@@ -1,6 +1,6 @@
-// @spec VOTE-API-009, VOTE-BE-004
+// @spec VOTE-API-009, VOTE-BE-004, VOTE-API-009-MANUAL, PROG-UI-BOOK-001
 import { z } from "zod";
-import { router, protectedProcedure } from "../trpc";
+import { router, protectedProcedure, memberProcedure } from "../trpc";
 import { searchBooks as searchOpenLibrary } from "../services/open-library";
 
 export const booksRouter = router({
@@ -27,28 +27,40 @@ export const booksRouter = router({
       try {
         const results = await searchOpenLibrary(input.query);
 
-        // Cache results locally
+        // Cache results locally using proper findFirst → create/update logic
         const books = await Promise.all(
           results.map(async (r) => {
-            return ctx.db.book.upsert({
-              where: {
-                id: (
-                  await ctx.db.book.findFirst({
-                    where: { openLibraryId: r.openLibraryId },
-                  })
-                )?.id ?? "00000000-0000-0000-0000-000000000000",
-              },
-              update: {},
-              create: {
-                title: r.title,
-                author: r.author,
-                isbn: r.isbn,
-                coverUrl: r.coverUrl,
-                pageCount: r.pageCount,
-                openLibraryId: r.openLibraryId,
-                description: r.description,
-              },
+            const existing = await ctx.db.book.findFirst({
+              where: { openLibraryId: r.openLibraryId },
             });
+
+            if (existing) {
+              // Update existing record with latest metadata
+              return ctx.db.book.update({
+                where: { id: existing.id },
+                data: {
+                  title: r.title,
+                  author: r.author,
+                  isbn: r.isbn,
+                  coverUrl: r.coverUrl,
+                  pageCount: r.pageCount,
+                  description: r.description,
+                },
+              });
+            } else {
+              // Create new record
+              return ctx.db.book.create({
+                data: {
+                  title: r.title,
+                  author: r.author,
+                  isbn: r.isbn,
+                  coverUrl: r.coverUrl,
+                  pageCount: r.pageCount,
+                  openLibraryId: r.openLibraryId,
+                  description: r.description,
+                },
+              });
+            }
           })
         );
 
@@ -57,5 +69,42 @@ export const booksRouter = router({
         // API unavailable — return empty, user can enter manually
         return [];
       }
+    }),
+
+  // @spec VOTE-API-009-MANUAL
+  createManual: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        author: z.string().min(1).max(500),
+        isbn: z.string().optional(),
+        pageCount: z.number().int().positive().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const book = await ctx.db.book.create({
+        data: {
+          title: input.title,
+          author: input.author,
+          isbn: input.isbn,
+          pageCount: input.pageCount,
+          // openLibraryId deliberately omitted — null for manual entries
+        },
+      });
+
+      return { book };
+    }),
+
+  // @spec PROG-UI-BOOK-001
+  listForClub: memberProcedure
+    .input(z.object({ clubId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const selections = await ctx.db.bookSelection.findMany({
+        where: { clubId: input.clubId },
+        include: { book: true },
+        orderBy: { selectedAt: "desc" },
+      });
+
+      return selections.map((s) => s.book);
     }),
 });
