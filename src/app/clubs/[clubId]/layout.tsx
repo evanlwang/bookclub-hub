@@ -14,6 +14,8 @@ export default async function ClubLayout({
 
   let club: { name: string; code: string } | null = null;
   let userName = "";
+  let clubs: { id: string; name: string; code: string; role: string }[] = [];
+  let hasActiveVote = false;
 
   try {
     const caller = await getServerCaller();
@@ -21,13 +23,25 @@ export default async function ClubLayout({
     club = result.club;
     const me = await caller.auth.me();
     userName = me.user.displayName || me.user.email;
+    clubs = me.clubs;
+
+    const rounds = await caller.rounds.list({ clubId });
+    hasActiveVote = rounds.some(
+      (r: any) => r.status === "nominating" || r.status === "voting"
+    );
   } catch {
     // Will fall through to child which handles errors
   }
 
   return (
     <div className="min-h-screen flex">
-      <ClubSidebar clubId={clubId} clubName={club?.name ?? "Club"} userName={userName} />
+      <ClubSidebar
+        clubId={clubId}
+        clubName={club?.name ?? "Club"}
+        userName={userName}
+        clubs={clubs}
+        hasActiveVote={hasActiveVote}
+      />
       <main className="flex-1 min-w-0 p-6 md:p-10">{children}</main>
     </div>
   );

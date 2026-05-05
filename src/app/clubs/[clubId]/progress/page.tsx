@@ -2,6 +2,7 @@ import { getServerCaller } from "@/trpc/server";
 import { Card, Badge, ProgressBar, Avatar } from "@/components/ui";
 import { UpdateProgressButton } from "./update-modal";
 
+// @spec PROG-API-003, PROG-UI-001, PROG-UI-004, PROG-UI-005, PROG-UI-006, PROG-UI-007, PROG-UI-008
 export default async function ProgressPage({
   params,
   searchParams,
@@ -151,6 +152,11 @@ export default async function ProgressPage({
           </Card>
 
           {/* Member list */}
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="font-[var(--font-display)] text-lg font-semibold text-ink">Where everyone is</h2>
+            <span className="text-xs text-ink-3">Sorted by progress</span>
+          </div>
+
           <Card className="divide-y divide-line">
             <ul data-testid="progress-list">
               {sorted.map((p: any, i: number) => (
@@ -161,11 +167,29 @@ export default async function ProgressPage({
                 >
                   <Avatar
                     name={p.user?.displayName ?? ""}
-                    size="sm"
+                    size="md"
                   />
-                  <span className="text-sm font-medium text-ink w-28 truncate">
-                    {p.user?.displayName ?? "Member"}
-                  </span>
+                  <div className="w-40">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-medium text-ink truncate">
+                        {p.user?.displayName ?? "Member"}
+                      </span>
+                      {p.status === "finished" && (
+                        <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-accent text-[oklch(0.25_0.04_75)] shrink-0">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12.5l4.5 4.5L19 7" />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-ink-3 mt-0.5">
+                      {p.status === "not_started"
+                        ? "Not started yet"
+                        : p.status === "finished"
+                          ? `Finished · ${p.totalPages ?? p.currentPage ?? ""} pages`
+                          : `Page ${p.currentPage ?? 0}${p.currentChapter != null ? ` · ch. ${p.currentChapter}` : ""}`}
+                    </p>
+                  </div>
                   <div className="flex-1">
                     <ProgressBar
                       percentage={p.percentage ?? 0}
@@ -174,9 +198,10 @@ export default async function ProgressPage({
                       delay={i * 60}
                     />
                   </div>
-                  <span className="text-xs text-ink-2 font-[var(--font-mono)] w-10 text-right tabular-nums">
-                    {p.percentage ?? 0}%
-                  </span>
+                  <div className="text-right w-14">
+                    <span className="font-[var(--font-display)] text-lg font-semibold tabular-nums">{p.percentage ?? 0}</span>
+                    <span className="text-ink-3 text-sm">%</span>
+                  </div>
                   {p.status === "finished" && (
                     <span data-testid="badge-finished"><Badge tone="accent">Done</Badge></span>
                   )}

@@ -61,8 +61,8 @@ test.describe("Spoiler-Safe Discussions", () => {
 
     await page.goto(`/clubs/${club.id}/discussions`);
 
-    await expect(page.getByText("[Chapter 3]")).toBeVisible();
-    await expect(page.getByText("[Chapter 5]")).toBeVisible();
-    await expect(page.getByText("[Chapter 10]")).toBeVisible();
+    await expect(page.getByText("Chapter 3")).toBeVisible();
+    await expect(page.getByText("Chapter 5")).toBeVisible();
+    await expect(page.getByText("Chapter 10")).toBeVisible();
   });
 });

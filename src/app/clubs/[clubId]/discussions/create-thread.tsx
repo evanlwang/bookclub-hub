@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Badge } from "@/components/ui";
+import { Button, ChapterChip } from "@/components/ui";
 
 interface CreateThreadProps {
   clubId: string;
@@ -127,7 +127,7 @@ function CreateThreadForm({
         />
         {chapterTag && (
           <span data-testid="chapter-tag-preview">
-            <Badge tone="neutral">[{chapterTag}]</Badge>
+            <ChapterChip tag={chapterTag} />
           </span>
         )}
       </div>

@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { Card, Badge } from "@/components/ui";
+import { Card, ChapterChip, Avatar } from "@/components/ui";
 import { CreateThreadButton } from "./create-thread";
 
 type Thread = {
@@ -12,9 +12,20 @@ type Thread = {
   chapterTag: string | null;
   chapterNumber: number | null;
   authorId: string;
+  author?: { displayName: string };
   createdAt: string;
   commentCount?: number;
 };
+
+function relativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 function DiscussionsContent() {
   const params = useParams();
@@ -102,7 +113,7 @@ function DiscussionsContent() {
       {/* Spoiler filter */}
       <div
         data-testid="chapter-filter"
-        className="flex items-center gap-3 mb-6 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line"
+        className="flex items-center gap-3 mb-6 p-3 bg-primary-soft rounded-[var(--radius-md)] border border-primary/20"
       >
         <label className="flex items-center gap-2 text-sm text-ink-2">
           <span>I&apos;m on chapter:</span>
@@ -166,7 +177,7 @@ function DiscussionsContent() {
                 <div className="flex items-center gap-3 mb-1">
                   {thread.chapterTag && (
                     <span data-testid="chapter-tag">
-                      <Badge tone="neutral">[{thread.chapterTag}]</Badge>
+                      <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
                     </span>
                   )}
                   {thread.commentCount != null && (
@@ -180,6 +191,15 @@ function DiscussionsContent() {
                   <p data-testid="thread-body-preview" className="text-xs text-ink-3 mt-1 line-clamp-1">
                     {thread.body}
                   </p>
+                )}
+                {thread.author && (
+                  <div className="flex items-center gap-2 mt-2.5">
+                    <Avatar name={thread.author.displayName} size="sm" />
+                    <span className="text-xs text-ink-3">
+                      {thread.author.displayName.split(" ")[0]}
+                      {thread.createdAt && ` · ${relativeTime(thread.createdAt)}`}
+                    </span>
+                  </div>
                 )}
               </Card>
             </li>

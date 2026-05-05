@@ -51,7 +51,7 @@ test.describe("Create Discussion Thread", () => {
 
     await page.getByTestId("thread-chapter-input").fill("Chapter 7");
     await expect(page.getByTestId("chapter-tag-preview")).toBeVisible();
-    await expect(page.getByTestId("chapter-tag-preview")).toContainText("[Chapter 7]");
+    await expect(page.getByTestId("chapter-tag-preview")).toContainText("Chapter 7");
   });
 
   test("thread with chapter tag appears in list with tag", async ({ page }) => {
@@ -68,6 +68,6 @@ test.describe("Create Discussion Thread", () => {
 
     await expect(page.getByTestId("create-thread-form")).not.toBeVisible({ timeout: 10000 });
     await expect(page.getByText("Tagged Thread Test")).toBeVisible();
-    await expect(page.getByText("[Chapter 8]")).toBeVisible();
+    await expect(page.getByText("Chapter 8")).toBeVisible();
   });
 });

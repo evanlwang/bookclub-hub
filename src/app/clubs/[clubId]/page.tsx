@@ -1,6 +1,6 @@
 import { getServerCaller } from "@/trpc/server";
 import Link from "next/link";
-import { Card, Badge, BookCover, ProgressBar } from "@/components/ui";
+import { Card, Badge, BookCover, ProgressBar, AvatarStack, ChapterChip, Avatar } from "@/components/ui";
 
 export default async function ClubDashboard({
   params,
@@ -14,6 +14,7 @@ export default async function ClubDashboard({
   let activeRound: any = null;
   let meetings: any[] = [];
   let threads: any[] = [];
+  let progress: any[] = [];
   let error = "";
 
   try {
@@ -35,6 +36,8 @@ export default async function ClubDashboard({
         bookId: currentBook.book.id,
       });
       threads = threadResult.threads?.slice(0, 3) ?? [];
+
+      progress = await caller.progress.list({ clubId, bookId: currentBook.book.id });
     }
   } catch (e: unknown) {
     error = e instanceof Error ? e.message : "Error loading club";
@@ -54,6 +57,12 @@ export default async function ClubDashboard({
     (m: any) => m.status === "proposed" || m.status === "confirmed"
   );
 
+  // Progress stats
+  const percentages = progress.map((p: any) => p.percentage ?? 0).sort((a: number, b: number) => a - b);
+  const median = percentages.length > 0 ? percentages[Math.floor(percentages.length / 2)] : 0;
+  const finished = progress.filter((p: any) => p.status === "finished").length;
+  const reading = progress.filter((p: any) => p.status === "reading").length;
+
   return (
     <div className="max-w-4xl">
       {/* Header */}
@@ -72,7 +81,7 @@ export default async function ClubDashboard({
       {/* Currently Reading hero */}
       {currentBook?.book ? (
         <Card className="p-6 mb-6">
-          <div className="flex gap-5">
+          <div className="flex gap-6">
             <BookCover
               title={currentBook.book.title}
               author={currentBook.book.author}
@@ -89,7 +98,38 @@ export default async function ClubDashboard({
               <p className="text-ink-2 text-sm mb-4">
                 {currentBook.book.author}
               </p>
-              {currentBook.book.pageCount && (
+
+              {/* Progress stats */}
+              {progress.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4 text-xs text-ink-2">
+                    <span className="font-[var(--font-display)] text-lg font-semibold text-ink">{median}%</span>
+                    <span>median</span>
+                    <span className="text-ink-4">·</span>
+                    <span>{finished} finished</span>
+                    <span className="text-ink-4">·</span>
+                    <span>{reading} reading</span>
+                  </div>
+
+                  {/* Progress bar with member tick-marks */}
+                  <div className="relative">
+                    <ProgressBar percentage={median} status="reading" animate />
+                    <div className="relative h-6 mt-1">
+                      {progress.slice(0, 8).map((p: any) => (
+                        <div
+                          key={p.userId}
+                          className="absolute -translate-x-1/2"
+                          style={{ left: `${Math.min(p.percentage ?? 0, 100)}%` }}
+                        >
+                          <Avatar name={p.user?.displayName ?? ""} size="sm" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!progress.length && currentBook.book.pageCount && (
                 <p className="text-ink-3 text-xs">
                   {currentBook.book.pageCount} pages
                 </p>
@@ -104,13 +144,13 @@ export default async function ClubDashboard({
             href={`/clubs/${clubId}/vote`}
             className="text-primary text-sm font-medium hover:underline"
           >
-            Start a vote →
+            Start a vote
           </Link>
         </Card>
       )}
 
-      {/* Two-column grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      {/* Three-up grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Active Vote */}
         <Card className="p-5">
           <h3 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-3">
@@ -129,7 +169,7 @@ export default async function ClubDashboard({
                 className="block mt-3 text-sm text-primary font-medium hover:underline"
                 data-testid="nav-vote"
               >
-                View round →
+                Cast my vote
               </Link>
             </div>
           ) : (
@@ -140,7 +180,7 @@ export default async function ClubDashboard({
                 className="block mt-2 text-sm text-primary font-medium hover:underline"
                 data-testid="nav-vote"
               >
-                Start a vote →
+                Start a vote
               </Link>
             </div>
           )}
@@ -153,7 +193,7 @@ export default async function ClubDashboard({
           </h3>
           {nextMeeting ? (
             <div>
-              <p className="text-sm font-medium text-ink">{nextMeeting.title}</p>
+              <p className="text-sm font-medium text-ink mb-1">{nextMeeting.title}</p>
               <Badge
                 tone={
                   nextMeeting.status === "confirmed" ? "success" : "warning"
@@ -164,12 +204,17 @@ export default async function ClubDashboard({
                   ? "Confirmed"
                   : "Awaiting responses"}
               </Badge>
+              {nextMeeting.confirmedTime && (
+                <p className="text-xs text-ink-2 mt-2">
+                  {new Date(nextMeeting.confirmedTime).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                </p>
+              )}
               <Link
                 href={`/clubs/${clubId}/meetings`}
                 className="block mt-3 text-sm text-primary font-medium hover:underline"
                 data-testid="nav-meetings"
               >
-                View meetings →
+                View meetings
               </Link>
             </div>
           ) : (
@@ -180,50 +225,48 @@ export default async function ClubDashboard({
                 className="block mt-2 text-sm text-primary font-medium hover:underline"
                 data-testid="nav-meetings"
               >
-                Schedule a meeting →
+                Schedule a meeting
               </Link>
             </div>
           )}
         </Card>
+
+        {/* Recent Discussions */}
+        <Card className="p-5">
+          <h3 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-3">
+            Recent Discussions
+          </h3>
+          {threads.length > 0 ? (
+            <ul className="space-y-2.5">
+              {threads.map((thread: any) => (
+                <li key={thread.id} className="flex items-center gap-2 text-sm">
+                  {thread.chapterTag && (
+                    <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
+                  )}
+                  <span className="text-ink font-medium truncate">
+                    {thread.title}
+                  </span>
+                  {thread.commentCount != null && (
+                    <span className="text-[11px] text-ink-3 ml-auto shrink-0">{thread.commentCount}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-ink-3 text-sm">No discussions yet</p>
+          )}
+          <Link
+            href={`/clubs/${clubId}/discussions`}
+            className="block mt-3 text-sm text-primary font-medium hover:underline"
+            data-testid="nav-discussions"
+          >
+            View all
+          </Link>
+        </Card>
       </div>
 
-      {/* Recent Discussions */}
-      <Card className="p-5">
-        <h3 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-3">
-          Recent Discussions
-        </h3>
-        {threads.length > 0 ? (
-          <ul className="space-y-2.5">
-            {threads.map((thread: any) => (
-              <li
-                key={thread.id}
-                className="flex items-center justify-between text-sm"
-              >
-                <span className="text-ink font-medium truncate">
-                  {thread.title}
-                </span>
-                {thread.chapterTag && (
-                  <span className="text-xs text-ink-3 font-[var(--font-mono)] ml-2 shrink-0">
-                    {thread.chapterTag}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-ink-3 text-sm">No discussions yet</p>
-        )}
-        <Link
-          href={`/clubs/${clubId}/discussions`}
-          className="block mt-3 text-sm text-primary font-medium hover:underline"
-          data-testid="nav-discussions"
-        >
-          View all →
-        </Link>
-      </Card>
-
       {/* Progress link */}
-      <Card className="p-5 mt-4">
+      <Card className="p-5">
         <h3 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-3">
           Reading Progress
         </h3>
@@ -232,7 +275,7 @@ export default async function ClubDashboard({
           data-testid="nav-progress"
           className="text-sm text-primary font-medium hover:underline"
         >
-          View progress →
+          View progress
         </Link>
       </Card>
     </div>

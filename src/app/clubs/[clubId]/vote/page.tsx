@@ -70,6 +70,7 @@ export default async function VotePage({
                 book: n.book,
                 nominator: n.nominator,
                 pitch: n.pitch,
+                createdAt: n.createdAt,
                 voteCount: activeRoundDetail.status === "decided" ? n.votes?.length : undefined,
               }))}
               maxApprovals={activeRoundDetail.maxApprovalsPerMember ?? 3}
