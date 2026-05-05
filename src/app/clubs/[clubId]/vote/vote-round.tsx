@@ -21,6 +21,8 @@ interface VoteRoundProps {
   maxApprovals: number;
   myVotes: string[];
   isAdmin: boolean;
+  memberCount?: number;
+  voterCount?: number;
 }
 
 function relativeTime(dateStr?: string): string {
@@ -43,6 +45,8 @@ export function VoteRound({
   maxApprovals,
   myVotes: initialVotes,
   isAdmin,
+  memberCount = 0,
+  voterCount = 0,
 }: VoteRoundProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>(initialVotes);
@@ -110,84 +114,166 @@ export function VoteRound({
 
   if (status === "voting") {
     return (
-      <div data-testid="voting-phase">
-        <p className="text-sm text-ink-2 mb-4">
-          Approve up to {maxApprovals} book{maxApprovals !== 1 ? "s" : ""} you&rsquo;d be happy to read
-        </p>
-
-        <div className="space-y-2.5 mb-6">
-          {nominations.map((nom) => {
-            const isSelected = selected.includes(nom.id);
-            const isMaxed = selected.length >= maxApprovals && !isSelected;
-            return (
-              <button
-                key={nom.id}
-                type="button"
-                onClick={() => toggleSelection(nom.id)}
-                disabled={isMaxed}
-                data-testid={`nomination-${nom.id}`}
-                className={`w-full text-left p-4 rounded-[var(--radius-lg)] border transition-all duration-150 cursor-pointer ${
-                  isSelected
-                    ? "border-primary bg-primary-soft shadow-[0_0_0_3px_oklch(0.42_0.06_195/0.12)]"
-                    : isMaxed
-                      ? "border-line bg-bg-soft opacity-50 cursor-not-allowed"
-                      : "border-line bg-bg hover:border-line-strong"
-                }`}
-              >
-                <div className="grid grid-cols-[22px_auto_1fr] gap-4 items-center">
-                  {/* Checkbox */}
+      <div data-testid="voting-phase" className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+        {/* Main content */}
+        <div className="min-w-0">
+          <div className="flex items-end justify-between gap-4 flex-wrap mb-4">
+            <p className="text-sm text-ink-2">
+              Approve up to {maxApprovals} book{maxApprovals !== 1 ? "s" : ""} you&rsquo;d be happy to read
+            </p>
+            {/* Inline approval pill */}
+            <div
+              data-testid="approval-pill"
+              className="flex items-center gap-2.5 px-3 py-1.5 bg-bg-soft border border-line rounded-full shrink-0"
+            >
+              <span className="text-xs text-ink-3">Picks</span>
+              <span className="flex gap-1">
+                {[...Array(maxApprovals)].map((_, i) => (
                   <span
-                    className={`w-[22px] h-[22px] rounded-md border-[1.5px] flex items-center justify-center shrink-0 ${
-                      isSelected
-                        ? "border-primary bg-primary text-white"
-                        : "border-line-strong bg-bg"
+                    key={i}
+                    className={`w-3 h-3 rounded-full border-[1.5px] transition-all duration-150 ${
+                      i < selected.length
+                        ? "border-primary bg-primary"
+                        : "border-line-strong bg-transparent"
+                    }`}
+                  />
+                ))}
+              </span>
+              <span className="font-[var(--font-mono)] text-[11px] text-ink-2 tabular-nums">
+                {selected.length}/{maxApprovals}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-2.5 mb-6">
+            {nominations.map((nom) => {
+              const isSelected = selected.includes(nom.id);
+              const isMaxed = selected.length >= maxApprovals && !isSelected;
+              return (
+                <button
+                  key={nom.id}
+                  type="button"
+                  onClick={() => toggleSelection(nom.id)}
+                  disabled={isMaxed}
+                  data-testid={`nomination-${nom.id}`}
+                  className={`w-full text-left p-4 rounded-[var(--radius-lg)] border transition-all duration-150 cursor-pointer ${
+                    isSelected
+                      ? "border-primary bg-primary-soft shadow-[0_0_0_3px_oklch(0.42_0.06_195/0.12)]"
+                      : isMaxed
+                        ? "border-line bg-bg-soft opacity-50 cursor-not-allowed"
+                        : "border-line bg-bg hover:border-line-strong"
+                  }`}
+                >
+                  <div className="grid grid-cols-[22px_auto_1fr] gap-4 items-center">
+                    {/* Checkbox */}
+                    <span
+                      className={`w-[22px] h-[22px] rounded-md border-[1.5px] flex items-center justify-center shrink-0 ${
+                        isSelected
+                          ? "border-primary bg-primary text-white"
+                          : "border-line-strong bg-bg"
+                      }`}
+                    >
+                      {isSelected && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 12.5l4.5 4.5L19 7" />
+                        </svg>
+                      )}
+                    </span>
+                    {/* Book cover */}
+                    <BookCover title={nom.book.title} author={nom.book.author} size="sm" />
+                    {/* Content */}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-ink">{nom.book.title}</p>
+                      <p className="text-xs text-ink-2 italic mb-1">by {nom.book.author} · nom. {nom.nominator.displayName.split(" ")[0]}</p>
+                      {nom.pitch && (
+                        <p className="text-xs text-ink-2 line-clamp-2">&ldquo;{nom.pitch}&rdquo;</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {error && (
+            <p className="text-sm text-danger mb-3">{error}</p>
+          )}
+
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full"
+            loading={loading}
+            disabled={selected.length === 0}
+            onClick={handleSubmitVotes}
+            data-testid="submit-votes-btn"
+          >
+            {hasVoted
+              ? `✓ Voted — Update ${selected.length}?`
+              : `Submit ${selected.length} vote${selected.length !== 1 ? "s" : ""}`}
+          </Button>
+
+          {hasVoted && !loading && (
+            <p className="text-xs text-success text-center mt-2 animate-fade-in" data-testid="vote-success">
+              ✓ Your votes have been recorded
+            </p>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <aside data-testid="vote-sidebar" className="hidden lg:flex flex-col gap-4 sticky top-6 self-start">
+          <Card className="p-5">
+            <Badge tone="accent" dot>Voting open</Badge>
+            <p className="font-[var(--font-display)] text-lg font-semibold mt-2.5 mb-1">
+              You&rsquo;ve approved
+            </p>
+            <p className="font-[var(--font-display)] text-[28px] font-semibold tracking-tight">
+              {selected.length}<span className="text-ink-3 text-lg"> / {maxApprovals}</span>
+            </p>
+            <div data-testid="approval-dots" className="flex gap-2 mt-3 mb-4 items-center">
+              {[...Array(maxApprovals)].map((_, i) => {
+                const filled = i < selected.length;
+                return (
+                  <div
+                    key={i}
+                    data-testid="approval-dot"
+                    data-filled={filled}
+                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
+                      filled
+                        ? "border-primary bg-primary shadow-[0_0_0_3px_oklch(0.42_0.06_195/0.12)]"
+                        : "border-line-strong bg-transparent"
                     }`}
                   >
-                    {isSelected && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    {filled && (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M5 12.5l4.5 4.5L19 7" />
                       </svg>
                     )}
-                  </span>
-                  {/* Book cover */}
-                  <BookCover title={nom.book.title} author={nom.book.author} size="sm" />
-                  {/* Content */}
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink">{nom.book.title}</p>
-                    <p className="text-xs text-ink-2 italic mb-1">by {nom.book.author} · nom. {nom.nominator.displayName.split(" ")[0]}</p>
-                    {nom.pitch && (
-                      <p className="text-xs text-ink-2 line-clamp-2">&ldquo;{nom.pitch}&rdquo;</p>
-                    )}
                   </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                );
+              })}
+              <span className="text-[11px] text-ink-3 ml-auto">
+                {maxApprovals - selected.length === 0 ? "all used" : `${maxApprovals - selected.length} left`}
+              </span>
+            </div>
+          </Card>
 
-        {error && (
-          <p className="text-sm text-danger mb-3">{error}</p>
-        )}
-
-        <Button
-          variant="primary"
-          size="lg"
-          className="w-full"
-          loading={loading}
-          disabled={selected.length === 0}
-          onClick={handleSubmitVotes}
-          data-testid="submit-votes-btn"
-        >
-          {hasVoted
-            ? `✓ Voted — Update ${selected.length}?`
-            : `Submit ${selected.length} vote${selected.length !== 1 ? "s" : ""}`}
-        </Button>
-
-        {hasVoted && !loading && (
-          <p className="text-xs text-success text-center mt-2 animate-fade-in" data-testid="vote-success">
-            ✓ Your votes have been recorded
-          </p>
-        )}
+          <Card className="p-5 bg-bg-soft" data-testid="voter-turnout">
+            <div className="flex items-center gap-2 mb-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="text-ink-3">
+                <circle cx="9" cy="8" r="4" />
+                <path d="M2 21a7 7 0 0 1 14 0" />
+                <path d="M16 4a4 4 0 0 1 0 8" />
+                <path d="M22 21a7 7 0 0 0-5-6.7" />
+              </svg>
+              <span className="text-xs text-ink-3">Voter turnout</span>
+            </div>
+            <p className="font-[var(--font-display)] text-2xl font-semibold">
+              {voterCount}<span className="text-ink-3 text-sm ml-1">of {memberCount} have voted</span>
+            </p>
+            <p className="text-[11px] text-ink-3 mt-1.5">Tallies hidden until close</p>
+          </Card>
+        </aside>
       </div>
     );
   }

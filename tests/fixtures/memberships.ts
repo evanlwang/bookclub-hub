@@ -1,18 +1,16 @@
-import { type PrismaClient, type MemberRole } from "@prisma/client";
-import type { TestUser } from "./users";
-import type { TestClub } from "./clubs";
+import type { PrismaClient } from "@prisma/client";
+import type { TestUser } from "../factories/users";
+import type { TestClub } from "../factories/clubs";
+import { createMembership, insertClub } from "../factories";
 
-export async function insertMembership(
-  db: PrismaClient,
-  clubId: string,
-  userId: string,
-  role: MemberRole = "member"
-) {
-  return db.membership.create({
-    data: { clubId, userId, role },
-  });
-}
+// Re-export from factories
+export { createMembership } from "../factories/entities";
+export type { MembershipInput } from "../factories/entities";
 
+/**
+ * Helper: Create a club with owner, admins, and members.
+ * Used by integration tests for quick setup.
+ */
 export async function seedClubWithMembers(
   db: PrismaClient,
   club: TestClub,
@@ -20,23 +18,19 @@ export async function seedClubWithMembers(
   admins: TestUser[],
   members: TestUser[]
 ) {
-  await db.club.create({
-    data: {
-      id: club.id,
-      name: club.name,
-      code: club.code,
-      description: club.description,
-      createdBy: owner.id,
-    },
-  });
+  // Create club with owner
+  await insertClub(db, { ...club, createdBy: owner.id });
 
-  await insertMembership(db, club.id, owner.id, "owner");
+  // Add owner
+  await createMembership(db, { clubId: club.id, userId: owner.id, role: "owner" });
 
+  // Add admins
   for (const admin of admins) {
-    await insertMembership(db, club.id, admin.id, "admin");
+    await createMembership(db, { clubId: club.id, userId: admin.id, role: "admin" });
   }
 
+  // Add members
   for (const member of members) {
-    await insertMembership(db, club.id, member.id, "member");
+    await createMembership(db, { clubId: club.id, userId: member.id, role: "member" });
   }
 }

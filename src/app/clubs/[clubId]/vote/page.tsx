@@ -13,6 +13,8 @@ export default async function VotePage({
   let activeRoundDetail: any = null;
   let myVotes: string[] = [];
   let isAdmin = false;
+  let memberCount = 0;
+  let voterCount = 0;
   let error = "";
 
   try {
@@ -31,6 +33,19 @@ export default async function VotePage({
     if (activeRound) {
       const detail = await caller.rounds.get({ clubId, roundId: activeRound.id });
       activeRoundDetail = detail.round;
+
+      // Get member count and voter turnout for voting phase sidebar
+      if (activeRound.status === "voting") {
+        const { prisma } = await import("@/lib/db");
+        const members = await prisma.membership.count({ where: { clubId } });
+        memberCount = members;
+        const voters = await prisma.vote.findMany({
+          where: { roundId: activeRound.id },
+          select: { userId: true },
+          distinct: ["userId"],
+        });
+        voterCount = voters.length;
+      }
     }
   } catch (e: unknown) {
     error = e instanceof Error ? e.message : "Error loading rounds";
@@ -41,7 +56,7 @@ export default async function VotePage({
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Voting Rounds
@@ -76,6 +91,8 @@ export default async function VotePage({
               maxApprovals={activeRoundDetail.maxApprovalsPerMember ?? 3}
               myVotes={myVotes}
               isAdmin={isAdmin}
+              memberCount={memberCount}
+              voterCount={voterCount}
             />
           </Card>
         </div>

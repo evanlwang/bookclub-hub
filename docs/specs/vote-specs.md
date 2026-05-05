@@ -56,7 +56,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **VOTE-UI-006**: During nominating phase, admins SHALL see an "Advance to voting" button with a prerequisite indicator (minimum 2 nominations).
 - `[x]` **VOTE-UI-007**: When a round is decided, the system SHALL display a winner banner with gradient background, total vote count, and "Set up first meeting" CTA.
 - `[x]` **VOTE-UI-008**: Below the winner banner, the system SHALL display final tallies as a ranked list with proportional progress bars per nomination.
-- `[ ]` **VOTE-UI-009**: During voting phase, the sidebar SHALL show a visual approval bar ({N}/{max} filled dots) and voter turnout count with "tallies hidden" message.
+- `[x]` **VOTE-UI-009**: During voting phase, the sidebar SHALL show a visual approval bar ({N}/{max} filled dots) and voter turnout count with "tallies hidden" message.
 - `[x]` **VOTE-UI-010**: After submitting votes, the button SHALL change to "Voted — update {N}?" allowing re-vote until round closes.
 
 ## Deferred
