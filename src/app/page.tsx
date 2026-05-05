@@ -1,59 +1,220 @@
+// @spec HOME-UI-001 through HOME-UI-011, HOME-A11Y-002, HOME-A11Y-004
 import Link from "next/link";
-import { LogoIcon, VoteIcon, CalendarIcon, ChatIcon } from "@/components/ui";
+import {
+  LogoIcon,
+  VoteIcon,
+  CalendarIcon,
+  ChatIcon,
+  ChevronRightIcon,
+} from "@/components/ui/icons";
+import { AvatarStack, Badge, Card, BookCover, ChapterChip } from "@/components/ui";
+
+const paperBg =
+  "radial-gradient(circle at 20% 10%, oklch(0.97 0.012 75) 0, transparent 50%), radial-gradient(circle at 80% 90%, oklch(0.96 0.018 30) 0, transparent 55%), var(--color-bg)";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col">
-      {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center">
-        <div className="mb-6">
-          <LogoIcon size={48} />
-        </div>
-        <h1 className="font-[var(--font-display)] text-5xl font-semibold tracking-tight text-ink leading-tight mb-4">
-          Your book club, organized
-        </h1>
-        <p className="text-ink-2 text-lg max-w-md mb-10">
-          Vote on books, schedule meetings, discuss without spoilers, and track
-          everyone&apos;s progress — all in one place.
-        </p>
-        <div className="flex gap-3">
+    <main id="main-content" className="min-h-screen" style={{ background: paperBg }}>
+      {/* Top Nav */}
+      <nav className="flex items-center justify-between" style={{ padding: "20px 56px" }}>
+        <Link href="/" className="flex items-center gap-2.5">
+          <LogoIcon size={26} />
+          <span className="font-[var(--font-display)] text-xl font-semibold text-ink">
+            BookClub Hub
+          </span>
+        </Link>
+        <div className="flex items-center gap-1">
+          <Link href="#" className="text-ink-2 text-sm px-2.5 py-1.5 hover:text-ink transition-colors">
+            Pricing
+          </Link>
+          <Link href="#" className="text-ink-2 text-sm px-2.5 py-1.5 hover:text-ink transition-colors">
+            About
+          </Link>
           <Link
             href="/join"
-            className="inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] bg-primary text-bg px-6 py-3 text-[15px] hover:bg-primary-hover transition-colors duration-150"
+            className="text-ink-2 text-sm px-3 py-1.5 hover:text-ink transition-colors ml-2"
           >
-            Join a Club
+            Sign in
           </Link>
           <Link
-            href="/clubs"
-            className="inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] bg-transparent text-ink-2 px-6 py-3 text-[15px] hover:bg-bg-sunken hover:text-ink transition-colors duration-150"
+            href="/join"
+            className="inline-flex items-center justify-center font-medium rounded-[var(--radius-md)] bg-primary text-bg px-3 py-1.5 text-[13px] hover:bg-primary-hover transition-colors"
           >
-            My Clubs
+            Join a club
           </Link>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section
+        className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center"
+        style={{ padding: "56px 56px 72px" }}
+      >
+        {/* Left column */}
+        <div>
+          {/* Eyebrow pill */}
+          <div className="inline-flex items-center gap-1.5 px-[11px] py-[5px] rounded-full bg-accent-soft text-accent-ink text-xs font-medium mb-5">
+            <span className="w-[5px] h-[5px] rounded-full bg-accent-ink" />
+            Spoiler-safe by default
+          </div>
+
+          <h1 className="font-[var(--font-display)] text-[72px] font-semibold leading-none tracking-[-0.03em] mb-5 text-ink">
+            Your book club,
+            <br />
+            <em className="italic" style={{ color: "var(--color-primary)" }}>
+              finally
+            </em>{" "}
+            organized.
+          </h1>
+
+          <p className="text-[18px] text-ink-2 max-w-[480px] leading-[1.55] mb-7">
+            Vote on books, schedule meetings, discuss without spoilers, and track
+            everyone&apos;s progress — all in one place.
+          </p>
+
+          {/* CTA row */}
+          <div className="flex gap-2.5">
+            <Link
+              href="/join"
+              className="inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] bg-primary text-bg px-5 py-2.5 text-[15px] hover:bg-primary-hover transition-colors h-[46px]"
+            >
+              Join a club
+              <ChevronRightIcon size={14} />
+            </Link>
+            <Link
+              href="/join"
+              className="inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] border border-line-strong text-ink px-5 py-2.5 text-[15px] hover:bg-bg-sunken transition-colors h-[46px]"
+            >
+              Create a club
+            </Link>
+          </div>
+
+          {/* Social proof */}
+          <div className="mt-8 flex items-center gap-3">
+            <AvatarStack names={["Alice Chen", "Marcus Webb", "Priya K"]} max={3} size="sm" />
+            <span className="text-[13px] text-ink-3">
+              <strong className="text-ink-2">2,400+</strong> readers ·{" "}
+              <strong className="text-ink-2">340</strong> active clubs
+            </span>
+          </div>
+        </div>
+
+        {/* Right column — decorative collage */}
+        <div className="hidden lg:block relative h-[460px]" aria-hidden="true">
+          {/* Voting card */}
+          <Card
+            className="absolute top-0 right-[30px] w-[280px] p-4"
+            style={{ transform: "rotate(-2deg)", boxShadow: "var(--shadow-lg)" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Badge tone="accent" dot>Voting</Badge>
+            </div>
+            <p className="text-xs text-ink-2 mb-3">Round 4 · Pick up to 3</p>
+            <div className="space-y-2">
+              {["Dune", "Piranesi", "Klara and the Sun"].map((title, i) => (
+                <div key={title} className="flex items-center gap-2.5">
+                  <div
+                    className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 ${
+                      i === 0
+                        ? "border-primary bg-primary"
+                        : "border-line-strong bg-bg"
+                    }`}
+                  >
+                    {i === 0 && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                        <path d="M5 12.5l4.5 4.5L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-xs text-ink">{title}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Meeting card */}
+          <Card
+            className="absolute top-[90px] left-0 w-[260px] p-4"
+            style={{ transform: "rotate(1.5deg)", boxShadow: "var(--shadow-lg)" }}
+          >
+            <p className="text-sm font-medium text-ink mb-2.5">Thursday potluck?</p>
+            <div className="space-y-1.5">
+              {[
+                { time: "Thu 6:30 PM", hot: true },
+                { time: "Fri 7:00 PM", hot: false },
+                { time: "Sat 2:00 PM", hot: false },
+              ].map((slot) => (
+                <div
+                  key={slot.time}
+                  className={`text-xs px-2.5 py-2 rounded-[var(--radius-sm)] ${
+                    slot.hot
+                      ? "bg-success-soft text-ink font-semibold"
+                      : "bg-bg-soft text-ink-2"
+                  }`}
+                >
+                  {slot.time}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Discussion card */}
+          <Card
+            className="absolute bottom-[10px] right-[60px] w-[290px] p-4"
+            style={{ transform: "rotate(2deg)", boxShadow: "var(--shadow-lg)" }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <ChapterChip tag="Ch. 12" chapter={12} />
+              <span className="text-[11px] text-ink-3">4 comments</span>
+            </div>
+            <p className="text-sm font-medium text-ink mb-1">
+              The lighthouse metaphor — anyone else?
+            </p>
+            <p className="text-xs text-ink-3">Started by Marisol · 2h ago</p>
+          </Card>
+
+          {/* Book cover */}
+          <div className="absolute bottom-[110px] left-[110px]">
+            <BookCover title="Sea of Tranquility" author="Mandel" variant="teal" size="xl" />
+          </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="max-w-3xl mx-auto px-6 pb-24 grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Feature row */}
+      <section
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        style={{ padding: "0 56px 72px" }}
+      >
         <FeatureCard
           icon={<VoteIcon size={20} />}
-          title="Vote on books"
-          description="Nominate, discuss, and vote. Everyone gets a say in what you read next."
+          title="Approval voting"
+          description="Everyone picks the books they'd be happy reading. The group's top choice wins."
         />
         <FeatureCard
           icon={<CalendarIcon size={20} />}
-          title="Schedule meetings"
-          description="Find a time that works for everyone with availability polling."
+          title="Meeting scheduling"
+          description="Propose times, collect availability, confirm — no more group chat negotiation."
         />
         <FeatureCard
           icon={<ChatIcon size={20} />}
-          title="Discuss safely"
-          description="Chapter-tagged threads mean no one gets spoiled accidentally."
+          title="Spoiler-safe threads"
+          description="Chapter-tagged discussions appear only when you've read that far."
         />
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-line py-8 text-center text-ink-3 text-sm">
-        BookClub Hub
+      <footer className="border-t border-line text-[13px] text-ink-3 flex items-center justify-between" style={{ padding: "28px 56px" }}>
+        <div className="flex items-center gap-2">
+          <LogoIcon size={18} />
+          <span>BookClub Hub</span>
+          <span>·</span>
+          <span>For people who finish the book.</span>
+        </div>
+        <div className="flex gap-4">
+          <Link href="#" className="hover:text-ink-2 transition-colors">Privacy</Link>
+          <Link href="#" className="hover:text-ink-2 transition-colors">Terms</Link>
+          <Link href="#" className="hover:text-ink-2 transition-colors">Changelog</Link>
+        </div>
       </footer>
     </main>
   );
@@ -70,11 +231,13 @@ function FeatureCard({
 }) {
   return (
     <div className="bg-bg border border-line rounded-[var(--radius-lg)] p-6 shadow-sm">
-      <div className="w-10 h-10 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink flex items-center justify-center mb-4">
+      <div className="w-10 h-10 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink flex items-center justify-center mb-3.5">
         {icon}
       </div>
-      <h3 className="font-medium text-ink mb-1">{title}</h3>
-      <p className="text-ink-3 text-sm leading-relaxed">{description}</p>
+      <h3 className="font-[var(--font-display)] text-[19px] font-semibold text-ink mb-1.5">
+        {title}
+      </h3>
+      <p className="text-[14px] text-ink-2 leading-relaxed">{description}</p>
     </div>
   );
 }

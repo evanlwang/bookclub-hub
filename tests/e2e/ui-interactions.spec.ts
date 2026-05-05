@@ -5,15 +5,15 @@ import { loginAs, getClubByCode } from "./helpers";
 test.describe("Landing Page Interactions", () => {
   test("Join a Club link navigates to join page", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Join a Club" }).click();
+    await page.locator("nav").getByRole("link", { name: "Join a club" }).click();
     await expect(page).toHaveURL("/join");
     await expect(page.getByTestId("join-form")).toBeVisible();
   });
 
-  test("My Clubs link navigates to clubs page", async ({ page }) => {
+  test("Sign in link navigates to join page", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "My Clubs" }).click();
-    await expect(page).toHaveURL("/clubs");
+    await page.getByRole("link", { name: "Sign in" }).click();
+    await expect(page).toHaveURL("/join");
   });
 });
 
@@ -27,8 +27,7 @@ test.describe("Join Page Interactions", () => {
   test("club code lookup shows club info on blur", async ({ page }) => {
     await page.goto("/join");
     await page.getByTestId("code-input").fill("WEDREADS");
-    // Click another field to trigger blur
-    await page.getByTestId("email-input").click();
+    await page.getByTestId("code-input").blur();
 
     // Should show club name and member count (wait for async fetch)
     await expect(page.getByText("Wednesday Night Reads")).toBeVisible({ timeout: 10000 });
@@ -37,21 +36,27 @@ test.describe("Join Page Interactions", () => {
   test("submit button shows loading state", async ({ page }) => {
     await page.goto("/join");
     await page.getByTestId("code-input").fill("WEDREADS");
+    await page.getByTestId("code-input").blur();
+    await expect(page.getByTestId("club-found-panel")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("continue-button").click();
+
     await page.getByTestId("email-input").fill("loadtest@example.com");
     await page.getByTestId("name-input").fill("Load Tester");
 
-    // Click and immediately check loading state
     const button = page.getByTestId("join-button");
     await button.click();
 
-    // Button should be disabled during submission
-    // (we check the final state — successful navigation)
+    // Check the final state — successful navigation
     await expect(page).toHaveURL(/\/clubs\//);
   });
 
   test("shows success message before redirect", async ({ page }) => {
     await page.goto("/join");
     await page.getByTestId("code-input").fill("WEDREADS");
+    await page.getByTestId("code-input").blur();
+    await expect(page.getByTestId("club-found-panel")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("continue-button").click();
+
     await page.getByTestId("email-input").fill("success-msg@example.com");
     await page.getByTestId("name-input").fill("Success Person");
     await page.getByTestId("join-button").click();
