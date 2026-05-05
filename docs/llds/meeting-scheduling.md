@@ -90,25 +90,27 @@ AvailabilityResponse {
 └─────────────────────────────────────────────────┘
 ```
 
-## API Endpoints
+## API Contracts
 
-| Endpoint | Method | Auth | Request | Response |
-|----------|--------|------|---------|----------|
-| `/api/clubs/:clubId/meetings` | GET | member | `?status=...` | 200 `[{ meeting, slots, responses_summary }]` |
-| `/api/clubs/:clubId/meetings` | POST | admin+ | `{ title?, book_id?, description?, location?, slots: [{ time, duration? }] }` | 201 `{ meeting, slots }` |
-| `/api/clubs/:clubId/meetings/:meetId` | GET | member | - | 200 `{ meeting, slots, responses }` |
-| `/api/clubs/:clubId/meetings/:meetId` | PATCH | admin+ | `{ title?, description?, location? }` | 200 |
-| `/api/clubs/:clubId/meetings/:meetId/confirm` | POST | admin+ | `{ slot_id }` | 200 `{ meeting }` (sets confirmed_time) |
-| `/api/clubs/:clubId/meetings/:meetId/cancel` | POST | admin+ | - | 200 |
-| `/api/clubs/:clubId/meetings/:meetId/availability` | POST | member | `{ responses: [{ slot_id, status }] }` | 200 (replaces all responses for this user) |
+Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `meetings.create(...)`, `meetings.confirm(...)`) rather than REST routes.
 
-## Notification Triggers
+| Procedure | Auth | Input | Output |
+|-----------|------|-------|--------|
+| `meetings.list` | member | `{ clubId, status? }` | `[{ meeting, slots, responses_summary }]` |
+| `meetings.create` | admin+ | `{ clubId, title?, book_id?, description?, location?, slots: [{ time, duration? }] }` | `{ meeting, slots }` |
+| `meetings.get` | member | `{ meetingId }` | `{ meeting, slots, responses }` |
+| `meetings.update` | admin+ | `{ meetingId, title?, description?, location? }` | `{ meeting }` |
+| `meetings.confirm` | admin+ | `{ meetingId, slotId }` | `{ meeting }` (sets confirmed_time) |
+| `meetings.cancel` | admin+ | `{ meetingId }` | - |
+| `meetings.submitAvailability` | member | `{ meetingId, responses: [{ slotId, status }] }` | (replaces all responses for user) |
 
-- Meeting proposed: notify all club members
-- Availability not yet submitted (48h after proposal): remind non-responders
-- Meeting confirmed: notify all members with time, location, and book
-- Meeting reminder: 24 hours before confirmed time
-- Meeting cancelled: notify all members
+## Notification Triggers (via Resend)
+
+- Meeting proposed: email all club members
+- Availability not yet submitted (48h after proposal): email non-responders
+- Meeting confirmed: email all members with time, location, and book
+- Meeting reminder: email 24 hours before confirmed time
+- Meeting cancelled: email all members
 
 ## Time Zone Handling
 

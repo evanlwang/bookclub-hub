@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- Enums ---
+
+enum ClubStatus {
+  active
+  archived
+  deleted
+}
+
+enum MemberRole {
+  owner
+  admin
+  member
+}
+
+enum RoundStatus {
+  nominating
+  voting
+  decided
+  cancelled
+}
+
+enum MeetingStatus {
+  proposed
+  confirmed
+  completed
+  cancelled
+}
+
+enum AvailabilityStatus {
+  available
+  maybe
+  unavailable
+}
+
+enum ReadingStatus {
+  not_started
+  reading
+  finished
+}
+
+// --- Models ---
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  displayName String   @map("display_name") @db.VarChar(100)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  sessions          Session[]
+  memberships       Membership[]
+  createdClubs      Club[]              @relation("ClubCreator")
+  nominations       Nomination[]
+  votes             Vote[]
+  createdRounds     VotingRound[]       @relation("RoundCreator")
+  createdMeetings   Meeting[]           @relation("MeetingCreator")
+  availabilities    AvailabilityResponse[]
+  threads           DiscussionThread[]
+  comments          Comment[]
+  readingProgress   ReadingProgress[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @db.VarChar(128)
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Club {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @db.VarChar(100)
+  description String?    @db.VarChar(500)
+  code        String     @unique @db.VarChar(16)
+  createdBy   String     @map("created_by") @db.Uuid
+  status      ClubStatus @default(active)
+  deletedAt   DateTime?  @map("deleted_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  creator         User              @relation("ClubCreator", fields: [createdBy], references: [id])
+  memberships     Membership[]
+  votingRounds    VotingRound[]
+  bookSelections  BookSelection[]
+  meetings        Meeting[]
+  threads         DiscussionThread[]
+  readingProgress ReadingProgress[]
+
+  @@map("clubs")
+}
+
+model Membership {
+  id       String     @id @default(uuid()) @db.Uuid
+  clubId   String     @map("club_id") @db.Uuid
+  userId   String     @map("user_id") @db.Uuid
+  role     MemberRole @default(member)
+  joinedAt DateTime   @default(now()) @map("joined_at")
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, userId])
+  @@map("memberships")
+}
+
+model Book {
+  id            String   @id @default(uuid()) @db.Uuid
+  title         String
+  author        String
+  isbn          String?
+  coverUrl      String?  @map("cover_url")
+  description   String?
+  pageCount     Int?     @map("page_count")
+  openLibraryId String?  @map("open_library_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  nominations    Nomination[]
+  selections     BookSelection[]
+  winningRounds  VotingRound[]     @relation("RoundWinner")
+  meetings       Meeting[]
+  threads        DiscussionThread[]
+  readingProgress ReadingProgress[]
+
+  @@map("books")
+}
+
+model VotingRound {
+  id                    String      @id @default(uuid()) @db.Uuid
+  clubId                String      @map("club_id") @db.Uuid
+  status                RoundStatus @default(nominating)
+  maxApprovalsPerMember Int         @default(3) @map("max_approvals_per_member")
+  nominationDeadline    DateTime?   @map("nomination_deadline")
+  votingDeadline        DateTime?   @map("voting_deadline")
+  winningBookId         String?     @map("winning_book_id") @db.Uuid
+  createdBy             String      @map("created_by") @db.Uuid
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  club         Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  winningBook  Book?          @relation("RoundWinner", fields: [winningBookId], references: [id])
+  creator      User           @relation("RoundCreator", fields: [createdBy], references: [id])
+  nominations  Nomination[]
+  selections   BookSelection[]
+
+  @@map("voting_rounds")
+}
+
+model Nomination {
+  id          String   @id @default(uuid()) @db.Uuid
+  roundId     String   @map("round_id") @db.Uuid
+  bookId      String   @map("book_id") @db.Uuid
+  nominatedBy String   @map("nominated_by") @db.Uuid
+  pitch       String?  @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  round     VotingRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  book      Book        @relation(fields: [bookId], references: [id])
+  nominator User        @relation(fields: [nominatedBy], references: [id])
+  votes     Vote[]
+
+  @@unique([roundId, bookId])
+  @@map("nominations")
+}
+
+model Vote {
+  id           String   @id @default(uuid()) @db.Uuid
+  roundId      String   @map("round_id") @db.Uuid
+  nominationId String   @map("nomination_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  nomination Nomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([roundId, nominationId, userId])
+  @@map("votes")
+}
+
+model BookSelection {
+  id         String    @id @default(uuid()) @db.Uuid
+  clubId     String    @map("club_id") @db.Uuid
+  bookId     String    @map("book_id") @db.Uuid
+  roundId    String?   @map("round_id") @db.Uuid
+  selectedAt DateTime  @default(now()) @map("selected_at")
+  finishedAt DateTime? @map("finished_at")
+  isCurrent  Boolean   @default(true) @map("is_current")
+
+  club  Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  book  Book         @relation(fields: [bookId], references: [id])
+  round VotingRound? @relation(fields: [roundId], references: [id])
+
+  @@map("book_selections")
+}
+
+model Meeting {
+  id            String        @id @default(uuid()) @db.Uuid
+  clubId        String        @map("club_id") @db.Uuid
+  bookId        String?       @map("book_id") @db.Uuid
+  title         String
+  description   String?
+  status        MeetingStatus @default(proposed)
+  confirmedTime DateTime?     @map("confirmed_time")
+  location      String?
+  createdBy     String        @map("created_by") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  club    Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  book    Book?            @relation(fields: [bookId], references: [id])
+  creator User             @relation("MeetingCreator", fields: [createdBy], references: [id])
+  slots   MeetingTimeSlot[]
+
+  @@map("meetings")
+}
+
+model MeetingTimeSlot {
+  id              String   @id @default(uuid()) @db.Uuid
+  meetingId       String   @map("meeting_id") @db.Uuid
+  proposedTime    DateTime @map("proposed_time")
+  durationMinutes Int      @default(60) @map("duration_minutes")
+
+  meeting   Meeting                @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  responses AvailabilityResponse[]
+
+  @@map("meeting_time_slots")
+}
+
+model AvailabilityResponse {
+  id        String             @id @default(uuid()) @db.Uuid
+  slotId    String             @map("slot_id") @db.Uuid
+  userId    String             @map("user_id") @db.Uuid
+  status    AvailabilityStatus
+  createdAt DateTime           @default(now()) @map("created_at")
+
+  slot MeetingTimeSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  user User            @relation(fields: [userId], references: [id])
+
+  @@unique([slotId, userId])
+  @@map("availability_responses")
+}
+
+model DiscussionThread {
+  id            String   @id @default(uuid()) @db.Uuid
+  clubId        String   @map("club_id") @db.Uuid
+  bookId        String   @map("book_id") @db.Uuid
+  authorId      String   @map("author_id") @db.Uuid
+  title         String   @db.VarChar(200)
+  body          String
+  chapterTag    String?  @map("chapter_tag")
+  chapterNumber Int?     @map("chapter_number")
+  isPinned      Boolean  @default(false) @map("is_pinned")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  club     Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  book     Book      @relation(fields: [bookId], references: [id])
+  author   User      @relation(fields: [authorId], references: [id])
+  comments Comment[]
+
+  @@map("discussion_threads")
+}
+
+model Comment {
+  id              String   @id @default(uuid()) @db.Uuid
+  threadId        String   @map("thread_id") @db.Uuid
+  parentCommentId String?  @map("parent_comment_id") @db.Uuid
+  authorId        String   @map("author_id") @db.Uuid
+  body            String
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  thread  DiscussionThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  parent  Comment?         @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies Comment[]        @relation("CommentReplies")
+  author  User             @relation(fields: [authorId], references: [id])
+
+  @@map("comments")
+}
+
+model ReadingProgress {
+  id             String        @id @default(uuid()) @db.Uuid
+  clubId         String        @map("club_id") @db.Uuid
+  bookId         String        @map("book_id") @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  currentPage    Int?          @map("current_page")
+  totalPages     Int?          @map("total_pages")
+  percentage     Int           @default(0)
+  currentChapter Int?          @map("current_chapter")
+  status         ReadingStatus @default(not_started)
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([clubId, bookId, userId])
+  @@map("reading_progress")
+}

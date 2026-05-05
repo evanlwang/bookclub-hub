@@ -86,7 +86,7 @@ BookSelection {
 
 ## Book Metadata Lookup
 
-When a member nominates a book, they can search by title or ISBN. The system queries an external API (Open Library or Google Books) and presents results. The member selects the correct edition. Metadata (title, author, cover, page count) is cached locally in the Book table.
+When a member nominates a book, they can search by title or ISBN. The system queries the Open Library API and presents results. The member selects the correct edition. Metadata (title, author, cover, page count) is cached locally in the Book table via Prisma.
 
 If the API is unavailable, the member can enter metadata manually. The API is a convenience, not a dependency.
 
@@ -140,27 +140,29 @@ If the API is unavailable, the member can enter metadata manually. The API is a 
 
 Vote tallies are hidden until the voting phase ends (to prevent bandwagoning). After the round is decided, results are visible to all members.
 
-## API Endpoints
+## API Contracts
 
-| Endpoint | Method | Auth | Request | Response |
-|----------|--------|------|---------|----------|
-| `/api/clubs/:clubId/rounds` | GET | member | - | 200 `[{ round }]` |
-| `/api/clubs/:clubId/rounds` | POST | admin+ | `{ max_approvals?, nomination_deadline?, voting_deadline? }` | 201 `{ round }` |
-| `/api/clubs/:clubId/rounds/:roundId` | GET | member | - | 200 `{ round, nominations, votes? }` (votes only if decided or own votes) |
-| `/api/clubs/:clubId/rounds/:roundId/advance` | POST | admin+ | - | 200 (nominating→voting or voting→decided) |
-| `/api/clubs/:clubId/rounds/:roundId/cancel` | POST | admin+ | - | 200 |
-| `/api/clubs/:clubId/rounds/:roundId/nominations` | POST | member | `{ book_id, pitch? }` or `{ search_query }` | 201 `{ nomination }` |
-| `/api/clubs/:clubId/rounds/:roundId/nominations/:nomId` | DELETE | author or admin+ | - | 200 |
-| `/api/clubs/:clubId/rounds/:roundId/votes` | POST | member | `{ nomination_ids: [...] }` | 200 (replaces all votes for this user in this round) |
-| `/api/books/search` | GET | required | `?q=...` | 200 `[{ book }]` (from external API + local cache) |
-| `/api/clubs/:clubId/selections` | GET | member | - | 200 `[{ selection }]` (reading history) |
+Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `rounds.create(...)`, `votes.submit(...)`) rather than REST routes.
 
-## Notification Triggers
+| Procedure | Auth | Input | Output |
+|-----------|------|-------|--------|
+| `rounds.list` | member | `{ clubId }` | `[{ round }]` |
+| `rounds.create` | admin+ | `{ clubId, max_approvals?, nomination_deadline?, voting_deadline? }` | `{ round }` |
+| `rounds.get` | member | `{ roundId }` | `{ round, nominations, votes? }` (votes only if decided or own votes) |
+| `rounds.advance` | admin+ | `{ roundId }` | (nominating→voting or voting→decided) |
+| `rounds.cancel` | admin+ | `{ roundId }` | - |
+| `nominations.create` | member | `{ roundId, book_id, pitch? }` | `{ nomination }` |
+| `nominations.delete` | author or admin+ | `{ nominationId }` | - |
+| `votes.submit` | member | `{ roundId, nomination_ids }` | (replaces all votes for user in round) |
+| `books.search` | required | `{ query }` | `[{ book }]` (from Open Library API + local cache) |
+| `selections.list` | member | `{ clubId }` | `[{ selection }]` (reading history) |
 
-- Round enters "nominating": notify all club members
-- Round enters "voting": notify all club members
-- Voting deadline approaching (24h before): notify members who haven't voted
-- Round decided: notify all club members with the winner
+## Notification Triggers (via Resend)
+
+- Round enters "nominating": email all club members
+- Round enters "voting": email all club members
+- Voting deadline approaching (24h before): email members who haven't voted
+- Round decided: email all club members with the winner
 
 ## Decisions & Alternatives
 

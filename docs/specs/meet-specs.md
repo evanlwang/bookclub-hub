@@ -9,13 +9,13 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Meeting Creation
 
-- `[ ]` **MEET-API-001**: When an admin POSTs to create a meeting with time slots, the system SHALL create the meeting in "proposed" status with the specified slots.
+- `[ ]` **MEET-API-001**: When an admin calls `meetings.create` with time slots, the system SHALL create the meeting in "proposed" status with the specified slots.
 - `[ ]` **MEET-DATA-001**: Each meeting shall have 2–5 proposed time slots.
 - `[ ]` **MEET-API-002**: Meetings may optionally link to a book (via book_id FK). When linked, the meeting title defaults to "Meeting: {book title}".
 
 ## Availability
 
-- `[ ]` **MEET-API-003**: When a member POSTs availability responses, the system SHALL accept a list of (slot_id, status) pairs and replace all previous responses for that user.
+- `[ ]` **MEET-API-003**: When a member calls `meetings.submitAvailability`, the system SHALL accept a list of (slot_id, status) pairs and replace all previous responses for that user.
 - `[ ]` **MEET-DATA-002**: Availability status shall be one of: "available", "maybe", "unavailable".
 - `[ ]` **MEET-UI-001**: The availability grid shall display three-state radio buttons (available, maybe, unavailable) for each time slot.
 - `[ ]` **MEET-UI-002**: The system SHALL show how many members have responded out of total club members.
@@ -23,9 +23,9 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Meeting Confirmation
 
-- `[ ]` **MEET-API-004**: When an admin POSTs to confirm a meeting with a slot_id, the system SHALL set the meeting status to "confirmed" and store the confirmed_time from the selected slot.
+- `[ ]` **MEET-API-004**: When an admin calls `meetings.confirm` with a slot_id, the system SHALL set the meeting status to "confirmed" and store the confirmed_time from the selected slot.
 - `[ ]` **MEET-BE-001**: When a confirmed meeting's time has passed, the system SHALL automatically transition its status to "completed".
-- `[ ]` **MEET-API-005**: When an admin cancels a meeting, the system SHALL set status to "cancelled".
+- `[ ]` **MEET-API-005**: When an admin calls `meetings.cancel`, the system SHALL set status to "cancelled".
 
 ## Time Handling
 

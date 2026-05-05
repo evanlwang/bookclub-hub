@@ -50,7 +50,7 @@ Members report their page or chapter. A club dashboard shows where everyone is, 
 
 1. **Single-pane coordination.** A club organizer can run a complete book-selection-to-meeting cycle without leaving the app. Falsifiable: zero external tools required for the core loop (nominate, vote, schedule, discuss, track).
 2. **Sub-30-second club switch.** A multi-club member can switch from one club's context to another in under 30 seconds, including loading the new club's current state.
-3. **Voting completes without reminder chasing.** At least 70% of active members vote before the deadline when the system sends automated reminders at configurable intervals.
+3. **Voting completes without reminder chasing.** At least 70% of active members vote before the deadline when the system sends automated reminders (24h before deadline).
 4. **Progress visibility reduces scheduling guesswork.** The organizer can see aggregate reading progress before scheduling a meeting. Falsifiable: progress dashboard loads for any club with fewer than 50 members in under 2 seconds.
 5. **Spoiler-safe discussions.** A member who is on chapter 3 never sees discussion content tagged for chapter 5+ unless they explicitly opt in.
 
@@ -98,57 +98,49 @@ v1 ships a complete, usable product for the core loop: join → vote → schedul
 
 ```mermaid
 flowchart TB
-    subgraph client["Browser (React)"]
-        next["Next.js App Router\n+ Server Components"]
+    subgraph client["Browser"]
+        next["Next.js App Router\n(React Server Components)"]
     end
 
-    subgraph server["Next.js Backend"]
-        trpc["tRPC Route Handlers"]
-        auth["Auth (email sessions)"]
-        club["Club Management"]
-        book["Book Selection & Voting"]
-        meet["Meeting Scheduling"]
-        disc["Discussion Threads"]
-        prog["Reading Progress"]
+    subgraph server["Next.js API (tRPC)"]
+        auth["Auth"]
+        club["Clubs"]
+        book["Voting"]
+        meet["Meetings"]
+        disc["Discussions"]
+        prog["Progress"]
     end
 
-    subgraph data["Data Layer"]
-        db[("PostgreSQL\n(via Prisma)")]
+    subgraph data["Data"]
+        db[("PostgreSQL\n(Neon)")]
     end
 
-    subgraph external["External Services"]
-        resend["Resend\n(transactional email)"]
-        bookapi["Open Library API\n(book metadata)"]
+    subgraph external["External"]
+        resend["Resend"]
+        bookapi["Open Library"]
     end
 
-    next -->|tRPC| trpc
-    trpc --> auth
-    trpc --> club
-    trpc --> book
-    trpc --> meet
-    trpc --> disc
-    trpc --> prog
-    auth --> db
-    club --> db
-    book --> db
+    next <-->|tRPC| server
+    server <--> db
     book --> bookapi
-    meet --> db
     meet --> resend
-    disc --> db
-    prog --> db
 ```
 
 ### Entity Relationship Overview
 
 ```mermaid
 erDiagram
+    USER ||--o{ SESSION : "has many"
     USER ||--o{ MEMBERSHIP : "has many"
     CLUB ||--o{ MEMBERSHIP : "has many"
+    CLUB ||--o{ VOTING_ROUND : "has many"
     CLUB ||--o{ BOOK_SELECTION : "has many"
     CLUB ||--o{ MEETING : "has many"
-    BOOK_SELECTION ||--o{ NOMINATION : "has many"
-    BOOK_SELECTION ||--o{ VOTE : "has many"
+    VOTING_ROUND ||--o{ NOMINATION : "has many"
+    VOTING_ROUND ||--o{ VOTE : "has many"
+    NOMINATION ||--|| BOOK : "for"
     BOOK_SELECTION ||--|| BOOK : "selects"
+    BOOK_SELECTION ||--o| VOTING_ROUND : "from round"
     BOOK ||--o{ DISCUSSION_THREAD : "has many"
     DISCUSSION_THREAD ||--o{ COMMENT : "has many"
     BOOK ||--o{ READING_PROGRESS : "tracked per member"
@@ -161,8 +153,13 @@ erDiagram
 
     USER {
         uuid id PK
-        string email
+        string email UK
         string display_name
+    }
+    SESSION {
+        string id PK
+        uuid user_id FK
+        timestamp expires_at
     }
     CLUB {
         uuid id PK
@@ -176,13 +173,26 @@ erDiagram
         uuid club_id FK
         enum role
     }
+    VOTING_ROUND {
+        uuid id PK
+        uuid club_id FK
+        enum status
+    }
+    BOOK_SELECTION {
+        uuid id PK
+        uuid club_id FK
+        uuid book_id FK
+        uuid round_id FK
+        boolean is_current
+    }
 ```
 
 ### Tech Stack
 
 - **Frontend**: Next.js 15 (React, App Router, Server Components)
 - **Backend**: Next.js Route Handlers + tRPC for type-safe API calls
-- **Database**: PostgreSQL via Prisma ORM (type-safe queries, migration management)
+- **Database**: PostgreSQL on Neon (serverless Postgres, generous free tier, branching for dev/preview)
+- **ORM**: Prisma (type-safe queries, migration management)
 - **Auth**: Custom email-based sessions (HttpOnly cookie, server-side session store)
 - **Email**: Resend (transactional email API — notifications, reminders)
 - **Deployment**: Vercel (zero-config Next.js hosting, serverless functions, edge network)
@@ -224,30 +234,32 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant Email as Resend
 
+    Note over User,Email: Paths below are logical contracts.<br/>tRPC implements them as typed procedures.
+
     Note over User,Email: Join a Club
-    User->>App: POST /api/clubs/join {code, email, name}
+    User->>App: clubs.join({code, email, name})
     App->>DB: Find or create User by email
     App->>DB: Look up Club by code
     App->>DB: Create Membership (role: member)
     App-->>User: Set session cookie, redirect to club
 
     Note over User,Email: Vote on Next Book
-    User->>App: GET /api/clubs/:id/rounds/:id
+    User->>App: rounds.get({roundId})
     App-->>User: Show nominations
-    User->>App: POST /votes {nomination_ids}
+    User->>App: votes.submit({roundId, nominationIds})
     App->>DB: Replace votes for user in round
     App-->>User: "Vote submitted"
 
     Note over User,Email: Track Progress
-    User->>App: PUT /progress/me {page: 187, chapter: 12}
+    User->>App: progress.update({page: 187, chapter: 12})
     App->>DB: Upsert ReadingProgress
     App-->>User: Updated progress bar
 
     Note over User,Email: Discuss (spoiler-safe)
-    User->>App: GET /threads?max_chapter=12
+    User->>App: threads.list({bookId, maxChapter: 12})
     App->>DB: SELECT WHERE chapter_number <= 12 OR NULL
     App-->>User: Show filtered threads
-    User->>App: POST /threads/:id/comments {body}
+    User->>App: comments.create({threadId, body})
     App->>DB: Insert Comment
     App-->>User: Comment posted
 

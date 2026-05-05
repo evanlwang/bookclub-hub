@@ -78,16 +78,18 @@ The `current_chapter` field is entered separately by the member. It is not deriv
 
 Individual progress bars are visible to all club members. The aggregate summary (median, chapter distribution) is visible to all but primarily useful to the organizer.
 
-## API Endpoints
+## API Contracts
 
-| Endpoint | Method | Auth | Request | Response |
-|----------|--------|------|---------|----------|
-| `/api/clubs/:clubId/books/:bookId/progress` | GET | member | - | 200 `[{ user, progress }]` (all members' progress) |
-| `/api/clubs/:clubId/books/:bookId/progress/me` | GET | member | - | 200 `{ progress }` |
-| `/api/clubs/:clubId/books/:bookId/progress/me` | PUT | member | `{ current_page?, percentage?, current_chapter?, status? }` | 200 `{ progress }` |
-| `/api/clubs/:clubId/books/:bookId/progress/summary` | GET | member | - | 200 `{ median_pct, finished_count, reading_count, not_started_count, chapter_distribution }` |
+Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `progress.update(...)`) rather than REST routes.
 
-The `PUT` endpoint is idempotent — it creates the record if it doesn't exist, updates it if it does. The member can update any subset of fields.
+| Procedure | Auth | Input | Output |
+|-----------|------|-------|--------|
+| `progress.list` | member | `{ clubId, bookId }` | `[{ user, progress }]` (all members' progress) |
+| `progress.me` | member | `{ clubId, bookId }` | `{ progress }` |
+| `progress.update` | member | `{ clubId, bookId, current_page?, percentage?, current_chapter?, status? }` | `{ progress }` |
+| `progress.summary` | member | `{ clubId, bookId }` | `{ median_pct, finished_count, reading_count, not_started_count, chapter_distribution }` |
+
+`progress.update` is idempotent — it creates the record if it doesn't exist, updates it if it does. The member can update any subset of fields.
 
 ## Decisions & Alternatives
 

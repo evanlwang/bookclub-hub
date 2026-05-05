@@ -75,20 +75,22 @@ Comment {
 
 The `chapter_number` field is derived from `chapter_tag` when possible (e.g., "Chapter 5" → 5, "Part 2" → 2). When the tag is free-form and unparseable (e.g., "Epilogue"), `chapter_number` is null and the thread is always shown (not filterable by progress). The thread creation UI encourages structured input but allows free text.
 
-## API Endpoints
+## API Contracts
 
-| Endpoint | Method | Auth | Request | Response |
-|----------|--------|------|---------|----------|
-| `/api/clubs/:clubId/books/:bookId/threads` | GET | member | `?max_chapter=N&sort=recent\|active` | 200 `[{ thread, comment_count, latest_comment_at }]` |
-| `/api/clubs/:clubId/books/:bookId/threads` | POST | member | `{ title, body, chapter_tag? }` | 201 `{ thread }` |
-| `/api/clubs/:clubId/books/:bookId/threads/:threadId` | GET | member | - | 200 `{ thread, comments }` |
-| `/api/clubs/:clubId/books/:bookId/threads/:threadId` | PATCH | author or admin+ | `{ title?, body?, chapter_tag?, is_pinned? }` | 200 |
-| `/api/clubs/:clubId/books/:bookId/threads/:threadId` | DELETE | author or admin+ | - | 200 |
-| `/api/clubs/:clubId/books/:bookId/threads/:threadId/comments` | POST | member | `{ body, parent_comment_id? }` | 201 `{ comment }` |
-| `/api/clubs/:clubId/books/:bookId/threads/:threadId/comments/:commentId` | PATCH | author | `{ body }` | 200 |
-| `/api/clubs/:clubId/books/:bookId/threads/:threadId/comments/:commentId` | DELETE | author or admin+ | - | 200 |
+Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `threads.list(...)`, `comments.create(...)`) rather than REST routes.
 
-The `max_chapter` query parameter implements spoiler filtering server-side. The client passes the user's current chapter number; the server returns only threads where `chapter_number IS NULL OR chapter_number <= max_chapter`. The "show all" override omits this parameter.
+| Procedure | Auth | Input | Output |
+|-----------|------|-------|--------|
+| `threads.list` | member | `{ clubId, bookId, maxChapter?, sort? }` | `[{ thread, comment_count, latest_comment_at }]` |
+| `threads.create` | member | `{ clubId, bookId, title, body, chapter_tag? }` | `{ thread }` |
+| `threads.get` | member | `{ threadId }` | `{ thread, comments }` |
+| `threads.update` | author or admin+ | `{ threadId, title?, body?, chapter_tag?, is_pinned? }` | `{ thread }` |
+| `threads.delete` | author or admin+ | `{ threadId }` | - |
+| `comments.create` | member | `{ threadId, body, parent_comment_id? }` | `{ comment }` |
+| `comments.update` | author | `{ commentId, body }` | `{ comment }` |
+| `comments.delete` | author or admin+ | `{ commentId }` | - |
+
+The `maxChapter` input implements spoiler filtering server-side. The client passes the user's current chapter number; the server returns only threads where `chapter_number IS NULL OR chapter_number <= maxChapter`. The "show all" override omits this input.
 
 ## Content Format
 

@@ -58,19 +58,21 @@ Session {
 
 That's it. No OAuthConnection table, no MagicLinkToken table, no password hash. The User table is two meaningful fields: email and display_name.
 
-## API Endpoints
+## API Contracts
 
-| Endpoint | Method | Request | Response |
-|----------|--------|---------|----------|
-| `/auth/enter` | POST | `{ "email": "...", "display_name": "..." }` | 200 `{ user }` (set session cookie). Creates user if new, updates display_name if changed. |
-| `/auth/me` | GET | - | 200 `{ user, clubs }` or 401 |
-| `/auth/logout` | POST | - | 200 (clear session cookie) |
+Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `auth.enter(...)`) rather than REST routes.
 
-The `/auth/enter` endpoint is the only "login" flow. It is idempotent: calling it with an existing email returns that user; calling it with a new email creates one. The display_name is updated to the latest value provided (so a user can change their name by re-entering).
+| Procedure | Input | Output |
+|-----------|-------|--------|
+| `auth.enter` | `{ email, display_name }` | `{ user }` (set session cookie). Creates user if new, updates display_name if changed. |
+| `auth.me` | - | `{ user, clubs }` or 401 |
+| `auth.logout` | - | (clear session cookie) |
+
+`auth.enter` is the only "login" flow. It is idempotent: calling it with an existing email returns that user; calling it with a new email creates one. The display_name is updated to the latest value provided (so a user can change their name by re-entering).
 
 ## Session Management
 
-Sessions are server-side, stored in the database or cache store. Session ID is a cryptographically random string stored in an HttpOnly, Secure, SameSite=Lax cookie. Expiration: 30 days, sliding (refreshed on each request). This means a weekly-active user never has to re-enter their email.
+Sessions are server-side, stored in PostgreSQL (Neon). Session ID is a cryptographically random string stored in an HttpOnly, Secure, SameSite=Lax cookie. Expiration: 30 days, sliding (refreshed on each request). This means a weekly-active user never has to re-enter their email.
 
 Logout destroys the server-side session and clears the cookie.
 

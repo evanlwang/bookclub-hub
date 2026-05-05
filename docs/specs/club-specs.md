@@ -9,23 +9,23 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Club Creation
 
-- `[ ]` **CLUB-API-001**: When an authenticated user POSTs to `/api/clubs` with name and code, the system SHALL create the club and assign the user as owner.
+- `[ ]` **CLUB-API-001**: When an authenticated user calls `clubs.create` with name and code, the system SHALL create the club and assign the user as owner.
 - `[ ]` **CLUB-DATA-001**: Club codes shall be unique across all active clubs (case-insensitive, stored uppercase).
 - `[ ]` **CLUB-DATA-002**: Club codes shall be 4–16 characters, alphanumeric only.
-- `[ ]` **CLUB-API-002**: When a user attempts to create a club with a code already in use by an active club, the system SHALL return a 409 conflict error.
+- `[ ]` **CLUB-API-002**: When a user attempts to create a club with a code already in use by an active club, the system SHALL throw a conflict error.
 
 ## Joining Clubs
 
-- `[ ]` **CLUB-API-003**: When a user POSTs to `/api/clubs/join` with a valid club code, the system SHALL create a membership with role "member".
-- `[ ]` **CLUB-API-004**: When an unauthenticated user POSTs to `/api/clubs/join` with code, email, and display_name, the system SHALL create or find the user, create a session, and create the membership in a single operation.
+- `[ ]` **CLUB-API-003**: When a user calls `clubs.join` with a valid club code, the system SHALL create a membership with role "member".
+- `[ ]` **CLUB-API-004**: When an unauthenticated user calls `clubs.join` with code, email, and display_name, the system SHALL create or find the user, create a session, and create the membership in a single operation.
 - `[ ]` **CLUB-API-005**: When a user attempts to join a club they are already a member of, the system SHALL return the existing club data without creating a duplicate membership.
-- `[ ]` **CLUB-API-006**: When a user submits an invalid or non-existent club code, the system SHALL return a 404 error.
+- `[ ]` **CLUB-API-006**: When a user submits an invalid or non-existent club code, the system SHALL throw a not-found error.
 - `[ ]` **CLUB-BE-001**: The system shall NOT allow joining clubs with status "archived" or "deleted".
 
 ## Club Lookup
 
-- `[ ]` **CLUB-API-007**: The `/api/clubs/lookup?code=...` endpoint SHALL return the club name and member count without requiring authentication.
-- `[ ]` **CLUB-API-008**: The lookup endpoint SHALL NOT return any club data beyond name and member count (no book info, no member list, no discussions).
+- `[ ]` **CLUB-API-007**: The `clubs.lookup` procedure SHALL return the club name and member count without requiring authentication.
+- `[ ]` **CLUB-API-008**: The `clubs.lookup` procedure SHALL NOT return any club data beyond name and member count (no book info, no member list, no discussions).
 
 ## Club Switching
 
@@ -36,7 +36,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Roles and Authorization
 
 - `[ ]` **CLUB-BE-002**: The system shall enforce role-based access: member+ for viewing, admin+ for editing settings and managing members, owner for deletion and ownership transfer.
-- `[ ]` **CLUB-API-009**: When a non-member attempts to access any club-scoped endpoint, the system SHALL return 403.
+- `[ ]` **CLUB-API-009**: When a non-member attempts to access any club-scoped procedure, the system SHALL throw a forbidden error.
 - `[ ]` **CLUB-BE-003**: The owner shall NOT be able to leave the club without first transferring ownership to another member.
 
 ## Club Lifecycle

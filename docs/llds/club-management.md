@@ -146,22 +146,24 @@ The club switcher is a persistent UI element (sidebar on desktop, bottom sheet o
 
 Switching clubs is a client-side operation: the app fetches the target club's current state (current book, upcoming meeting, user's progress) and re-renders. No page reload. Target: under 30 seconds per the HLD goal.
 
-## API Endpoints
+## API Contracts
 
-| Endpoint | Method | Auth | Request | Response |
-|----------|--------|------|---------|----------|
-| `/api/clubs` | GET | required | - | 200 `[{ club, role, current_book, unread_count }]` |
-| `/api/clubs` | POST | required | `{ name, description, code }` | 201 `{ club }` (creator becomes owner) |
-| `/api/clubs/:id` | GET | member | - | 200 `{ club, members, current_book }` |
-| `/api/clubs/:id` | PATCH | admin+ | `{ name?, description?, code? }` | 200 `{ club }` |
-| `/api/clubs/:id` | DELETE | owner | - | 200 (soft delete) |
-| `/api/clubs/:id/members` | GET | member | - | 200 `[{ user, role, joined_at }]` |
-| `/api/clubs/:id/members/:userId` | DELETE | admin+ (or self) | - | 200 |
-| `/api/clubs/:id/members/:userId/role` | PATCH | owner | `{ role }` | 200 |
-| `/api/clubs/join` | POST | optional | `{ code, email?, display_name? }` | 200 `{ club }` (creates session if not logged in) |
-| `/api/clubs/lookup` | GET | - | `?code=...` | 200 `{ club_name, member_count }` or 404 |
+Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `clubs.list()`, `clubs.join(...)`) rather than REST routes.
 
-The `/api/clubs/lookup` endpoint is unauthenticated — it lets the join form show the club name before the user submits. It returns minimal info (name, member count) to avoid leaking club data.
+| Procedure | Auth | Input | Output |
+|-----------|------|-------|--------|
+| `clubs.list` | required | - | `[{ club, role, current_book, unread_count }]` |
+| `clubs.create` | required | `{ name, description, code }` | `{ club }` (creator becomes owner) |
+| `clubs.get` | member | `{ clubId }` | `{ club, members, current_book }` |
+| `clubs.update` | admin+ | `{ clubId, name?, description?, code? }` | `{ club }` |
+| `clubs.delete` | owner | `{ clubId }` | (soft delete) |
+| `clubs.members.list` | member | `{ clubId }` | `[{ user, role, joined_at }]` |
+| `clubs.members.remove` | admin+ (or self) | `{ clubId, userId }` | - |
+| `clubs.members.updateRole` | owner | `{ clubId, userId, role }` | - |
+| `clubs.join` | optional | `{ code, email?, display_name? }` | `{ club }` (creates session if not logged in) |
+| `clubs.lookup` | none | `{ code }` | `{ club_name, member_count }` or 404 |
+
+`clubs.lookup` is unauthenticated — it lets the join form show the club name before the user submits. It returns minimal info (name, member count) to avoid leaking club data.
 
 ## Authorization Model
 
