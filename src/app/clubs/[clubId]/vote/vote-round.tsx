@@ -201,33 +201,68 @@ export function VoteRound({
     );
   }
 
-  // Nominating phase - just display
+  // Nominating phase
+  async function handleAdvanceRound() {
+    setCreateLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/trpc/rounds.advance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubId, roundId }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error.message || "Failed to advance round");
+      } else {
+        router.refresh();
+      }
+    } catch {
+      setError("Something went wrong");
+    } finally {
+      setCreateLoading(false);
+    }
+  }
+
   return (
     <div data-testid="nominating-phase">
       <p className="text-sm text-ink-2 mb-4">
-        Members are nominating books for this round.
+        Members are nominating books for this round. {nominations.length} nomination{nominations.length !== 1 ? "s" : ""} so far.
       </p>
-      {nominations.map((nom) => (
-        <Card key={nom.id} className="p-4 mb-2">
-          <p className="text-sm font-medium text-ink">{nom.book.title}</p>
-          <p className="text-xs text-ink-3">
-            {nom.book.author} · nominated by {nom.nominator.displayName}
-          </p>
-        </Card>
-      ))}
+      <div className="space-y-3 mb-6">
+        {nominations.map((nom) => (
+          <Card key={nom.id} className="p-4">
+            <p className="text-sm font-medium text-ink">{nom.book.title}</p>
+            <p className="text-xs text-ink-3 mt-0.5">
+              by {nom.book.author}
+            </p>
+            {nom.pitch && (
+              <p className="text-xs text-ink-2 mt-2 italic">&ldquo;{nom.pitch}&rdquo;</p>
+            )}
+            <p className="text-xs text-ink-3 mt-2">
+              Nominated by <strong className="text-ink-2">{nom.nominator.displayName}</strong>
+            </p>
+          </Card>
+        ))}
+      </div>
       {isAdmin && (
-        <div className="mt-6">
+        <div className="mt-6 flex gap-3">
           <Button
-            variant="secondary"
+            variant="primary"
             size="md"
             loading={createLoading}
-            onClick={handleStartNewRound}
-            data-testid="start-new-round-btn"
+            disabled={nominations.length < 2}
+            onClick={handleAdvanceRound}
+            data-testid="advance-round-btn"
           >
-            Start New Round
+            Advance to Voting
           </Button>
+          {nominations.length < 2 && (
+            <span className="text-xs text-ink-3 self-center">Needs at least 2 nominations</span>
+          )}
         </div>
       )}
+      {error && <p className="text-sm text-danger mt-2">{error}</p>}
     </div>
   );
 }

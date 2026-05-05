@@ -9,15 +9,15 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Meeting Creation
 
-- `[ ]` **MEET-API-001**: When an admin calls `meetings.create` with time slots, the system SHALL create the meeting in "proposed" status with the specified slots.
-- `[ ]` **MEET-DATA-001**: Each meeting shall have 2–5 proposed time slots.
+- `[x]` **MEET-API-001**: When an admin calls `meetings.create` with time slots, the system SHALL create the meeting in "proposed" status with the specified slots.
+- `[x]` **MEET-DATA-001**: Each meeting shall have 2–5 proposed time slots.
 - `[ ]` **MEET-API-002**: Meetings may optionally link to a book (via book_id FK). When linked, the meeting title defaults to "Meeting: {book title}".
 
 ## Availability
 
-- `[ ]` **MEET-API-003**: When a member calls `meetings.submitAvailability`, the system SHALL accept a list of (slot_id, status) pairs and replace all previous responses for that user.
-- `[ ]` **MEET-DATA-002**: Availability status shall be one of: "available", "maybe", "unavailable".
-- `[ ]` **MEET-UI-001**: The availability grid shall display three-state radio buttons (available, maybe, unavailable) for each time slot.
+- `[x]` **MEET-API-003**: When a member calls `meetings.submitAvailability`, the system SHALL accept a list of (slot_id, status) pairs and replace all previous responses for that user.
+- `[x]` **MEET-DATA-002**: Availability status shall be one of: "available", "maybe", "unavailable".
+- `[x]` **MEET-UI-001**: The availability grid shall display three-state radio buttons (available, maybe, unavailable) for each time slot.
 - `[ ]` **MEET-UI-002**: The system SHALL show how many members have responded out of total club members.
 - `[ ]` **MEET-UI-003**: Admins shall see a summary of all responses per slot (count of available, maybe, unavailable) to inform their confirmation decision.
 
@@ -39,6 +39,15 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[ ]` **MEET-NOTIFY-003**: When a meeting is confirmed, the system SHALL notify all members with the confirmed time, location, and linked book.
 - `[ ]` **MEET-NOTIFY-004**: The system SHALL send a reminder email 24 hours before a confirmed meeting.
 - `[ ]` **MEET-NOTIFY-005**: When a meeting is cancelled, the system SHALL notify all members.
+
+## Design UI (from prototype)
+
+- `[ ]` **MEET-UI-006**: The meeting list SHALL support filter tabs (All / Proposed / Confirmed / Past) with counts.
+- `[ ]` **MEET-UI-007**: Admins SHALL see a "Confirm" view with availability heatmap per slot, "Most available" badge on the top slot, location input, and "Confirm & notify members" button.
+- `[ ]` **MEET-UI-008**: Confirmed meetings SHALL display a date block (day/date/month), time range, location, attendee avatars, and "going/maybe" count.
+- `[ ]` **MEET-UI-009**: Past meetings SHALL appear dimmed with a "Notes" button.
+- `[ ]` **MEET-UI-010**: The create form SHALL include a linked-book dropdown selector.
+- `[ ]` **MEET-UI-011**: The respond view sidebar SHALL show members-responded progress bar and list of members still waiting.
 
 ## Deferred
 

@@ -8,10 +8,12 @@ import { CreateThreadButton } from "./create-thread";
 type Thread = {
   id: string;
   title: string;
+  body: string;
   chapterTag: string | null;
   chapterNumber: number | null;
   authorId: string;
   createdAt: string;
+  commentCount?: number;
 };
 
 function DiscussionsContent() {
@@ -24,6 +26,7 @@ function DiscussionsContent() {
   const [hiddenCount, setHiddenCount] = useState(0);
   const [maxChapter, setMaxChapter] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [sort, setSort] = useState<"recent" | "comments">("recent");
   const [error, setError] = useState("");
   const [currentBookId, setCurrentBookId] = useState<string | null>(bookIdParam);
 
@@ -49,7 +52,7 @@ function DiscussionsContent() {
   const loadThreads = useCallback(async () => {
     if (!currentBookId) return;
     try {
-      const queryInput: Record<string, unknown> = { clubId, bookId: currentBookId };
+      const queryInput: Record<string, unknown> = { clubId, bookId: currentBookId, sort };
       if (maxChapter !== null && !showAll) {
         queryInput.maxChapter = maxChapter;
       }
@@ -67,7 +70,7 @@ function DiscussionsContent() {
     } catch {
       setError("Failed to load threads");
     }
-  }, [clubId, currentBookId, maxChapter, showAll]);
+  }, [clubId, currentBookId, maxChapter, showAll, sort]);
 
   useEffect(() => {
     loadThreads();
@@ -129,6 +132,27 @@ function DiscussionsContent() {
         )}
       </div>
 
+      {/* Sort controls */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs text-ink-3">{threads.length} thread{threads.length !== 1 ? "s" : ""}</span>
+        <div className="flex gap-1 p-0.5 bg-bg-soft rounded-[var(--radius-md)] border border-line">
+          <button
+            data-testid="sort-recent"
+            onClick={() => setSort("recent")}
+            className={`px-3 py-1 text-xs rounded-[var(--radius-sm)] transition-colors ${sort === "recent" ? "bg-bg font-medium text-ink shadow-sm" : "text-ink-3 hover:text-ink-2"}`}
+          >
+            Recent
+          </button>
+          <button
+            data-testid="sort-comments"
+            onClick={() => setSort("comments")}
+            className={`px-3 py-1 text-xs rounded-[var(--radius-sm)] transition-colors ${sort === "comments" ? "bg-bg font-medium text-ink shadow-sm" : "text-ink-3 hover:text-ink-2"}`}
+          >
+            Most comments
+          </button>
+        </div>
+      </div>
+
       {/* Thread list */}
       {threads.length === 0 ? (
         <Card className="p-8 text-center">
@@ -139,16 +163,24 @@ function DiscussionsContent() {
           {threads.map((thread) => (
             <li key={thread.id} data-testid={`thread-${thread.id}`}>
               <Card className="p-4 hover:border-line-strong transition-colors duration-150 cursor-pointer">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-ink truncate">
-                    {thread.title}
-                  </span>
+                <div className="flex items-center gap-3 mb-1">
                   {thread.chapterTag && (
                     <span data-testid="chapter-tag">
                       <Badge tone="neutral">[{thread.chapterTag}]</Badge>
                     </span>
                   )}
+                  {thread.commentCount != null && (
+                    <span className="text-xs text-ink-3 ml-auto">{thread.commentCount} replies</span>
+                  )}
                 </div>
+                <span className="text-sm font-medium text-ink">
+                  {thread.title}
+                </span>
+                {thread.body && (
+                  <p data-testid="thread-body-preview" className="text-xs text-ink-3 mt-1 line-clamp-1">
+                    {thread.body}
+                  </p>
+                )}
               </Card>
             </li>
           ))}

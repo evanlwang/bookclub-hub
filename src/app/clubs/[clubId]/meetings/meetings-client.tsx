@@ -12,17 +12,40 @@ interface MeetingsClientProps {
 
 export function MeetingsClient({ clubId, initialMeetings }: MeetingsClientProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<string>("all");
+
+  const filteredMeetings = filter === "all"
+    ? initialMeetings
+    : initialMeetings.filter((m: any) => m.status === filter);
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Meetings
         </h1>
         <CreateMeetingButton clubId={clubId} />
       </div>
 
-      {initialMeetings.length === 0 ? (
+      {/* Filter tabs */}
+      <div className="flex gap-1 p-0.5 bg-bg-soft rounded-[var(--radius-md)] border border-line mb-6 w-fit">
+        {[
+          { key: "all", label: "All" },
+          { key: "proposed", label: "Proposed" },
+          { key: "confirmed", label: "Confirmed" },
+        ].map((f) => (
+          <button
+            key={f.key}
+            data-testid={`filter-${f.key}`}
+            onClick={() => setFilter(f.key)}
+            className={`px-3 py-1 text-xs rounded-[var(--radius-sm)] transition-colors ${filter === f.key ? "bg-bg font-medium text-ink shadow-sm" : "text-ink-3 hover:text-ink-2"}`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {filteredMeetings.length === 0 ? (
         <Card className="p-10 text-center">
           <div className="text-ink-3 mb-2">
             <svg className="mx-auto mb-3" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
@@ -36,7 +59,7 @@ export function MeetingsClient({ clubId, initialMeetings }: MeetingsClientProps)
         </Card>
       ) : (
         <ul data-testid="meetings-list" className="space-y-3">
-          {initialMeetings.map((meeting: any) => (
+          {filteredMeetings.map((meeting: any) => (
             <li key={meeting.id} data-testid={`meeting-${meeting.id}`}>
               <Card className="p-4">
                 <div
