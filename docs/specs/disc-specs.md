@@ -36,13 +36,13 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Design UI (from prototype)
 
-- `[ ]` **DISC-UI-005**: The thread list SHALL support sort controls (Recent / Most comments) as tab-style toggles.
+- `[x]` **DISC-UI-005**: The thread list SHALL support sort controls (Recent / Most comments) as tab-style toggles.
 - `[ ]` **DISC-UI-006**: Pinned threads SHALL display with a pin icon and "PINNED" label, sorted above non-pinned threads regardless of sort order.
 - `[ ]` **DISC-UI-007**: Thread detail SHALL show edit and delete icon buttons for the thread author (and admin), positioned in the header.
 - `[ ]` **DISC-UI-008**: When a comment is deleted but has replies, the system SHALL render a "[deleted]" placeholder preserving the reply tree structure.
 - `[ ]` **DISC-UI-009**: The comment composer SHALL be sticky to the bottom of the thread detail view with a gradient fade-mask above.
 - `[ ]` **DISC-UI-010**: Reply buttons on comments SHALL be hidden by default and revealed on hover or keyboard focus.
-- `[ ]` **DISC-UI-011**: Thread list items SHALL display a single-line truncated body preview below the title.
+- `[x]` **DISC-UI-011**: Thread list items SHALL display a single-line truncated body preview below the title.
 - `[ ]` **DISC-UI-012**: Thread detail SHALL include a sidebar with "About this thread" metadata (chapter, reply count, age).
 
 ## Deferred

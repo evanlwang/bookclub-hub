@@ -35,11 +35,11 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Design UI (from prototype)
 
-- `[ ]` **PROG-UI-004**: The progress dashboard SHALL display an SVG ring chart showing the club's median reading percentage.
-- `[ ]` **PROG-UI-005**: Below the ring, a segmented distribution bar SHALL show proportions of finished/reading/not_started members with a color legend.
-- `[ ]` **PROG-UI-006**: Individual member progress bars SHALL animate with a staggered 60ms delay (500ms ease-out fill).
-- `[ ]` **PROG-UI-007**: Each member row SHALL display a status badge (Done/Reading/Waiting) with appropriate color tone.
-- `[ ]` **PROG-UI-008**: Finished members SHALL show a gold checkmark indicator next to their name.
+- `[x]` **PROG-UI-004**: The progress dashboard SHALL display an SVG ring chart showing the club's median reading percentage.
+- `[x]` **PROG-UI-005**: Below the ring, a segmented distribution bar SHALL show proportions of finished/reading/not_started members with a color legend.
+- `[x]` **PROG-UI-006**: Individual member progress bars SHALL animate with a staggered 60ms delay (500ms ease-out fill).
+- `[x]` **PROG-UI-007**: Each member row SHALL display a status badge (Done/Reading/Waiting) with appropriate color tone.
+- `[x]` **PROG-UI-008**: Finished members SHALL show a gold checkmark indicator next to their name.
 - `[ ]` **PROG-UI-009**: The update modal SHALL include a range slider for page input (in addition to the number field).
 
 ## Deferred

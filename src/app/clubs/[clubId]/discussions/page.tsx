@@ -1,3 +1,4 @@
+// @spec DISC-UI-001, DISC-UI-002, DISC-UI-003, DISC-UI-005, DISC-UI-011
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";

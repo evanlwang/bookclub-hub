@@ -42,10 +42,10 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Design UI (from prototype)
 
-- `[ ]` **MEET-UI-006**: The meeting list SHALL support filter tabs (All / Proposed / Confirmed / Past) with counts.
+- `[x]` **MEET-UI-006**: The meeting list SHALL support filter tabs (All / Proposed / Confirmed / Past) with counts.
 - `[ ]` **MEET-UI-007**: Admins SHALL see a "Confirm" view with availability heatmap per slot, "Most available" badge on the top slot, location input, and "Confirm & notify members" button.
-- `[ ]` **MEET-UI-008**: Confirmed meetings SHALL display a date block (day/date/month), time range, location, attendee avatars, and "going/maybe" count.
-- `[ ]` **MEET-UI-009**: Past meetings SHALL appear dimmed with a "Notes" button.
+- `[x]` **MEET-UI-008**: Confirmed meetings SHALL display a date block (day/date/month), time range, location, attendee avatars, and "going/maybe" count.
+- `[x]` **MEET-UI-009**: Past meetings SHALL appear dimmed with a "Notes" button.
 - `[ ]` **MEET-UI-010**: The create form SHALL include a linked-book dropdown selector.
 - `[ ]` **MEET-UI-011**: The respond view sidebar SHALL show members-responded progress bar and list of members still waiting.
 
