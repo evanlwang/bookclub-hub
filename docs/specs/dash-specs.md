@@ -21,6 +21,10 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **DASH-UI-007**: The hero card SHALL display three stats: median progress (with trend), finished count (with names), and not-started count (with nudge suggestion).
 - `[x]` **DASH-UI-008**: Below the hero, three preview cards SHALL show: active vote (with nominee covers and "Cast my vote" CTA), next confirmed meeting (with date block, time, location, attendees), and recent discussions (with chapter chips and reply counts).
 
+## Attention Banner
+
+- `[x]` **DASH-UI-011**: When the user has unvoted active rounds or proposed meetings awaiting their availability response, the dashboard SHALL display an attention banner between the header and the hero card with action items and a CTA linking to the relevant page.
+
 ## Deferred
 
 - `[D]` **DASH-UI-009**: The dashboard shall support a notification bell icon with unread count badge.

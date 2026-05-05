@@ -1,5 +1,6 @@
-// @spec DASH-UI-006, DASH-UI-007, DASH-UI-008
+// @spec DASH-UI-006, DASH-UI-007, DASH-UI-008, DASH-UI-011
 import { getServerCaller } from "@/trpc/server";
+import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { Card, Badge, BookCover, ProgressBar, AvatarStack, ChapterChip, Avatar } from "@/components/ui";
 
@@ -17,6 +18,8 @@ export default async function ClubDashboard({
   let threads: any[] = [];
   let progress: any[] = [];
   let error = "";
+  let hasNotVoted = false;
+  let hasPendingMeeting = false;
 
   try {
     const caller = await getServerCaller();
@@ -30,6 +33,31 @@ export default async function ClubDashboard({
     );
 
     meetings = await caller.meetings.list({ clubId });
+
+    // Attention banner checks
+    const me = await caller.auth.me();
+    const userId = me.user.id;
+
+    // Check if user has NOT voted in active voting round
+    if (activeRound && activeRound.status === "voting") {
+      const userVotes = await prisma.vote.count({
+        where: { roundId: activeRound.id, userId },
+      });
+      hasNotVoted = userVotes === 0;
+    }
+
+    // Check if user has a proposed meeting they haven't responded to
+    const proposedMeetings = meetings.filter((m: any) => m.status === "proposed");
+    for (const meeting of proposedMeetings) {
+      const slots = meeting.slots ?? [];
+      const hasResponded = slots.some((slot: any) =>
+        slot.responses?.some((r: any) => r.userId === userId)
+      );
+      if (!hasResponded) {
+        hasPendingMeeting = true;
+        break;
+      }
+    }
 
     if (currentBook?.book?.id) {
       const threadResult = await caller.threads.list({
@@ -78,6 +106,56 @@ export default async function ClubDashboard({
           Code: <span className="font-[var(--font-mono)]">{club.code}</span>
         </p>
       </div>
+
+      {/* Attention Banner */}
+      {(hasNotVoted || hasPendingMeeting) && (
+        <Card
+          data-testid="attention-banner"
+          className="p-5 mb-6 border-primary/30"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.96 0.02 195 / 0.4), oklch(0.98 0.005 195 / 0.2))",
+          }}
+        >
+          <div className="grid grid-cols-[auto_1fr_auto] gap-4 items-center">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-ink mb-1">
+                {hasNotVoted && hasPendingMeeting
+                  ? "2 things need your attention"
+                  : "1 thing needs your attention"}
+              </p>
+              <ul className="space-y-0.5">
+                {hasNotVoted && (
+                  <li className="text-xs text-ink-2 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                    Voting is open — you haven&apos;t voted yet
+                  </li>
+                )}
+                {hasPendingMeeting && (
+                  <li className="text-xs text-ink-2 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                    Meeting awaits your availability
+                  </li>
+                )}
+              </ul>
+            </div>
+            {hasNotVoted && (
+              <Link
+                href={`/clubs/${clubId}/vote`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] bg-primary text-bg text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Cast my vote
+              </Link>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Currently Reading hero */}
       {currentBook?.book ? (
