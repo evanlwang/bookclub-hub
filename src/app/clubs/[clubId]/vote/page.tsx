@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { getServerCaller } from "@/trpc/server";
 import { Card, Badge } from "@/components/ui";
+import { ChevronLeftIcon } from "@/components/ui/icons";
 import { VoteRound } from "./vote-round";
 
 export default async function VotePage({
@@ -57,6 +59,14 @@ export default async function VotePage({
 
   return (
     <div className="max-w-4xl">
+      <Link
+        href={`/clubs/${clubId}`}
+        className="inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink mb-4 transition-colors"
+      >
+        <ChevronLeftIcon size={14} />
+        Dashboard
+      </Link>
+
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Voting Rounds

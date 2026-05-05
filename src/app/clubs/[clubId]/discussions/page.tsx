@@ -3,7 +3,9 @@
 
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Card, ChapterChip, Avatar } from "@/components/ui";
+import { ChevronLeftIcon } from "@/components/ui/icons";
 import { CreateThreadButton } from "./create-thread";
 
 type Thread = {
@@ -212,8 +214,19 @@ function DiscussionsContent() {
 }
 
 export default function DiscussionsPage() {
+  const params = useParams();
+  const clubId = params.clubId as string;
+
   return (
     <div className="max-w-3xl">
+      <Link
+        href={`/clubs/${clubId}`}
+        className="inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink mb-4 transition-colors"
+      >
+        <ChevronLeftIcon size={14} />
+        Dashboard
+      </Link>
+
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Discussions

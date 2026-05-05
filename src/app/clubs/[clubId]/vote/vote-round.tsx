@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Badge, BookCover, Avatar } from "@/components/ui";
+import { NominateModal } from "./nominate-modal";
 
 type Nomination = {
   id: string;
@@ -54,6 +55,7 @@ export function VoteRound({
   const [loading, setLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isNominateModalOpen, setIsNominateModalOpen] = useState(false);
 
   // @spec VOTE-BE-003
   function toggleSelection(nominationId: string) {
@@ -397,6 +399,14 @@ export function VoteRound({
         <p className="text-sm text-ink-2">
           {nominations.length} nomination{nominations.length !== 1 ? "s" : ""} so far. Anyone can nominate.
         </p>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => setIsNominateModalOpen(true)}
+          data-testid="search-and-nominate-btn"
+        >
+          Search & nominate
+        </Button>
       </div>
 
       <div className="space-y-3 mb-6">
@@ -443,6 +453,14 @@ export function VoteRound({
         </div>
       )}
       {error && <p className="text-sm text-danger mt-2">{error}</p>}
+
+      <NominateModal
+        isOpen={isNominateModalOpen}
+        onClose={() => setIsNominateModalOpen(false)}
+        clubId={clubId}
+        roundId={roundId}
+        onNominationSuccess={() => router.refresh()}
+      />
     </div>
   );
 }

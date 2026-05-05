@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Card, Badge, Avatar, Button } from "@/components/ui";
+import { ChevronLeftIcon } from "@/components/ui/icons";
 import { CommentComposer } from "../comment-composer";
 
 type Comment = {
@@ -86,6 +88,14 @@ export default function ThreadDetailPage() {
 
   return (
     <div className="max-w-3xl">
+      <Link
+        href={`/clubs/${clubId}/discussions`}
+        className="inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink mb-4 transition-colors"
+      >
+        <ChevronLeftIcon size={14} />
+        Discussions
+      </Link>
+
       {/* Thread header */}
       <div className="mb-6" data-testid="thread-detail">
         <div className="flex items-center gap-2 mb-2">

@@ -127,7 +127,7 @@ model Book {
   coverUrl      String?  @map("cover_url")
   description   String?
   pageCount     Int?     @map("page_count")
-  openLibraryId String?  @map("open_library_id")
+  openLibraryId String?  @unique @map("open_library_id")
   createdAt     DateTime @default(now()) @map("created_at")
 
   nominations    Nomination[]

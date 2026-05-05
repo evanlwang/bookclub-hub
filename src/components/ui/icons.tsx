@@ -162,6 +162,14 @@ export function ReplyIcon(p: IconProps) {
   );
 }
 
+export function ChevronLeftIcon(p: IconProps) {
+  return (
+    <IconBase {...p}>
+      <path d="M15 18l-6-6 6-6" />
+    </IconBase>
+  );
+}
+
 export function ChevronRightIcon(p: IconProps) {
   return (
     <IconBase {...p}>
