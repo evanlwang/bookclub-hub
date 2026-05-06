@@ -2,22 +2,24 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Landing Page — Navigation", () => {
-  test("renders top nav with logo wordmark and nav items", async ({ page }) => {
+  test("renders top nav with logo wordmark and primary actions", async ({ page }) => {
     await page.goto("/");
 
     await expect(page.locator("nav").getByText("BookClub Hub")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Pricing" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "About" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
-    await expect(
-      page.locator("nav").getByRole("link", { name: "Join a club" })
-    ).toBeVisible();
+    await expect(page.locator("nav").getByRole("link", { name: /^log in$/i })).toBeVisible();
+    await expect(page.locator("nav").getByRole("link", { name: /^sign up$/i })).toBeVisible();
   });
 
-  test("nav 'Join a club' navigates to /join", async ({ page }) => {
+  test("nav 'Sign up' navigates to /join", async ({ page }) => {
     await page.goto("/");
-    await page.locator("nav").getByRole("link", { name: "Join a club" }).click();
+    await page.locator("nav").getByRole("link", { name: /^sign up$/i }).click();
     await expect(page).toHaveURL("/join");
+  });
+
+  test("nav 'Log in' navigates to /login", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("nav").getByRole("link", { name: /^log in$/i }).click();
+    await expect(page).toHaveURL("/login");
   });
 
   test("skip-nav link is first focusable and points to #main-content", async ({
@@ -53,11 +55,16 @@ test.describe("Landing Page — Hero", () => {
     await expect(page.getByText(/340/)).toBeVisible();
   });
 
-  test("hero CTA 'Join a club' navigates to /join", async ({ page }) => {
+  test("hero CTA 'Sign up' navigates to /join", async ({ page }) => {
     await page.goto("/");
-    // Get the hero CTA (not the nav one)
-    await page.locator("section").getByRole("link", { name: "Join a club" }).click();
+    await page.getByTestId("hero-signup").click();
     await expect(page).toHaveURL("/join");
+  });
+
+  test("hero CTA 'Log in' navigates to /login", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("hero-login").click();
+    await expect(page).toHaveURL("/login");
   });
 
   test("decorative collage has aria-hidden", async ({ page }) => {
@@ -79,14 +86,12 @@ test.describe("Landing Page — Features", () => {
 });
 
 test.describe("Landing Page — Footer", () => {
-  test("renders footer with tagline and links", async ({ page }) => {
+  test("renders footer with tagline", async ({ page }) => {
     await page.goto("/");
 
     const footer = page.locator("footer");
     await expect(footer).toContainText("For people who finish the book.");
-    await expect(footer.getByRole("link", { name: "Privacy" })).toBeVisible();
-    await expect(footer.getByRole("link", { name: "Terms" })).toBeVisible();
-    await expect(footer.getByRole("link", { name: "Changelog" })).toBeVisible();
+    // Privacy/Terms/Changelog links removed until they have real destinations.
   });
 });
 

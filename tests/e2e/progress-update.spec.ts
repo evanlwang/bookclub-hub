@@ -1,7 +1,9 @@
+// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-001, PROG-UI-MODAL-PAGE-001, PROG-UI-003, PROG-UI-007, PROG-API-001, PROG-BE-001, PROG-BE-006
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 
 test.describe("Progress Update Modal", () => {
+  // @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-PAGE-001
   test("opens modal and shows current progress fields", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -21,6 +23,7 @@ test.describe("Progress Update Modal", () => {
     await expect(page.getByTestId("percentage-display")).toBeVisible();
   });
 
+  // @spec PROG-BE-001, PROG-UI-MODAL-PAGE-001
   test("entering page number updates percentage live", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -39,6 +42,7 @@ test.describe("Progress Update Modal", () => {
     await expect(page.getByTestId("percentage-display")).toContainText("50%");
   });
 
+  // @spec PROG-UI-001, PROG-UI-003, PROG-BE-006
   test("selecting Finished sets percentage to 100%", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -56,6 +60,7 @@ test.describe("Progress Update Modal", () => {
     await expect(page.getByTestId("percentage-display")).toContainText("100%");
   });
 
+  // @spec PROG-UI-007, PROG-API-001
   test("submitting progress closes modal", async ({ page }) => {
     await loginAs(page, "dave@example.com");
     const club = await getClubByCode("WEDREADS");

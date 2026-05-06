@@ -6,12 +6,13 @@ import { generateSessionId, computeNewExpiry } from "@/lib/auth/session";
 
 /**
  * Create an authenticated tRPC caller with a real user session.
+ * Pass a `resHeaders` Headers object to inspect Set-Cookie writes from procedures.
  */
 export async function createAuthenticatedCaller(
   db: PrismaClient,
-  user: TestUser
+  user: TestUser,
+  opts: { resHeaders?: Headers } = {}
 ) {
-  // Create a session for the user
   const sessionId = generateSessionId();
   await db.session.create({
     data: {
@@ -29,6 +30,7 @@ export async function createAuthenticatedCaller(
       displayName: user.displayName,
     },
     sessionId,
+    resHeaders: opts.resHeaders ?? null,
   };
 
   return appRouter.createCaller(ctx);
@@ -37,11 +39,15 @@ export async function createAuthenticatedCaller(
 /**
  * Create an anonymous (unauthenticated) tRPC caller.
  */
-export function createAnonymousCaller(db: PrismaClient) {
+export function createAnonymousCaller(
+  db: PrismaClient,
+  opts: { resHeaders?: Headers } = {}
+) {
   const ctx: Context = {
     db,
     user: null,
     sessionId: null,
+    resHeaders: opts.resHeaders ?? null,
   };
 
   return appRouter.createCaller(ctx);

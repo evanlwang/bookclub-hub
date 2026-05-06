@@ -3,6 +3,7 @@ import { getServerCaller } from "@/trpc/server";
 import { Card, Badge } from "@/components/ui";
 import { ChevronLeftIcon } from "@/components/ui/icons";
 import { VoteRound } from "./vote-round";
+import { derivePriorVotes } from "@/lib/voting/prior-votes";
 
 export default async function VotePage({
   params,
@@ -35,6 +36,12 @@ export default async function VotePage({
     if (activeRound) {
       const detail = await caller.rounds.get({ clubId, roundId: activeRound.id });
       activeRoundDetail = detail.round;
+
+      // @spec VOTE-UI-PRIOR-VOTES-001
+      // Pre-load the user's existing votes so the wizard pre-selects what they
+      // previously approved. The server already filters `votes` to the calling
+      // user during the voting phase (rounds.ts:85-93).
+      myVotes = derivePriorVotes(activeRoundDetail.nominations, me.user.id);
 
       // Get member count and voter turnout for voting phase sidebar
       if (activeRound.status === "voting") {

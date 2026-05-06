@@ -2,15 +2,38 @@
 
 ## Context and Design Philosophy
 
-Reading progress serves two purposes: (1) it lets the organizer see whether the group is ready to meet, and (2) it drives the spoiler filter in discussions. Progress is self-reported — the member enters their current page or percentage. There is no e-reader integration.
+Reading progress serves two purposes: (1) it lets the organizer see whether the group is ready to meet, and (2) it drives the spoiler filter in discussions. Progress is self-reported — the member enters their current page or status. There is no e-reader integration.
 
-Design philosophy: **low friction, visible but not judgmental**. The system shows aggregate progress ("65% of members are past chapter 10") but does not rank members or send "you're behind" notifications. Reading is supposed to be fun.
+Design philosophy: **low friction, visible but not judgmental**. The system shows aggregate progress but does not rank members or send "you're behind" notifications.
 
-Traces to HLD Approach (Reading Progress Tracking), Key Design Decision (no e-reader integration), and Goal #4 (progress visibility reduces scheduling guesswork).
+Status markers: `[x]` implemented · `[ ]` gap · `[!]` divergence · `[D]` deferred
+
+## Update Modal Status States
+
+State: not_started — page input: forced to 0; chapter input: editable — auto-transition: page > 0 typed → status flips to "reading"
+State: reading — page input: editable, range 0..totalPages; chapter input: editable
+State: finished — page input: forced to totalPages AND disabled; chapter input: editable
+
+## Button Inventory
+
+Button: "Update My Progress" — `update-modal.tsx:24-30` — visible: progress dashboard header — handler: opens modal
+Button: status radio cards "Not Started" / "Reading" / "Finished" — `update-modal.tsx:118-139` — handler: handleStatusChange (sets status; also coerces page on enter to "finished" or "not_started")
+Button: page number input — `update-modal.tsx:146-160` — disabled: status="finished"
+Button: chapter number input (optional) — `update-modal.tsx:182-190`
+Button: "Cancel" — `update-modal.tsx:201-203` — handler: onClose
+Button: "Save Progress" — `update-modal.tsx:204-212` — handler: `progress.update` then router.refresh + onClose
+Button: book selector card (per book) — `progress/page.tsx:51-76` — handler: navigates to `/clubs/[clubId]/progress?bookId={bookId}`
+Button: "All books" back link — `progress/page.tsx:120-126` — handler: navigates back to `/clubs/[clubId]/progress`
+
+## Gaps (described in older spec, not implemented)
+
+Range slider input bidirectionally synced with page input — `[ ]` not implemented; only number input.
+Editable percentage input (0–100) — `[ ]` not implemented; percentage shown as read-only "Progress: {N}%".
+Live preview progress bar in modal — `[ ]` not implemented.
+Toast notification with Undo (4s auto-dismiss) — `[ ]` not implemented; modal closes silently on save.
+"Last updated" timestamp in modal — `[ ]` not implemented.
 
 ## Progress Model
-
-A member's progress through a book is a single record that they update over time. The record stores both a page number and a percentage (the member can enter either; the system computes the other if page count is known).
 
 ```
 ReadingProgress {
@@ -28,112 +51,63 @@ ReadingProgress {
 }
 ```
 
-When the member enters a page number and `total_pages` is known, `percentage` is computed. When they enter a percentage, `current_page` is computed (rounded). When `total_pages` is not known (book metadata missing), only percentage is accepted.
+Page ↔ percentage computation:
+- If member enters page and totalPages is known → percentage = round(page/totalPages * 100)
+- If member enters percentage and totalPages is known → page = round(percentage/100 * totalPages)
+- If totalPages is null → only percentage is stored; page stays null
+- If status="finished" → percentage forced to 100; page forced to totalPages (when known)
 
-The `current_chapter` field is entered separately by the member. It is not derived from page number because chapter lengths vary unpredictably. This field drives the discussion spoiler filter.
-
-## Progress Update Interface
-
-Members can update their progress via a modal or dedicated page. Input options include current page number, percentage complete, current chapter (for spoiler filtering), and reading status (not started, reading, finished). The UI displays a live progress bar visualization as the member enters values.
-
-For visual implementation of the progress update modal, progress bar styling, and the aggregate club dashboard, see `docs/bookclub-hub-designs/project/artboards/progress.jsx` and `docs/design-system.md` → Components (progress bar, Badge, Avatar).
+The current_chapter field is entered separately and is not derived from page (chapter lengths vary). It drives the discussion spoiler filter.
 
 ## Club Progress Dashboard
 
-Individual progress bars are visible to all club members. The aggregate summary (median, chapter distribution) is visible to all but primarily useful to the organizer. The dashboard shows:
-- Horizontal progress bars per member with percentage label
-- Median progress and chapter distribution summary
-- "Schedule Meeting" call-to-action for organizing around reading pace
+The dashboard at `/clubs/[clubId]/progress?bookId={bookId}` shows:
+- A summary card with an animated SVG ring (median %), a segmented status bar (finished / reading / not_started), and a legend.
+- A "Where everyone is" member list, sorted by progress, each row showing avatar, name, page/chapter info, animated progress bar, right-aligned percentage, and status badge.
+- Staggered animations: ~60ms delay per row, 500ms duration, ease-out.
+- A compact card variant (360px) appears on the main club dashboard as a read-only preview.
 
 ## API Contracts
 
-Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `progress.update(...)`) rather than REST routes.
-
 | Procedure | Auth | Input | Output |
 |-----------|------|-------|--------|
-| `progress.list` | member | `{ clubId, bookId }` | `[{ user, progress }]` (all members' progress) |
-| `progress.me` | member | `{ clubId, bookId }` | `{ progress }` |
-| `progress.update` | member | `{ clubId, bookId, current_page?, percentage?, current_chapter?, status? }` | `{ progress }` |
-| `progress.summary` | member | `{ clubId, bookId }` | `{ median_pct, finished_count, reading_count, not_started_count, chapter_distribution }` |
-
-`progress.update` is idempotent — it creates the record if it doesn't exist, updates it if it does. The member can update any subset of fields.
+| `progress.list` | member | `{ clubId, bookId }` | `[{ user, progress }]` (sorted by percentage DESC) |
+| `progress.me` | member | `{ clubId, bookId }` | `{ progress }` or null |
+| `progress.update` | member | `{ clubId, bookId, currentPage?, percentage?, currentChapter?, status? }` | `{ progress }` (idempotent upsert) |
+| `progress.summary` | member | `{ clubId, bookId }` | `{ medianPct, finishedCount, readingCount, notStartedCount, chapterDistribution }` |
+| `books.listForClub` | member | `{ clubId }` | `[{ book }]` (selected books, most recent first) |
 
 ## Decisions & Alternatives
 
 | Decision | Chosen | Alternatives Considered | Rationale |
 |----------|--------|------------------------|-----------|
-| Progress input | Page number or percentage, manually entered | E-reader sync; photo of page; daily check-in prompt | Manual entry is the only approach that works across all reading formats (physical, Kindle, audiobook, PDF). E-reader sync is fragile (HLD non-goal). |
-| Chapter tracking | Separate manual field | Derive from page number + table of contents; no chapter tracking | Derivation requires a table of contents rarely available from APIs. No chapter tracking breaks spoiler filtering. Manual entry is one number. |
-| Visibility | All members see individual progress | Only organizer sees individual; everyone sees aggregate only | Visibility creates gentle social accountability. Privacy concern is mitigated by the fact that book clubs are small trusted groups. |
-| Progress history | No history (current state only) | Store every update with timestamp | History adds storage cost for minimal value. Current state is what matters for scheduling and spoiler filtering. |
+| Progress input | Page number, manually entered | E-reader sync; photo of page | Manual entry is the only approach that works across all reading formats. |
+| Chapter tracking | Separate manual field | Derive from page + table of contents | Table of contents rarely available; manual entry is one number. |
+| Visibility | All members see individual progress | Only organizer sees individual; everyone sees aggregate only | Visibility creates gentle social accountability in a small trusted group. |
+| Progress history | No history (current state only) | Store every update | History adds storage cost for minimal value. |
+| Live percentage editing | Read-only computed display | Editable input with two-way sync | (Today: read-only. Editable would require either a slider or sync logic; deferred.) |
 
-## Open Questions & Future Decisions
+## Open Questions
 
 ### Resolved
 
-1. ✅ Manual entry (page or percentage).
+1. ✅ Manual entry, page-based.
 2. ✅ Separate chapter field for spoiler filtering.
 3. ✅ Individual progress visible to all members.
 
 ### Deferred
 
-1. **Audiobook progress.** Audiobooks measure progress in hours:minutes, not pages. A `duration_seconds` field could accommodate this.
-2. **Progress reminders.** "You haven't updated your progress in 2 weeks." Could be useful but risks feeling nagging.
-3. **Historical reading pace.** "You read 50 pages/week on average." Requires storing update history.
-
-## Design Reference
-
-**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/progress.jsx` (interactive progress dashboard with book selector and update modal).
-
-**Design tokens & components:**
-- Progress bar: `.progress-track` and `.progress-fill` (8px height, rounded ends)
-- Progress fill color: `--primary` (teal) for reading, `--accent` (amber) for finished, `--ink-4` (disabled) for not started
-- Progress row: `.bar-anim` class for stagger-in animation (0.5s cubic-bezier)
-- Status badges: `Badge` with tones (neutral for "not started", primary for "reading", success for "finished")
-- Book cover: small size (48×70) displayed next to progress summary
-- Avatars: stacked overflow style for member list (small 24px size)
-
-**Key patterns:**
-- **Progress update modal:**
-  - Book selector: dropdown or searchable list showing current book + recent books
-  - Current page input: number field (optional if percentage known)
-  - Total pages display: read-only (sourced from Book metadata)
-  - Percentage input: number field 0-100 (optional if pages known)
-  - Progress bar: live visual as user enters values
-  - Current chapter input: free-form text (optional, for spoiler filtering)
-  - Status radio buttons: "Not started", "Reading", "Finished"
-  - `btn-primary` for submit, timestamp of last update shown below
-
-- **Club progress dashboard (list view):**
-  - Member name + avatar (left aligned, 32px avatar)
-  - Horizontal progress bar (full width, responsive)
-  - Percentage label (right aligned, tabular-nums)
-  - Median summary at bottom: caption text (12px)
-  - Chapter distribution: text summary (e.g., "3 members past Ch. 10")
-
-- **Aggregate view (for organizers):**
-  - Book cover (small, 48×70)
-  - "Currently reading" or book title (Title serif, 20px)
-  - Progress bar with median % overlay
-  - Metadata: "4 of 7 members underway", "median 52%", "page 214 / 412"
-  - "Schedule Meeting" button: `btn-primary`
-
-**Typography & spacing:**
-- Member name: 15px, 600 weight
-- Percentage: 12px, monospace, 600 weight (tabular-nums)
-- Page numbers: caption (12px, secondary ink)
-- Spacing between rows: 12px
-- Progress bar height: 8px, rounded fully (border-radius 999px)
-
-**Animation:**
-- Progress fill: smooth 0.6s transition (cubic-bezier(0.4, 0, 0.2, 1))
-- Row stagger: each row animates in with 0.5s barFill animation
-- Transform origin: left center (grows from left to right)
+1. **Range slider in modal.**
+2. **Editable percentage input.**
+3. **Live preview bar in modal.**
+4. **Toast / Undo on save.**
+5. **Audiobook progress (hours:minutes).**
+6. **Progress reminders.**
+7. **Historical reading pace.**
 
 ## References
 
-- `docs/high-level-design.md`
-- `docs/llds/discussion-threads.md` — progress drives spoiler filtering
-- `docs/llds/club-management.md` — progress is club-scoped
 - `docs/specs/prog-specs.md`
-- `docs/design-system.md` — design tokens, progress bar component, Badge variants, Avatar component
+- `docs/llds/discussion-threads.md` — progress drives spoiler filtering
+- `docs/llds/club-management.md`
+- `docs/high-level-design.md`

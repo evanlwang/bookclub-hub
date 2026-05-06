@@ -1,3 +1,4 @@
+// @spec VOTE-UI-NOM-001, VOTE-UI-NOM-003, VOTE-UI-NOM-COUNT-001, VOTE-API-002
 import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers";
 import { getDb } from "./helpers";
@@ -21,6 +22,7 @@ test.describe("Voting Phase Enhancements", () => {
     }
   });
 
+  // @spec VOTE-UI-NOM-001, VOTE-UI-NOM-003
   test("nominating phase shows cards with pitch, nominator, and advance button", async ({ page }) => {
     const db = getDb();
     const club = await db.club.findUniqueOrThrow({ where: { code: "SCIFI42" } });
@@ -57,6 +59,7 @@ test.describe("Voting Phase Enhancements", () => {
     await expect(page.getByTestId("advance-round-btn")).toContainText("Advance to Voting");
   });
 
+  // @spec VOTE-UI-NOM-003, VOTE-API-002
   test("advance button moves round to voting phase", async ({ page }) => {
     await loginAs(page, "bob@example.com");
     await page.goto(`/clubs/${clubId}/vote`);
@@ -66,6 +69,52 @@ test.describe("Voting Phase Enhancements", () => {
     await expect(page.getByTestId("voting-phase")).toBeVisible({ timeout: 10000 });
   });
 
+  // @spec VOTE-UI-NOMMODAL-001, VOTE-UI-NOMMODAL-003, VOTE-UI-NOMMODAL-004, VOTE-UI-NOMMODAL-005, VOTE-API-005, VOTE-API-MANUAL-001
+  test("manual book entry fallback adds a nomination", async ({ page }) => {
+    const db = getDb();
+
+    // Reset round to nominating for this test
+    await db.votingRound.update({
+      where: { id: roundId },
+      data: { status: "nominating" },
+    });
+
+    await loginAs(page, "bob@example.com");
+    await page.goto(`/clubs/${clubId}/vote`);
+
+    await expect(page.getByTestId("nominating-phase")).toBeVisible({ timeout: 10000 });
+
+    // Open NominateModal via "Search & nominate"
+    await page.getByTestId("search-and-nominate-btn").click();
+
+    // Search a string that returns no results, then fall back to manual entry
+    const ghostQuery = `__nope_${Date.now()}__`;
+    await page.locator('input[placeholder*="Search by title" i]').fill(ghostQuery);
+
+    // Wait for "Enter manually" affordance to appear
+    const manualBtn = page.getByRole("button", { name: /enter manually/i });
+    await expect(manualBtn).toBeVisible({ timeout: 10000 });
+    await manualBtn.click();
+
+    // Manual form is now visible — fill required fields and submit
+    const uniqueTitle = `E2E Manual Book ${Date.now()}`;
+    await page.locator('input[placeholder*="Midnight Library"]').fill(uniqueTitle);
+    await page.locator('input[placeholder*="Matt Haig"]').fill("Test Author");
+
+    await page.getByRole("button", { name: /create & nominate/i }).click();
+
+    // Modal closes; new nomination appears in the list
+    await expect(page.getByText(uniqueTitle).first()).toBeVisible({ timeout: 10000 });
+
+    // Cleanup the manually-created book + its nomination
+    const book = await db.book.findFirst({ where: { title: uniqueTitle } });
+    if (book) {
+      await db.nomination.deleteMany({ where: { bookId: book.id } });
+      await db.book.delete({ where: { id: book.id } }).catch(() => {});
+    }
+  });
+
+  // @spec VOTE-UI-NOM-003
   test("non-admin does not see advance button", async ({ page }) => {
     const db = getDb();
     // Reset round to nominating for this test

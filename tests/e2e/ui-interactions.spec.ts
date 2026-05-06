@@ -1,8 +1,9 @@
-// @spec UI-INT-001 through UI-INT-012
+// @spec HOME-UI-005, HOME-UI-006, JOIN-UI-007, JOIN-UI-008, JOIN-UI-009, JOIN-UI-014, JOIN-UI-015, DASH-NAV-001, DASH-UI-002, DASH-UI-CARD-VOTE-001, DASH-UI-CARD-MEET-001, DASH-UI-CARD-DISC-001, DASH-UI-PROG-001, DASH-UI-007, PROG-UI-BOOK-001, PROG-UI-DASH-009, DISC-UI-004, CLUB-NAV-003
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 
 test.describe("Landing Page Interactions", () => {
+  // @spec HOME-UI-005
   test("Join a Club link navigates to join page", async ({ page }) => {
     await page.goto("/");
     await page.locator("nav").getByRole("link", { name: "Join a club" }).click();
@@ -10,6 +11,7 @@ test.describe("Landing Page Interactions", () => {
     await expect(page.getByTestId("join-form")).toBeVisible();
   });
 
+  // @spec HOME-UI-006
   test("Sign in link navigates to join page", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "Sign in" }).click();
@@ -18,12 +20,14 @@ test.describe("Landing Page Interactions", () => {
 });
 
 test.describe("Join Page Interactions", () => {
+  // @spec JOIN-UI-007
   test("club code input converts to uppercase", async ({ page }) => {
     await page.goto("/join");
     await page.getByTestId("code-input").fill("wedreads");
     await expect(page.getByTestId("code-input")).toHaveValue("WEDREADS");
   });
 
+  // @spec JOIN-UI-008, JOIN-UI-009
   test("club code lookup shows club info on blur", async ({ page }) => {
     await page.goto("/join");
     await page.getByTestId("code-input").fill("WEDREADS");
@@ -33,6 +37,7 @@ test.describe("Join Page Interactions", () => {
     await expect(page.getByText("Wednesday Night Reads")).toBeVisible({ timeout: 10000 });
   });
 
+  // @spec JOIN-UI-014
   test("submit button shows loading state", async ({ page }) => {
     await page.goto("/join");
     await page.getByTestId("code-input").fill("WEDREADS");
@@ -50,6 +55,7 @@ test.describe("Join Page Interactions", () => {
     await expect(page).toHaveURL(/\/clubs\//);
   });
 
+  // @spec JOIN-UI-015
   test("shows success message before redirect", async ({ page }) => {
     await page.goto("/join");
     await page.getByTestId("code-input").fill("WEDREADS");
@@ -67,6 +73,7 @@ test.describe("Join Page Interactions", () => {
 });
 
 test.describe("Sidebar Navigation", () => {
+  // @spec DASH-NAV-001
   test("sidebar links navigate between sections", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -94,6 +101,7 @@ test.describe("Sidebar Navigation", () => {
     await expect(page).toHaveURL(`/clubs/${club.id}`);
   });
 
+  // @spec DASH-NAV-001
   test("active nav link is highlighted", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -107,6 +115,7 @@ test.describe("Sidebar Navigation", () => {
 });
 
 test.describe("Dashboard Interactions", () => {
+  // @spec DASH-UI-007
   test("currently reading card displays book info", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -118,6 +127,7 @@ test.describe("Dashboard Interactions", () => {
     await expect(page.getByRole("heading", { name: "Dune" })).toBeVisible();
   });
 
+  // @spec DASH-UI-CARD-VOTE-001
   test("vote card links to voting page", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -128,6 +138,7 @@ test.describe("Dashboard Interactions", () => {
     await expect(page).toHaveURL(`/clubs/${club.id}/vote`);
   });
 
+  // @spec DASH-UI-CARD-MEET-001
   test("meetings card links to meetings page", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -138,6 +149,7 @@ test.describe("Dashboard Interactions", () => {
     await expect(page).toHaveURL(`/clubs/${club.id}/meetings`);
   });
 
+  // @spec DASH-UI-CARD-DISC-001
   test("discussions link navigates to discussions", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -148,6 +160,7 @@ test.describe("Dashboard Interactions", () => {
     await expect(page).toHaveURL(`/clubs/${club.id}/discussions`);
   });
 
+  // @spec DASH-UI-PROG-001
   test("progress link navigates to progress page", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -160,6 +173,7 @@ test.describe("Dashboard Interactions", () => {
 });
 
 test.describe("Progress Page Interactions", () => {
+  // @spec PROG-UI-BOOK-001, PROG-UI-DASH-009
   test("progress bars render with correct percentages", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -181,6 +195,7 @@ test.describe("Progress Page Interactions", () => {
 });
 
 test.describe("Discussions Interactions", () => {
+  // @spec DISC-UI-004
   test("chapter filter input accepts numeric values", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -193,6 +208,7 @@ test.describe("Discussions Interactions", () => {
     await expect(input).toHaveValue("7");
   });
 
+  // @spec DISC-UI-004
   test("clearing chapter filter shows all threads", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -214,6 +230,7 @@ test.describe("Discussions Interactions", () => {
 });
 
 test.describe("Clubs List Interactions", () => {
+  // @spec CLUB-NAV-003
   test("clicking a club card navigates to dashboard", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     await page.goto("/clubs");

@@ -1,10 +1,48 @@
-// @spec AUTH-API-001, AUTH-API-002, AUTH-API-003, AUTH-API-004, AUTH-API-005
+// @spec AUTH-API-001, AUTH-API-002, AUTH-API-003, AUTH-API-004, AUTH-API-005, AUTH-API-SIGNIN-001, AUTH-API-LOGOUT-001, AUTH-API-LOGOUT-002
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { normalizeEmail, validateEmail } from "@/lib/validation/email";
 import { generateSessionId, computeNewExpiry } from "@/lib/auth/session";
 
 export const authRouter = router({
+  // @spec AUTH-API-SIGNIN-001
+  // Existing-user-only login. Unlike auth.enter (which upserts), signIn refuses
+  // to create a new user — it returns NOT_FOUND for unknown emails so the UI
+  // can route users without an account into the sign-up flow.
+  signIn: publicProcedure
+    .input(z.object({ email: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const emailValidation = validateEmail(input.email);
+      if (!emailValidation.valid) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: emailValidation.error,
+        });
+      }
+
+      const email = normalizeEmail(input.email);
+      const user = await ctx.db.user.findUnique({ where: { email } });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No account found with that email",
+        });
+      }
+
+      const sessionId = generateSessionId();
+      await ctx.db.session.create({
+        data: {
+          id: sessionId,
+          userId: user.id,
+          expiresAt: computeNewExpiry(),
+        },
+      });
+
+      return { user, sessionId };
+    }),
+
   enter: publicProcedure
     .input(
       z.object({
@@ -57,8 +95,21 @@ export const authRouter = router({
     };
   }),
 
-  logout: protectedProcedure.mutation(async ({ ctx }) => {
-    await ctx.db.session.delete({ where: { id: ctx.sessionId } });
+  // @spec AUTH-API-LOGOUT-001, AUTH-API-LOGOUT-002
+  // publicProcedure (not protected) so a stale or missing cookie still completes
+  // sign-out cleanly. We delete the session row if it exists and always emit a
+  // clearing Set-Cookie so the browser drops the cookie even if the client
+  // forgets to.
+  logout: publicProcedure.mutation(async ({ ctx }) => {
+    if (ctx.sessionId) {
+      await ctx.db.session
+        .delete({ where: { id: ctx.sessionId } })
+        .catch(() => {});
+    }
+    ctx.resHeaders?.append(
+      "Set-Cookie",
+      "session_id=; Path=/; Max-Age=0; SameSite=Lax"
+    );
     return { success: true };
   }),
 });

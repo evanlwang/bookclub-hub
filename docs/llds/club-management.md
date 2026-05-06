@@ -6,39 +6,65 @@ Club management is the multi-tenancy backbone. Every other feature (voting, meet
 
 The guiding principle is **isolation by default**: a user sees nothing from a club they don't belong to. There is no global feed, no cross-club search, no public directory. Clubs are private spaces, discoverable only by knowing the club code.
 
-Traces to the HLD's Approach section (Club Management), the Multi-Tenancy key design decision, the Club Joining key design decision, and the Non-Goal (no public discovery).
+Status markers: `[x]` implemented · `[ ]` gap · `[!]` divergence · `[D]` deferred
+
+## Club Lifecycle State
+
+ASCII state diagram:
+
+```
+active → archived → active
+active → deleted
+```
+
+State: active — buttons shown: all features (vote/meet/discuss/progress) — transitions: → archived (admin/owner; no UI); → deleted (owner; no UI)
+State: archived — buttons shown: read-only history (no UI to enter this state today) — transitions: → active (un-archive; no UI)
+State: deleted — buttons shown: none — transitions: terminal; hard-delete after 30 days (not enforced today)
+
+Today only the "active" state is exercised in the UI; archived/deleted lifecycle is data-model-only.
+
+## Button Inventory
+
+Sidebar (`sidebar.tsx`):
+Button: club header dropdown toggle — `sidebar.tsx:51-69` — handler: setSwitcherOpen
+Button: per-club row in dropdown — `sidebar.tsx:74-84` — handler: navigates to `/clubs/{id}` (full route load)
+Button: "Create or join a club" — `sidebar.tsx` — handler: opens ClubSwitcherModal (CLUB-NAV-MODAL-001)
+Button: Dashboard / Voting / Meetings / Discussions / Progress nav link — `sidebar.tsx:99-126` — visible: always — active styling when path matches
+
+Clubs index (`/clubs`, `clubs/page.tsx`):
+Button: per-club Link card — `clubs/page.tsx:42-62` — handler: navigates to `/clubs/{clubId}`
+Button: "Join a Club →" — `clubs/page.tsx:27-32` — visible: when not authenticated — handler: navigates to `/join`
+
+Create flow (in `/join`, see auth-and-accounts.md for full inventory of Step 3b).
+
+## Gaps (UI not built)
+
+Settings page — `[ ]` admin: name/desc/code edit, archive/unarchive, delete (30-day notice). Mutations exist.
+Member management UI — `[ ]` admin: list with remove and promote/demote actions. `clubs.members.remove`, `clubs.members.updateRole` exist.
+Topbar invite chip ("OAKWOOD-7Q · Copy") — `[ ]` not in any topbar; invite code is shown only on the dashboard header and on Step 4 success.
+Topbar "Invite" button — `[ ]` not implemented.
+Real-time code-availability check during create — `[ ]` only on submit today.
+Unread activity indicators on switcher rows — `[ ]` not implemented.
+Unread count Badge on Discussions nav link — `[ ]` not implemented.
+Client-side switcher (no full route load) — `[ ]` switching today is a Link navigation.
+Archive/un-archive flow — `[ ]` not implemented.
+Soft-delete with 30-day retention and hard-delete job — `[ ]` not implemented.
 
 ## Club Codes
 
-Every club has a **club code** — a short, human-readable, alphanumeric string (e.g., `DUNE42`, `WEDREADS`, `SCIFI99`). The code is the only way to join a club. It is set by the organizer at club creation and can be changed later.
+Every club has a **club code** — a short, human-readable, alphanumeric string (e.g., `DUNE42`, `WEDREADS`). The code is the only way to join a club. Set by the organizer at creation and (by spec) changeable later. Codes are case-insensitive (stored uppercase), 4–16 chars, letters and digits only. Unique across active clubs.
 
-Codes are case-insensitive (stored uppercase), 4–16 characters, letters and digits only. They must be unique across all active clubs. The organizer shares the code in their group chat, and members type it into the app.
-
-Why codes over invitation links: a code is the simplest thing to share verbally, in a text message, or on a whiteboard. No URL formatting, no broken links, no expiration tokens. "Join code: DUNE42" is all you need.
+Why codes over invitation links: a code is the simplest thing to share verbally, in a text message, or on a whiteboard.
 
 ## Membership Roles
 
 Three roles, each a strict superset of the one below:
 
-- **owner** — created the club. Can delete the club, transfer ownership, change the club code, and do everything an admin can do. Exactly one owner per club.
-- **admin** — can manage members (remove, promote to admin), edit club settings (name, description), and manage voting rounds. Cannot delete the club or transfer ownership.
-- **member** — can nominate books, vote, RSVP to meetings, post in discussions, and track progress. Cannot manage other members or club settings.
+- **owner** — created the club. Can delete, transfer ownership, change code.
+- **admin** — can manage members, edit settings, manage voting rounds.
+- **member** — can nominate, vote, RSVP, post, track progress.
 
-## Club Lifecycle
-
-```mermaid
-stateDiagram-v2
-    [*] --> Active: User creates club
-    Active --> Active: Members join/leave
-    Active --> Archived: Owner archives
-    Archived --> Active: Owner un-archives
-    Active --> Deleted: Owner deletes
-    Deleted --> [*]
-```
-
-- **Active**: normal operation. All features available. New members can join via code.
-- **Archived**: read-only. History visible, no new votes/meetings/discussions. Code is deactivated (cannot join). Owner can un-archive.
-- **Deleted**: soft-delete. Data retained for 30 days, then hard-deleted. Not recoverable by the user after soft-delete.
+UI today renders only `admin` / `member` Badges in the switcher (owner appears as "owner" string). Member management UI is not built.
 
 ## Data Model
 
@@ -69,66 +95,66 @@ No Invitation table. The club code on the Club record is the only join mechanism
 
 ## Join Flow
 
-### Already Logged In
+### Already Logged In (current UI)
 
-1. User enters club code on the join page
-2. Server looks up club by code (case-insensitive)
-3. If club not found or not active: error
-4. If user is already a member: redirect to club
-5. If valid: create Membership (role: member), redirect to club
+1. User enters club code on Step 3a of `/join` (after Step 1 identity).
+2. Debounced `clubs.lookup` validates the code. On valid result, "Join" button enables.
+3. User clicks "Join {clubName}" → `clubs.join` → membership created → Step 4 → auto-redirect.
 
-### Not Logged In
+### Not Logged In (per API)
 
-1. User enters club code + email + display name on a combined join page
-2. Server finds or creates User by email
-3. Server looks up club by code
-4. If valid: create Membership, create session, redirect to club
-
-This means a brand-new user can go from zero to inside a club in a single form submission. See the design artboards for the full join flow UI at `docs/bookclub-hub-designs/project/artboards/landing-join.jsx`.
+1. User enters club code + email + display name (combined). The current UI sequences these across Step 1 and Step 3a, but `clubs.join` itself accepts a combined payload.
 
 ## Club Creation
 
-1. User (must be logged in) clicks "Create a club"
-2. Enters: club name, description (optional), club code (with uniqueness check)
-3. Server creates Club, creates Membership (role: owner)
-4. User lands in the new (empty) club
-
-See the design artboards for the visual implementation of club creation forms and validation feedback.
+1. User completes Step 1 (identity).
+2. Step 2 path choice → "Create a new club" → Step 3b.
+3. Form: name (required, ≥3 chars), auto-derived code (editable, uppercase, alphanumeric, max 10 chars), voting cadence radio (monthly / six_weeks / flexible).
+4. On submit: `validateClubCode` (one `clubs.lookup` call) → `clubs.create` with `description = "Voting cadence: {cadence}"`.
+5. Step 4: invite code with "Copy" button → auto-redirect to `/clubs/{id}`.
 
 ## Club Switcher
 
-The club switcher is a persistent UI element (sidebar on desktop, bottom sheet on mobile) visible on every authenticated page. It displays:
-- Club list with avatars and club codes
-- Current book, next meeting, and user's reading progress
-- Unread activity indicators
-- "Create new club" or "Join with code" option
+Sidebar dropdown on every club-scoped page. Lists all clubs the user is in. Each row links to `/clubs/{id}` (full route load). Bottom row is "Create or join a club" → opens the Switcher Modal in place. The Voting nav link displays a "Live" Badge (accent dot) when an active round exists for the current club.
 
-Switching clubs is a client-side operation: the app fetches the target club's current state (current book, upcoming meeting, user's progress) and re-renders. No page reload. Target: under 30 seconds per the HLD goal.
+## Switcher Modal Flow
 
-For visual details on the club switcher layout and responsive behavior, see `docs/bookclub-hub-designs/project/artboards/dashboard.jsx` and `docs/design-system.md` → Components.
+Centered `<Dialog>` opened from the switcher dropdown for users who are already authenticated. Skips the identity step that `/join` enforces and runs only the join-by-code or create-club paths.
+
+```
+sidebar dropdown
+  └─ "Create or join a club" button
+        ├─ closes dropdown
+        └─ opens ClubSwitcherModal
+              ├─ Tab: Join with code
+              │     code input → debounced clubs.lookup → submit clubs.join
+              │     → router.push("/clubs/{id}") → router.refresh()
+              └─ Tab: Create new club
+                    name + derived code + cadence → clubs.lookup (uniqueness)
+                    → clubs.create → success view with code + Copy
+                    → on dismissal: router.push + router.refresh
+```
+
+The modal reuses the existing `clubs.lookup`, `clubs.join`, and `clubs.create` procedures; no new API. Idempotent join (already a member) shows a "Go to club" affordance instead of an error. Dismissal (Esc / backdrop / close button) is blocked while a mutation is in flight to avoid leaving the user with partial state.
+
+The sidebar's clubs list is loaded server-side via `auth.me` in `clubs/[clubId]/layout.tsx`; `router.refresh()` after the navigation re-fetches it so the new club appears in the dropdown without a hard reload.
 
 ## API Contracts
 
-Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `clubs.list()`, `clubs.join(...)`) rather than REST routes.
-
 | Procedure | Auth | Input | Output |
 |-----------|------|-------|--------|
-| `clubs.list` | required | - | `[{ club, role, current_book, unread_count }]` |
+| `clubs.list` | required | - | `[{ club, role, current_book?, unread_count? }]` |
 | `clubs.create` | required | `{ name, description, code }` | `{ club }` (creator becomes owner) |
 | `clubs.get` | member | `{ clubId }` | `{ club, members, current_book }` |
 | `clubs.update` | admin+ | `{ clubId, name?, description?, code? }` | `{ club }` |
 | `clubs.delete` | owner | `{ clubId }` | (soft delete) |
-| `clubs.members.list` | member | `{ clubId }` | `[{ user, role, joined_at }]` |
+| `clubs.members.list` | member | `{ clubId }` | `[{ user, role, joinedAt }]` |
 | `clubs.members.remove` | admin+ (or self) | `{ clubId, userId }` | - |
 | `clubs.members.updateRole` | owner | `{ clubId, userId, role }` | - |
-| `clubs.join` | optional | `{ code, email?, display_name? }` | `{ club }` (creates session if not logged in) |
-| `clubs.lookup` | none | `{ code }` | `{ club_name, member_count }` or 404 |
-
-`clubs.lookup` is unauthenticated — it lets the join form show the club name before the user submits. It returns minimal info (name, member count) to avoid leaking club data.
+| `clubs.join` | optional | `{ code, email?, displayName? }` | `{ club }` |
+| `clubs.lookup` | none | `{ code }` | `{ clubName, memberCount }` or 404 |
 
 ## Authorization Model
-
-All club-scoped API endpoints check membership before processing. The check is: "does a Membership record exist for (request.user_id, :club_id) and is the role sufficient?"
 
 | Action | Required Role |
 |--------|--------------|
@@ -138,76 +164,40 @@ All club-scoped API endpoints check membership before processing. The check is: 
 | Manage members (remove, promote) | admin+ |
 | Delete club | owner |
 | Transfer ownership | owner |
-| Leave club | member+ (owner cannot leave without transferring) |
+| Leave club | member+ (owner cannot leave without transferring; not enforced) |
 
 ## Decisions & Alternatives
 
-| Decision | Chosen | Alternatives Considered | Rationale |
-|----------|--------|------------------------|-----------|
-| Join mechanism | Club code (short alphanumeric) | Shareable invitation links; email-sent invites; QR codes | Club code is the simplest thing to share in a group chat or say out loud. No URL formatting, no tokens, no expiration. "Join code: DUNE42" is all you need. |
-| Code format | 4–16 chars, alphanumeric, case-insensitive | UUID-based; numeric-only; auto-generated | Human-chosen codes are memorable and shareable. Auto-generated codes are harder to remember. Numeric-only is too collision-prone in short lengths. |
-| Code uniqueness | Unique across active clubs | Globally unique (including deleted); no uniqueness (password-style) | Active-only uniqueness recycles codes from deleted clubs. Global uniqueness would exhaust short codes over time. No uniqueness requires a club ID + code combo, which is more friction. |
-| Role model | Three roles (owner, admin, member) | Two roles (owner, member); fine-grained permissions | Three roles is the minimum that covers the use cases. Fine-grained permissions add UI complexity without clear benefit. |
-| Club deletion | Soft delete with 30-day retention | Hard delete immediately; archive-only (no delete) | Soft delete prevents accidental data loss. 30-day retention bounds storage. Archive-only doesn't respect the user's intent to remove. |
+| Decision | Chosen | Alternatives | Rationale |
+|----------|--------|--------------|-----------|
+| Join mechanism | Club code | Invitation links; QR codes; email-sent invites | Simplest thing to share. |
+| Code format | 4–16 alphanumeric, case-insensitive | UUID; numeric only | Memorable and shareable. |
+| Code uniqueness | Unique across active clubs | Globally unique (incl. deleted); none | Recycles codes from deleted clubs. |
+| Role model | Three roles | Two; fine-grained permissions | Minimum that covers use cases. |
+| Club deletion | Soft delete + 30-day retention (target) | Hard delete; archive-only | Prevents accidental data loss. (Not enforced today.) |
 
-## Open Questions & Future Decisions
+## Open Questions
 
 ### Resolved
 
-1. ✅ Club codes as join mechanism (not invitation links).
+1. ✅ Club codes as join mechanism.
 2. ✅ Three-tier role model.
-3. ✅ Soft delete with 30-day retention.
+3. ✅ Sidebar club switcher.
 
 ### Deferred
 
-1. **Club settings beyond name/description.** Timezone, default voting method, notification preferences. These will emerge as other features crystallize.
-2. **Member limit per club.** No hard cap in v1.
-3. **Ownership transfer UX.** The API supports it; the UI flow is deferred to implementation.
-4. **Code regeneration rate limiting.** Prevent an owner from burning through codes. Not urgent for v1 scale.
-
-## Design Reference
-
-**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/dashboard.jsx` (sidebar shell, club switcher, main dashboard area).
-
-**Design tokens & components:**
-- Sidebar club switcher: left panel (responsive: sidebar on desktop, bottom sheet on mobile)
-- Club avatar/code: `--ink` text on `--primary-soft` background, monospace font for code
-- Club cards in switcher: show current book cover (`BookCover` small size), next meeting date, member count
-- Unread indicator: `Badge tone="accent"` dot for new activity
-- Dashboard main area: header with club name (Display serif, 32px), content area with cards
-
-**Key patterns:**
-- **Club creation modal:**
-  - Name input (max 100 chars)
-  - Description textarea (optional, max 500 chars)
-  - Code input with real-time availability check (`✓ Available` / `✗ Taken`)
-  - `btn-primary` for submit, `btn-secondary` for cancel
-
-- **Club switcher mobile:**
-  - Bottom sheet on mobile, sidebar on desktop (breakpoint ~768px)
-  - Club list scrollable, each item clickable to switch
-  - [+] button to create new club or join with code
-
-- **Member management (admin view):**
-  - Member list in a table or card stack
-  - Avatar, name, role badge, joined date
-  - Remove button (dangerous variant) with confirmation
-  - Promote/demote dropdown for role changes
-
-- **Club settings page (admin):**
-  - Name, description, code editable
-  - Archive/unarchive toggle (danger action)
-  - Delete button (soft delete with 30-day retention notice)
-
-**Typography & spacing:**
-- Club name in switcher: Title serif (20px)
-- Metadata (next meeting, progress): Caption class (12px, secondary ink)
-- Current book cover: Small size (48×70), rounded corners
-- Spacing between clubs: 12–16px
+1. **Settings page** (admin: rename, change code, archive/delete).
+2. **Member management UI** (admin: remove, promote/demote).
+3. **Topbar invite chip + Invite button.**
+4. **Real-time code-availability validation during create.**
+5. **Unread activity indicators on switcher and Discussions nav.**
+6. **Client-side switcher with prefetch.**
+7. **Archive/un-archive flow + soft-delete enforcement + hard-delete job.**
+8. **Owner-cannot-leave-without-transfer enforcement.**
 
 ## References
 
-- `docs/high-level-design.md`
-- `docs/llds/auth-and-accounts.md` — identity provides the user that membership references
 - `docs/specs/club-specs.md`
-- `docs/design-system.md` — design tokens, BookCover component, Avatar component
+- `docs/llds/auth-and-accounts.md` — identity provides the user that membership references
+- `docs/specs/dash-specs.md` — sidebar nav and dashboard composition
+- `docs/high-level-design.md`

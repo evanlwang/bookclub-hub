@@ -4,73 +4,111 @@
 
 Identity in BookClub Hub is designed for maximum frictionlessness. There is no account creation flow, no passwords, no OAuth, and no third-party authentication. A user's identity is their email address. They enter it once when they first join a club, along with a display name. The system creates a long-lived session and the user is done.
 
-The email serves as a cross-device, cross-club identity anchor. If a user opens the app on a new device, they enter their email and are recognized — all their clubs appear. No verification step, no magic link, no password. This is a deliberate trade-off: anyone who knows your email could claim to be you. For a book club app among friends, this is acceptable. The threat model is "people who know each other," not "adversarial strangers."
+The email serves as a cross-device, cross-club identity anchor. If a user opens the app on a new device, they enter their email and are recognized — all their clubs appear. No verification step, no magic link, no password. The threat model is "people who know each other," not "adversarial strangers."
 
-Traces to the HLD's Identity key design decision (email + display name, no password or OAuth).
+Status markers: `[x]` implemented · `[ ]` gap · `[!]` divergence · `[D]` deferred
 
-## How It Works
+## Two-Path Entry Architecture
 
-### New Entry Flow (4-step: Join or Create)
+The marketing landing page (`/`) presents two clear actions:
 
-**Step 1 — Identity**
-1. User navigates to `/join`
-2. User enters email + display name
-3. On "Continue", server calls `auth.enter` → creates User (if new), creates Session → sets cookie
-4. User advances to Step 2 (path choice)
+- **Log in** → `/login` (dedicated, email-only). For returning users.
+- **Sign up** → `/join` (4-step wizard with smart detection). For new users + create/join branching.
 
-**Step 2 — Path Choice**
-1. User sees two options: "Join an existing club" or "Create a new club"
-2. Click one to advance to Step 3
+These are distinct routes with distinct intents, but they meet at the same destination (`/clubs`) for users with memberships. The `/join` smart detection acts as a safety net for users who pick the wrong door.
 
-**Step 3a — Join Branch**
-1. User enters club code
-2. Debounced `clubs.lookup` validates the code
-3. On valid code, user submits with `clubs.join` (already authenticated from Step 1)
-4. Server adds Membership, user advances to success
+```
+Landing (/)
+  ├─ "Log in"  → /login → auth.signIn → /clubs (has clubs)
+  │                                  └─ /join?welcome=1 (no clubs OR not found)
+  └─ "Sign up" → /join → auth.enter → smart detection
+                                  ├─ /clubs (has clubs)
+                                  └─ Step 2 → 3a/3b → Step 4 → /clubs/{id}
+```
 
-**Step 3b — Create Branch**
-1. User enters club name
-2. Auto-derived invite code (from club name, editable)
-3. Selects voting cadence (monthly / 6 weeks / flexible)
-4. On submit, `clubs.create` creates Club + Membership (already authenticated from Step 1)
-5. User advances to success with invite code displayed
+## Entry Flow State
 
-**Step 4 — Success**
-1. Join branch: "Welcome to [Club]!" → redirects to `/clubs/[id]`
-2. Create branch: "[Club] is live!" + invite code chip with copy button → redirects to `/clubs/[id]`
+ASCII state diagram:
 
-**Key difference from old flow**: Session created at Step 1 (when identity is confirmed), not at final submit. This enables the create branch to use authenticated procedures downstream.
+```
+step 1 → step 2 → step 3a → step 4
+step 1 → step 2 → step 3b → step 4
+step 1 → /clubs (smart detection: clubs.length > 0)
+step 1 → step 3a (?path=join)
+step 1 → step 3b (?path=create)
+step 4 → /clubs/{id}  (auto-redirect after 1500ms)
+```
 
-### Smart Detection (Returning Users)
+State: step 1 (Identity) — buttons: email, display name, "Continue" — transitions: → step 2; → /clubs (smart); → step 3 (?path)
+State: step 2 (Path) — buttons: "Join an existing club", "Create a new club", "Back" — transitions: → step 3a / step 3b / step 1
+State: step 3a (Join) — buttons: code input, "Back", "Join the club" — transitions: → step 4 / step 2
+State: step 3b (Create) — buttons: name, code, cadence radios, "Back", "Create club" — transitions: → step 4 / step 2
+State: step 4 (Success) — buttons: "Copy" (create branch only) — transitions: auto-redirect
 
-After Step 1 succeeds, the client immediately calls `auth.me` with the new session cookie to fetch the user's clubs. The flow then branches:
+## Button Inventory
 
-- If `clubs.length > 0`, the user is a returning member. The wizard skips Step 2 entirely and redirects to `/clubs` (the dashboard). This is the invisible "login" path: a returning user just types email + name and lands home.
-- If `clubs.length === 0`, the user is new (or has no memberships yet). The wizard continues to Step 2 (path choice) as in the new-user flow.
+Button: email input — `join/page.tsx:472-480` — required, type=email
+Button: display name input — `join/page.tsx:487-495` — required
+Button: "Continue" — `join/page.tsx:503-512` — enabled: identityValid (email contains @ AND displayName.trim() ≥ 1) — handler: `auth.enter` then smart detection or step 2
+Button: "Join an existing club" PathCard — `join/page.tsx:532-537` — handler: setPath("join"), step 3
+Button: "Create a new club" PathCard — `join/page.tsx:539-544` — handler: setPath("create"), step 3
+Button: "Back" (step 2 → 1) — `join/page.tsx:546-550`
+Button: club code input (join) — `join/page.tsx:563-572` — debounced, normalized to uppercase, calls `clubs.lookup` after 4 chars
+Button: "Back" (step 3a → 2) — `join/page.tsx:586-593`
+Button: "Join {clubName}" / "Join the club" — `join/page.tsx:595-604` — enabled: joinReady AND !joiningClub — handler: `clubs.join`
+Button: club name input (create) — `join/page.tsx:616-624` — required, min 3 chars
+Button: invite code input (create) — `join/page.tsx:631-638` — defaulted from derivedCode; auto-uppercases
+Button: voting cadence radio "Monthly" / "Six Weeks" / "Flexible" — `join/page.tsx:646-666` — values: monthly / six_weeks / flexible
+Button: "Back" (step 3b → 2) — `join/page.tsx:676-682`
+Button: "Create club" — `join/page.tsx:685-694` — enabled: createReady (name.trim() ≥ 3) AND !creatingClub — handler: `validateClubCode` then `clubs.create`
+Button: "Copy" (step 4, create branch) — `join/page.tsx:723-730` — handler: `navigator.clipboard.writeText(successClubCode)`
+Button: "Sign out" (club sidebar footer) — `src/app/clubs/[clubId]/sidebar.tsx` — handler: POST `/api/trpc/auth.logout` → clear `session_id` cookie → `router.push("/")`
+Button: "Sign out" (/clubs page header) — `src/app/clubs/page.tsx` — same handler as the sidebar variant
 
-The redirect is bypassed when the user arrives with an explicit `?path=join` or `?path=create` query parameter — for example, an existing member creating a second club. In that case the explicit intent wins and the wizard advances directly to Step 3 with the requested branch pre-selected.
+## Smart Detection
 
-If `auth.me` fails (network error), the wizard falls through to Step 2. The user can still proceed; the smart-detection check is best-effort.
+After Step 1 succeeds (`auth.enter` returns sessionId, cookie is set), the client immediately calls `auth.me` to fetch the user's clubs. The flow then branches:
 
-### Return Visit (Same Device)
+- If `clubs.length > 0` AND no `?path=` override → `router.push("/clubs")`. This is the invisible "login" path.
+- If `clubs.length === 0` → continue to Step 2 (path choice).
+- If the URL had `?path=join` or `?path=create` → skip detection, advance to Step 3 with branch pre-selected.
+- If `auth.me` fails (network error) → fall through to Step 2 (graceful degradation).
 
-1. Session cookie is present and valid
-2. User goes straight to their dashboard — no login step at all
+## Login Route (`/login`)
 
-### Return Visit (New Device)
+A dedicated minimal page for returning users. Unlike `/join`, it:
 
-1. No session cookie
-2. User navigates to `/join` (directly, or bounced from a club page)
-3. Enters email + name in Step 1
-4. `auth.enter` creates a session; smart detection (`auth.me`) finds existing memberships
-5. Wizard auto-redirects to `/clubs` — no path-choice step
+- Asks only for email (no display name).
+- Calls `auth.signIn` (a strict-find variant of `auth.enter`).
+- Refuses to create new User records — unknown emails get a NOT_FOUND error.
 
-### First Visit to a New Club (Existing User)
+Flow:
 
-1. User is already logged in (has session)
-2. User navigates to `/join` with a club code
-3. Skips Steps 1–2, goes straight to Step 3a (join branch)
-4. Or from dashboard, clicks "Create a club" → goes to Step 2, then Step 3b
+1. User enters email → "Log in" button.
+2. Client POSTs `auth.signIn({ email })`.
+   - **Success** (user exists): cookie is set with the new sessionId. Client then calls `auth.me`.
+     - `clubs.length > 0` → `router.push("/clubs")`.
+     - `clubs.length === 0` → `router.push("/join?welcome=1")`. The /join page displays a welcome banner so the user understands why they were bounced.
+   - **NOT_FOUND** (no User record): `router.push("/join?welcome=1&email=…")`. The email is carried through and pre-filled on /join's Step 1.
+   - **BAD_REQUEST** (malformed email): inline error on /login.
+
+Why a separate route:
+
+- Returning users get a 1-field form; no friction.
+- The semantic separation (login vs sign-up) lets the landing page advertise both with clarity.
+- `auth.signIn`'s strict-find behavior prevents typo-induced ghost user records.
+
+## Return Visit (Same Device)
+
+Session cookie present and valid → user goes straight to dashboard. No login step.
+
+## Return Visit (New Device)
+
+No session cookie → `/join` → Step 1 → smart detection finds existing memberships → auto-redirect to `/clubs`.
+
+## Existing User Creating Second Club
+
+Already logged in. Navigate to `/join?path=create` → skip Steps 1–2 (smart detection bypassed by override) → land on Step 3b. (Note: with a valid session cookie, Step 1 is still rendered — `?path=` is read after Step 1 completes. A future improvement could skip Step 1 when a valid session is already present.)
 
 ## Data Model
 
@@ -84,85 +122,60 @@ User {
 }
 
 Session {
-  id: string (PK, cryptographically random, 64 chars)
+  id: string (PK, cryptographically random)
   user_id: UUID (FK -> User)
   expires_at: timestamp
   created_at: timestamp
 }
 ```
 
-That's it. No OAuthConnection table, no MagicLinkToken table, no password hash. The User table is two meaningful fields: email and display_name.
+No OAuthConnection table, no MagicLinkToken table, no password hash.
 
 ## API Contracts
 
-Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `auth.enter(...)`) rather than REST routes.
-
 | Procedure | Input | Output |
 |-----------|-------|--------|
-| `auth.enter` | `{ email, display_name }` | `{ user }` (set session cookie). Creates user if new, updates display_name if changed. |
+| `auth.enter` | `{ email, displayName }` | `{ user, sessionId }` (sets cookie). Idempotent: creates user if new, updates displayName if changed. |
+| `auth.signIn` | `{ email }` | `{ user, sessionId }` if user exists. Throws NOT_FOUND otherwise — never creates a User record. |
 | `auth.me` | - | `{ user, clubs }` or 401 |
-| `auth.logout` | - | (clear session cookie) |
+| `auth.logout` | - | `{ success: true }`. Deletes the server session row (if present) and emits a `Set-Cookie: session_id=; Path=/; Max-Age=0` response header. Idempotent — safe to call without an active session (publicProcedure). |
 
-`auth.enter` is the only "login" flow. It is idempotent: calling it with an existing email returns that user; calling it with a new email creates one. The display_name is updated to the latest value provided (so a user can change their name by re-entering).
+## Voting Cadence Field (gap)
+
+The voting cadence radios in Step 3b store the chosen value (`monthly`/`six_weeks`/`flexible`) and pass it as `description: "Voting cadence: {cadence}"` to `clubs.create` (`join/page.tsx:369`). There is **no structured field** on Club for cadence today. Recommendation: add `voting_cadence` enum to Club and stop overloading description.
 
 ## Session Management
 
-Sessions are server-side, stored in PostgreSQL (Neon). Session ID is a cryptographically random string stored in an HttpOnly, Secure, SameSite=Lax cookie. Expiration: 30 days, sliding (refreshed on each request). This means a weekly-active user never has to re-enter their email.
-
-Logout destroys the server-side session and clears the cookie.
-
-## Security Considerations
-
-This auth model is intentionally weak by traditional standards. The trade-offs:
-
-- **No email verification.** Anyone can enter any email. Mitigation: this is a private app for friend groups. If someone impersonates another member, the group notices immediately.
-- **No password.** Anyone who knows your email can access your clubs on a new device. Mitigation: they'd also need to know which clubs you're in. The data is book opinions and meeting availability, not financial records.
-- **Session hijacking.** Standard cookie security (HttpOnly, Secure, SameSite) mitigates the main vectors. Sessions are server-side so they can be revoked.
-
-If security needs escalate later (e.g., the app grows beyond trusted friend groups), email verification via magic link can be added as a layer on top of `/auth/enter` without changing the data model.
+Sessions are server-side, stored in PostgreSQL (Neon). Session ID is a cryptographically random string stored in a cookie. The cookie is set on `auth.enter` success with `max-age=30 days` (`join/page.tsx:224`). Cookie hardening flags (HttpOnly/Secure/SameSite) need verification against the actual cookie write path on the server side.
 
 ## Decisions & Alternatives
 
 | Decision | Chosen | Alternatives Considered | Rationale |
 |----------|--------|------------------------|-----------|
-| Identity mechanism | Email address (unverified) | OAuth; email + password; magic links; anonymous/cookie-only | Email is the minimum cross-device identity. No password means zero friction. No OAuth means no third-party dependency. Cookie-only would lose identity on device switch. |
-| Display name | Entered with email, updatable | Fixed at creation; per-club names; no display name | Updatable is simplest. Per-club names add complexity ("which name am I in this club?"). No display name makes discussions impersonal. |
-| Session duration | 30 days, sliding | 7 days; permanent; session-only | 30 days with sliding means weekly users never re-authenticate. Permanent sessions are a security risk if the device is shared. Session-only forces re-entry too often. |
-| User creation | Implicit on first `/auth/enter` | Explicit registration step; admin-created accounts | Implicit creation removes any concept of "signing up." You join a club and a user record is created as a side effect. Zero friction. |
+| Identity mechanism | Email address (unverified) | OAuth; email + password; magic link | Email is the minimum cross-device identity. No password = zero friction. |
+| Display name | Entered with email, updatable | Fixed at creation; per-club names | Updatable is simplest. |
+| Session duration | 30 days, sliding (target) | 7 days; permanent; session-only | Weekly users never re-authenticate. |
+| User creation | Implicit on first `auth.enter` | Explicit registration | Removes the concept of "signing up." |
+| Smart detection | Branch on existing memberships | Always show step 2 | Returning users get a true zero-step login. |
 
-## Open Questions & Future Decisions
+## Open Questions
 
 ### Resolved
 
 1. ✅ Email-only identity, no password or OAuth.
-2. ✅ 30-day sliding sessions.
-3. ✅ Implicit user creation.
+2. ✅ Implicit user creation.
+3. ✅ Smart detection branching after Step 1.
 
 ### Deferred
 
-1. **Email verification (magic link upgrade).** If the app needs to prevent impersonation, add an optional magic link verification step. The data model doesn't change — add a `verified_at` timestamp to User.
-2. **Display name per club.** Some users might want different names in different clubs. Requires moving display_name to Membership. Not needed for v1.
-3. **Account deletion.** Delete User and cascade through memberships, votes, comments. Needed for GDPR if the app grows. Simple cascade from User.id.
-
-## Design Reference
-
-**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/landing-join.jsx` (Join Flow section, 4 interactive steps).
-
-**Design tokens & components:**
-- Form inputs: `--input` styling with focus ring (primary border + oklch highlight)
-- Button variants: `btn-primary` for "Join", `btn-secondary` for secondary options
-- Field labels: `label` class (13px, medium weight, secondary ink color)
-- Hints: `hint` class (12px, tertiary ink, 6px margin-top)
-- Typography: Body text at 15px with 1.55 line-height for instructions
-
-**Key patterns:**
-- Paper background (`--bg`) for maximum contrast on form inputs
-- Clear visual hierarchy with display serif for headings
-- Generous vertical spacing between form sections (16–24px)
-- Toast notifications for async feedback (e.g., "Session created")
+1. **Magic-link email verification.**
+2. **Display name per club.**
+3. **Account deletion.**
+4. **Persist voting cadence as a structured Club field.**
+5. **Skip Step 1 when a valid session cookie is already present** (existing-user-creates-second-club flow).
 
 ## References
 
-- `docs/high-level-design.md`
 - `docs/specs/auth-specs.md`
-- `docs/design-system.md` — design tokens, typography, components
+- `docs/llds/club-management.md`
+- `docs/high-level-design.md`

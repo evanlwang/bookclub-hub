@@ -1,40 +1,104 @@
 # Identity and Session Specs
 
 **LLD**: docs/llds/auth-and-accounts.md
-**Implementing artifacts**: TBD (implementation not started)
+**Implementing artifacts**:
+- API: `src/server/routers/auth.ts`
+- UI: `src/app/join/page.tsx`, `src/app/login/page.tsx`, `src/app/page.tsx` (landing CTAs)
+- Tests: `tests/e2e/login.spec.ts`, `tests/e2e/join-club.spec.ts`, `tests/integration/auth.test.ts`, `tests/integration/join-flow.test.ts`
 
-Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
+Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
 ---
 
-## Entry Flow (4-step join or create)
+## Entry Flow State
 
-- `[x]` **AUTH-UI-001**: The system SHALL display an identity form (email + display name) as the first step of the join flow.
-- `[x]` **AUTH-UI-002**: After identity entry, the system SHALL present a choice between joining an existing club and creating a new one.
-- `[x]` **AUTH-UI-003**: The system SHALL create a session immediately on Step 1 completion (when `auth.enter` succeeds) so subsequent steps can use authenticated procedures (e.g., `clubs.create`).
-- `[ ]` **AUTH-UI-004**: After Step 1 succeeds, the system SHALL fetch the user's club list via `auth.me`. If the user has one or more memberships AND the request did not include an explicit `?path=` query parameter, the system SHALL redirect to `/clubs` and skip Step 2 (path choice). Users with zero memberships SHALL continue to Step 2. If `auth.me` fails, the system SHALL fall through to Step 2 (graceful degradation).
+State: step 1 (Identity) — buttons shown: email input, display name input, "Continue" — transitions: → step 2 (no clubs); → /clubs (smart detection: user has clubs); → step 3 (explicit `?path=join|create`)
+State: step 2 (Path) — buttons shown: "Join an existing club" card, "Create a new club" card, "Back" — transitions: → step 3a (Join); → step 3b (Create); → step 1 (Back)
+State: step 3a (Join) — buttons shown: club code input, "Back", "Join the club" — transitions: → step 4; → step 2 (Back)
+State: step 3b (Create) — buttons shown: club name input, club code input, voting cadence radios, "Back", "Create club" — transitions: → step 4; → step 2 (Back)
+State: step 4 (Success) — buttons shown: invite code "Copy" (create branch only) — transitions: auto-redirect to `/clubs/{id}` after 1500ms
+
+## Landing Page CTAs
+
+- `[x]` **LANDING-UI-001**: The marketing landing page (`/`) SHALL expose two distinct primary actions: "Log in" → `/login` (returning users) and "Sign up" → `/join` (new users). Both must be visible in the top nav AND in the hero CTA row. (`src/app/page.tsx:33-44, 76-89`)
+
+## Login Route (Returning Users)
+
+- `[x]` **AUTH-UI-LOGIN-001**: The `/login` page SHALL render a single email input and a "Log in" button — no display-name prompt. The button is disabled until the email contains `@` and `.`. (`src/app/login/page.tsx`)
+- `[x]` **AUTH-UI-LOGIN-002**: On submit, the system SHALL call `auth.signIn` with the email. On success, it calls `auth.me`; if the user has one or more memberships, it SHALL `router.push("/clubs")`. (`src/app/login/page.tsx`)
+- `[x]` **AUTH-UI-LOGIN-003**: When `auth.signIn` returns NOT_FOUND OR the user has zero memberships, the system SHALL `router.push("/join?welcome=1[&email=…]")`. The `/join` page SHALL render a welcome banner above Step 1 and pre-fill the email field. (`src/app/login/page.tsx`, `src/app/join/page.tsx`)
+
+## Entry Flow
+
+- `[x]` **AUTH-UI-001**: The system SHALL display an identity form (email + display name) as the first step of the join flow. (`join/page.tsx:466-526`)
+- `[x]` **AUTH-UI-002**: After identity entry (and when smart detection finds no existing memberships), the system SHALL present a choice between joining an existing club and creating a new one. (`join/page.tsx:530-552`)
+- `[x]` **AUTH-UI-003**: The system SHALL create a session immediately on Step 1 completion (when `auth.enter` succeeds) so subsequent steps can use authenticated procedures. (`join/page.tsx:198-254`)
+- `[x]` **AUTH-UI-004**: After Step 1 succeeds, the system SHALL fetch the user's clubs via `auth.me`. If `clubs.length > 0` AND the request did NOT include `?path=join` or `?path=create`, the system SHALL `router.push("/clubs")`. Otherwise it advances to Step 2. If `auth.me` fails, the system falls through to Step 2 (graceful degradation). (`join/page.tsx:226-249`)
+- `[x]` **AUTH-UI-PATH-OVERRIDE-001**: When the URL includes `?path=join` or `?path=create`, the system SHALL skip Step 2 and route directly to the corresponding Step 3 branch (`pathOverride` in `join/page.tsx:158, 226-232`).
+
+## Step 1 Buttons
+
+- `[x]` **AUTH-UI-STEP1-EMAIL-001**: Email input (type=email, required, htmlFor matches input id). (`join/page.tsx:472-480`)
+- `[x]` **AUTH-UI-STEP1-NAME-001**: Display name input (required). (`join/page.tsx:487-495`)
+- `[x]` **AUTH-UI-STEP1-CONTINUE-001**: Button: "Continue" (`join/page.tsx:503-512`) — disabled when `!identityValid || signingIn` (`identityValid = email.includes("@") && displayName.trim().length > 0`) — handler: `handleIdentityContinue` (calls `auth.enter`, sets session cookie, runs smart detection).
+
+## Step 2 Buttons
+
+- `[x]` **AUTH-UI-STEP2-PATHCARD-JOIN-001**: PathCard "Join an existing club" — handler: `handlePathChoice("join")` → step 3.
+- `[x]` **AUTH-UI-STEP2-PATHCARD-CREATE-001**: PathCard "Create a new club" — handler: `handlePathChoice("create")` → step 3.
+- `[x]` **AUTH-UI-STEP2-BACK-001**: Button: "Back" — handler: returns to step 1.
+
+## Step 3a Buttons (Join Branch)
+
+- `[x]` **AUTH-UI-STEP3A-CODE-001**: Club code input (uppercase normalized, monospace, debounced lookup). On change ≥4 chars, calls `clubs.lookup`. (`join/page.tsx:265-297`)
+- `[x]` **AUTH-UI-STEP3A-BACK-001**: Button: "Back" — handler: returns to step 2.
+- `[x]` **AUTH-UI-STEP3A-JOIN-001**: Button: "Join {clubName}" / "Join the club" (`join/page.tsx:595-604`) — disabled when `!joinReady || joiningClub` — handler: `handleJoinSubmit` calls `clubs.join`.
+
+## Step 3b Buttons (Create Branch)
+
+- `[x]` **AUTH-UI-STEP3B-NAME-001**: Club name input (required, min 3 chars). (`join/page.tsx:616-624`)
+- `[x]` **AUTH-UI-STEP3B-CODE-001**: Club code input, defaulted from auto-derived `derivedCode` (alphanumeric, uppercase, max 10). User can override; uppercased on input. (`join/page.tsx:631-638`)
+- `[!]` **AUTH-UI-STEP3B-CADENCE-001**: Voting cadence radio buttons — IMPLEMENTED but undocumented in older spec. Three options labeled "Monthly" / "Six Weeks" / "Flexible" (values: `monthly`, `six_weeks`, `flexible`). (`join/page.tsx:646-666`) The chosen cadence is appended to the club description on create as "Voting cadence: {cadence}". The cadence is **not** stored as a structured field on Club today.
+  - `[ ]` **AUTH-UI-STEP3B-CADENCE-DATA-001**: Persist voting cadence as a typed field on Club rather than embedding it in `description`.
+- `[x]` **AUTH-UI-STEP3B-BACK-001**: Button: "Back" — handler: returns to step 2.
+- `[x]` **AUTH-UI-STEP3B-CREATE-001**: Button: "Create club" (`join/page.tsx:685-694`) — disabled when `!createReady || creatingClub` — handler: `handleCreateSubmit` validates code via `clubs.lookup` then calls `clubs.create`.
+
+## Step 4 Buttons (Success)
+
+- `[x]` **AUTH-UI-STEP4-WELCOME-001**: For join branch, the system SHALL display "Welcome to {clubName}!" with a 64×64 success check icon (role="img", aria-label="Success"). Auto-redirects to `/clubs/{id}` after 1500ms. (`join/page.tsx:700-734`)
+- `[x]` **AUTH-UI-STEP4-COPY-001**: For create branch, the system SHALL display the invite code prominently with a Button: "Copy" that calls `navigator.clipboard.writeText(successClubCode)`. (`join/page.tsx:723-730`)
 
 ## User Identity
 
-- `[x]` **AUTH-DATA-001**: The system shall store user identity as email (unique, lowercase-normalized) and display_name.
-- `[x]` **AUTH-DATA-002**: The system shall enforce email uniqueness case-insensitively (e.g., "Evan@Example.com" and "evan@example.com" resolve to the same user).
-- `[x]` **AUTH-API-001**: When a user calls `auth.enter` with email and display_name, the system SHALL create a new user if the email does not exist, or return the existing user if it does.
-- `[x]` **AUTH-API-002**: When an existing user calls `auth.enter` with a different display_name, the system SHALL update the display_name to the new value.
+- `[x]` **AUTH-DATA-001**: User identity stored as email (unique, lowercase-normalized) and `display_name`.
+- `[x]` **AUTH-DATA-002**: Email uniqueness is case-insensitive ("Evan@Example.com" and "evan@example.com" resolve to the same user).
+- `[x]` **AUTH-API-001**: `auth.enter` SHALL create a new user if email does not exist, or return the existing user if it does.
+- `[x]` **AUTH-API-002**: When an existing user calls `auth.enter` with a different display name, the system SHALL update the display name.
+- `[x]` **AUTH-API-SIGNIN-001**: `auth.signIn({ email })` SHALL look up the user by normalized email. If the user exists, it creates a session and returns `{ user, sessionId }`. If not, it throws NOT_FOUND. Unlike `auth.enter`, it MUST NOT create a new user record. (`src/server/routers/auth.ts:8-43`)
 
 ## Sessions
 
-- `[ ]` **AUTH-BE-001**: The system shall create a server-side session with a cryptographically random ID (64+ characters) stored in an HttpOnly, Secure, SameSite=Lax cookie.
-- `[ ]` **AUTH-BE-002**: Sessions shall expire after 30 days of inactivity (sliding expiration refreshed on each authenticated request).
-- `[ ]` **AUTH-API-003**: When a user calls `auth.logout`, the system SHALL destroy the server-side session and clear the session cookie.
-- `[ ]` **AUTH-API-004**: When a request includes a valid session cookie, `auth.me` SHALL return the user's data and club list without requiring re-authentication.
-- `[ ]` **AUTH-API-005**: When a request includes an invalid or expired session cookie, `auth.me` SHALL throw an unauthorized error.
+- `[x]` **AUTH-BE-SESSION-001**: The system SHALL create a server-side session and set a `session_id` cookie with 30-day max-age. (`join/page.tsx:224`, `auth.ts`)
+- `[ ]` **AUTH-BE-001**: Cookie SHALL be HttpOnly, Secure, SameSite=Lax. (Verify cookie attributes in production code.)
+- `[ ]` **AUTH-BE-002**: Sliding expiration refreshed on each authenticated request. (Cookie max-age set on creation; verify if refreshed.)
+- `[!]` **AUTH-API-003**: `auth.logout` SHALL destroy the server-side session and clear the cookie. (Server-side row deletion is implemented; cookie clearing is tracked by AUTH-API-LOGOUT-001 below.)
+- `[x]` **AUTH-API-004**: When a request includes a valid session cookie, `auth.me` SHALL return the user's data and club list without re-authentication.
+- `[x]` **AUTH-API-005**: When a request includes an invalid or expired session cookie, `auth.me` SHALL throw an unauthorized error.
+
+## Sign Out
+
+- `[x]` **AUTH-UI-LOGOUT-001**: The club sidebar (`src/app/clubs/[clubId]/sidebar.tsx`) SHALL render a "Sign out" button in the user footer. Clicking it calls `auth.logout`, clears the `session_id` cookie client-side, and `router.push("/")`.
+- `[x]` **AUTH-UI-LOGOUT-002**: The `/clubs` page (`src/app/clubs/page.tsx`) SHALL render a "Sign out" control in its header that runs the same handler.
+- `[x]` **AUTH-UI-LOGOUT-003**: After sign-out, navigating back to a protected route (e.g. `/clubs`) SHALL render the unauthenticated state — `auth.me` throws UNAUTHORIZED and the page shows the existing "Not authenticated" view (`data-testid="auth-error"`).
+- `[x]` **AUTH-API-LOGOUT-001**: `auth.logout` SHALL emit a `Set-Cookie: session_id=; Path=/; Max-Age=0` response header so the browser drops the cookie even if the client-side clear is skipped (defense in depth: both server and client clear).
+- `[x]` **AUTH-API-LOGOUT-002**: `auth.logout` called without a valid session SHALL return `{ success: true }` (idempotent) rather than throwing — the procedure becomes a `publicProcedure` so a stale or missing cookie still completes sign-out.
 
 ## No Third-Party Auth
 
-- `[ ]` **AUTH-BE-003**: The system shall NOT require any OAuth provider, third-party authentication service, or password for user identification.
+- `[x]` **AUTH-BE-003**: The system SHALL NOT require any OAuth provider, third-party authentication service, or password.
 
 ## Deferred
 
-- `[D]` **AUTH-BE-004**: Where email verification is enabled, the system shall send a magic link and require click-through before creating the session.
-- `[D]` **AUTH-API-006**: The system shall enforce rate limiting of max 3 `auth.enter` calls per email per hour to prevent abuse.
-- `[D]` **AUTH-DATA-003**: The system shall support account deletion with cascading removal of all associated memberships, votes, and comments.
+- `[D]` **AUTH-BE-004**: Magic-link email verification.
+- `[D]` **AUTH-API-006**: Rate limiting on `auth.enter` (max 3 per email per hour).
+- `[D]` **AUTH-DATA-003**: Account deletion with cascading removal of memberships, votes, comments.

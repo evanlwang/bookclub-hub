@@ -1,3 +1,4 @@
+// @spec DISC-UI-PAGE-003, DISC-UI-COMPOSE-001, DISC-UI-COMPOSE-SUBMIT-001, DISC-UI-016, DISC-API-001
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 import { getDb } from "./helpers";
@@ -10,6 +11,7 @@ test.describe("Create Discussion Thread", () => {
     });
   });
 
+  // @spec DISC-UI-PAGE-003, DISC-UI-COMPOSE-001
   test("New Thread button opens form", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -22,6 +24,7 @@ test.describe("Create Discussion Thread", () => {
     await expect(page.getByTestId("thread-body-input")).toBeVisible();
   });
 
+  // @spec DISC-UI-COMPOSE-SUBMIT-001, DISC-API-001
   test("submitting thread adds it to the list", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -42,6 +45,7 @@ test.describe("Create Discussion Thread", () => {
     await expect(page.getByText("E2E Test Thread")).toBeVisible({ timeout: 10000 });
   });
 
+  // @spec DISC-UI-016
   test("chapter tag shows preview badge", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -54,6 +58,7 @@ test.describe("Create Discussion Thread", () => {
     await expect(page.getByTestId("chapter-tag-preview")).toContainText("Chapter 7");
   });
 
+  // @spec DISC-UI-016, DISC-UI-PAGE-CARD-001
   test("thread with chapter tag appears in list with tag", async ({ page }) => {
     await loginAs(page, "bob@example.com");
     const club = await getClubByCode("WEDREADS");

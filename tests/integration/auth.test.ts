@@ -1,4 +1,4 @@
-// @spec AUTH-API-001, AUTH-API-002, AUTH-API-003, AUTH-API-004, AUTH-API-005, AUTH-BE-001, AUTH-BE-002, AUTH-BE-003
+// @spec AUTH-API-001, AUTH-API-002, AUTH-API-003, AUTH-API-004, AUTH-API-005, AUTH-API-SIGNIN-001, AUTH-API-LOGOUT-001, AUTH-API-LOGOUT-002, AUTH-BE-001, AUTH-BE-002, AUTH-BE-003
 import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller, createAnonymousCaller } from "@tests/helpers/trpc";
@@ -73,6 +73,55 @@ describe("auth", () => {
     });
   });
 
+  describe("auth.signIn", () => {
+    // @spec AUTH-API-SIGNIN-001
+    it("creates a session for an existing user", async () => {
+      await insertUser(db, alice);
+      const caller = createAnonymousCaller(db);
+
+      const result = await caller.auth.signIn({ email: alice.email });
+
+      expect(result.user.id).toBe(alice.id);
+      expect(result.user.email).toBe(alice.email);
+      expect(result.sessionId).toBeTruthy();
+      expect(result.sessionId.length).toBeGreaterThanOrEqual(64);
+
+      const session = await db.session.findUnique({ where: { id: result.sessionId } });
+      expect(session?.userId).toBe(alice.id);
+    });
+
+    // @spec AUTH-API-SIGNIN-001
+    it("throws NOT_FOUND for an unknown email (does NOT create a user)", async () => {
+      const caller = createAnonymousCaller(db);
+
+      await expect(
+        caller.auth.signIn({ email: "ghost@example.com" })
+      ).rejects.toThrow("No account found");
+
+      const created = await db.user.findUnique({ where: { email: "ghost@example.com" } });
+      expect(created).toBeNull();
+    });
+
+    // @spec AUTH-API-SIGNIN-001
+    it("matches user case-insensitively via normalized email", async () => {
+      await insertUser(db, alice);
+      const caller = createAnonymousCaller(db);
+
+      const result = await caller.auth.signIn({ email: "ALICE@EXAMPLE.COM" });
+
+      expect(result.user.id).toBe(alice.id);
+    });
+
+    // @spec AUTH-API-SIGNIN-001
+    it("rejects invalid email format with BAD_REQUEST", async () => {
+      const caller = createAnonymousCaller(db);
+
+      await expect(
+        caller.auth.signIn({ email: "not-an-email" })
+      ).rejects.toThrow();
+    });
+  });
+
   describe("auth.me", () => {
     it("returns user data and club list with valid session", async () => {
       await insertUser(db, alice);
@@ -104,6 +153,32 @@ describe("auth", () => {
         where: { userId: alice.id },
       });
       expect(sessions).toHaveLength(0);
+    });
+
+    // @spec AUTH-API-LOGOUT-001
+    it("emits a clearing Set-Cookie header for session_id", async () => {
+      await insertUser(db, alice);
+      const resHeaders = new Headers();
+      const caller = await createAuthenticatedCaller(db, alice, { resHeaders });
+
+      await caller.auth.logout();
+
+      const setCookie = resHeaders.get("set-cookie") ?? "";
+      expect(setCookie).toMatch(/session_id=;/);
+      expect(setCookie.toLowerCase()).toMatch(/max-age=0/);
+      expect(setCookie).toMatch(/Path=\//);
+    });
+
+    // @spec AUTH-API-LOGOUT-002
+    it("is idempotent — anonymous caller (no session) returns success", async () => {
+      const resHeaders = new Headers();
+      const caller = createAnonymousCaller(db, { resHeaders });
+
+      const result = await caller.auth.logout();
+
+      expect(result).toEqual({ success: true });
+      // Still emits the clearing cookie even when no session existed.
+      expect(resHeaders.get("set-cookie") ?? "").toMatch(/session_id=;/);
     });
   });
 });

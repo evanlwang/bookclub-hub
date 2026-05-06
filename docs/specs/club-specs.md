@@ -1,58 +1,105 @@
 # Club Management Specs
 
 **LLD**: docs/llds/club-management.md
-**Implementing artifacts**: TBD (implementation not started)
+**Implementing artifacts**:
+- API: `src/server/routers/clubs.ts`, `memberships.ts`
+- UI: `src/app/clubs/page.tsx`, `src/app/clubs/[clubId]/sidebar.tsx`, create/join via `src/app/join/page.tsx`
+- Tests: `tests/integration/clubs.test.ts`, `tests/e2e/clubs-*.spec.ts`
 
-Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
+Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
 ---
 
-## Club Creation
+## Club State
 
-- `[x]` **CLUB-API-001**: When an authenticated user calls `clubs.create` with name and code, the system SHALL create the club and assign the user as owner.
-- `[x]` **CLUB-DATA-001**: Club codes shall be unique across all active clubs (case-insensitive, stored uppercase).
-- `[x]` **CLUB-DATA-002**: Club codes shall be 4–16 characters, alphanumeric only.
-- `[x]` **CLUB-API-002**: When a user attempts to create a club with a code already in use by an active club, the system SHALL throw a conflict error.
+State: active — buttons shown: all club features (vote/meet/discuss/progress) enabled — transitions: → archived (admin/owner; UI not built); → deleted (owner; UI not built)
+State: archived — buttons shown: read-only history; no creation/edit/join — transitions: → active (un-archive; UI not built)
+State: deleted — buttons shown: none — transitions: terminal (hard-delete after 30 days)
 
-## Club Creation UI (Entry Flow)
+The active/archived/deleted lifecycle is encoded in the data model but only "active" is exercised by the UI.
 
-- `[x]` **CLUB-UI-001**: The create branch (Step 3b) SHALL auto-derive an invite code from the club name (alphanumeric, uppercase, max 10 chars) and display it as an editable input field.
-- `[x]` **CLUB-UI-002**: When the user modifies the auto-derived code, the system SHALL validate the new code against existing clubs and show an error if the code is already in use.
-- `[x]` **CLUB-UI-003**: On successful club creation, the system SHALL display the invite code prominently on the success screen (Step 4) with a copy-to-clipboard button for easy sharing.
+## Club Creation API
 
-## Joining Clubs
+- `[x]` **CLUB-API-001**: When an authenticated user calls `clubs.create`, the system SHALL create the club and assign the user as owner.
+- `[x]` **CLUB-DATA-001**: Club codes SHALL be unique across all active clubs (case-insensitive, stored uppercase).
+- `[x]` **CLUB-DATA-002**: Club codes SHALL be 4–16 characters, alphanumeric only.
+- `[x]` **CLUB-API-002**: When a user attempts to create a club with a code already in use by an active club, the system SHALL throw a CONFLICT error.
 
-- `[ ]` **CLUB-API-003**: When a user calls `clubs.join` with a valid club code, the system SHALL create a membership with role "member".
-- `[ ]` **CLUB-API-004**: When an unauthenticated user calls `clubs.join` with code, email, and display_name, the system SHALL create or find the user, create a session, and create the membership in a single operation.
-- `[ ]` **CLUB-API-005**: When a user attempts to join a club they are already a member of, the system SHALL return the existing club data without creating a duplicate membership.
-- `[ ]` **CLUB-API-006**: When a user submits an invalid or non-existent club code, the system SHALL throw a not-found error.
-- `[ ]` **CLUB-BE-001**: The system shall NOT allow joining clubs with status "archived" or "deleted".
+## Club Creation UI (Step 3b in /join)
 
-## Club Lookup
+- `[x]` **CLUB-UI-001**: The create branch SHALL auto-derive an invite code from the club name (alphanumeric, uppercase, max 10 chars; defaults to "CLUB" if name is empty/non-alphanumeric). The derived code is shown as the default value of an editable input. (`join/page.tsx:191-195`)
+- `[!]` **CLUB-UI-002**: When the user modifies the auto-derived code, the system SHALL validate the new code against existing clubs and show an error if the code is already in use. **Today, validation runs only on submit** via a `clubs.lookup` call inside `handleCreateSubmit` (`join/page.tsx:333-348, 351-392`); the older "real-time as the user types" UX is a gap:
+  - `[ ]` **CLUB-UI-CODE-LIVE-001**: Real-time `clubs.lookup` debounce on code-input change to surface "✓ Available" / "✗ Taken" feedback before submit.
+- `[x]` **CLUB-UI-003**: On successful club creation, the system SHALL display the invite code prominently on Step 4 with a Button: "Copy" that calls `navigator.clipboard.writeText`. (`join/page.tsx:723-730`)
 
-- `[ ]` **CLUB-API-007**: The `clubs.lookup` procedure SHALL return the club name and member count without requiring authentication.
-- `[ ]` **CLUB-API-008**: The `clubs.lookup` procedure SHALL NOT return any club data beyond name and member count (no book info, no member list, no discussions).
+## Club Join API
 
-## Club Switching
+- `[x]` **CLUB-API-003**: When a user calls `clubs.join` with a valid club code, the system SHALL create a membership with role "member".
+- `[ ]` **CLUB-API-004**: When an unauthenticated user calls `clubs.join` with `code, email, displayName`, the system SHALL create or find the user, create a session, and create the membership in a single operation. (Today the UI requires Step 1 identity first — verify if the API still supports the combined flow.)
+- `[x]` **CLUB-API-005**: When a user attempts to join a club they're already in, the system SHALL return the existing club data without creating a duplicate membership.
+- `[x]` **CLUB-API-006**: When a user submits an invalid or non-existent club code, the system SHALL throw a NOT_FOUND error.
+- `[ ]` **CLUB-BE-001**: The system SHALL NOT allow joining clubs with status "archived" or "deleted".
 
-- `[ ]` **CLUB-NAV-001**: The club switcher UI element shall be visible on every authenticated page.
-- `[ ]` **CLUB-UI-001**: When a user selects a different club in the switcher, the system SHALL load that club's current state (current book, upcoming meeting, user's progress) without a full page reload.
-- `[ ]` **CLUB-UI-002**: The club switcher shall display an unread activity indicator for clubs with new activity since the user's last visit.
+## Club Lookup API
+
+- `[x]` **CLUB-API-007**: The `clubs.lookup` procedure SHALL return the club name and member count without requiring authentication.
+- `[x]` **CLUB-API-008**: `clubs.lookup` SHALL NOT return any data beyond name and member count.
+
+## Club Switcher (Sidebar)
+
+- `[x]` **CLUB-NAV-001**: The club switcher UI SHALL be visible on every authenticated club-scoped page via the sidebar dropdown. (`sidebar.tsx:50-95`)
+- `[x]` **CLUB-NAV-002**: The switcher header is a Button that toggles a dropdown listing all clubs the user is a member of. The chevron icon rotates 180° when open. (`sidebar.tsx:51-69`)
+- `[x]` **CLUB-NAV-003**: Each club row in the dropdown is a Link to `/clubs/{clubId}`, displaying the club name and a role Badge ("admin" / "member"). The current club is highlighted with `font-medium text-ink`. (`sidebar.tsx:74-84`)
+- `[!]` **CLUB-NAV-004**: At the bottom of the dropdown, a "Create or join a club" entry SHALL be present. **Today** it opens the Switcher Modal in place rather than routing to `/clubs` (see CLUB-NAV-MODAL-001). The `/clubs` landing page still surfaces its own create/join entry for users with zero memberships.
+
+## Switcher Create/Join Modal
+
+- `[x]` **CLUB-NAV-MODAL-001**: When a signed-in user activates "Create or join a club" in the switcher dropdown, the system SHALL open an in-page centered Dialog instead of navigating to `/clubs`. (`sidebar.tsx`, `components/club/club-switcher-modal.tsx`)
+- `[x]` **CLUB-NAV-MODAL-002**: The modal SHALL present two tabs — "Join with code" and "Create new club" — defaulting to Join.
+- `[x]` **CLUB-NAV-MODAL-003**: The Join tab SHALL accept a club code, debounce-validate it via `clubs.lookup`, and enable the submit button only when a club is found.
+- `[x]` **CLUB-NAV-MODAL-004**: On a successful join, the system SHALL navigate to `/clubs/{joinedClubId}` and call `router.refresh()` so the sidebar's club list (loaded server-side from `auth.me`) reflects the new membership.
+- `[x]` **CLUB-NAV-MODAL-005**: If the user is already a member of the entered code's club, the system SHALL surface "You're already a member of this club" and offer a "Go to club" action without creating a duplicate membership.
+- `[x]` **CLUB-NAV-MODAL-006**: The Create tab SHALL accept name, auto-derived editable code, and voting cadence — mirroring `/join` Step 3b — and SHALL validate code uniqueness on submit via `clubs.lookup`.
+- `[x]` **CLUB-NAV-MODAL-007**: On a successful create, the modal SHALL surface the invite code with a copy action, and on user dismissal SHALL navigate to the new club and refresh the layout.
+- `[x]` **CLUB-NAV-MODAL-008**: The modal SHALL be dismissible via Escape, backdrop click, and an explicit close button; dismissal SHALL be blocked while a mutation is in flight.
+- `[x]` **CLUB-NAV-MODAL-009**: The "Create or join a club" entry on `/clubs` (the no-club landing) SHALL continue to work as today — the modal is additive to the switcher only.
+- `[x]` **CLUB-NAV-MODAL-010**: When the modal opens, the switcher dropdown SHALL close so it is not stacked behind the Dialog.
+- `[!]` **CLUB-NAV-SWITCH-001** (older "switcher loads target club state under 30s"): Switching is a Link navigation that triggers a full route load. Whether under 30 seconds depends on data fetch performance, not a frontend optimization. Mark as targeted gap rather than implemented:
+  - `[ ]` **CLUB-NAV-CLIENT-001**: Client-side switcher (no full route load) prefetching the target club's state.
+- `[ ]` **CLUB-NAV-UNREAD-001**: Unread activity indicator (Badge tone="accent" dot) on club switcher rows for clubs with new activity since last visit. Not implemented.
+
+## Sidebar Nav (per-club)
+
+- `[x]` **DASH-NAV-001**: The sidebar SHALL render five nav links: Dashboard / Voting / Meetings / Discussions / Progress. The active link uses `bg-primary-soft text-primary-ink`. (`sidebar.tsx:18-126`)
+- `[x]` **CLUB-NAV-LIVE-001**: Badge: "Live" (accent dot) SHALL appear on the Voting nav link when an active round exists for the club (`hasActiveVote`). (`sidebar.tsx:107, 120-122`) — also referenced as `DASH-UI-002` in dash-specs.md (canonical ID lives there).
+- `[ ]` **CLUB-NAV-UNREAD-DISC-001**: Unread count Badge on the Discussions link when new threads exist since last visit. Not implemented. Also referenced as `DASH-UI-NAV-UNREAD-001` in dash-specs.md.
 
 ## Roles and Authorization
 
-- `[ ]` **CLUB-BE-002**: The system shall enforce role-based access: member+ for viewing, admin+ for editing settings and managing members, owner for deletion and ownership transfer.
-- `[ ]` **CLUB-API-009**: When a non-member attempts to access any club-scoped procedure, the system SHALL throw a forbidden error.
-- `[ ]` **CLUB-BE-003**: The owner shall NOT be able to leave the club without first transferring ownership to another member.
+- `[x]` **CLUB-BE-002**: Role-based access enforcement: member+ for viewing, admin+ for editing settings and managing members, owner for deletion and ownership transfer. (Enforced at tRPC procedure level via `memberProcedure` / `adminProcedure`.)
+- `[x]` **CLUB-API-009**: When a non-member attempts to access any club-scoped procedure, the system SHALL throw a FORBIDDEN error.
+- `[ ]` **CLUB-BE-003**: The owner SHALL NOT be able to leave the club without first transferring ownership.
 
-## Club Lifecycle
+## Club Lifecycle Gaps
 
-- `[ ]` **CLUB-BE-004**: When the owner deletes a club, the system SHALL soft-delete it (set status to "deleted" and record deleted_at timestamp).
-- `[ ]` **CLUB-BE-005**: Soft-deleted clubs shall be hard-deleted (data permanently removed) after 30 days.
-- `[ ]` **CLUB-BE-006**: When the owner archives a club, the system SHALL set status to "archived" and reject all write operations except un-archiving.
-- `[ ]` **CLUB-DATA-003**: The system shall enforce exactly one owner per club at all times.
+- `[ ]` **CLUB-BE-004**: When the owner deletes a club, the system SHALL soft-delete (status="deleted", deleted_at timestamp).
+- `[ ]` **CLUB-BE-005**: Soft-deleted clubs SHALL be hard-deleted after 30 days.
+- `[ ]` **CLUB-BE-006**: When the owner archives, the system SHALL set status="archived" and reject all writes except un-archive.
+- `[ ]` **CLUB-DATA-003**: Exactly one owner per club at all times.
+
+## Settings Page Gaps
+
+- `[ ]` **CLUB-UI-SETTINGS-001**: Admin Settings page (name / description / code edit, archive/unarchive toggle, delete with 30-day notice). Mutations may exist on `clubs.update` / `clubs.delete`; no UI surfaces them.
+- `[ ]` **CLUB-UI-MEMBERS-001**: Member management UI (table/cards with avatar, name, role, joined date; remove, promote/demote actions). Mutations exist (`clubs.members.remove`, `clubs.members.updateRole`); no UI.
+
+## Topbar Gaps
+
+(Canonical IDs live in dash-specs.md; cross-referenced here because they fall in the club-management UI surface.)
+
+- `[ ]` **CLUB-UI-TOPBAR-CHIP-001** (= `DASH-UI-003`): Topbar breadcrumb and copyable invite-code chip.
+- `[ ]` **CLUB-UI-TOPBAR-INVITE-001** (= `DASH-UI-004`): Topbar "Invite" button.
 
 ## Deferred
 
-- `[D]` **CLUB-BE-007**: The system shall enforce a configurable maximum member limit per club.
-- `[D]` **CLUB-UI-003**: The system shall provide an ownership transfer UI with confirmation dialog and notification to the new owner.
+- `[D]` **CLUB-BE-007**: Configurable maximum member limit per club.
+- `[D]` **CLUB-UI-OWNERSHIP-001**: Ownership transfer UI with confirmation dialog and notification.

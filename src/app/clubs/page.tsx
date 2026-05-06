@@ -1,6 +1,7 @@
 import { getServerCaller } from "@/trpc/server";
 import Link from "next/link";
 import { Card, Badge, LogoIcon } from "@/components/ui";
+import { SignOutLink } from "./sign-out-link";
 
 export default async function ClubsPage() {
   let clubs: { id: string; name: string; code: string; role: string }[] = [];
@@ -36,9 +37,12 @@ export default async function ClubsPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-16">
-      <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink mb-8">
-        My Clubs
-      </h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink">
+          My Clubs
+        </h1>
+        <SignOutLink />
+      </div>
       <ul data-testid="club-list" className="space-y-3">
         {clubs.map((club) => (
           <li key={club.id} data-testid={`club-${club.id}`}>

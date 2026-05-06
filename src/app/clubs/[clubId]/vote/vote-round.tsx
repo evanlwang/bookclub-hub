@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Badge, BookCover, Avatar } from "@/components/ui";
 import { NominateModal } from "./nominate-modal";
+import { successMessage } from "@/lib/voting/prior-votes";
 
 type Nomination = {
   id: string;
@@ -52,13 +53,32 @@ export function VoteRound({
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>(initialVotes);
   const [hasVoted, setHasVoted] = useState(initialVotes.length > 0);
+  // Tracks the just-completed in-session submit so we can show a confirmation
+  // toast that disappears on the next interaction. Distinct from `hasVoted`,
+  // which persists across reloads to drive the "Update N?" button label.
+  const [justSubmitted, setJustSubmitted] = useState(false);
+  const [lastSubmitWasUpdate, setLastSubmitWasUpdate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [error, setError] = useState("");
   const [isNominateModalOpen, setIsNominateModalOpen] = useState(false);
 
+  // @spec VOTE-UI-PRIOR-VOTES-001, VOTE-UI-TURNOUT-LIVE-001
+  // After router.refresh() the parent server component re-renders with fresh
+  // `myVotes`. Sync local `selected` state with the new prop so the picks UI
+  // reflects what's now persisted. Safe because we only call router.refresh()
+  // after a successful submit, where the server state matches local intent.
+  const initialVotesKey = initialVotes.join(",");
+  useEffect(() => {
+    setSelected(initialVotes);
+    // initialVotes identity changes per render; the join string is stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialVotesKey]);
+
   // @spec VOTE-BE-003
   function toggleSelection(nominationId: string) {
+    // Clear the just-submitted toast as soon as the user starts changing their picks again.
+    if (justSubmitted) setJustSubmitted(false);
     setSelected((prev) => {
       if (prev.includes(nominationId)) {
         return prev.filter((id) => id !== nominationId);
@@ -68,10 +88,11 @@ export function VoteRound({
     });
   }
 
-  // @spec VOTE-API-008
+  // @spec VOTE-API-008, VOTE-UI-TURNOUT-LIVE-001, VOTE-UI-UPDATE-CONFIRM-001
   async function handleSubmitVotes() {
     setLoading(true);
     setError("");
+    const wasUpdate = hasVoted;
     try {
       const res = await fetch("/api/trpc/votes.submit", {
         method: "POST",
@@ -83,6 +104,10 @@ export function VoteRound({
         setError(data.error.message || "Failed to submit votes");
       } else {
         setHasVoted(true);
+        setJustSubmitted(true);
+        setLastSubmitWasUpdate(wasUpdate);
+        // Re-fetch the server component so the voter-turnout card reflects the new count.
+        router.refresh();
       }
     } catch {
       setError("Something went wrong");
@@ -120,9 +145,20 @@ export function VoteRound({
         {/* Main content */}
         <div className="min-w-0">
           <div className="flex items-end justify-between gap-4 flex-wrap mb-4">
-            <p className="text-sm text-ink-2">
-              Approve up to {maxApprovals} book{maxApprovals !== 1 ? "s" : ""} you&rsquo;d be happy to read
-            </p>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm text-ink-2">
+                Approve up to {maxApprovals} book{maxApprovals !== 1 ? "s" : ""} you&rsquo;d be happy to read
+              </p>
+              {/* @spec VOTE-UI-PRIOR-VOTES-002 */}
+              {initialVotes.length > 0 && !loading && (
+                <span
+                  data-testid="prior-vote-hint"
+                  className="text-xs text-ink-3 italic"
+                >
+                  You voted previously — toggle a selection to update.
+                </span>
+              )}
+            </div>
             {/* Inline approval pill */}
             <div
               data-testid="approval-pill"
@@ -215,9 +251,10 @@ export function VoteRound({
               : `Submit ${selected.length} vote${selected.length !== 1 ? "s" : ""}`}
           </Button>
 
-          {hasVoted && !loading && (
+          {/* @spec VOTE-UI-UPDATE-CONFIRM-001 */}
+          {justSubmitted && !loading && (
             <p className="text-xs text-success text-center mt-2 animate-fade-in" data-testid="vote-success">
-              ✓ Your votes have been recorded
+              {successMessage(lastSubmitWasUpdate)}
             </p>
           )}
         </div>

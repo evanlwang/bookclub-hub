@@ -261,7 +261,6 @@ function PastMeetingRow({ meeting }: { meeting: any }) {
           {meeting.location && `${meeting.location} · `}{going > 0 ? `${going} attended` : ""}
         </p>
       </div>
-      <Button variant="ghost" size="sm">Notes</Button>
     </div>
   );
 }

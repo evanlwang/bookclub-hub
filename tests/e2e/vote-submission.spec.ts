@@ -1,3 +1,4 @@
+// @spec VOTE-UI-VOTE-001, VOTE-UI-VOTE-003, VOTE-UI-VOTE-004, VOTE-UI-DEC-003, VOTE-API-001, VOTE-API-008, VOTE-BE-003
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 import { getDb } from "./helpers";
@@ -13,6 +14,7 @@ test.describe("Voting Interactions", () => {
   });
 
   // Create test round before all tests in this file
+  // @spec VOTE-UI-VOTE-001, VOTE-UI-VOTE-003, VOTE-UI-VOTE-004, VOTE-API-008, VOTE-BE-003
   test("setup and test voting flow", async ({ page }) => {
     const db = getDb();
     const club = await db.club.findUniqueOrThrow({ where: { code: "WEDREADS" } });
@@ -65,6 +67,9 @@ test.describe("Voting Interactions", () => {
       // Submit
       await page.getByTestId("submit-votes-btn").click();
       await expect(page.getByTestId("vote-success")).toBeVisible({ timeout: 10000 });
+
+      // After submit, label flips to "✓ Voted — Update {N}?" — VOTE-UI-VOTE-003 post-vote variant
+      await expect(page.getByTestId("submit-votes-btn")).toContainText(/Voted.*Update 2/);
     } finally {
       // Cleanup
       await db.vote.deleteMany({ where: { roundId: round.id } });
@@ -73,6 +78,7 @@ test.describe("Voting Interactions", () => {
     }
   });
 
+  // @spec VOTE-UI-DEC-003, VOTE-API-001
   test("admin can start a new round", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");

@@ -1,81 +1,116 @@
 # Landing Page & Join Flow Specs
 
 **LLD**: docs/llds/auth-and-accounts.md
-**Implementing artifacts**: src/app/page.tsx, src/app/join/page.tsx, src/app/layout.tsx
+**Implementing artifacts**:
+- UI: `src/app/page.tsx` (landing), `src/app/join/page.tsx` (join flow), `src/app/layout.tsx` (skip nav)
+- Tests: `tests/e2e/home-*.spec.ts`, `tests/e2e/join-*.spec.ts`, `tests/e2e/login-smart-detection.spec.ts`
 
-Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
+Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
 ---
+
+## Landing Page State
+
+State: top nav — buttons shown: logo home link, "Log in", "Sign up" — transitions: → /login (Log in), → /join (Sign up)
+State: hero — buttons shown: "Sign up" (primary), "Log in" (secondary) — transitions: → /join (Sign up), → /login (Log in)
+State: feature row — display only (no buttons)
+State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred — see `HOME-UI-013`)
+
+## Join Page State
+
+(See auth-specs.md for full state breakdown across step 1 / 2 / 3a / 3b / 4.)
 
 ## Landing Page — Navigation
 
-- `[x]` **HOME-UI-001**: When the landing page loads, the system SHALL render a top navigation bar containing the logo, "BookClub Hub" wordmark, "Pricing" and "About" nav links, a "Sign in" ghost button, and a "Join a club" primary button.
-- `[x]` **HOME-UI-005**: When a user clicks "Join a club" in the top nav or hero CTA, the system SHALL navigate to /join.
-- `[x]` **HOME-UI-006**: When a user clicks "Sign in" in the top nav, the system SHALL navigate to /join.
+- `[x]` **HOME-UI-001**: Top nav SHALL contain: logo, "BookClub Hub" wordmark, "Log in" ghost-style link → `/login`, "Sign up" primary button → `/join`. ("Pricing" and "About" links removed — see `HOME-UI-012`.) (`page.tsx:19-40`)
+- `[x]` **HOME-UI-005**: "Sign up" links/buttons SHALL navigate to `/join`. (`page.tsx:33-40, 71-79`)
+- `[x]` **HOME-UI-006**: "Log in" link SHALL navigate to `/login`. (`page.tsx:27-32`)
 
 ## Landing Page — Hero
 
-- `[x]` **HOME-UI-002**: When the landing page loads, the system SHALL render a two-column hero section with headline, body copy, CTA row, and social proof on the left, and a decorative collage (aria-hidden) on the right.
-- `[x]` **HOME-UI-003**: When the viewport is narrower than the lg breakpoint, the system SHALL hide the hero collage column and display only the left (text/CTA) column.
-- `[x]` **HOME-UI-004**: When the landing page loads, the hero h1 SHALL use the display font at 72px with letter-spacing -0.03em and line-height 1.0, with the word "finally" rendered in italic primary color.
-- `[x]` **HOME-UI-009**: When the landing page loads, the main element SHALL apply a paper radial-gradient background using oklch color values.
-- `[x]` **HOME-UI-010**: When the landing page loads, the hero section SHALL render a social proof row containing an AvatarStack and the text "2,400+ readers · 340 active clubs".
-- `[x]` **HOME-UI-011**: When the landing page loads, the hero eyebrow pill SHALL contain a dot indicator and the text "Spoiler-safe by default" with accent-soft background and accent-ink text color.
+- `[x]` **HOME-UI-002**: Two-column hero with text/CTA on left and decorative collage on right (collage `aria-hidden="true"`). (`page.tsx:49-181`)
+- `[x]` **HOME-UI-003**: Below the `lg` breakpoint, the collage column SHALL be hidden (`hidden lg:block` on `page.tsx:103`).
+- `[x]` **HOME-UI-004**: Hero h1 SHALL use display font at 72px, letter-spacing -0.03em, line-height 1.0, with "finally" rendered in italic primary color. (`page.tsx:61-68`)
+- `[x]` **HOME-UI-009**: Main element SHALL apply a paper radial-gradient background using oklch colors. (`page.tsx:12-17`)
+- `[x]` **HOME-UI-010**: Hero SHALL render a social-proof row with AvatarStack and "2,400+ readers · 340 active clubs". (`page.tsx:93-99`)
+- `[x]` **HOME-UI-011**: Hero eyebrow pill SHALL contain a dot + "Spoiler-safe by default" with accent-soft background and accent-ink text. (`page.tsx:55-59`)
+- `[x]` **HOME-UI-CTA-PRIMARY-001**: Hero CTA: "Sign up" with right chevron icon, primary variant, links to `/join`. Identified by `data-testid="hero-signup"`. (`page.tsx:71-79`)
+- `[x]` **HOME-UI-CTA-SECONDARY-001**: Hero CTA: "Log in", secondary border variant, links to `/login`. Identified by `data-testid="hero-login"`. (`page.tsx:80-86`)
 
 ## Landing Page — Features & Footer
 
-- `[x]` **HOME-UI-007**: When the landing page loads, the system SHALL render a three-column feature row with cards for "Approval voting", "Meeting scheduling", and "Spoiler-safe threads", each containing a 40×40 icon container and a title in display font at 19px.
-- `[x]` **HOME-UI-008**: When the landing page loads, the system SHALL render a footer containing the logo, wordmark, tagline "For people who finish the book.", and "Privacy", "Terms", "Changelog" links.
-
----
+- `[x]` **HOME-UI-007**: Three-column feature row with cards "Approval voting" / "Meeting scheduling" / "Spoiler-safe threads", each with a 40×40 icon container and a 19px display-font title. (`page.tsx:184-199, 214-234`)
+- `[x]` **HOME-UI-008**: Footer SHALL contain logo, wordmark, and tagline "For people who finish the book." (Privacy/Terms/Changelog links removed — see `HOME-UI-013`.) (`page.tsx:201-208`)
 
 ## Join Page — Layout
 
-- `[x]` **JOIN-UI-001**: When the join page loads, the system SHALL render a header containing the logo and "BookClub Hub" wordmark.
-- `[x]` **JOIN-UI-002**: When the join page loads, the system SHALL render a Card (maxWidth 440px, padding 32px) containing the join flow.
+- `[x]` **JOIN-UI-001**: Header SHALL contain logo and "BookClub Hub" wordmark.
+- `[x]` **JOIN-UI-002**: Card SHALL constrain content to maxWidth 440px with padding 32px.
 
 ## Join Page — Stepper
 
-- `[x]` **JOIN-UI-003**: When the join page loads on step 1, the system SHALL render a 3-dot stepper with step 1 active, step 2 inactive, and step 3 inactive, connected by lines.
-- `[x]` **JOIN-UI-004**: When a step dot is in the "active" state, the system SHALL render it as a 24×24 circle with a primary-colored border and primary-colored step number.
-- `[x]` **JOIN-UI-005**: When a step dot is in the "done" state, the system SHALL render it as a 24×24 filled primary circle with a white check icon.
-- `[x]` **JOIN-UI-006**: When a step dot is in the "inactive" state, the system SHALL render it as a 24×24 circle with a line-strong border and ink-3 step number.
+- `[x]` **JOIN-UI-003**: 3-dot stepper renders with step 1 active by default, connected by lines. (`join/page.tsx:45-64`)
+- `[x]` **JOIN-UI-004**: Active step dot: 24×24 circle with primary border + primary step number.
+- `[x]` **JOIN-UI-005**: Done step dot: 24×24 filled primary circle with white check icon.
+- `[x]` **JOIN-UI-006**: Inactive step dot: 24×24 circle with line-strong border + ink-3 step number.
 
-## Join Page — Step 1: Club Code
+## Join Page — Step 1: Identity
 
-- `[x]` **JOIN-UI-007**: When the join page is on step 1, the system SHALL render the club code input with monospace font, letter-spacing 0.08em, uppercase transform, and right padding for the lookup spinner.
-- `[x]` **JOIN-UI-008**: While the club code lookup fetch is in-flight, the system SHALL render a 16×16 inline spinner inside the right side of the code input.
-- `[x]` **JOIN-UI-009**: When a valid club code is entered and the lookup succeeds, the system SHALL render a "club found" panel with primary-soft background, a primary icon, club name, member count, and a check icon.
-- `[x]` **JOIN-UI-010**: When the club code lookup fails or returns no match, the system SHALL render an error box with danger-soft background, danger text color, borderRadius 10px, and role="alert" aria-live="assertive".
-- `[x]` **JOIN-UI-011**: When the club code step has no valid club found, the "Continue" button SHALL be disabled.
+- `[x]` **JOIN-UI-IDENTITY-EMAIL-001**: Email input (type=email, required).
+- `[x]` **JOIN-UI-IDENTITY-NAME-001**: Display name input (required).
+- `[x]` **JOIN-UI-IDENTITY-CONTINUE-001**: Button: "Continue" — disabled when `!identityValid || signingIn`.
 
-## Join Page — Step 2: Profile
+(See auth-specs.md for handler details.)
 
-- `[x]` **JOIN-UI-012**: When the user clicks "Continue" on step 1 with a valid club found, the system SHALL transition to step 2 showing Email and Display Name fields.
-- `[x]` **JOIN-UI-013**: When step 2 renders, the system SHALL display a "Back" ghost button (returning to step 1) and a "Join the club" primary button.
-- `[x]` **JOIN-UI-014**: When the join form is submitting, the "Join the club" button SHALL display "Joining…" text and aria-busy="true".
+## Join Page — Step 2: Path Choice
 
-## Join Page — Step 3: Success
+- `[x]` **JOIN-UI-PATH-JOIN-001**: PathCard "Join an existing club".
+- `[x]` **JOIN-UI-PATH-CREATE-001**: PathCard "Create a new club".
+- `[x]` **JOIN-UI-PATH-BACK-001**: Button: "Back" returns to step 1.
 
-- `[x]` **JOIN-UI-015**: When the join succeeds, the system SHALL transition to step 3 showing a 64×64 success check circle (role="img" aria-label="Success"), "Welcome to {clubName}!" heading, and "Redirecting you now…" body text.
+## Join Page — Step 3a: Join Branch
+
+- `[x]` **JOIN-UI-007**: Club code input SHALL use monospace font, letter-spacing 0.08em, uppercase transform, and right padding for the lookup spinner.
+- `[x]` **JOIN-UI-008**: While `clubs.lookup` is in-flight, an inline 16×16 spinner SHALL render inside the input.
+- `[x]` **JOIN-UI-009**: On valid lookup, a "club found" panel SHALL render with primary-soft background, primary icon, club name, member count, and check icon.
+- `[x]` **JOIN-UI-010**: On lookup failure or no match, an error box SHALL render with danger-soft background, danger text, borderRadius 10px, role="alert", aria-live="assertive".
+- `[x]` **JOIN-UI-011**: Button: "Continue" / "Join {clubName}" SHALL be disabled until a valid club is found.
+
+## Join Page — Step 2/3a: Identity-After-Code Variant
+
+- `[x]` **JOIN-UI-012**: When the user clicks "Continue" on Step 1 with a valid club found (legacy variant), the flow advanced to a profile step. **Today the flow is identity-first then code, so this transition is via Step 1 → Step 2 → Step 3a.** Mark as alignment note rather than gap.
+- `[x]` **JOIN-UI-013**: Step 3a SHALL display Buttons: "Back" (ghost) and "Join the club" (primary).
+- `[!]` **JOIN-UI-014**: Older spec required "Joining…" label and `aria-busy="true"` on the join button while submitting. Verify by reading current Button component; today loading state is conveyed via the shared Button component's `loading` prop. The exact label string and aria-busy attribute should be confirmed:
+  - `[ ]` **JOIN-UI-JOINING-LABEL-001**: Confirm submit button shows "Joining…" text (or equivalent) and sets `aria-busy="true"` during the request.
+
+## Join Page — Step 3b: Create Branch
+
+- `[x]` **JOIN-UI-CREATE-NAME-001**: Club name input (required, min 3 chars).
+- `[x]` **JOIN-UI-CREATE-CODE-001**: Auto-derived invite code input (uppercase, alphanumeric, max 10 chars; user can override).
+- `[!]` **JOIN-UI-CREATE-CADENCE-001**: Voting cadence radio buttons (monthly / six_weeks / flexible) — IMPLEMENTED but undocumented in older home/auth specs. Today the cadence is appended to the club description as a string. (See auth-specs.md `AUTH-UI-STEP3B-CADENCE-001`.)
+- `[x]` **JOIN-UI-CREATE-BACK-001**: Button: "Back" returns to step 2.
+- `[x]` **JOIN-UI-CREATE-SUBMIT-001**: Button: "Create club" — disabled when `!createReady || creatingClub`.
+
+## Join Page — Step 4: Success
+
+- `[x]` **JOIN-UI-015**: On successful join, the system SHALL render a 64×64 success check circle (role="img", aria-label="Success"), "Welcome to {clubName}!" heading, and "Redirecting you now…" body. Auto-redirect after 1500ms.
+- `[x]` **JOIN-UI-COPY-001**: For the create branch, the invite code is rendered prominently with a "Copy" Button that calls `navigator.clipboard.writeText`.
 
 ## Join Page — Accessibility
 
-- `[x]` **JOIN-UI-016**: All label elements in the join form SHALL have htmlFor attributes matching the id of their associated input elements.
-- `[x]` **JOIN-UI-017**: All error messages in the join form SHALL have role="alert" and aria-live="assertive".
+- `[x]` **JOIN-UI-016**: All `label` elements SHALL have `htmlFor` attributes matching the `id` of their input.
+- `[x]` **JOIN-UI-017**: All error messages SHALL have `role="alert"` and `aria-live="assertive"`.
 
----
+## Accessibility (App-wide)
 
-## Accessibility
-
-- `[x]` **HOME-A11Y-001**: The root layout SHALL render a skip-navigation link as the first focusable element with text "Skip to content" pointing to #main-content, visible only on keyboard focus.
-- `[x]` **HOME-A11Y-002**: The main content element on the landing page SHALL have id="main-content".
-- `[x]` **HOME-A11Y-003**: The main content element on the join page SHALL have id="main-content".
-- `[x]` **HOME-A11Y-004**: The decorative hero collage on the landing page SHALL have aria-hidden="true".
-
----
+- `[x]` **HOME-A11Y-001**: The root layout SHALL render a "Skip to content" link as the first focusable element pointing to `#main-content`, visible only on keyboard focus. (`layout.tsx:30-33`)
+- `[x]` **HOME-A11Y-002**: The landing page main element SHALL have `id="main-content"`. (`page.tsx:17`)
+- `[x]` **HOME-A11Y-003**: The join page main element SHALL have `id="main-content"`. (`join/page.tsx:431`)
+- `[x]` **HOME-A11Y-004**: The decorative hero collage SHALL have `aria-hidden="true"`. (`page.tsx:103`)
 
 ## Deferred
 
-- `[D]` **HOME-UI-012**: The "Pricing" and "About" nav links shall navigate to corresponding content pages (placeholder # links for now).
-- `[D]` **JOIN-UI-018**: The join page shall support a "Sign in" returning-user flow that skips the code step if the user has a valid session.
+- `[D]` **HOME-UI-012**: "Pricing" and "About" pages with real content. **Links hidden from nav today** — restore once content pages exist.
+- `[D]` **HOME-UI-013**: Footer "Privacy", "Terms", and "Changelog" pages with real content. **Links hidden from footer today** — restore once content pages exist.
+- `[D]` **HOME-UI-014**: Legal disclaimer ("By continuing you agree to our Terms and Privacy Policy") on /join Step 1. **Hidden today** — restore once Terms and Privacy Policy pages exist.
+- `[x]` **JOIN-UI-018**: A "Sign in" returning-user flow that skips the code/identity steps. **Now covered by two complementary mechanisms**: (1) the dedicated `/login` route — see `AUTH-UI-LOGIN-001..003` in `auth-specs.md` — and (2) smart detection on `/join` — see `AUTH-UI-004`. A user with a valid session who lands on `/clubs` directly is also routed correctly by `getServerCaller`.

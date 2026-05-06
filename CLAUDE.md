@@ -2,11 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-This project is developed with linked-intent driven development and test driven developemnt. Use EARS notation and grep to quickly search specs, tests, and code efficiently. Always plan and consult these files first, then write tests, then implement source code:
+This project should evolve using linked-intent driven development and test driven developemnt. Use EARS notation and grep to quickly search specs, tests, and code efficiently. Always plan and consult these files first with a plan, then write tests, then implement source code:
 - CLAUDE.md for architecture, commands, and development patterns
 - docs/high-level-design.md for system vision and key design decisions
 - docs/specs/ for EARS requirement IDs and feature scope
 - docs/llds/ for component-level contracts (data models, API shapes, visual layouts)
+- docs/lids/ for linked-intent driven development docs
 
 ## Project Overview
 

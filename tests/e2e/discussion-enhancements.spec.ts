@@ -1,7 +1,9 @@
+// @spec DISC-UI-005, DISC-UI-PAGE-CARD-001, DISC-API-LIST-SORT-001
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 
 test.describe("Discussion List Enhancements", () => {
+  // @spec DISC-UI-005
   test("shows sort controls (Recent / Most comments)", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -12,6 +14,7 @@ test.describe("Discussion List Enhancements", () => {
     await expect(page.getByTestId("sort-comments")).toBeVisible();
   });
 
+  // @spec DISC-API-LIST-SORT-001
   test("sort by most comments changes thread order", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -24,6 +27,7 @@ test.describe("Discussion List Enhancements", () => {
     await expect(page.getByTestId("threads-list")).toBeVisible();
   });
 
+  // @spec DISC-UI-PAGE-CARD-001
   test("thread list items show body preview", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");

@@ -1,7 +1,9 @@
+// @spec MEET-UI-006, MEET-UI-008, MEET-UI-PROP-001
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 
 test.describe("Meeting List Filters", () => {
+  // @spec MEET-UI-006
   test("shows filter tabs for meeting statuses", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -13,6 +15,7 @@ test.describe("Meeting List Filters", () => {
     await expect(page.getByTestId("filter-confirmed")).toBeVisible();
   });
 
+  // @spec MEET-UI-006
   test("filter tabs filter the meeting list", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -25,6 +28,7 @@ test.describe("Meeting List Filters", () => {
     await expect(page.getByTestId("meetings-list")).toBeVisible();
   });
 
+  // @spec MEET-UI-PROP-001
   test("meeting cards show status badge", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");

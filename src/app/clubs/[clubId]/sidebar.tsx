@@ -1,9 +1,9 @@
-// @spec DASH-UI-001, DASH-UI-002
+// @spec DASH-UI-001, DASH-UI-002, AUTH-UI-LOGOUT-001, CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-010
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LogoIcon,
   BookIcon,
@@ -14,6 +14,7 @@ import {
   Avatar,
   Badge,
 } from "@/components/ui";
+import { ClubSwitcherModal } from "@/components/club/club-switcher-modal";
 
 const navItems = [
   { label: "Dashboard", href: "", icon: BookIcon },
@@ -39,10 +40,29 @@ export function ClubSidebar({
   hasActiveVote?: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const basePath = `/clubs/${clubId}`;
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [addClubModalOpen, setAddClubModalOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const currentClub = clubs.find((c) => c.id === clubId);
+
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await fetch("/api/trpc/auth.logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+    } catch {
+      // Server emits the clearing Set-Cookie; we still wipe locally as a backup.
+    }
+    document.cookie = "session_id=; Path=/; Max-Age=0; SameSite=Lax";
+    router.push("/");
+  }
 
   return (
     <aside className="w-60 shrink-0 border-r border-line bg-bg-soft flex flex-col h-screen sticky top-0 hidden md:flex">
@@ -83,17 +103,26 @@ export function ClubSidebar({
               </Link>
             ))}
             <div className="border-t border-line mt-1 pt-1">
-              <Link
-                href="/clubs"
-                onClick={() => setSwitcherOpen(false)}
-                className="block px-3 py-2 text-sm text-primary hover:bg-bg-sunken transition-colors"
+              <button
+                type="button"
+                onClick={() => {
+                  setSwitcherOpen(false);
+                  setAddClubModalOpen(true);
+                }}
+                data-testid="sidebar-add-club"
+                className="block w-full text-left px-3 py-2 text-sm text-primary hover:bg-bg-sunken transition-colors"
               >
                 Create or join a club
-              </Link>
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      <ClubSwitcherModal
+        isOpen={addClubModalOpen}
+        onClose={() => setAddClubModalOpen(false)}
+      />
 
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-0.5">
@@ -129,7 +158,15 @@ export function ClubSidebar({
       <div className="p-4 border-t border-line">
         <div className="flex items-center gap-2.5">
           <Avatar name={userName} size="sm" />
-          <span className="text-sm text-ink-2 truncate">{userName}</span>
+          <span className="flex-1 text-sm text-ink-2 truncate">{userName}</span>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="text-xs text-ink-3 hover:text-ink transition-colors disabled:opacity-50"
+          >
+            {signingOut ? "Signing out…" : "Sign out"}
+          </button>
         </div>
       </div>
     </aside>

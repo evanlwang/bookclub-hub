@@ -1,87 +1,106 @@
 # Reading Progress Specs
 
 **LLD**: docs/llds/reading-progress.md
-**Implementing artifacts**: 
-- API: `src/server/routers/progress.ts`, `src/server/routers/books.ts` (listForClub procedure)
+**Implementing artifacts**:
+- API: `src/server/routers/progress.ts`, `src/server/routers/books.ts` (`listForClub`)
 - UI: `src/app/clubs/[clubId]/progress/page.tsx`, `update-modal.tsx`
-- Tests: `tests/integration/progress.test.ts`, `tests/e2e/progress-*.spec.ts`, `tests/e2e/progress-book-selector.spec.ts`
+- Tests: `tests/integration/progress.test.ts`, `tests/e2e/progress-*.spec.ts`
 
-Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
+Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
 ---
 
+## Update Modal Status States
+
+State: not_started — page input behavior: forced to 0 on status change — chapter input: editable but cleared on auto-set
+State: reading — page input behavior: editable, range 0..totalPages — chapter input: editable
+State: finished — page input behavior: forced to totalPages on status change AND disabled — chapter input: editable
+Auto-transitions: page input change from 0→positive while status="not_started" auto-bumps status to "reading" (`update-modal.tsx:151-156`)
+
 ## Book Selection & Navigation
 
-- `[x]` **PROG-UI-BOOK-001**: When a member navigates to `/clubs/[clubId]/progress` with no bookId query param, the system SHALL display either a book grid for selection or a message "No books have been selected yet."
+- `[x]` **PROG-UI-BOOK-001**: When a member navigates to `/clubs/[clubId]/progress` with no `bookId`, the system SHALL display either a book grid for selection or a message "No books have been selected yet." (`progress/page.tsx:19-81`)
 - `[x]` **PROG-UI-BOOK-002**: The progress page SHALL accept a `?bookId=` query parameter and show the dashboard for that book when provided.
-- `[x]` **PROG-UI-BOOK-003**: Each book in the selector grid is a clickable Link that navigates to the progress dashboard with the appropriate bookId for the selected book.
-- `[x]` **PROG-API-006**: The `books.listForClub` procedure SHALL return all books that have been selected for a given club, ordered by most recently selected first. This is visible to all club members.
+- `[x]` **PROG-UI-BOOK-003**: Each book in the selector grid SHALL be a clickable Link navigating to `/clubs/[clubId]/progress?bookId={bookId}`.
+- `[x]` **PROG-UI-BOOK-004**: The detail view SHALL include a back link "All books" returning to the selector grid.
+- `[x]` **PROG-API-006**: The `books.listForClub` procedure SHALL return all books that have been selected for a given club, ordered by most recently selected first. Visible to all members.
 
 ## Progress Data Model & API
 
-- `[x]` **PROG-DATA-001**: The system SHALL enforce one progress record per (club_id, book_id, user_id) tuple via a database unique constraint.
-- `[x]` **PROG-API-001**: The `progress.update` procedure SHALL create a new progress record if none exists, or update an existing one (idempotent upsert).
-- `[x]` **PROG-API-002**: The `progress.update` procedure SHALL accept any subset of fields (currentPage, percentage, currentChapter, status) and update only the provided fields, leaving others unchanged.
-- `[x]` **PROG-API-003**: The `progress.list` procedure SHALL return a list of all progress records for a given (clubId, bookId), including user data, sorted by percentage descending. This list is visible to all club members.
-- `[x]` **PROG-API-004**: The `progress.me` procedure SHALL return the current user's progress record for a given (clubId, bookId), or null if no record exists.
-- `[x]` **PROG-API-005**: The `progress.summary` procedure SHALL return aggregate statistics: median percentage, count by status (finished/reading/not_started), and a chapter distribution map. This is visible to all club members.
+- `[x]` **PROG-DATA-001**: The system SHALL enforce one progress record per `(clubId, bookId, userId)` via a unique constraint.
+- `[x]` **PROG-API-001**: The `progress.update` procedure SHALL upsert (create or update) the record (idempotent).
+- `[x]` **PROG-API-002**: The `progress.update` procedure SHALL accept any subset of fields (`currentPage`, `percentage`, `currentChapter`, `status`) and update only the provided fields, leaving others unchanged.
+- `[x]` **PROG-API-003**: The `progress.list` procedure SHALL return all members' progress records for `(clubId, bookId)`, including user data, sorted by percentage DESC. Visible to all members.
+- `[x]` **PROG-API-004**: The `progress.me` procedure SHALL return the current user's progress for `(clubId, bookId)`, or null if no record exists.
+- `[x]` **PROG-API-005**: The `progress.summary` procedure SHALL return aggregate stats: median percentage, count by status (finished/reading/not_started), and a chapter distribution map.
 
 ## Progress Computation
 
-- `[x]` **PROG-BE-001**: When a member updates currentPage and totalPages is known, the system SHALL compute percentage as `round(currentPage / totalPages * 100)`.
-- `[x]` **PROG-BE-002**: When a member updates percentage and totalPages is known, the system SHALL compute currentPage as `round(percentage / 100 * totalPages)`.
-- `[x]` **PROG-BE-003**: When totalPages is not known (null), the system SHALL accept percentage input but leave currentPage null.
-- `[x]` **PROG-BE-004**: The totalPages value is determined by the Book.pageCount in the database. If not available, it defaults to null.
-- `[x]` **PROG-BE-005**: Progress status is an enum with three values: "not_started", "reading", "finished".
-- `[x]` **PROG-BE-006**: When a member sets status to "finished", the system SHALL set percentage to 100 and currentPage to totalPages (if totalPages is known).
-- `[x]` **PROG-BE-007**: When a member sets status to "not_started", the system SHALL keep currentPage and percentage at their current values (no auto-reset).
+- `[x]` **PROG-BE-001**: When `currentPage` and `totalPages` are known, percentage = `round(currentPage / totalPages * 100)`.
+- `[x]` **PROG-BE-002**: When `percentage` and `totalPages` are known, currentPage = `round(percentage / 100 * totalPages)`.
+- `[x]` **PROG-BE-003**: When `totalPages` is null, the system SHALL accept percentage input but leave `currentPage` null.
+- `[x]` **PROG-BE-004**: `totalPages` is determined by `Book.pageCount`. If unavailable, defaults to null.
+- `[x]` **PROG-BE-005**: Status enum: "not_started", "reading", "finished".
+- `[x]` **PROG-BE-006**: When status="finished", percentage forced to 100; currentPage forced to totalPages (if known).
+- `[x]` **PROG-BE-007**: When status="not_started" via the modal, currentPage SHALL be reset to 0 (modal-side; API itself does not coerce). (`update-modal.tsx:62-66`)
 
-## Progress Update UI
+## Progress Update UI — Modal
 
-- `[x]` **PROG-UI-001**: The progress update modal SHALL display three large radio-card buttons for status selection (Not Started / Reading / Finished) with radio dot, label, and descriptive subtext.
-- `[x]` **PROG-UI-002**: The progress update modal SHALL include a range slider input (HTML `<input type="range">`) synchronized bidirectionally with a numeric "Current Page" input field.
-- `[x]` **PROG-UI-003**: When the user selects "Finished" status, the page slider and number input SHALL auto-lock to totalPages value and become disabled for editing.
-- `[x]` **PROG-UI-004**: When the user selects "Not started" status, page and chapter inputs SHALL clear/reset to 0 and null.
-- `[x]` **PROG-UI-005**: The progress update modal SHALL display a live preview progress bar below the inputs showing the current status-class fill color and percentage.
-- `[x]` **PROG-UI-006**: The modal SHALL include an optional numeric input field for current chapter, labeled "Chapter (optional)".
-- `[x]` **PROG-UI-007**: The update modal SHALL include Cancel and Save Progress buttons at the bottom.
-- `[x]` **PROG-UI-008**: On successful save, the system SHALL display a floating toast notification at bottom-right ("Progress saved · page N") with an Undo button and 4-second auto-dismiss.
-- `[x]` **PROG-UI-009**: The toast Undo button SHALL be highlighted in accent color and available for manual dismissal; clicking it reverts the progress update and re-opens the modal.
+- `[x]` **PROG-UI-MODAL-OPEN-001**: Button: "Update My Progress" (`update-modal.tsx:24-30`) is rendered on the progress dashboard. Click opens the modal.
+- `[x]` **PROG-UI-001**: The modal SHALL display three large radio-card buttons for status: "Not Started", "Reading", "Finished" (`update-modal.tsx:118-139`). Selected state uses primary border + soft background.
+- `[x]` **PROG-UI-MODAL-PAGE-001**: Number input for "Current Page", min 0, max totalPages. Disabled when status="finished" (`update-modal.tsx:142-164`). When user enters a positive value while status="not_started", status auto-changes to "reading".
+- `[!]` **PROG-UI-002**: Older spec required a range slider synchronized with the page number input. **Slider not implemented**; only the number input exists. Treat as gap:
+  - `[ ]` **PROG-UI-MODAL-SLIDER-001**: Range slider input (HTML `<input type="range">`) bidirectionally synced with the page number input.
+- `[x]` **PROG-UI-003**: When status="finished", the page input auto-locks to totalPages and is disabled. (`update-modal.tsx:62-63, 157`)
+- `[x]` **PROG-UI-004**: When status="not_started", the page input resets to 0. Chapter input is not auto-cleared. (`update-modal.tsx:64-66`)
+- `[!]` **PROG-UI-MODAL-PCT-001**: The modal shows a read-only "Progress: {N}%" display computed live (`update-modal.tsx:167-175`). Older spec described an editable percentage input — **not implemented**:
+  - `[ ]` **PROG-UI-MODAL-PCT-EDIT-001**: Editable percentage number input (0–100), bidirectionally synced with page input.
+- `[x]` **PROG-UI-006**: The modal SHALL include an optional numeric "Chapter (optional)" input (`update-modal.tsx:178-191`), placeholder "—".
+- `[x]` **PROG-UI-007**: Buttons: "Cancel" (`update-modal.tsx:201-203`) and "Save Progress" (`update-modal.tsx:204-212`) at the bottom. Save calls `progress.update` and refreshes the route on success.
+
+## Progress Update UI — Gaps
+
+- `[!]` **PROG-UI-005**: Older spec required a live preview progress bar in the modal. **Not implemented**; only the read-only "Progress: {N}%" text exists.
+  - `[ ]` **PROG-UI-MODAL-PREVIEW-001**: Animated live preview progress bar showing status-class fill color and percentage.
+- `[!]` **PROG-UI-008** & **PROG-UI-009**: Older spec required a floating toast on save with an Undo button and 4-second auto-dismiss. **Not implemented**; the save handler calls `router.refresh()` and closes the modal silently.
+  - `[ ]` **PROG-UI-MODAL-TOAST-001**: Toast notification "Progress saved · page N" with Undo button, 4s auto-dismiss.
+  - `[ ]` **PROG-UI-MODAL-UNDO-001**: Undo button reverts the update and re-opens the modal.
+- `[ ]` **PROG-UI-MODAL-TIMESTAMP-001**: "Last updated" timestamp shown below modal body.
 
 ## Progress Dashboard Display
 
-- `[x]` **PROG-UI-DASH-001**: The progress dashboard header SHALL display the title "Reading Progress" and an "Update My Progress" button.
-- `[x]` **PROG-UI-DASH-002**: When no progress records exist for a book, the system SHALL display a card with the message "No progress tracked yet."
-- `[x]` **PROG-UI-DASH-003**: The dashboard SHALL display a summary card with an SVG animated progress ring showing the club's median reading percentage (e.g., "61%") with label "median" below.
-- `[x]` **PROG-UI-DASH-004**: The progress ring SHALL be animated via stroke-dasharray/stroke-dashoffset transition (1s cubic-bezier, duration 500ms ease-out) filling from 0% to the target percentage on load.
-- `[x]` **PROG-UI-DASH-005**: Two ring sizes SHALL be supported: full (130px / 12px stroke) for main dashboard and compact (64px / 7px stroke) for the dashboard hero card variant.
-- `[x]` **PROG-UI-DASH-006**: Below the ring, a horizontal segmented bar SHALL show the proportions of members by status: finished (accent color), reading (primary color), not_started (ink-4 color). The bar height is 8px.
-- `[x]` **PROG-UI-DASH-007**: A legend below the distribution bar SHALL show colored square dots and labels with counts: "Finished [N]", "Reading [N]", "Not started [N]".
-- `[x]` **PROG-UI-DASH-008**: The member list SHALL be titled "Where everyone is" with a subtitle "Sorted by progress".
-- `[x]` **PROG-UI-DASH-009**: Each member progress row SHALL display: avatar, name, status/page info, an animated progress bar, percentage in right-aligned large text, and a status badge.
-- `[x]` **PROG-UI-DASH-010**: Progress bars in the member list SHALL animate with a staggered 60ms delay per row (e.g., row 0: 0ms, row 1: 60ms, row 2: 120ms), duration 500ms, easing ease-out.
-- `[x]` **PROG-UI-DASH-011**: The status badge SHALL show one of: "Done" (accent bg), "Reading" (primary bg with dot), or "Waiting" (neutral bg), matching the member's progress status.
-- `[x]` **PROG-UI-DASH-012**: For members with status "finished", a gold checkmark icon SHALL appear next to the name.
-- `[x]` **PROG-UI-DASH-013**: The page/chapter info line for each member SHALL display:
-  - If "not_started": "Not started yet"
-  - If "finished": "Finished · [totalPages] pages"
-  - If "reading": "Page [currentPage][optional · ch. [currentChapter]]"
-- `[x]` **PROG-UI-DASH-014**: A compact dashboard card variant (360px width, small ring size, mini distribution bar, two-line summary text) SHALL be designed for use on the main club dashboard as a read-only progress preview.
+- `[x]` **PROG-UI-DASH-001**: Header SHALL display the page title and the "Update My Progress" button.
+- `[x]` **PROG-UI-DASH-002**: When no progress records exist for a book, the system SHALL display an empty state.
+- `[x]` **PROG-UI-DASH-003**: A summary card SHALL display an SVG animated progress ring showing the club's median reading percentage.
+- `[x]` **PROG-UI-DASH-004**: The progress ring animates via stroke-dasharray/stroke-dashoffset (≈1s cubic-bezier, 500ms ease-out variant for staggered rows).
+- `[x]` **PROG-UI-DASH-005**: Two ring sizes: full (130px / 12px stroke) and compact (64px / 7px stroke).
+- `[x]` **PROG-UI-DASH-006**: Below the ring, a horizontal segmented bar SHALL show finished (accent), reading (primary), not_started (ink-4) proportions; height 8px.
+- `[x]` **PROG-UI-DASH-007**: A legend below the distribution bar SHALL show colored square dots and "Finished [N]", "Reading [N]", "Not started [N]".
+- `[x]` **PROG-UI-DASH-008**: The member list SHALL be titled "Where everyone is" with subtitle "Sorted by progress".
+- `[x]` **PROG-UI-DASH-009**: Each member row SHALL display: avatar, name, status/page info, animated progress bar, right-aligned percentage, status badge.
+- `[x]` **PROG-UI-DASH-010**: Member-list bars SHALL animate with a staggered ~60ms delay per row, 500ms duration, ease-out.
+- `[x]` **PROG-UI-DASH-011**: Status badge: "Done" (accent), "Reading" (primary + dot), "Waiting" (neutral).
+- `[x]` **PROG-UI-DASH-012**: Members with status="finished" SHALL display a gold checkmark next to the name.
+- `[x]` **PROG-UI-DASH-013**: Per-member info line:
+  - "Not started yet" (status="not_started")
+  - "Finished · [totalPages] pages" (status="finished")
+  - "Page [currentPage][optional · ch. [currentChapter]]" (status="reading")
+- `[x]` **PROG-UI-DASH-014**: A compact dashboard card variant (360px width, small ring, mini distribution bar) is used as a read-only preview on the main club dashboard.
 
 ## Spoiler Integration
 
-- `[ ]` **PROG-BE-SPOOF-001**: When filtering discussion threads by maxChapter, the system SHALL use the current user's currentChapter value from their progress record as the default filter (if a record exists and currentChapter is set).
-- `[ ]` **PROG-UI-SPOOF-001**: On the discussion thread list, a note or indicator SHALL show the current chapter filter: "Showing discussions up to chapter [N]" or "Showing all discussions (no spoiler filter)".
+- `[ ]` **PROG-BE-SPOOF-001**: When filtering discussion threads by `maxChapter`, the system SHALL use the user's `currentChapter` value from their progress record as the default filter.
+- `[ ]` **PROG-UI-SPOOF-001**: On the discussion thread list, an indicator SHALL show the current chapter filter ("Showing discussions up to chapter [N]").
 
 ## Error Handling
 
-- `[ ]` **PROG-ERR-001**: If a progress update fails due to database error, the modal SHALL display an error message: "Failed to save" or a more specific error returned by the API.
-- `[ ]` **PROG-ERR-002**: If loading the progress list fails, the page SHALL display an error message with the specific error text.
-- `[ ]` **PROG-ERR-003**: If the user lacks membership in the specified club, the system SHALL return a 403 Unauthorized error from the tRPC procedure.
+- `[x]` **PROG-ERR-001**: If `progress.update` fails, the modal SHALL display the error message inline (`update-modal.tsx:193-197`).
+- `[ ]` **PROG-ERR-002**: If loading the progress list fails, the page SHALL display the specific error.
+- `[ ]` **PROG-ERR-003**: If the user lacks membership, the procedure SHALL return a 403 (handled at middleware level — verify in tests).
 
 ## Deferred
 
-- `[D]` **PROG-BE-AUDIO-001**: The system shall support audiobook progress measured in hours:minutes format (e.g., "2:15") in addition to page-based progress.
-- `[D]` **PROG-NOTIFY-001**: The system shall send a gentle reminder email to members who haven't updated progress in 2+ weeks (opt-in only).
-- `[D]` **PROG-BE-HISTORY-001**: The system shall track historical progress updates with timestamps to compute reading velocity (e.g., "50 pages/week on average").
-- `[D]` **PROG-UI-GOAL-001**: Each member SHALL be able to set a reading goal (e.g., "finish by May 10") and the dashboard SHALL show progress toward that goal.
+- `[D]` **PROG-BE-AUDIO-001**: Audiobook progress in hours:minutes.
+- `[D]` **PROG-NOTIFY-001**: Reminder email after 2+ weeks without a progress update.
+- `[D]` **PROG-BE-HISTORY-001**: Historical progress updates with timestamps for reading-velocity analytics.
+- `[D]` **PROG-UI-GOAL-001**: Per-member reading goals with goal-progress visualization.

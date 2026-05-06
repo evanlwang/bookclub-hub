@@ -26,7 +26,7 @@ async function handler(req: Request) {
     endpoint: "/api/trpc",
     req,
     router: appRouter,
-    createContext: () => ({ db, user, sessionId }),
+    createContext: ({ resHeaders }) => ({ db, user, sessionId, resHeaders }),
   });
 }
 

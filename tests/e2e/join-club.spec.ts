@@ -1,4 +1,4 @@
-// @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003, AUTH-UI-004, CLUB-UI-001, CLUB-UI-002, CLUB-UI-003
+// @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003, AUTH-UI-004, AUTH-UI-PATH-OVERRIDE-001, AUTH-UI-STEP3B-CADENCE-001, CLUB-UI-001, CLUB-UI-002, CLUB-UI-003
 import { test, expect, type Page } from "@playwright/test";
 
 /**
@@ -171,7 +171,7 @@ test.describe("New Entry Flow — Step 3b: Create branch", () => {
     await expect(page.locator("#club-code")).toHaveValue("CUSTOM");
   });
 
-  // @spec AUTH-UI-002
+  // @spec AUTH-UI-002, AUTH-UI-STEP3B-CADENCE-001
   test("Cadence options are available (monthly, six_weeks, flexible)", async ({ page }) => {
     await expect(page.getByRole("button", { name: /Monthly/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /6 weeks/i })).toBeVisible();
@@ -267,10 +267,10 @@ test.describe("New Entry Flow — Layout & Accessibility", () => {
 });
 
 test.describe("Landing Page → Join page navigation", () => {
-  test("landing page has navigation to join", async ({ page }) => {
+  test("landing page has navigation to join (Sign up)", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.locator("nav").getByRole("link", { name: /join a club/i })
+      page.locator("nav").getByRole("link", { name: /^sign up$/i })
     ).toBeVisible();
   });
 });
@@ -293,7 +293,7 @@ test.describe("New Entry Flow — Smart detection (returning users)", () => {
     await expect(page.getByText("Create a new club")).toBeVisible();
   });
 
-  // @spec AUTH-UI-004
+  // @spec AUTH-UI-004, AUTH-UI-PATH-OVERRIDE-001
   test("?path=create overrides smart detection for existing user", async ({ page }) => {
     await page.goto("/join?path=create");
     await fillIdentity(page, "alice@example.com", "Alice Chen");
@@ -302,7 +302,7 @@ test.describe("New Entry Flow — Smart detection (returning users)", () => {
     await expect(page.locator("#club-code")).toBeVisible();
   });
 
-  // @spec AUTH-UI-004
+  // @spec AUTH-UI-004, AUTH-UI-PATH-OVERRIDE-001
   test("?path=join overrides smart detection for existing user", async ({ page }) => {
     await page.goto("/join?path=join");
     await fillIdentity(page, "alice@example.com", "Alice Chen");

@@ -2,29 +2,63 @@
 
 ## Context and Design Philosophy
 
-Meetings are where the book club actually meets. Scheduling is the second-highest-friction activity after book selection (the first being "when can everyone meet?"). This LLD replaces the Doodle-poll-in-a-group-chat pattern with an integrated availability poll tied to the club's current book.
+Meetings are where the book club actually meets. Scheduling is the second-highest-friction activity after book selection. This LLD replaces the Doodle-poll-in-a-group-chat pattern with an integrated availability poll tied to the club's current book.
 
 Design philosophy: **lightweight scheduling, not a calendar app**. The system proposes times, collects availability, and confirms a meeting. It does not manage recurring schedules, integrate with external calendars (v1), or handle time zones beyond displaying them correctly.
 
-Traces to HLD Approach (Meeting Scheduling) and Success Metric (voting completes without reminder chasing — meetings inherit the same reminder infrastructure).
+Status markers: `[x]` implemented · `[ ]` gap · `[!]` divergence · `[D]` deferred
 
 ## Meeting Lifecycle
 
-```mermaid
-stateDiagram-v2
-    [*] --> Proposed: Admin proposes time slots
-    Proposed --> Confirmed: Admin confirms a time
-    Proposed --> Cancelled: Admin cancels
-    Confirmed --> Completed: Meeting time passes
-    Confirmed --> Cancelled: Admin cancels
-    Completed --> [*]
-    Cancelled --> [*]
+ASCII state diagram (greppable):
+
+```
+proposed → confirmed → completed
+proposed → cancelled
+confirmed → cancelled
 ```
 
-- **Proposed**: admin offers 2–5 candidate time slots. Members indicate availability for each.
-- **Confirmed**: admin picks a time based on availability responses. The meeting is set.
-- **Completed**: the meeting's scheduled time has passed. Automatic transition.
-- **Cancelled**: admin cancels. Members are notified.
+State: proposed — buttons shown: "Respond", per-slot "Available"/"Maybe"/"Can't", "Save Availability"; admin gap: no Confirm/Edit/Cancel buttons — transitions: → confirmed (`meetings.confirm` API; **no UI**); → cancelled (`meetings.cancel` API; **no UI**)
+State: confirmed — buttons shown: none (read-only display) — transitions: → completed (auto when time passes; **not enforced via background job**); → cancelled (API only)
+State: completed — buttons shown: "Notes" (no-op handler) — transitions: terminal
+State: cancelled — buttons shown: rendered as Past with no-op "Notes" — transitions: terminal
+
+Phase descriptions:
+- **Proposed**: admin offers 2–5 candidate slots. Members mark availability per slot.
+- **Confirmed**: admin picks one slot. Confirmed time and location are surfaced to all members.
+- **Completed**: time has passed. Today reached only by manual `meetings.update` or via the API; no scheduled job.
+- **Cancelled**: admin cancels via API. UI does not currently expose this.
+
+## Button Inventory
+
+Button: "Propose Meeting" — `create-meeting.tsx:17-24` — visible: meetings page header (admin only) — handler: opens CreateMeetingForm
+Button: filter tabs "All" / "Proposed" / "Confirmed" / "Past" — `meetings-client.tsx:74-94` — visible: always — handler: setFilter (client state)
+Button: meeting row toggle (proposed) — `meetings-client.tsx:197-219` — visible: status="proposed" — handler: expand/collapse RespondMeeting
+Button: "Respond" — `meetings-client.tsx:216-218` — visible: status="proposed" — handler: same toggle as row click
+Button: "Available" / "Maybe" / "Can't" (per slot) — `respond-meeting.tsx:97-113` — visible: respond UI expanded — handler: setSlotResponse (client state)
+Button: "Save Availability" — `respond-meeting.tsx:121-129` — visible: respond UI expanded — enabled: ≥1 slot has a response — handler: `meetings.submitAvailability`
+Button: "Notes" — `meetings-client.tsx:264` — visible: status="completed" or "cancelled" — **handler: NO-OP (no onClick wired)**
+Button: meeting title input — `create-meeting.tsx:122-129` — optional
+Button: "+ Add description" — `create-meeting.tsx:132-139` — visible: showDesc=false — handler: reveals description textarea
+Button: per-slot datetime input — `create-meeting.tsx:160-166` — always visible per slot
+Button: per-slot duration select (30/60/90/120 min) — `create-meeting.tsx:167-178` — always visible per slot
+Button: "×" remove slot — `create-meeting.tsx:179-188` — visible: slots.length > 2 — handler: removeSlot
+Button: "+ Add another time" — `create-meeting.tsx:191-200` — visible: slots.length < 5 — handler: addSlot
+Button: "Cancel" (create form) — `create-meeting.tsx:210-211` — visible: form open — handler: closes form
+Button: "Send to Members" — `create-meeting.tsx:213-221` — visible: form open — enabled: ≥2 slots have a time — handler: `meetings.create`; reloads page on success
+
+## Gaps (mutations exist, UI does not call them)
+
+Button: admin "Confirm time" per slot — `[ ]` not in UI — should call `meetings.confirm`. Mutation at `meetings.ts:141-180`.
+Button: admin "Edit meeting" — `[ ]` not in UI — should call `meetings.update`. Mutation at `meetings.ts:116-139`.
+Button: admin "Cancel meeting" — `[ ]` not in UI — should call `meetings.cancel`. Mutation at `meetings.ts:182-207`.
+Heatmap grid (admin confirm view) — `[!]` listed in older spec, not implemented.
+"Most available" badge / AI-recommended banner — `[!]` listed in older spec, not implemented.
+Linked-book dropdown in create form — `[ ]` API supports `bookId`; UI does not.
+Location text input in create form — `[ ]` API supports `location`; UI does not collect it on creation (read-only display on confirmed rows).
+Response progress bar on proposed meeting rows — `[ ]` only a textual count.
+"Notes" button handler — `[!]` button rendered without onClick.
+Auto-transition to "completed" when confirmedTime passes — `[ ]` no scheduled job; status remains "confirmed" until updated.
 
 ## Data Model
 
@@ -33,11 +67,11 @@ Meeting {
   id: UUID (PK)
   club_id: UUID (FK -> Club)
   book_id: UUID (FK -> Book, nullable -- nullable for non-book meetings)
-  title: string (default: "Meeting: {book title}")
+  title: string (default: "Meeting: {book title}" or "Club Meeting")
   description: string (nullable)
   status: enum("proposed", "confirmed", "completed", "cancelled")
   confirmed_time: timestamp (nullable -- set when confirmed)
-  location: string (nullable -- "Zoom link", "Alice's house", etc.)
+  location: string (nullable)
   created_by: UUID (FK -> User)
   created_at: timestamp
   updated_at: timestamp
@@ -47,7 +81,7 @@ MeetingTimeSlot {
   id: UUID (PK)
   meeting_id: UUID (FK -> Meeting)
   proposed_time: timestamp
-  duration_minutes: integer (default 60)
+  duration_minutes: integer (default 60; allowed 15-120)
 }
 
 AvailabilityResponse {
@@ -60,106 +94,64 @@ AvailabilityResponse {
 }
 ```
 
-## Availability Collection
-
-Members mark their availability for each time slot (available, maybe, unavailable). The admin view shows a color-coded response heatmap with the best-fit slot highlighted. For visual implementation of the availability polling UI, response summary, and admin confirmation flow, see `docs/bookclub-hub-designs/project/artboards/meetings.jsx` and `docs/design-system.md` → Color Palette (success, warning, danger colors).
-
 ## API Contracts
 
-Endpoints below are logical contracts. The implementation uses tRPC procedures (e.g., `meetings.create(...)`, `meetings.confirm(...)`) rather than REST routes.
-
-| Procedure | Auth | Input | Output |
-|-----------|------|-------|--------|
-| `meetings.list` | member | `{ clubId, status? }` | `[{ meeting, slots, responses_summary }]` |
-| `meetings.create` | admin+ | `{ clubId, title?, book_id?, description?, location?, slots: [{ time, duration? }] }` | `{ meeting, slots }` |
-| `meetings.get` | member | `{ meetingId }` | `{ meeting, slots, responses }` |
-| `meetings.update` | admin+ | `{ meetingId, title?, description?, location? }` | `{ meeting }` |
-| `meetings.confirm` | admin+ | `{ meetingId, slotId }` | `{ meeting }` (sets confirmed_time) |
-| `meetings.cancel` | admin+ | `{ meetingId }` | - |
-| `meetings.submitAvailability` | member | `{ meetingId, responses: [{ slotId, status }] }` | (replaces all responses for user) |
+| Procedure | Auth | Input | Output | Notes |
+|-----------|------|-------|--------|-------|
+| `meetings.list` | member | `{ clubId, status? }` | `[{ meeting, slots, responses }]` | createdAt DESC |
+| `meetings.create` | admin+ | `{ clubId, title?, bookId?, description?, location?, slots[] }` | `{ meeting }` | 2–5 slots, 15–120 min each |
+| `meetings.get` | member | `{ clubId, meetingId }` | `{ meeting, slots, responses }` | full detail |
+| `meetings.update` | admin+ | `{ clubId, meetingId, title?, description?, location? }` | `{ meeting }` | only provided fields |
+| `meetings.confirm` | admin+ | `{ clubId, meetingId, slotId }` | `{ meeting }` | sets confirmedTime, status="confirmed" |
+| `meetings.cancel` | admin+ | `{ clubId, meetingId }` | `{ success: true }` | sets status="cancelled" |
+| `meetings.submitAvailability` | member | `{ clubId, meetingId, responses[] }` | `{ success: true }` | replaces all prior responses for user |
 
 ## Notification Triggers (via Resend)
 
-- Meeting proposed: email all club members
-- Availability not yet submitted (48h after proposal): email non-responders
-- Meeting confirmed: email all members with time, location, and book
-- Meeting reminder: email 24 hours before confirmed time
-- Meeting cancelled: email all members
+- `[x]` Meeting proposed → email all members (`meetings.ts:31-94`)
+- `[x]` Meeting confirmed → email all members with time + location (`meetings.ts:141-180`)
+- `[x]` Meeting cancelled → email all members (`meetings.ts:182-207`)
+- `[ ]` 48h-after-proposal availability reminder for non-responders
+- `[ ]` 24h-before-confirmed-meeting reminder
 
 ## Time Zone Handling
 
-All timestamps are stored in UTC. The frontend displays times in the user's local timezone (detected from browser). The proposal UI lets the admin enter times in their local timezone; the server converts to UTC on receipt. No per-user timezone setting in v1.
+All timestamps stored in UTC (Prisma default). Frontend displays in user's local timezone via `toLocaleString` / `toLocaleTimeString`. Proposal UI uses `<input type="datetime-local">` which submits in user-local time and is converted to UTC via `new Date(s.time).toISOString()` (`create-meeting.tsx:79`). No per-user timezone setting in v1.
 
 ## Decisions & Alternatives
 
 | Decision | Chosen | Alternatives Considered | Rationale |
 |----------|--------|------------------------|-----------|
-| Scheduling model | Propose-and-respond (Doodle-style) | Fixed recurring schedule; calendar integration; free-text poll | Propose-and-respond is the proven pattern for small-group scheduling. Recurring schedules are too rigid for irregular book clubs. Calendar integration is high-effort for v1. |
-| Availability options | Three-state (available, maybe, unavailable) | Binary (yes/no); four-state (adding "prefer") | Three states capture useful nuance. Binary loses the "maybe" signal. Four states add complexity without much information gain. |
-| Who confirms the time | Admin picks from responses | Auto-confirm best fit; group vote on time | Admin picks because they know context the algorithm doesn't (e.g., "we always meet at Alice's house on Saturdays"). |
-| Meeting-book linkage | Optional FK to Book | Required; no linkage | Optional because clubs may have non-book meetings (planning, social). |
+| Scheduling model | Propose-and-respond (Doodle-style) | Fixed recurring schedule; calendar integration | Proven pattern for small-group scheduling. |
+| Availability options | Three-state (available, maybe, unavailable) | Binary; four-state | Three states capture useful nuance. |
+| Who confirms the time | Admin picks from responses | Auto-confirm best fit; group vote | Admin knows context the algorithm doesn't. (Note: UI for admin confirmation is not built yet.) |
+| Meeting-book linkage | Optional FK to Book | Required; no linkage | Optional; clubs may have non-book meetings. |
+| Slot remove threshold | Allow removal only when slots.length > 2 | Allow removal of any slot | Enforces 2-slot minimum at the UI layer. |
+| Slot add threshold | Allow add only when slots.length < 5 | Unbounded | Enforces 5-slot maximum at the UI layer. |
 
-## Open Questions & Future Decisions
+## Open Questions
 
 ### Resolved
 
 1. ✅ Doodle-style propose-and-respond.
-2. ✅ Three-state availability.
-3. ✅ Admin confirms.
+2. ✅ Three-state availability with "Available" / "Maybe" / "Can't" labels.
+3. ✅ Admin confirms (in API).
 
 ### Deferred
 
-1. **Calendar export (.ics).** Confirmed meetings should be exportable as .ics files. Straightforward but not v1 core.
-2. **Recurring meeting templates.** "We usually meet the third Thursday" — a template that pre-fills time slots.
-3. **External calendar integration (Google Calendar, Outlook).** Two-way sync is complex. Deferred.
-
-## Design Reference
-
-**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/meetings.jsx` (four interactive views: list, member-respond, admin-confirm, create flow).
-
-**Design tokens & components:**
-- Meeting title: Display serif (32px) with book metadata below
-- Availability heatmap: color-coded responses with `--success` (available), `--warning` (maybe), `--danger` (unavailable)
-- Time slots: card stack (20px padding, `--shadow-sm`), each with response counts
-- Admin confirmation: use `btn-primary` with icon `I.check` for "Confirm time"
-- Status badge: `Badge` with appropriate tone (primary for proposed, success for confirmed)
-
-**Key patterns:**
-- **Proposed view (member):**
-  - Question/prompt: "Mark your availability:" (body text, 15px)
-  - Radio buttons or pill buttons for each time slot (available, maybe, unavailable)
-  - Response count: caption text ("5 of 8 members have responded")
-  - Submit button: `btn-primary` (primary, md size)
-
-- **Admin confirm view:**
-  - Show availability heatmap: horizontal bars with color-coded dots (✓, ~, ✗)
-  - Highlight best-fit slot with `--success-soft` background
-  - "Responses" label (caption/mono, 12px)
-  - Confirm button: `btn-primary` with icon `I.check`
-
-- **Create meeting flow:**
-  - Title input: max 200 chars
-  - Description textarea: optional
-  - Location input: free-form text (Zoom link, address, etc.)
-  - Time slot inputs: proposal date/time picker, duration (default 60 min)
-  - Add/remove slot buttons: `btn-secondary` with `I.plus` / `I.x`
-
-- **Confirmed meeting card:**
-  - Display time in user's local timezone
-  - Show location and description
-  - Book cover (if linked): small size with details
-  - Member avatars: stacked overflow style
-  - Edit/cancel buttons: `btn-secondary` for edit, `btn-danger` for cancel
-
-**Typography & spacing:**
-- Time slot text: body (15px) with caption for day of week
-- Response summary: caption (12px, secondary ink)
-- Metadata (duration, location): caption (12px, tertiary ink)
+1. **Admin confirmation UI.** Heatmap, recommend-banner, "Most available" badge, and "Confirm time" button. None built.
+2. **Edit / Cancel meeting UI.** Mutations exist but no UI surfaces them.
+3. **Linked-book picker in create form.**
+4. **Location input in create form.**
+5. **"Notes" button on past meetings.** Currently a no-op placeholder.
+6. **Calendar export (.ics).**
+7. **Recurring meeting templates.**
+8. **External calendar integration (Google Calendar, Outlook).**
+9. **Auto-transition to "completed" via scheduled job.**
 
 ## References
 
-- `docs/high-level-design.md`
+- `docs/specs/meet-specs.md`
 - `docs/llds/club-management.md` — meetings are club-scoped
 - `docs/llds/book-selection-and-voting.md` — meetings link to books
-- `docs/specs/meet-specs.md`
-- `docs/design-system.md` — design tokens, Badge, Button variants
+- `docs/high-level-design.md`

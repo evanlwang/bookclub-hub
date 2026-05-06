@@ -24,23 +24,17 @@ export default function Home() {
           </span>
         </Link>
         <div className="flex items-center gap-1">
-          <Link href="#" className="text-ink-2 text-sm px-2.5 py-1.5 hover:text-ink transition-colors">
-            Pricing
-          </Link>
-          <Link href="#" className="text-ink-2 text-sm px-2.5 py-1.5 hover:text-ink transition-colors">
-            About
-          </Link>
           <Link
-            href="/join"
+            href="/login"
             className="text-ink-2 text-sm px-3 py-1.5 hover:text-ink transition-colors ml-2"
           >
-            Sign in
+            Log in
           </Link>
           <Link
             href="/join"
             className="inline-flex items-center justify-center font-medium rounded-[var(--radius-md)] bg-primary text-bg px-3 py-1.5 text-[13px] hover:bg-primary-hover transition-colors"
           >
-            Join a club
+            Sign up
           </Link>
         </div>
       </nav>
@@ -72,20 +66,22 @@ export default function Home() {
             everyone&apos;s progress — all in one place.
           </p>
 
-          {/* CTA row */}
+          {/* CTA row — two clear actions: returning users sign in, new users sign up */}
           <div className="flex gap-2.5">
             <Link
               href="/join"
+              data-testid="hero-signup"
               className="inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] bg-primary text-bg px-5 py-2.5 text-[15px] hover:bg-primary-hover transition-colors h-[46px]"
             >
-              Join a club
+              Sign up
               <ChevronRightIcon size={14} />
             </Link>
             <Link
-              href="/join"
+              href="/login"
+              data-testid="hero-login"
               className="inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] border border-line-strong text-ink px-5 py-2.5 text-[15px] hover:bg-bg-sunken transition-colors h-[46px]"
             >
-              Create a club
+              Log in
             </Link>
           </div>
 
@@ -203,17 +199,12 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-line text-[13px] text-ink-3 flex items-center justify-between" style={{ padding: "28px 56px" }}>
+      <footer className="border-t border-line text-[13px] text-ink-3 flex items-center" style={{ padding: "28px 56px" }}>
         <div className="flex items-center gap-2">
           <LogoIcon size={18} />
           <span>BookClub Hub</span>
           <span>·</span>
           <span>For people who finish the book.</span>
-        </div>
-        <div className="flex gap-4">
-          <Link href="#" className="hover:text-ink-2 transition-colors">Privacy</Link>
-          <Link href="#" className="hover:text-ink-2 transition-colors">Terms</Link>
-          <Link href="#" className="hover:text-ink-2 transition-colors">Changelog</Link>
         </div>
       </footer>
     </main>

@@ -1,3 +1,4 @@
+// @spec DISC-UI-DETAIL-001, DISC-UI-DETAIL-COMMENT-001, DISC-UI-013, DISC-UI-DETAIL-NESTED-001, DISC-UI-DETAIL-COMPOSER-001, DISC-UI-DETAIL-REPLY-002, DISC-API-005, DISC-DATA-002
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 import { getDb } from "./helpers";
@@ -14,6 +15,7 @@ test.describe("Thread Detail and Comments", () => {
     });
   });
 
+  // @spec DISC-UI-DETAIL-001
   test("thread detail page shows thread content", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -30,6 +32,7 @@ test.describe("Thread Detail and Comments", () => {
     await expect(page.getByText(thread!.title)).toBeVisible();
   });
 
+  // @spec DISC-UI-DETAIL-COMPOSER-001, DISC-API-005
   test("posting a comment adds it to the list", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
@@ -48,6 +51,7 @@ test.describe("Thread Detail and Comments", () => {
     await expect(page.getByText("This is a test comment from E2E")).toBeVisible({ timeout: 10000 });
   });
 
+  // @spec DISC-UI-013, DISC-UI-DETAIL-NESTED-001, DISC-UI-DETAIL-REPLY-002, DISC-DATA-002
   test("reply button opens reply form and posts nested reply", async ({ page }) => {
     await loginAs(page, "bob@example.com");
     const club = await getClubByCode("WEDREADS");

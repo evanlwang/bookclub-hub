@@ -156,11 +156,13 @@ function JoinPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathOverride = searchParams.get("path");
+  const welcomeFromLogin = searchParams.get("welcome") === "1";
+  const prefilledEmail = searchParams.get("email") ?? "";
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [path, setPath] = useState<"join" | "create" | null>(null);
 
   // Identity (Step 1)
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefilledEmail);
   const [displayName, setDisplayName] = useState("");
   const [identityError, setIdentityError] = useState("");
   const [signingIn, setSigningIn] = useState(false);
@@ -465,6 +467,16 @@ function JoinPageInner() {
           {/* Step 1: Identity */}
           {step === 1 && (
             <div className="space-y-4">
+              {welcomeFromLogin && (
+                <div
+                  data-testid="welcome-banner"
+                  role="status"
+                  className="p-3 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink text-[13px] border animate-fade-in"
+                  style={{ borderColor: "oklch(0.85 0.04 195)" }}
+                >
+                  We couldn&apos;t find any clubs for that email — let&apos;s get you set up below.
+                </div>
+              )}
               <div>
                 <label htmlFor="email" className="block text-[13px] font-medium text-ink-2 mb-1.5">
                   Email
@@ -511,18 +523,6 @@ function JoinPageInner() {
               >
                 {signingIn ? "Signing you in…" : "Continue"}
               </Button>
-
-              <p className="text-xs text-ink-3 text-center">
-                By continuing you agree to our{" "}
-                <a href="#" className="text-ink-2 hover:underline">
-                  Terms
-                </a>{" "}
-                and{" "}
-                <a href="#" className="text-ink-2 hover:underline">
-                  Privacy Policy
-                </a>
-                .
-              </p>
             </div>
           )}
 
