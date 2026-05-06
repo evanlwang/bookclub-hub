@@ -189,7 +189,7 @@ test.describe("Progress Page Interactions", () => {
       await expect(page.getByTestId("progress-list")).toBeVisible();
     } else {
       await page.goto(`/clubs/${club.id}/progress`);
-      await expect(page.getByTestId("no-book")).toBeVisible();
+      await expect(page.getByTestId("no-current-book")).toBeVisible();
     }
   });
 });
@@ -229,16 +229,17 @@ test.describe("Discussions Interactions", () => {
   });
 });
 
-test.describe("Clubs List Interactions", () => {
+test.describe("Sidebar Club Switcher Interactions", () => {
   // @spec CLUB-NAV-003
-  test("clicking a club card navigates to dashboard", async ({ page }) => {
+  test("opening the switcher and clicking a club navigates to its dashboard", async ({ page }) => {
     await loginAs(page, "alice@example.com");
-    await page.goto("/clubs");
+    const wedReads = await getClubByCode("WEDREADS");
 
-    await expect(page.getByTestId("club-list")).toBeVisible();
-    // Click first club
-    await page.getByTestId("club-list").locator("a").first().click();
+    await page.goto(`/clubs/${wedReads.id}`);
+    await page.getByTestId("sidebar-club-switcher").click();
+
+    await page.getByRole("link", { name: /Sci-Fi Explorers/i }).click();
     await expect(page).toHaveURL(/\/clubs\/.+/);
-    await expect(page.getByTestId("club-name")).toBeVisible();
+    await expect(page.getByTestId("club-name")).toContainText("Sci-Fi Explorers");
   });
 });

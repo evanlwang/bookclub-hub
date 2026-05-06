@@ -5,7 +5,7 @@ import { test, expect } from "@playwright/test";
  * E2E coverage for the dedicated /login route and the two-CTA landing page.
  *
  * Three login outcomes:
- *   1. Existing user with clubs       → /clubs (smart route home)
+ *   1. Existing user with clubs       → /clubs/<firstClubId> (jump straight into a club)
  *   2. Existing user with no clubs    → /join?welcome=1 (onboarding bounce)
  *   3. Unknown email                  → /join?welcome=1&email=… (no user record created)
  */
@@ -33,13 +33,13 @@ test.describe("Login Page — /login", () => {
   });
 
   // @spec AUTH-UI-LOGIN-002, AUTH-API-SIGNIN-001
-  test("returning user with clubs is routed to /clubs", async ({ page }) => {
+  test("returning user with clubs is dropped into a club dashboard", async ({ page }) => {
     await page.goto("/login");
     await page.locator("#email").fill("alice@example.com");
     await page.getByRole("button", { name: /^log in$/i }).click();
 
-    await page.waitForURL(/\/clubs(\?.*)?$/, { timeout: 10000 });
-    await expect(page.getByTestId("club-list")).toBeVisible();
+    await page.waitForURL(/\/clubs\/[^/?#]+(\?.*)?$/, { timeout: 10000 });
+    await expect(page.getByTestId("club-name")).toBeVisible();
   });
 
   // @spec AUTH-UI-LOGIN-003, AUTH-API-SIGNIN-001

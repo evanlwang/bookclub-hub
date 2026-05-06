@@ -19,11 +19,14 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 
 ## Book Selection & Navigation
 
-- `[x]` **PROG-UI-BOOK-001**: When a member navigates to `/clubs/[clubId]/progress` with no `bookId`, the system SHALL display either a book grid for selection or a message "No books have been selected yet." (`progress/page.tsx:19-81`)
+- `[x]` **PROG-UI-BOOK-001**: When a member navigates to `/clubs/[clubId]/progress` with no `bookId`, the system SHALL render the dashboard for the club's current `BookSelection` (`isCurrent: true`); if no selection exists at all, SHALL render an empty state "No books have been selected yet." (supersedes the prior "book grid" behavior).
 - `[x]` **PROG-UI-BOOK-002**: The progress page SHALL accept a `?bookId=` query parameter and show the dashboard for that book when provided.
-- `[x]` **PROG-UI-BOOK-003**: Each book in the selector grid SHALL be a clickable Link navigating to `/clubs/[clubId]/progress?bookId={bookId}`.
-- `[x]` **PROG-UI-BOOK-004**: The detail view SHALL include a back link "All books" returning to the selector grid.
+- `[D]` **PROG-UI-BOOK-003**: Deferred — replaced by the inline history picker (PROG-UI-BOOK-005..007). No standalone book grid page.
+- `[D]` **PROG-UI-BOOK-004**: Deferred — no separate selector page to return to; the picker is always inline.
 - `[x]` **PROG-API-006**: The `books.listForClub` procedure SHALL return all books that have been selected for a given club, ordered by most recently selected first. Visible to all members.
+- `[x]` **PROG-UI-BOOK-005**: The progress dashboard SHALL render an inline history picker listing the club's `BookSelection` rows, with the current selection (`isCurrent: true`) first, followed by past selections ordered by `selectedAt` DESC.
+- `[x]` **PROG-UI-BOOK-006**: Each entry in the history picker SHALL be a Link navigating to `/clubs/[clubId]/progress?bookId={bookId}`. Past entries display live `ReadingProgress` for that book (no snapshotting).
+- `[x]` **PROG-UI-BOOK-007**: The current selection in the history picker SHALL be marked with a "Current" badge; past selections SHALL NOT show the badge.
 
 ## Progress Data Model & API
 

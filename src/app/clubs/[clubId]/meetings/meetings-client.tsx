@@ -8,7 +8,10 @@ import { RespondMeeting } from "./respond-meeting";
 interface MeetingsClientProps {
   clubId: string;
   initialMeetings: any[];
+  viewerId: string;
 }
+
+type ResponseStatus = "available" | "maybe" | "unavailable";
 
 function DateBlock({ date }: { date: Date }) {
   const d = new Date(date);
@@ -47,19 +50,49 @@ function getAttendeeNames(meeting: any): string[] {
 }
 
 // @spec MEET-UI-006, MEET-UI-008, MEET-UI-009
-export function MeetingsClient({ clubId, initialMeetings }: MeetingsClientProps) {
+export function MeetingsClient({ clubId, initialMeetings, viewerId }: MeetingsClientProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [meetings, setMeetings] = useState<any[]>(initialMeetings);
+
+  // Apply the viewer's freshly saved availability to local state so the responded
+  // count refreshes without a round trip to the server.
+  function applyViewerResponses(
+    meetingId: string,
+    next: { slotId: string; status: ResponseStatus }[]
+  ) {
+    setMeetings((prev) =>
+      prev.map((m) => {
+        if (m.id !== meetingId) return m;
+        const byId = new Map(next.map((r) => [r.slotId, r.status]));
+        return {
+          ...m,
+          slots: m.slots?.map((s: any) => {
+            const others = (s.responses ?? []).filter(
+              (r: any) => r.userId !== viewerId
+            );
+            const mine = byId.get(s.id);
+            return {
+              ...s,
+              responses: mine
+                ? [...others, { slotId: s.id, userId: viewerId, status: mine }]
+                : others,
+            };
+          }),
+        };
+      })
+    );
+  }
 
   const filteredMeetings = filter === "all"
-    ? initialMeetings
-    : initialMeetings.filter((m: any) => m.status === filter || (filter === "past" && m.status === "completed"));
+    ? meetings
+    : meetings.filter((m: any) => m.status === filter || (filter === "past" && m.status === "completed"));
 
   const counts = {
-    all: initialMeetings.length,
-    proposed: initialMeetings.filter((m: any) => m.status === "proposed").length,
-    confirmed: initialMeetings.filter((m: any) => m.status === "confirmed").length,
-    past: initialMeetings.filter((m: any) => m.status === "completed").length,
+    all: meetings.length,
+    proposed: meetings.filter((m: any) => m.status === "proposed").length,
+    confirmed: meetings.filter((m: any) => m.status === "confirmed").length,
+    past: meetings.filter((m: any) => m.status === "completed").length,
   };
 
   return (
@@ -119,6 +152,8 @@ export function MeetingsClient({ clubId, initialMeetings }: MeetingsClientProps)
                     expanded={expandedId === meeting.id}
                     onToggle={() => setExpandedId(expandedId === meeting.id ? null : meeting.id)}
                     clubId={clubId}
+                    viewerId={viewerId}
+                    onResponsesUpdated={(next) => applyViewerResponses(meeting.id, next)}
                     onDone={() => setExpandedId(null)}
                   />
                 )}
@@ -181,16 +216,26 @@ function ProposedMeetingRow({
   expanded,
   onToggle,
   clubId,
+  viewerId,
+  onResponsesUpdated,
   onDone,
 }: {
   meeting: any;
   expanded: boolean;
   onToggle: () => void;
   clubId: string;
+  viewerId: string;
+  onResponsesUpdated: (next: { slotId: string; status: ResponseStatus }[]) => void;
   onDone: () => void;
 }) {
   const { responded } = getResponseCounts(meeting);
   const totalSlots = meeting.slots?.length ?? 0;
+
+  const initialResponses: Record<string, ResponseStatus> = {};
+  for (const slot of meeting.slots ?? []) {
+    const mine = (slot.responses ?? []).find((r: any) => r.userId === viewerId);
+    if (mine) initialResponses[slot.id] = mine.status as ResponseStatus;
+  }
 
   return (
     <div>
@@ -229,6 +274,8 @@ function ProposedMeetingRow({
               proposedTime: s.proposedTime,
               durationMinutes: s.durationMinutes,
             }))}
+            initialResponses={initialResponses}
+            onResponsesUpdated={onResponsesUpdated}
             onDone={onDone}
           />
         </div>

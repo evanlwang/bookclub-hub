@@ -63,14 +63,14 @@ export default function LoginPage() {
 
       document.cookie = `session_id=${result.sessionId}; path=/; max-age=${30 * 24 * 60 * 60}`;
 
-      // User exists — check whether they have any clubs.
+      // User exists — drop them straight into their first club.
       try {
         const meInput = encodeURIComponent(JSON.stringify({}));
         const meRes = await fetch(`/api/trpc/auth.me?input=${meInput}`);
         const meData = await meRes.json();
         const clubs = meData.result?.data?.clubs;
         if (Array.isArray(clubs) && clubs.length > 0) {
-          router.push("/clubs");
+          router.push(`/clubs/${clubs[0].id}`);
           return;
         }
       } catch {

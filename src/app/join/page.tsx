@@ -233,14 +233,14 @@ function JoinPageInner() {
         return;
       }
 
-      // Smart detection: if user already has clubs, route to dashboard.
+      // Smart detection: if user already has clubs, drop them into their first one.
       try {
         const meInput = encodeURIComponent(JSON.stringify({}));
         const meRes = await fetch(`/api/trpc/auth.me?input=${meInput}`);
         const meData = await meRes.json();
         const clubs = meData.result?.data?.clubs;
         if (Array.isArray(clubs) && clubs.length > 0) {
-          router.push("/clubs");
+          router.push(`/clubs/${clubs[0].id}`);
           return;
         }
       } catch {

@@ -77,7 +77,7 @@ test.describe("Meeting Create and Respond", () => {
   });
 
   // @spec MEET-UI-RESP-001, MEET-UI-RESP-SAVE-001, MEET-UI-RESP-CONFIRM-001, MEET-API-003
-  test("saving availability shows confirmation", async ({ page }) => {
+  test("selecting availability auto-saves and shows confirmation", async ({ page }) => {
     await loginAs(page, "dave@example.com");
     const club = await getClubByCode("WEDREADS");
 
@@ -89,12 +89,32 @@ test.describe("Meeting Create and Respond", () => {
 
     await expect(page.getByTestId("respond-meeting")).toBeVisible();
 
-    // Select availability for first slot
+    // Selecting availability for a slot is enough — saves automatically.
     const availableBtn = page.locator("[data-testid$='-available']").first();
     await availableBtn.click();
 
-    await page.getByTestId("save-availability-btn").click();
-
     await expect(page.getByTestId("availability-saved")).toBeVisible({ timeout: 10000 });
+  });
+
+  // @spec MEET-UI-RESP-CONFIRM-001
+  test("responded count updates live after a response is saved", async ({ page }) => {
+    // Eve has not yet responded to any meeting in seed data.
+    await loginAs(page, "eve@example.com");
+    const club = await getClubByCode("WEDREADS");
+
+    await page.goto(`/clubs/${club.id}/meetings`);
+
+    const meetingCard = page.locator("[data-testid^='meeting-toggle-']").first();
+    const responseLabel = meetingCard.locator("text=/\\d+ responded/");
+    const before = (await responseLabel.textContent()) ?? "";
+    const beforeCount = Number(before.match(/(\d+) responded/)?.[1] ?? "0");
+
+    await meetingCard.click();
+    await page.locator("[data-testid$='-available']").first().click();
+    await expect(page.getByTestId("availability-saved")).toBeVisible({ timeout: 10000 });
+
+    await expect(responseLabel).toHaveText(
+      new RegExp(`${beforeCount + 1} responded`)
+    );
   });
 });

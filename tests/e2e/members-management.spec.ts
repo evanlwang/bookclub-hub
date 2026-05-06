@@ -177,7 +177,7 @@ test.describe("Members Management", () => {
   });
 
   // @spec CLUB-UI-MEMBERS-LEAVE-001, CLUB-BE-LEAVE-001
-  test("non-owner can leave the club; redirects to /clubs", async ({ page }) => {
+  test("non-owner can leave their only club; redirects to onboarding", async ({ page }) => {
     const wedreads = await getClubByCode("WEDREADS");
     const db = getDb();
     const carol = await db.user.findUniqueOrThrow({ where: { email: "carol@example.com" } });
@@ -189,7 +189,8 @@ test.describe("Members Management", () => {
     await expect(page.getByTestId("member-action-dialog")).toContainText(/Leave this club/i);
     await page.getByTestId("member-action-confirm").click();
 
-    await page.waitForURL(/\/clubs(\?.*)?$/, { timeout: 10000 });
+    // Carol is only in WEDREADS, so she lands on /join after leaving.
+    await page.waitForURL(/\/join(\?.*)?$/, { timeout: 10000 });
 
     // Membership removed
     const m = await db.membership.findUnique({

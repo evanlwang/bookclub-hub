@@ -5,6 +5,7 @@ import { roundsRouter } from "./rounds";
 import { nominationsRouter } from "./nominations";
 import { votesRouter } from "./votes";
 import { booksRouter } from "./books";
+import { catalogRouter } from "./catalog";
 import { selectionsRouter } from "./selections";
 import { meetingsRouter } from "./meetings";
 import { threadsRouter } from "./threads";
@@ -18,6 +19,7 @@ export const appRouter = router({
   nominations: nominationsRouter,
   votes: votesRouter,
   books: booksRouter,
+  catalog: catalogRouter,
   selections: selectionsRouter,
   meetings: meetingsRouter,
   threads: threadsRouter,

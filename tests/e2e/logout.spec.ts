@@ -26,30 +26,19 @@ test.describe("Sign Out", () => {
     expect(await getSessionCookie(page)).toBeUndefined();
   });
 
-  // @spec AUTH-UI-LOGOUT-002
-  test("/clubs Sign out link clears session and redirects to /", async ({ page }) => {
-    await loginAs(page, "alice@example.com");
-
-    await page.goto("/clubs");
-    await expect(page.getByTestId("club-list")).toBeVisible({ timeout: 20000 });
-    await expect(await getSessionCookie(page)).toBeTruthy();
-
-    await page.getByTestId("clubs-signout").click();
-
-    await page.waitForURL("**/", { timeout: 10000 });
-    expect(new URL(page.url()).pathname).toBe("/");
-    expect(await getSessionCookie(page)).toBeUndefined();
-  });
-
   // @spec AUTH-UI-LOGOUT-003
-  test("revisiting /clubs after sign-out shows the unauthenticated state", async ({ page }) => {
+  test("revisiting a club after sign-out shows the unauthenticated state", async ({ page }) => {
     await loginAs(page, "alice@example.com");
+    const wedReads = await getClubByCode("WEDREADS");
 
-    await page.goto("/clubs");
-    await page.getByTestId("clubs-signout").click({ timeout: 20000 });
+    await page.goto(`/clubs/${wedReads.id}`);
+    await page
+      .getByRole("complementary")
+      .getByRole("button", { name: /sign out/i })
+      .click();
     await page.waitForURL("**/", { timeout: 10000 });
 
-    await page.goto("/clubs");
-    await expect(page.getByTestId("auth-error")).toBeVisible({ timeout: 10000 });
+    await page.goto(`/clubs/${wedReads.id}`);
+    await expect(page.getByTestId("club-error")).toBeVisible({ timeout: 10000 });
   });
 });

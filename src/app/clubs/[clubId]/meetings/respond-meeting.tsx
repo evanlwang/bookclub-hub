@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui";
+import { useRef, useState } from "react";
 
 type Slot = {
   id: string;
@@ -9,47 +8,44 @@ type Slot = {
   durationMinutes: number;
 };
 
+type ResponseStatus = "available" | "maybe" | "unavailable";
+
 interface RespondMeetingProps {
   clubId: string;
   meetingId: string;
   slots: Slot[];
+  initialResponses?: Record<string, ResponseStatus>;
+  onResponsesUpdated?: (
+    next: { slotId: string; status: ResponseStatus }[]
+  ) => void;
   onDone: () => void;
 }
 
-type ResponseStatus = "available" | "maybe" | "unavailable";
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export function RespondMeeting({
   clubId,
   meetingId,
   slots,
-  onDone,
+  initialResponses,
+  onResponsesUpdated,
 }: RespondMeetingProps) {
   const [responses, setResponses] = useState<Record<string, ResponseStatus>>(
-    {}
+    initialResponses ?? {}
   );
-  const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [error, setError] = useState("");
+  const requestToken = useRef(0);
 
-  function setSlotResponse(slotId: string, status: ResponseStatus) {
-    setResponses((prev) => ({ ...prev, [slotId]: status }));
-    setSaved(false);
-  }
-
-  async function handleSave() {
-    setLoading(true);
-    setError("");
-
-    const responseArray = Object.entries(responses).map(([slotId, status]) => ({
+  async function persist(next: Record<string, ResponseStatus>) {
+    const responseArray = Object.entries(next).map(([slotId, status]) => ({
       slotId,
       status,
     }));
 
-    if (responseArray.length === 0) {
-      setError("Please select availability for at least one time");
-      setLoading(false);
-      return;
-    }
+    const token = ++requestToken.current;
+    setSaveStatus("saving");
+    setError("");
 
     try {
       const res = await fetch("/api/trpc/meetings.submitAvailability", {
@@ -58,16 +54,33 @@ export function RespondMeeting({
         body: JSON.stringify({ clubId, meetingId, responses: responseArray }),
       });
       const data = await res.json();
+      // Ignore stale responses if a newer click already started.
+      if (token !== requestToken.current) return;
+
       if (data.error) {
+        setSaveStatus("error");
         setError(data.error.message || "Failed to save");
-      } else {
-        setSaved(true);
+        return;
       }
+      setSaveStatus("saved");
+      onResponsesUpdated?.(responseArray);
     } catch {
+      if (token !== requestToken.current) return;
+      setSaveStatus("error");
       setError("Something went wrong");
-    } finally {
-      setLoading(false);
     }
+  }
+
+  function setSlotResponse(slotId: string, status: ResponseStatus) {
+    // Toggle off if the same option is clicked again.
+    const next = { ...responses };
+    if (next[slotId] === status) {
+      delete next[slotId];
+    } else {
+      next[slotId] = status;
+    }
+    setResponses(next);
+    void persist(next);
   }
 
   const statusOptions: { value: ResponseStatus; label: string; color: string }[] = [
@@ -78,7 +91,7 @@ export function RespondMeeting({
 
   return (
     <div data-testid="respond-meeting" className="animate-slide-down">
-      <div className="space-y-3 mb-4">
+      <div className="space-y-3 mb-3">
         {slots.map((slot) => (
           <div
             key={slot.id}
@@ -115,21 +128,20 @@ export function RespondMeeting({
         ))}
       </div>
 
-      {error && <p className="text-sm text-danger mb-3">{error}</p>}
-
-      <div className="flex items-center gap-3">
-        <Button
-          variant="primary"
-          size="sm"
-          loading={loading}
-          onClick={handleSave}
-          data-testid="save-availability-btn"
-        >
-          Save Availability
-        </Button>
-        {saved && (
-          <span className="text-xs text-success animate-fade-in" data-testid="availability-saved">
+      <div className="flex items-center gap-2 text-xs h-5" aria-live="polite">
+        {saveStatus === "saving" && (
+          <span className="text-ink-3" data-testid="availability-saving">
+            Saving…
+          </span>
+        )}
+        {saveStatus === "saved" && (
+          <span className="text-success" data-testid="availability-saved">
             ✓ Saved
+          </span>
+        )}
+        {saveStatus === "error" && (
+          <span className="text-danger" data-testid="availability-error">
+            {error || "Couldn’t save — try again"}
           </span>
         )}
       </div>

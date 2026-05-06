@@ -2,10 +2,9 @@ import Link from "next/link";
 import { getServerCaller } from "@/trpc/server";
 import { prisma } from "@/lib/db";
 import { Card, Badge, BookCover, ProgressBar, Avatar } from "@/components/ui";
-import { ChevronLeftIcon } from "@/components/ui/icons";
 import { UpdateProgressButton } from "./update-modal";
 
-// @spec PROG-API-003, PROG-UI-001, PROG-UI-004, PROG-UI-005, PROG-UI-006, PROG-UI-007, PROG-UI-008, PROG-UI-BOOK-001
+// @spec PROG-API-003, PROG-UI-001, PROG-UI-004, PROG-UI-005, PROG-UI-006, PROG-UI-007, PROG-UI-008, PROG-UI-BOOK-001, PROG-UI-BOOK-002, PROG-UI-BOOK-005, PROG-UI-BOOK-006, PROG-UI-BOOK-007
 export default async function ProgressPage({
   params,
   searchParams,
@@ -14,72 +13,47 @@ export default async function ProgressPage({
   searchParams: Promise<{ bookId?: string }>;
 }) {
   const { clubId } = await params;
-  const { bookId } = await searchParams;
+  const { bookId: requestedBookId } = await searchParams;
+
+  let selections: any[] = [];
+  let selectionsError = "";
+  try {
+    const caller = await getServerCaller();
+    selections = await caller.selections.list({ clubId });
+  } catch (e: unknown) {
+    selectionsError = e instanceof Error ? e.message : "Error loading selections";
+  }
+
+  if (selectionsError) {
+    return (
+      <p data-testid="selections-error" className="text-danger">
+        {selectionsError}
+      </p>
+    );
+  }
+
+  const currentSelection = selections.find((s) => s.isCurrent);
+  const bookId = requestedBookId ?? currentSelection?.bookId;
 
   if (!bookId) {
-    let books: any[] = [];
-    let error = "";
-
-    try {
-      const caller = await getServerCaller();
-      books = await caller.books.listForClub({ clubId });
-    } catch (e: unknown) {
-      error = e instanceof Error ? e.message : "Error loading books";
-    }
-
     return (
       <div className="max-w-3xl">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight mb-8">
           Reading Progress
         </h1>
-
-        {error ? (
-          <Card className="p-10 text-center">
-            <p data-testid="books-error" className="text-danger text-sm">
-              {error}
-            </p>
-          </Card>
-        ) : books.length === 0 ? (
-          <Card className="p-10 text-center">
-            <p data-testid="no-books" className="text-ink-3 text-sm">
-              No books have been selected yet.
-            </p>
-          </Card>
-        ) : (
-          <div>
-            <p className="text-sm text-ink-2 mb-4">Select a book to view progress:</p>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {books.map((book) => (
-                <Link
-                  key={book.id}
-                  href={`/clubs/${clubId}/progress?bookId=${book.id}`}
-                  data-testid={`book-link-${book.id}`}
-                >
-                  <Card className="p-4 h-full cursor-pointer hover:bg-primary-soft transition-colors duration-150">
-                    {book.coverUrl && (
-                      <div className="mb-3 aspect-[2/3] overflow-hidden rounded bg-bg-soft flex items-center justify-center">
-                        <img
-                          src={book.coverUrl}
-                          alt={book.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <h3 className="font-medium text-sm text-ink line-clamp-2 mb-1">
-                      {book.title}
-                    </h3>
-                    <p className="text-xs text-ink-3">
-                      {book.author}
-                    </p>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        <Card className="p-10 text-center">
+          <p data-testid="no-current-book" className="text-ink-3 text-sm">
+            No books have been selected yet.
+          </p>
+        </Card>
       </div>
     );
   }
+
+  const orderedSelections = [
+    ...selections.filter((s) => s.isCurrent),
+    ...selections.filter((s) => !s.isCurrent),
+  ];
 
   let progress: any[] = [];
   let totalPages = 0;
@@ -92,7 +66,6 @@ export default async function ProgressPage({
     progress = await caller.progress.list({ clubId, bookId });
     myProgress = await caller.progress.me({ clubId, bookId });
     book = await prisma.book.findUnique({ where: { id: bookId } });
-    // Get book page count from the first progress entry or default
     const firstWithPages = progress.find((p: any) => p.totalPages);
     totalPages = firstWithPages?.totalPages ?? book?.pageCount ?? 0;
   } catch (e: unknown) {
@@ -115,38 +88,41 @@ export default async function ProgressPage({
     ? percentages[Math.floor(percentages.length / 2)]
     : 0;
 
+  const isViewingPast = !!requestedBookId && requestedBookId !== currentSelection?.bookId;
+
   return (
     <div className="max-w-3xl">
-      <Link
-        href={`/clubs/${clubId}/progress`}
-        className="inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink mb-4 transition-colors"
-      >
-        <ChevronLeftIcon size={14} />
-        All books
-      </Link>
-
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Reading Progress
         </h1>
-        <UpdateProgressButton
-          clubId={clubId}
-          bookId={bookId}
-          totalPages={totalPages || 412}
-          currentProgress={
-            myProgress
-              ? {
-                  currentPage: myProgress.currentPage ?? undefined,
-                  percentage: myProgress.percentage ?? undefined,
-                  currentChapter: myProgress.currentChapter ?? undefined,
-                  status: myProgress.status ?? undefined,
-                }
-              : undefined
-          }
-        />
+        {!isViewingPast && (
+          <UpdateProgressButton
+            clubId={clubId}
+            bookId={bookId}
+            totalPages={totalPages || 412}
+            currentProgress={
+              myProgress
+                ? {
+                    currentPage: myProgress.currentPage ?? undefined,
+                    percentage: myProgress.percentage ?? undefined,
+                    currentChapter: myProgress.currentChapter ?? undefined,
+                    status: myProgress.status ?? undefined,
+                  }
+                : undefined
+            }
+          />
+        )}
       </div>
 
-      {/* Book info card */}
+      {orderedSelections.length > 0 && (
+        <HistoryPicker
+          clubId={clubId}
+          selections={orderedSelections}
+          activeBookId={bookId}
+        />
+      )}
+
       {book && (
         <Card className="p-5 mb-6">
           <div className="flex gap-4 items-center">
@@ -164,6 +140,11 @@ export default async function ProgressPage({
               {book.pageCount && (
                 <p className="text-xs text-ink-3 mt-1">{book.pageCount} pages</p>
               )}
+              {isViewingPast && (
+                <p data-testid="viewing-past-notice" className="text-xs text-ink-3 mt-1 italic">
+                  Viewing a past selection — progress shown is live.
+                </p>
+              )}
             </div>
           </div>
         </Card>
@@ -177,10 +158,8 @@ export default async function ProgressPage({
         </Card>
       ) : (
         <>
-          {/* Summary card with ring + distribution */}
           <Card className="p-6 mb-6">
             <div className="flex items-center gap-8">
-              {/* Progress ring */}
               <div data-testid="progress-ring" className="relative w-[100px] h-[100px] flex-shrink-0">
                 <svg width="100" height="100" className="-rotate-90">
                   <circle cx="50" cy="50" r="42" fill="none" stroke="var(--bg-sunken, #eee)" strokeWidth="10" />
@@ -205,7 +184,6 @@ export default async function ProgressPage({
                   {finished > 0 && ` · ${finished} finished`}
                 </p>
 
-                {/* Distribution bar */}
                 <div data-testid="distribution-bar" className="flex rounded-lg overflow-hidden h-3 mb-2 bg-[var(--bg-sunken)]">
                   {finished > 0 && (
                     <div style={{ width: `${(finished / progress.length) * 100}%` }} className="bg-[var(--accent,oklch(0.78_0.13_75))]" />
@@ -218,7 +196,6 @@ export default async function ProgressPage({
                   )}
                 </div>
 
-                {/* Legend */}
                 <div className="flex gap-4 text-xs">
                   <span data-testid="legend-finished" className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-sm bg-[var(--accent,oklch(0.78_0.13_75))]" />
@@ -237,7 +214,6 @@ export default async function ProgressPage({
             </div>
           </Card>
 
-          {/* Member list */}
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="font-[var(--font-display)] text-lg font-semibold text-ink">Where everyone is</h2>
             <span className="text-xs text-ink-3">Sorted by progress</span>
@@ -303,6 +279,52 @@ export default async function ProgressPage({
           </Card>
         </>
       )}
+    </div>
+  );
+}
+
+function HistoryPicker({
+  clubId,
+  selections,
+  activeBookId,
+}: {
+  clubId: string;
+  selections: any[];
+  activeBookId: string;
+}) {
+  return (
+    <div data-testid="history-picker" className="mb-6">
+      <p className="text-xs uppercase tracking-wide text-ink-3 mb-2">Book history</p>
+      <ul className="flex gap-2 overflow-x-auto pb-1">
+        {selections.map((s) => {
+          const isActive = s.bookId === activeBookId;
+          return (
+            <li key={s.id} className="shrink-0">
+              <Link
+                href={`/clubs/${clubId}/progress?bookId=${s.bookId}`}
+                data-testid={`history-item-${s.bookId}`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                  isActive
+                    ? "border-primary bg-primary-soft text-ink"
+                    : "border-line bg-bg hover:bg-bg-soft text-ink-2"
+                }`}
+              >
+                <span className="font-medium truncate max-w-[180px]">{s.book?.title ?? "Untitled"}</span>
+                {s.isCurrent && (
+                  <span data-testid="history-current-badge">
+                    <Badge tone="primary">Current</Badge>
+                  </span>
+                )}
+                {!s.isCurrent && s.finishedAt && (
+                  <span className="text-xs text-ink-3">
+                    {new Date(s.finishedAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                  </span>
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

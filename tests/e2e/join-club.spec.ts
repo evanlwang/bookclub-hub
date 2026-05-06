@@ -281,11 +281,11 @@ test.describe("Landing Page → Join page navigation", () => {
 
 test.describe("New Entry Flow — Smart detection (returning users)", () => {
   // @spec AUTH-UI-004
-  test("returning user (alice) routes directly to /clubs after Step 1", async ({ page }) => {
+  test("returning user (alice) routes directly into a club after Step 1", async ({ page }) => {
     await page.goto("/join");
     await fillIdentity(page, "alice@example.com", "Alice Chen");
-    await page.waitForURL(/\/clubs(\?.*)?$/, { timeout: 10000 });
-    await expect(page.getByTestId("club-list")).toBeVisible();
+    await page.waitForURL(/\/clubs\/[^/?#]+(\?.*)?$/, { timeout: 10000 });
+    await expect(page.getByTestId("club-name")).toBeVisible();
   });
 
   // @spec AUTH-UI-004, AUTH-UI-002
@@ -404,10 +404,10 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
     await page.locator("#name").fill("Alice Chen");
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Smart detection: auth.me finds clubs.length > 0 → router.push("/clubs")
+    // Smart detection: auth.me finds clubs.length > 0 → router.push(`/clubs/${firstClubId}`)
     // No path-choice cards are ever rendered.
-    await page.waitForURL(/\/clubs(\?.*)?$/, { timeout: 10000 });
-    await expect(page.getByTestId("club-list")).toBeVisible();
+    await page.waitForURL(/\/clubs\/[^/?#]+(\?.*)?$/, { timeout: 10000 });
+    await expect(page.getByTestId("club-name")).toBeVisible();
     await expect(page.getByText("Join an existing club")).toHaveCount(0);
   });
 

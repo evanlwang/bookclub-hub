@@ -106,7 +106,22 @@ export function MembersClient({
         case "leave":
           await callMutation("clubs.leave", { clubId });
           // Owner-cannot-leave is enforced server-side; non-owners redirect.
-          router.push("/clubs");
+          // Drop into a remaining club if any, else send to onboarding.
+          try {
+            const meRes = await fetch(
+              `/api/trpc/auth.me?input=${encodeURIComponent(JSON.stringify({}))}`
+            );
+            const meData = await meRes.json();
+            const remaining = meData.result?.data?.clubs;
+            if (Array.isArray(remaining) && remaining.length > 0) {
+              router.push(`/clubs/${remaining[0].id}`);
+              router.refresh();
+              return;
+            }
+          } catch {
+            // Fall through to /join.
+          }
+          router.push("/join?welcome=1");
           router.refresh();
           return;
       }

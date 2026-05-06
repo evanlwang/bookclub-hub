@@ -12,11 +12,17 @@ export default async function MeetingsPage({
   const { clubId } = await params;
 
   let meetings: any[] = [];
+  let viewerId = "";
   let error = "";
 
   try {
     const caller = await getServerCaller();
-    meetings = await caller.meetings.list({ clubId });
+    const [meetingsResult, me] = await Promise.all([
+      caller.meetings.list({ clubId }),
+      caller.auth.me(),
+    ]);
+    meetings = meetingsResult;
+    viewerId = me.user.id;
   } catch (e: unknown) {
     error = e instanceof Error ? e.message : "Error loading meetings";
   }
@@ -34,7 +40,7 @@ export default async function MeetingsPage({
         <ChevronLeftIcon size={14} />
         Dashboard
       </Link>
-      <MeetingsClient clubId={clubId} initialMeetings={meetings} />
+      <MeetingsClient clubId={clubId} initialMeetings={meetings} viewerId={viewerId} />
     </div>
   );
 }

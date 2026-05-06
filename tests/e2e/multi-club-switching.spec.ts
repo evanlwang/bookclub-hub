@@ -3,28 +3,29 @@ import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 
 test.describe("Multi-Club Switching", () => {
-  test("user in multiple clubs sees all clubs listed", async ({ page }) => {
+  test("user in multiple clubs sees the sidebar switcher with all clubs", async ({ page }) => {
     // Alice is in both WEDREADS and SCIFI42
     await loginAs(page, "alice@example.com");
+    const wedReads = await getClubByCode("WEDREADS");
 
-    await page.goto("/clubs");
+    await page.goto(`/clubs/${wedReads.id}`);
+    await page.getByTestId("sidebar-club-switcher").click();
 
-    await expect(page.getByTestId("club-list")).toBeVisible();
     await expect(page.getByText("Wednesday Night Reads")).toBeVisible();
     await expect(page.getByText("Sci-Fi Explorers")).toBeVisible();
   });
 
-  test("clicking a club navigates to its dashboard", async ({ page }) => {
+  test("clicking another club in the switcher navigates to its dashboard", async ({ page }) => {
     await loginAs(page, "alice@example.com");
-    const club = await getClubByCode("WEDREADS");
+    const wedReads = await getClubByCode("WEDREADS");
+    const sciFi = await getClubByCode("SCIFI42");
 
-    await page.goto("/clubs");
-    await page.getByText("Wednesday Night Reads").click();
+    await page.goto(`/clubs/${wedReads.id}`);
+    await page.getByTestId("sidebar-club-switcher").click();
+    await page.getByRole("link", { name: /Sci-Fi Explorers/i }).click();
 
-    await expect(page).toHaveURL(`/clubs/${club.id}`);
-    await expect(page.getByTestId("club-name")).toContainText(
-      "Wednesday Night Reads"
-    );
+    await expect(page).toHaveURL(`/clubs/${sciFi.id}`);
+    await expect(page.getByTestId("club-name")).toContainText("Sci-Fi Explorers");
   });
 
   test("club dashboard shows navigation to all sections", async ({ page }) => {
@@ -49,11 +50,13 @@ test.describe("Multi-Club Switching", () => {
     await expect(page.getByTestId("club-error")).toBeVisible();
   });
 
-  test("unauthenticated user sees auth error on clubs page", async ({
-    page,
-  }) => {
-    await page.goto("/clubs");
+  test("user in only one club has no switcher (just the club name)", async ({ page }) => {
+    // Carol is only in WEDREADS
+    await loginAs(page, "carol@example.com");
+    const wedReads = await getClubByCode("WEDREADS");
 
-    await expect(page.getByTestId("auth-error")).toBeVisible();
+    await page.goto(`/clubs/${wedReads.id}`);
+
+    await expect(page.getByTestId("sidebar-club-switcher")).toHaveCount(0);
   });
 });
