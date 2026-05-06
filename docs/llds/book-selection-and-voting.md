@@ -19,7 +19,7 @@ voting → cancelled
 ```
 
 State: nominating — buttons shown: "Search & nominate", "Advance to Voting" (admin) — transitions: → voting (admin clicks "Advance to Voting"; needs ≥2 nominations); → cancelled (admin via API only)
-State: voting — buttons shown: nomination cards, "Submit N votes" / "✓ Voted — Update N?", "Close voting & reveal winner" (admin), "Cancel round" (admin) — transitions: → decided (admin clicks Close voting → `rounds.advance`); → cancelled (admin clicks Cancel round → `rounds.cancel`)
+State: voting — buttons shown: nomination cards, "Submit N votes" / "Save changes" / "✓ Votes saved", "Close voting & reveal winner" (admin), "Cancel round" (admin) — transitions: → decided (admin clicks Close voting → `rounds.advance`); → cancelled (admin clicks Cancel round → `rounds.cancel`)
 State: decided — buttons shown: "Start new round" (admin) — transitions: terminal
 State: cancelled — buttons shown: none — transitions: terminal
 
@@ -36,7 +36,7 @@ Exact rendered labels in the running app, with conditions and handlers.
 Button: "Search & nominate" — `vote-round.tsx:402-409` — visible: status="nominating" — enabled: always — handler: opens NominateModal
 Button: "Advance to Voting" — `vote-round.tsx:440-449` — visible: status="nominating" AND isAdmin — enabled: nominations.length ≥ 2 — handler: `rounds.advance`
 Button: nomination card (clickable) — `vote-round.tsx:155-196` — visible: status="voting" — enabled: not (selected.length ≥ maxApprovals AND !isSelected) — handler: toggleSelection
-Button: "Submit {N} votes" / "✓ Voted — Update {N}?" — `vote-round.tsx:204-216` — visible: status="voting" — enabled: selected.length ≥ 1 — handler: `votes.submit`
+Button: "Submit {N} votes" / "Save changes" / "✓ Votes saved" — visible: status="voting" — three states driven by `(hasVoted, hasPendingChanges)` (VOTE-UI-VOTE-003): "Submit N votes" pre-vote, "Save changes" when voted+edited, disabled "✓ Votes saved" when voted+unedited — handler: `votes.submit`
 Button: "Close voting & reveal winner" — visible: status="voting" AND isAdmin — enabled: at least one approval cast — handler: opens close-voting dialog → on confirm calls `rounds.advance` (CLOSE-002..006)
 Button: "Cancel round" — visible: (status="nominating" OR "voting") AND isAdmin — enabled: always — handler: opens typed-confirmation dialog → calls `rounds.cancel` (CANCEL-002)
 Button: "Start new round" — `vote-round.tsx:331-339` — visible: status="decided" AND isAdmin — enabled: always — handler: `rounds.create`

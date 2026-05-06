@@ -68,8 +68,11 @@ test.describe("Voting Interactions", () => {
       await page.getByTestId("submit-votes-btn").click();
       await expect(page.getByTestId("vote-success")).toBeVisible({ timeout: 10000 });
 
-      // After submit, label flips to "✓ Voted — Update {N}?" — VOTE-UI-VOTE-003 post-vote variant
-      await expect(page.getByTestId("submit-votes-btn")).toContainText(/Voted.*Update 2/);
+      // After submit with no further toggles, the button enters the saved/disabled state.
+      // VOTE-UI-VOTE-003 — voted, no pending edits → "✓ Votes saved" disabled.
+      await expect(page.getByTestId("submit-votes-btn")).toHaveAttribute("data-state", "saved");
+      await expect(page.getByTestId("submit-votes-btn")).toContainText(/Votes saved/i);
+      await expect(page.getByTestId("submit-votes-btn")).toBeDisabled();
     } finally {
       // Cleanup
       await db.vote.deleteMany({ where: { roundId: round.id } });

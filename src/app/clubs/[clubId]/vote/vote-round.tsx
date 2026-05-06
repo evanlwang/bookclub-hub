@@ -88,6 +88,15 @@ export function VoteRound({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialVotesKey]);
 
+  // @spec VOTE-UI-VOTE-003
+  // True when the local selection diverges from what's persisted server-side,
+  // i.e. the user has toggled something since their last save (or never saved).
+  // Drives the submit button's enabled/label state so a voted user with no
+  // pending edits sees "Votes saved" rather than the actionable "Save changes".
+  const selectedKey = [...selected].sort().join(",");
+  const persistedKey = [...initialVotes].sort().join(",");
+  const hasPendingChanges = selectedKey !== persistedKey;
+
   // @spec VOTE-BE-003
   function toggleSelection(nominationId: string) {
     // Clear the just-submitted toast as soon as the user starts changing their picks again.
@@ -223,7 +232,7 @@ export function VoteRound({
                   data-testid="prior-vote-hint"
                   className="text-xs text-ink-3 italic"
                 >
-                  You voted previously — toggle a selection to update.
+                  You voted previously — tap a book to add or remove it, then save your changes.
                 </span>
               )}
             </div>
@@ -305,18 +314,34 @@ export function VoteRound({
             <p className="text-sm text-danger mb-3">{error}</p>
           )}
 
+          {/*
+            Three-state submit button:
+              - never voted, has picks  → "Submit N votes" (primary, enabled)
+              - voted, no pending edits → "✓ Votes saved" (disabled, calm — no action to take)
+              - voted, pending edits    → "Save changes" (primary, enabled — clear update verb)
+            Loading collapses everything to the spinner regardless.
+          */}
           <Button
             variant="primary"
             size="lg"
             className="w-full"
             loading={loading}
-            disabled={selected.length === 0}
+            disabled={selected.length === 0 || (hasVoted && !hasPendingChanges)}
             onClick={handleSubmitVotes}
             data-testid="submit-votes-btn"
+            data-state={
+              !hasVoted
+                ? "first-submit"
+                : hasPendingChanges
+                  ? "save-changes"
+                  : "saved"
+            }
           >
-            {hasVoted
-              ? `✓ Voted — Update ${selected.length}?`
-              : `Submit ${selected.length} vote${selected.length !== 1 ? "s" : ""}`}
+            {!hasVoted
+              ? `Submit ${selected.length} vote${selected.length !== 1 ? "s" : ""}`
+              : hasPendingChanges
+                ? `Save changes`
+                : `✓ Votes saved`}
           </Button>
 
           {/* @spec VOTE-UI-UPDATE-CONFIRM-001 */}

@@ -2,11 +2,6 @@
 import { test, expect } from "@playwright/test";
 import { loginAs, getDb } from "./helpers";
 
-// These tests share the WEDREADS club and create their own voting rounds.
-// Running them serially avoids cross-contamination from the page's `.find()`
-// over multiple active rounds in the same club.
-test.describe.configure({ mode: "serial" });
-
 /**
  * E2E coverage for the prior-votes load + live-turnout update behaviors.
  *
@@ -28,13 +23,34 @@ type Fixture = {
 
 async function createVotingRoundFixture(): Promise<Fixture> {
   const db = getDb();
-  // Use SCIFI42 — the seed has no active voting round there, so we can create
-  // our own without colliding with voting-sidebar.spec.ts which depends on
-  // the WEDREADS seed round being intact.
-  const club = await db.club.findUniqueOrThrow({ where: { code: "SCIFI42" } });
+  // Create a dedicated test club + memberships per fixture to avoid colliding
+  // with other e2e specs that touch WEDREADS or SCIFI42 in parallel
+  // (voting-sidebar.spec.ts, voting-phases.spec.ts, etc.). The cleanup tears
+  // it all down. dave/alice are added as members so loginAs works downstream.
   const alice = await db.user.findUniqueOrThrow({ where: { email: "alice@example.com" } });
+  const dave = await db.user.findUniqueOrThrow({ where: { email: "dave@example.com" } });
   const books = await db.book.findMany({ take: 3 });
   if (books.length < 3) throw new Error("Need 3 seeded books for voting fixture");
+
+  // Combine time + random to avoid collisions across parallel workers.
+  const uniqueCode = `VPF${Math.floor(Math.random() * 36 ** 6)
+    .toString(36)
+    .padStart(6, "0")
+    .toUpperCase()
+    .slice(0, 6)}`;
+  const club = await db.club.create({
+    data: {
+      name: `Vote Persistence Fixture ${uniqueCode}`,
+      code: uniqueCode,
+      createdBy: alice.id,
+    },
+  });
+  await db.membership.createMany({
+    data: [
+      { clubId: club.id, userId: alice.id, role: "owner" },
+      { clubId: club.id, userId: dave.id, role: "member" },
+    ],
+  });
 
   const round = await db.votingRound.create({
     data: {
@@ -62,6 +78,8 @@ async function createVotingRoundFixture(): Promise<Fixture> {
       await db.nomination.deleteMany({ where: { roundId: round.id } });
       await db.bookSelection.deleteMany({ where: { roundId: round.id } });
       await db.votingRound.deleteMany({ where: { id: round.id } });
+      await db.membership.deleteMany({ where: { clubId: club.id } });
+      await db.club.deleteMany({ where: { id: club.id } });
     },
   };
 }
@@ -132,14 +150,43 @@ test.describe("Vote persistence — prior selections on page load", () => {
   });
 
   // @spec VOTE-UI-PRIOR-VOTES-002
-  test("submit button reads 'Update N?' on page load when prior votes exist", async ({ page }) => {
+  test("submit button shows the saved/disabled state on page load when prior votes exist", async ({ page }) => {
     const fixture = await createVotingRoundFixture();
     try {
       await castPriorVotes(fixture.roundId, "dave@example.com", [fixture.noms.dune]);
       await loginAs(page, "dave@example.com");
 
       await page.goto(`/clubs/${fixture.clubId}/vote`);
-      await expect(page.getByTestId("submit-votes-btn")).toContainText(/Voted.*Update 1/);
+      const btn = page.getByTestId("submit-votes-btn");
+      await expect(btn).toHaveAttribute("data-state", "saved");
+      await expect(btn).toContainText(/Votes saved/i);
+      await expect(btn).toBeDisabled();
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
+  // @spec VOTE-UI-VOTE-003, VOTE-UI-PRIOR-VOTES-002
+  test("toggling a nomination flips the button to 'Save changes' (enabled)", async ({ page }) => {
+    const fixture = await createVotingRoundFixture();
+    try {
+      await castPriorVotes(fixture.roundId, "dave@example.com", [fixture.noms.dune]);
+      await loginAs(page, "dave@example.com");
+
+      await page.goto(`/clubs/${fixture.clubId}/vote`);
+      const btn = page.getByTestId("submit-votes-btn");
+      await expect(btn).toHaveAttribute("data-state", "saved");
+
+      // Adding a second pick creates pending changes.
+      await page.getByTestId(`nomination-${fixture.noms.kindred}`).click();
+      await expect(btn).toHaveAttribute("data-state", "save-changes");
+      await expect(btn).toContainText(/Save changes/i);
+      await expect(btn).toBeEnabled();
+
+      // Toggling it back off restores the saved state.
+      await page.getByTestId(`nomination-${fixture.noms.kindred}`).click();
+      await expect(btn).toHaveAttribute("data-state", "saved");
+      await expect(btn).toBeDisabled();
     } finally {
       await fixture.cleanup();
     }
