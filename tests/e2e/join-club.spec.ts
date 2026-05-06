@@ -255,3 +255,53 @@ test.describe("Landing Page → Join page navigation", () => {
     ).toBeVisible();
   });
 });
+
+test.describe("New Entry Flow — Smart detection (returning users)", () => {
+  /**
+   * @spec AUTH-UI-004: After Step 1, the client calls auth.me to detect
+   * existing memberships. Users with clubs auto-redirect to /clubs;
+   * users with zero clubs continue to Step 2; ?path=join|create
+   * bypasses smart detection entirely.
+   */
+
+  test("returning user (alice) routes directly to /clubs after Step 1", async ({ page }) => {
+    await page.goto("/join");
+    await fillIdentity(page, "alice@example.com", "Alice Chen");
+    await page.waitForURL(/\/clubs(\?.*)?$/, { timeout: 10000 });
+    await expect(page.getByTestId("club-list")).toBeVisible();
+  });
+
+  test("brand-new email lands on Step 2 (path choice)", async ({ page }) => {
+    const uniqueEmail = `solo-${Date.now()}@example.com`;
+    await page.goto("/join");
+    await fillIdentity(page, uniqueEmail, "Solo User");
+    await expect(page.getByText("Join an existing club")).toBeVisible();
+    await expect(page.getByText("Create a new club")).toBeVisible();
+  });
+
+  test("?path=create overrides smart detection for existing user", async ({ page }) => {
+    await page.goto("/join?path=create");
+    await fillIdentity(page, "alice@example.com", "Alice Chen");
+    // Should be on Step 3b (create branch), NOT redirected to /clubs
+    await expect(page.locator("#club-name")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("#club-code")).toBeVisible();
+  });
+
+  test("?path=join overrides smart detection for existing user", async ({ page }) => {
+    await page.goto("/join?path=join");
+    await fillIdentity(page, "alice@example.com", "Alice Chen");
+    // Should be on Step 3a (join branch), NOT redirected to /clubs
+    await expect(page.locator("#code")).toBeVisible({ timeout: 10000 });
+  });
+
+  test("header shows plain copy, not a Sign in button", async ({ page }) => {
+    await page.goto("/join");
+    // The old broken "Sign in" button should be gone.
+    await expect(
+      page.locator("header").getByRole("button", { name: /^sign in$/i })
+    ).toHaveCount(0);
+    await expect(page.locator("header")).toContainText(
+      /already a member.*just enter your email above/i
+    );
+  });
+});
