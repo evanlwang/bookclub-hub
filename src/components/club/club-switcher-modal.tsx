@@ -237,7 +237,7 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="club-switcher-modal-title"
-      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
       onClick={handleClose}
     >
       <Card

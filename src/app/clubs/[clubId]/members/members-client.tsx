@@ -329,7 +329,7 @@ function ActionDialog({
       data-testid="member-action-dialog"
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget && !submitting) onCancel();
       }}

@@ -42,6 +42,8 @@ function StepDot({ n, state }: { n: number; state: "active" | "done" | "inactive
   );
 }
 
+// @spec JOIN-UI-003 — 3-dot stepper (Identity → Path → Branch). Step 4 is the
+// success state and is shown without a stepper, so it is not represented here.
 function Stepper({ step, stepLabel }: { step: 1 | 2 | 3 | 4; stepLabel?: string }) {
   function dotState(n: number): "active" | "done" | "inactive" {
     if (n < step) return "done";
@@ -56,8 +58,6 @@ function Stepper({ step, stepLabel }: { step: 1 | 2 | 3 | 4; stepLabel?: string 
       <StepDot n={2} state={dotState(2)} />
       <div className={`flex-1 h-px ${step > 2 ? "bg-primary" : "bg-line"}`} />
       <StepDot n={3} state={dotState(3)} />
-      <div className={`flex-1 h-px ${step > 3 ? "bg-primary" : "bg-line"}`} />
-      <StepDot n={4} state={dotState(4)} />
       {stepLabel && <span className="text-xs font-medium text-ink-2 ml-2">{stepLabel}</span>}
     </div>
   );

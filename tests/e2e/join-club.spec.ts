@@ -206,10 +206,14 @@ test.describe("New Entry Flow — Step 3b: Create branch", () => {
 
 test.describe("New Entry Flow — Stepper", () => {
   // @spec AUTH-UI-001
-  test("Stepper shows 4 steps with current state", async ({ page }) => {
+  test("Stepper shows 3 steps with the first one active by default", async ({ page }) => {
     await page.goto("/join");
     await expect(page.getByTestId("stepper")).toBeVisible();
     await expect(page.getByTestId("step-dot-1")).toHaveAttribute("data-state", "active");
+    await expect(page.getByTestId("step-dot-2")).toHaveAttribute("data-state", "inactive");
+    await expect(page.getByTestId("step-dot-3")).toHaveAttribute("data-state", "inactive");
+    // No 4th dot — step 4 is the success state, shown without a stepper.
+    await expect(page.getByTestId("step-dot-4")).toHaveCount(0);
   });
 
   // @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003

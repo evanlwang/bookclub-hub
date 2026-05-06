@@ -104,7 +104,7 @@ function UpdateModal({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-ink/30"
+        className="absolute inset-0 backdrop-blur-md bg-bg/40"
         onClick={onClose}
       />
       {/* Modal */}
