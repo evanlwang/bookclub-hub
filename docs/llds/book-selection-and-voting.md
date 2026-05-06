@@ -90,55 +90,11 @@ When a member nominates a book, they can search by title or ISBN. The system que
 
 If the API is unavailable, the member can enter metadata manually. The API is a convenience, not a dependency.
 
-```
-┌──────────────────────────────────────────────┐
-│  Nominate a Book                             │
-│                                              │
-│  Search: [The Left Hand of Darkne___]  [🔍] │
-│                                              │
-│  Results:                                    │
-│  ┌────────────────────────────────────────┐  │
-│  │ 📖 The Left Hand of Darkness          │  │
-│  │    Ursula K. Le Guin · 1969 · 304pp   │  │
-│  │    [Nominate this]                     │  │
-│  ├────────────────────────────────────────┤  │
-│  │ 📖 The Left Hand of Darkness (audio)  │  │
-│  │    Ursula K. Le Guin · 2010            │  │
-│  │    [Nominate this]                     │  │
-│  └────────────────────────────────────────┘  │
-│                                              │
-│  Can't find it? [Enter manually]             │
-└──────────────────────────────────────────────┘
-```
+See `docs/design-system.md` → Components → Book Cover and the design artboards for the visual implementation of book search, selection, and nomination flow.
 
-## Voting UI
+## Voting Interaction
 
-```
-┌──────────────────────────────────────────────┐
-│  Vote for Next Book (approve up to 3)        │
-│  Deadline: May 20, 2026                      │
-│  8 of 12 members have voted                  │
-│                                              │
-│  ┌────────────────────────────────────────┐  │
-│  │ [✓] The Left Hand of Darkness         │  │
-│  │     Nominated by Alice                │  │
-│  │     "A classic we've never read"      │  │
-│  ├────────────────────────────────────────┤  │
-│  │ [ ] Project Hail Mary                 │  │
-│  │     Nominated by Bob                  │  │
-│  │     "Fun and accessible"              │  │
-│  ├────────────────────────────────────────┤  │
-│  │ [✓] Kindred                           │  │
-│  │     Nominated by Carol                │  │
-│  │     "Powerful and discussable"        │  │
-│  └────────────────────────────────────────┘  │
-│                                              │
-│  You have approved 2 of 3 allowed.           │
-│  [Submit Vote]                               │
-└──────────────────────────────────────────────┘
-```
-
-Vote tallies are hidden until the voting phase ends (to prevent bandwagoning). After the round is decided, results are visible to all members.
+Vote tallies are hidden until the voting phase ends (to prevent bandwagoning). After the round is decided, results are visible to all members. For visual details on the voting UI and member approval checkboxes, see the design artboards at `docs/bookclub-hub-designs/project/artboards/voting.jsx`.
 
 ## API Contracts
 
@@ -188,8 +144,45 @@ Endpoints below are logical contracts. The implementation uses tRPC procedures (
 2. **Reading history analytics.** Genre distribution, pace over time, author diversity. Interesting but not v1.
 3. **"I've already read this" flag.** A member could flag a nomination as already-read. Useful signal but adds UI complexity.
 
+## Design Reference
+
+**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/voting.jsx` (three interactive phases: Nominating, Voting, Decided).
+
+**Design tokens & components:**
+- Book covers: `BookCover` component with six color variants (`cv-teal`, `cv-rust`, `cv-sage`, `cv-mauve`, `cv-amber`, `cv-ink`)
+- Status badges: `Badge` with tones (e.g., `tone="primary"` for Nominating phase)
+- Checkboxes: custom styled with primary teal on checked state
+- Progress indicators: show vote count / total members (secondary ink color)
+- Card layout: each nomination in a card with 20px padding, `--shadow-sm` elevation
+- Buttons: `btn-primary` for submit/confirm actions, `btn-secondary` for fallback options
+
+**Key patterns:**
+- **Nomination phase UI:**
+  - Book search with Open Library results in a scrollable list
+  - Manual entry fallback with title/author inputs
+  - Pitch textarea (optional, max 500 chars)
+  
+- **Voting phase UI:**
+  - Checkboxes for approval selection (up to N per member)
+  - Show approval count vs. max allowed
+  - Vote tallies hidden until phase ends (prevent bandwagoning)
+  - Timestamp metadata for nominator and deadline
+
+- **Decided phase UI:**
+  - Winner highlighted with `Badge tone="success"` and `I.check` icon
+  - Full vote breakdown visible
+  - Tie-breaking note (earliest nomination) if applicable
+  - "Next Book" card transitions to current book
+
+**Typography & spacing:**
+- Nomination title: Title class (20px serif, 600 weight)
+- Nominator name: Caption class (12px, secondary ink)
+- Pitch text: Body class (15px, 1.55 line-height)
+- Phase indicator: Badge at top (12px, bold, primary tone)
+
 ## References
 
 - `docs/high-level-design.md`
 - `docs/llds/club-management.md` — rounds are scoped to clubs
 - `docs/specs/vote-specs.md`
+- `docs/design-system.md` — design tokens, BookCover component, Badge variants

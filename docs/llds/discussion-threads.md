@@ -22,28 +22,7 @@ Each member's reading progress (from the Reading Progress LLD) includes a `curre
 
 The member can override the filter at any time ("Show all threads — spoiler warning"). The override is per-session, not persistent.
 
-```
-┌──────────────────────────────────────────────┐
-│  Discussions: Dune                           │
-│  Your progress: Chapter 12 (page 187)        │
-│                                              │
-│  [New Thread]  Filter: [Up to my progress ▾] │
-│                                              │
-│  ┌────────────────────────────────────────┐  │
-│  │ The water discipline worldbuilding     │  │
-│  │ Ch. 3 · Alice · 5 comments · 2d ago   │  │
-│  ├────────────────────────────────────────┤  │
-│  │ Paul's prescience -- too convenient?   │  │
-│  │ Ch. 10 · Bob · 12 comments · 1d ago   │  │
-│  ├────────────────────────────────────────┤  │
-│  │ General: Favorite quotes so far        │  │
-│  │ No chapter · Carol · 3 comments · 3h  │  │
-│  └────────────────────────────────────────┘  │
-│                                              │
-│  ⚠ 2 threads hidden (beyond Chapter 12)      │
-│  [Show all -- spoilers ahead]                │
-└──────────────────────────────────────────────┘
-```
+For the visual implementation of thread lists with chapter chips, spoiler filtering UI, and the override toggle, see `docs/bookclub-hub-designs/project/artboards/discussions.jsx` and `docs/design-system.md` → Components → ChapterChip.
 
 ## Data Model
 
@@ -121,9 +100,59 @@ Thread bodies and comment bodies are plain text with Markdown support (CommonMar
 3. **Thread search.** Full-text search across threads and comments within a book.
 4. **Edit history.** Show previous versions of edited comments.
 
+## Design Reference
+
+**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/discussions.jsx` (three interactive views: thread list with spoiler filtering, thread detail, compose).
+
+**Design tokens & components:**
+- Thread list: card stack (16px gap), each card 20px padding, `--shadow-sm` elevation
+- Chapter chip: `ChapterChip` component (5-color rotating palette, auto-hues by chapter number)
+- Thread title: Title serif (20px, 600 weight)
+- Metadata: caption (12px, secondary ink) — author, comment count, timestamp
+- Spoiler warning: `Badge tone="warning"` with `I.spark` icon, inlined
+- Pinned thread: `Badge tone="accent"` indicator, or pin icon `I.pin` to the left of title
+
+**Key patterns:**
+- **Thread list view:**
+  - Filter dropdown at top: "Show threads up to my progress" or "Show all"
+  - Chapter chip prominently displayed next to title
+  - Comment count: caption text (e.g., "8 comments")
+  - Timestamp: caption text relative to now (e.g., "2 hours ago")
+  - Spoiler warning: show if thread chapter > user's progress (yellow warning badge)
+
+- **Thread detail view:**
+  - Title: Display serif (32px)
+  - Chapter chip: larger size if present
+  - Author avatar + name + timestamp
+  - Body: body text (15px, 1.55 line-height) with markdown rendering
+  - Comments section: nested replies, each comment card with author avatar, timestamp, delete button (author/admin)
+  - Reply box: textarea with `btn-primary` submit button
+
+- **Compose new thread:**
+  - Title input (max 200 chars)
+  - Chapter tag input or dropdown (free-form, optional)
+  - Body textarea (supports Markdown)
+  - Preview toggle (show rendered markdown)
+  - `btn-primary` for submit, `btn-secondary` for cancel
+
+- **Comment card (list):**
+  - Compact avatar (24px)
+  - Author name (secondary ink, bold)
+  - Timestamp (caption, tertiary)
+  - Body text (15px)
+  - Reply button (ghost variant): appears on hover, or always visible on mobile
+
+**Typography & spacing:**
+- Thread title: 20px serif, 600 weight
+- Author name: 14px, bold
+- Chapter tag: use `ChapterChip` (11px mono)
+- Comment nesting: 12px left margin or indentation indicator
+- Overall line-height for body: 1.55
+
 ## References
 
 - `docs/high-level-design.md`
 - `docs/llds/club-management.md` — threads are club-scoped
 - `docs/llds/reading-progress.md` — progress drives spoiler filtering
 - `docs/specs/disc-specs.md`
+- `docs/design-system.md` — design tokens, ChapterChip, Badge, Avatar components

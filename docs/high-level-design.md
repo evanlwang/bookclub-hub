@@ -56,19 +56,23 @@ Members report their page or chapter. A club dashboard shows where everyone is, 
 
 ## v1 Scope
 
-v1 ships a complete, usable product for the core loop: join → vote → schedule → read → discuss. Everything below is in. Anything not listed is out.
+v1 ships a complete, usable product for the core loop: join/create → vote → schedule → read → discuss. Everything below is in. Anything not listed is out.
 
 **In v1:**
 - Email-only identity with long-lived sessions (no password, no OAuth)
-- Club creation with codes, joining by code, club switcher
+- 4-step entry flow: identity → path choice (join | create) → branch (join-by-code | create-with-code-derivation) → success
+- Club creation with auto-derived codes, joining by code, club switcher
 - Three-tier roles (owner, admin, member)
-- Book nomination + approval voting with external metadata lookup
+- Book nomination + approval voting (N approvals per member, configurable) with external metadata lookup
 - Admin-pick (skip vote) for book selection
-- Doodle-style meeting scheduling with 3-state availability
-- Chapter-tagged discussion threads with spoiler filtering
-- One-level comment nesting, Markdown support
-- Reading progress (page/percentage/chapter), club progress dashboard
-- Email notifications for: vote opens, vote deadline reminder, meeting proposed, meeting confirmed, meeting reminder (24h)
+- Doodle-style meeting scheduling with 3-state availability and heatmap confirmation view
+- Chapter-tagged discussion threads with spoiler filtering and real-time mismatch detection in compose
+- One-level comment nesting, Markdown support, inline reply composer
+- Reading progress (page/percentage/chapter), club progress dashboard with SVG ring, distribution bar, staggered animations
+- Email notifications for: round starts, deadline reminder (24h before), meeting proposed, meeting confirmed, meeting reminder (24h)
+- Toast feedback on save actions with undo affordance
+- Attention banner on dashboard highlighting immediate actions
+- Per-member progress indicators on reading hero card with hover tooltips
 - Responsive web (mobile-friendly, not native)
 
 **Post-v1 (explicitly deferred):**
@@ -219,11 +223,11 @@ This is a CRUD-heavy app with lightweight interactivity — Next.js is the faste
 
 | Metric | Target | How to Measure |
 |--------|--------|----------------|
-| Time to first meeting | < 10 min | Timed E2E test: create club → add code → 5 members join → run vote → schedule meeting. Clock starts at club creation. |
+| Time to first meeting | < 10 min | Timed E2E test: create club (via entry flow) → 5 members join → run vote → schedule meeting. Clock starts at Step 1 identity entry. |
 | Voting completion rate | > 70% of members vote before deadline | `COUNT(votes) / COUNT(memberships)` per round, filtered to rounds with reminders enabled. Measured per-club, averaged across clubs. |
 | Club data isolation | Zero cross-club leakage | Automated security test: create 2 clubs, 2 users (each in one club). Assert every API endpoint returns 403 for the non-member. Run in CI on every deploy. |
 | Page load (P95) | < 2s on 4G | Lighthouse CI against the club dashboard page with 50 members and 20 books seeded. Run on every deploy. |
-| Join-to-in-club time | < 15 seconds | Timed E2E test: unauthenticated user enters code + email + name → lands inside club. Measures the zero-friction identity model. |
+| Entry-to-in-club time | < 15 seconds (join), < 30 seconds (create) | Timed E2E tests: (1) join path — unauthenticated user enters email + name + code → lands in club; (2) create path — enters email + name + club name + cadence → lands in new club. Measures the zero-friction identity + multi-path model. |
 
 ## Core User Journey
 
@@ -236,12 +240,26 @@ sequenceDiagram
 
     Note over User,Email: Paths below are logical contracts.<br/>tRPC implements them as typed procedures.
 
-    Note over User,Email: Join a Club
-    User->>App: clubs.join({code, email, name})
+    Note over User,Email: Entry Flow — Join or Create
+    User->>App: auth.enter({email, displayName})
     App->>DB: Find or create User by email
-    App->>DB: Look up Club by code
-    App->>DB: Create Membership (role: member)
-    App-->>User: Set session cookie, redirect to club
+    App->>DB: Create Session (30-day TTL)
+    App-->>User: Set session cookie
+
+    alt Join Branch
+        User->>App: clubs.lookup({code}) [debounced]
+        App->>DB: Find Club by code
+        App-->>User: Show club preview
+        User->>App: clubs.join({code}) [authenticated]
+        App->>DB: Create Membership (role: member)
+    else Create Branch
+        User->>App: clubs.create({name, code, description?})
+        App->>DB: Create Club (status: active)
+        App->>DB: Create Membership (role: owner)
+        App-->>User: Show invite code
+    end
+
+    App-->>User: Redirect to /clubs/[clubId]
 
     Note over User,Email: Vote on Next Book
     User->>App: rounds.get({roundId})
@@ -253,7 +271,7 @@ sequenceDiagram
     Note over User,Email: Track Progress
     User->>App: progress.update({page: 187, chapter: 12})
     App->>DB: Upsert ReadingProgress
-    App-->>User: Updated progress bar
+    App-->>User: Updated progress bar + toast
 
     Note over User,Email: Discuss (spoiler-safe)
     User->>App: threads.list({bookId, maxChapter: 12})
@@ -263,7 +281,7 @@ sequenceDiagram
     App->>DB: Insert Comment
     App-->>User: Comment posted
 
-    Note over User,Email: Meeting Reminder
+    Note over User,Email: Meeting Confirmation
     Email->>User: "Meeting tomorrow at 7pm"
 ```
 

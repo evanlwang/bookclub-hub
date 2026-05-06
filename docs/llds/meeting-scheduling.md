@@ -60,35 +60,9 @@ AvailabilityResponse {
 }
 ```
 
-## Availability Collection UI
+## Availability Collection
 
-```
-┌─────────────────────────────────────────────────┐
-│  Schedule Meeting: Dune Discussion              │
-│  Proposed by Alice                              │
-│                                                 │
-│  Mark your availability:                        │
-│                                                 │
-│  ┌───────────────────┬─────┬───────┬─────────┐  │
-│  │ Time              │ ✓   │ Maybe │ ✗       │  │
-│  ├───────────────────┼─────┼───────┼─────────┤  │
-│  │ Mon May 18, 7pm   │ (●) │ ( )   │ ( )     │  │
-│  │ Wed May 20, 8pm   │ ( ) │ (●)   │ ( )     │  │
-│  │ Sat May 23, 2pm   │ (●) │ ( )   │ ( )     │  │
-│  └───────────────────┴─────┴───────┴─────────┘  │
-│                                                 │
-│  5 of 8 members have responded                  │
-│  [Submit]                                       │
-│                                                 │
-│  ── Responses (admin view) ──                   │
-│  Mon 18: ✓✓✓✓ ~✗✗                               │
-│  Wed 20: ✓✓ ~~✗✗✗                               │
-│  Sat 23: ✓✓✓✓✓ ~                                │
-│           ↑ best fit                            │
-│                                                 │
-│  [Confirm Sat May 23, 2pm]                      │
-└─────────────────────────────────────────────────┘
-```
+Members mark their availability for each time slot (available, maybe, unavailable). The admin view shows a color-coded response heatmap with the best-fit slot highlighted. For visual implementation of the availability polling UI, response summary, and admin confirmation flow, see `docs/bookclub-hub-designs/project/artboards/meetings.jsx` and `docs/design-system.md` → Color Palette (success, warning, danger colors).
 
 ## API Contracts
 
@@ -139,9 +113,53 @@ All timestamps are stored in UTC. The frontend displays times in the user's loca
 2. **Recurring meeting templates.** "We usually meet the third Thursday" — a template that pre-fills time slots.
 3. **External calendar integration (Google Calendar, Outlook).** Two-way sync is complex. Deferred.
 
+## Design Reference
+
+**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/meetings.jsx` (four interactive views: list, member-respond, admin-confirm, create flow).
+
+**Design tokens & components:**
+- Meeting title: Display serif (32px) with book metadata below
+- Availability heatmap: color-coded responses with `--success` (available), `--warning` (maybe), `--danger` (unavailable)
+- Time slots: card stack (20px padding, `--shadow-sm`), each with response counts
+- Admin confirmation: use `btn-primary` with icon `I.check` for "Confirm time"
+- Status badge: `Badge` with appropriate tone (primary for proposed, success for confirmed)
+
+**Key patterns:**
+- **Proposed view (member):**
+  - Question/prompt: "Mark your availability:" (body text, 15px)
+  - Radio buttons or pill buttons for each time slot (available, maybe, unavailable)
+  - Response count: caption text ("5 of 8 members have responded")
+  - Submit button: `btn-primary` (primary, md size)
+
+- **Admin confirm view:**
+  - Show availability heatmap: horizontal bars with color-coded dots (✓, ~, ✗)
+  - Highlight best-fit slot with `--success-soft` background
+  - "Responses" label (caption/mono, 12px)
+  - Confirm button: `btn-primary` with icon `I.check`
+
+- **Create meeting flow:**
+  - Title input: max 200 chars
+  - Description textarea: optional
+  - Location input: free-form text (Zoom link, address, etc.)
+  - Time slot inputs: proposal date/time picker, duration (default 60 min)
+  - Add/remove slot buttons: `btn-secondary` with `I.plus` / `I.x`
+
+- **Confirmed meeting card:**
+  - Display time in user's local timezone
+  - Show location and description
+  - Book cover (if linked): small size with details
+  - Member avatars: stacked overflow style
+  - Edit/cancel buttons: `btn-secondary` for edit, `btn-danger` for cancel
+
+**Typography & spacing:**
+- Time slot text: body (15px) with caption for day of week
+- Response summary: caption (12px, secondary ink)
+- Metadata (duration, location): caption (12px, tertiary ink)
+
 ## References
 
 - `docs/high-level-design.md`
 - `docs/llds/club-management.md` — meetings are club-scoped
 - `docs/llds/book-selection-and-voting.md` — meetings link to books
 - `docs/specs/meet-specs.md`
+- `docs/design-system.md` — design tokens, Badge, Button variants

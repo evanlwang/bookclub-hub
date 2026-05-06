@@ -7,12 +7,19 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ---
 
+## Entry Flow (4-step join or create)
+
+- `[x]` **AUTH-UI-001**: The system SHALL display an identity form (email + display name) as the first step of the join flow.
+- `[x]` **AUTH-UI-002**: After identity entry, the system SHALL present a choice between joining an existing club and creating a new one.
+- `[x]` **AUTH-UI-003**: The system SHALL create a session immediately on Step 1 completion (when `auth.enter` succeeds) so subsequent steps can use authenticated procedures (e.g., `clubs.create`).
+- `[ ]` **AUTH-UI-004**: After Step 1 succeeds, the system SHALL fetch the user's club list via `auth.me`. If the user has one or more memberships AND the request did not include an explicit `?path=` query parameter, the system SHALL redirect to `/clubs` and skip Step 2 (path choice). Users with zero memberships SHALL continue to Step 2. If `auth.me` fails, the system SHALL fall through to Step 2 (graceful degradation).
+
 ## User Identity
 
-- `[ ]` **AUTH-DATA-001**: The system shall store user identity as email (unique, lowercase-normalized) and display_name.
-- `[ ]` **AUTH-DATA-002**: The system shall enforce email uniqueness case-insensitively (e.g., "Evan@Example.com" and "evan@example.com" resolve to the same user).
-- `[ ]` **AUTH-API-001**: When a user calls `auth.enter` with email and display_name, the system SHALL create a new user if the email does not exist, or return the existing user if it does.
-- `[ ]` **AUTH-API-002**: When an existing user calls `auth.enter` with a different display_name, the system SHALL update the display_name to the new value.
+- `[x]` **AUTH-DATA-001**: The system shall store user identity as email (unique, lowercase-normalized) and display_name.
+- `[x]` **AUTH-DATA-002**: The system shall enforce email uniqueness case-insensitively (e.g., "Evan@Example.com" and "evan@example.com" resolve to the same user).
+- `[x]` **AUTH-API-001**: When a user calls `auth.enter` with email and display_name, the system SHALL create a new user if the email does not exist, or return the existing user if it does.
+- `[x]` **AUTH-API-002**: When an existing user calls `auth.enter` with a different display_name, the system SHALL update the display_name to the new value.
 
 ## Sessions
 

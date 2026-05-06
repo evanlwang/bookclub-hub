@@ -84,21 +84,7 @@ No Invitation table. The club code on the Club record is the only join mechanism
 3. Server looks up club by code
 4. If valid: create Membership, create session, redirect to club
 
-This means a brand-new user can go from zero to inside a club in a single form submission.
-
-```
-┌──────────────────────────────────────────┐
-│  Join a Book Club                        │
-│                                          │
-│  Club code: [DUNE42______]               │
-│  Email:     [evan@example.com]           │
-│  Name:      [Evan___________]            │
-│                                          │
-│  [Join]                                  │
-│                                          │
-│  Already in clubs? [Go to my clubs →]    │
-└──────────────────────────────────────────┘
-```
+This means a brand-new user can go from zero to inside a club in a single form submission. See the design artboards for the full join flow UI at `docs/bookclub-hub-designs/project/artboards/landing-join.jsx`.
 
 ## Club Creation
 
@@ -107,44 +93,19 @@ This means a brand-new user can go from zero to inside a club in a single form s
 3. Server creates Club, creates Membership (role: owner)
 4. User lands in the new (empty) club
 
-```
-┌──────────────────────────────────────────┐
-│  Create a Book Club                      │
-│                                          │
-│  Name:        [Wednesday Night Reads__]  │
-│  Description: [We read sci-fi and____]   │
-│  Club code:   [WEDREADS__]  ✓ Available  │
-│                                          │
-│  Share this code with your group so      │
-│  they can join.                          │
-│                                          │
-│  [Create Club]                           │
-└──────────────────────────────────────────┘
-```
+See the design artboards for the visual implementation of club creation forms and validation feedback.
 
 ## Club Switcher
 
-The club switcher is a persistent UI element (sidebar on desktop, bottom sheet on mobile) visible on every authenticated page.
-
-```
-┌──────┬──────────────────────────────────┐
-│ Clubs│  Wednesday Night Reads           │
-│      │  ┌────────────────────────────┐  │
-│ [WN] │  │ Currently reading: Dune    │  │
-│ ●    │  │ Next meeting: May 15       │  │
-│      │  │ Your progress: 45%         │  │
-│ [SF] │  └────────────────────────────┘  │
-│      │                                  │
-│ [HR] │  [Discussions] [Vote] [Meetings] │
-│      │                                  │
-│ [+]  │  ...                             │
-└──────┴──────────────────────────────────┘
-
-● = unread activity indicator
-[+] = create new club or join with code
-```
+The club switcher is a persistent UI element (sidebar on desktop, bottom sheet on mobile) visible on every authenticated page. It displays:
+- Club list with avatars and club codes
+- Current book, next meeting, and user's reading progress
+- Unread activity indicators
+- "Create new club" or "Join with code" option
 
 Switching clubs is a client-side operation: the app fetches the target club's current state (current book, upcoming meeting, user's progress) and re-renders. No page reload. Target: under 30 seconds per the HLD goal.
+
+For visual details on the club switcher layout and responsive behavior, see `docs/bookclub-hub-designs/project/artboards/dashboard.jsx` and `docs/design-system.md` → Components.
 
 ## API Contracts
 
@@ -204,8 +165,49 @@ All club-scoped API endpoints check membership before processing. The check is: 
 3. **Ownership transfer UX.** The API supports it; the UI flow is deferred to implementation.
 4. **Code regeneration rate limiting.** Prevent an owner from burning through codes. Not urgent for v1 scale.
 
+## Design Reference
+
+**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/dashboard.jsx` (sidebar shell, club switcher, main dashboard area).
+
+**Design tokens & components:**
+- Sidebar club switcher: left panel (responsive: sidebar on desktop, bottom sheet on mobile)
+- Club avatar/code: `--ink` text on `--primary-soft` background, monospace font for code
+- Club cards in switcher: show current book cover (`BookCover` small size), next meeting date, member count
+- Unread indicator: `Badge tone="accent"` dot for new activity
+- Dashboard main area: header with club name (Display serif, 32px), content area with cards
+
+**Key patterns:**
+- **Club creation modal:**
+  - Name input (max 100 chars)
+  - Description textarea (optional, max 500 chars)
+  - Code input with real-time availability check (`✓ Available` / `✗ Taken`)
+  - `btn-primary` for submit, `btn-secondary` for cancel
+
+- **Club switcher mobile:**
+  - Bottom sheet on mobile, sidebar on desktop (breakpoint ~768px)
+  - Club list scrollable, each item clickable to switch
+  - [+] button to create new club or join with code
+
+- **Member management (admin view):**
+  - Member list in a table or card stack
+  - Avatar, name, role badge, joined date
+  - Remove button (dangerous variant) with confirmation
+  - Promote/demote dropdown for role changes
+
+- **Club settings page (admin):**
+  - Name, description, code editable
+  - Archive/unarchive toggle (danger action)
+  - Delete button (soft delete with 30-day retention notice)
+
+**Typography & spacing:**
+- Club name in switcher: Title serif (20px)
+- Metadata (next meeting, progress): Caption class (12px, secondary ink)
+- Current book cover: Small size (48×70), rounded corners
+- Spacing between clubs: 12–16px
+
 ## References
 
 - `docs/high-level-design.md`
 - `docs/llds/auth-and-accounts.md` — identity provides the user that membership references
 - `docs/specs/club-specs.md`
+- `docs/design-system.md` — design tokens, BookCover component, Avatar component

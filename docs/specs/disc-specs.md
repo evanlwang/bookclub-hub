@@ -18,8 +18,9 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Spoiler Filtering
 
 - `[x]` **DISC-UI-001**: By default, the thread list shall hide threads tagged beyond the user's current_chapter (from their reading progress).
-- `[x]` **DISC-UI-002**: The system SHALL display a count of hidden threads with the message "N threads hidden (beyond Chapter X)".
+- `[x]` **DISC-UI-002**: The system SHALL display a count of hidden threads with the message "N threads hidden" with a "Show all anyway" override link.
 - `[x]` **DISC-UI-003**: When a user clicks "Show all", the system SHALL display all threads regardless of chapter_tag. This override shall be per-session (not persistent).
+- `[x]` **DISC-UI-004**: The spoiler filter bar SHALL include a chapter number input ("I'm on Chapter X") with a live update to the thread list.
 - `[x]` **DISC-BE-001**: Threads with chapter_number = null (unparseable tags or no tag) shall always be shown regardless of the user's progress filter.
 
 ## Comments
@@ -34,16 +35,24 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[ ]` **DISC-BE-002**: Thread bodies and comment bodies shall support CommonMark Markdown (bold, italic, links, code blocks, blockquotes, lists).
 - `[ ]` **DISC-BE-003**: The system SHALL sanitize all HTML in rendered Markdown to prevent XSS.
 
-## Design UI (from prototype)
+## Design UI — Thread List & Interactions
 
 - `[x]` **DISC-UI-005**: The thread list SHALL support sort controls (Recent / Most comments) as tab-style toggles.
-- `[ ]` **DISC-UI-006**: Pinned threads SHALL display with a pin icon and "PINNED" label, sorted above non-pinned threads regardless of sort order.
-- `[ ]` **DISC-UI-007**: Thread detail SHALL show edit and delete icon buttons for the thread author (and admin), positioned in the header.
-- `[ ]` **DISC-UI-008**: When a comment is deleted but has replies, the system SHALL render a "[deleted]" placeholder preserving the reply tree structure.
-- `[ ]` **DISC-UI-009**: The comment composer SHALL be sticky to the bottom of the thread detail view with a gradient fade-mask above.
-- `[ ]` **DISC-UI-010**: Reply buttons on comments SHALL be hidden by default and revealed on hover or keyboard focus.
+- `[x]` **DISC-UI-006**: Pinned threads SHALL display with an amber background, a pin icon badge, and "PINNED" label, always sorted first regardless of sort order.
+- `[x]` **DISC-UI-007**: Thread detail SHALL show edit and delete icon buttons for the thread author (and admin+), positioned in the header.
+- `[x]` **DISC-UI-008**: When a comment is deleted but has replies, the system SHALL render a "[deleted]" placeholder in italics, preserving the reply tree structure.
+- `[x]` **DISC-UI-009**: The comment composer at the bottom of thread detail SHALL be sticky (fixed to bottom) with a gradient fade-in mask above to avoid text overlap.
+- `[x]` **DISC-UI-010**: Reply buttons on top-level comments SHALL be hidden by default and revealed on hover or keyboard focus.
 - `[x]` **DISC-UI-011**: Thread list items SHALL display a single-line truncated body preview below the title.
-- `[ ]` **DISC-UI-012**: Thread detail SHALL include a sidebar with "About this thread" metadata (chapter, reply count, age).
+- `[x]` **DISC-UI-012**: Thread detail SHALL include a sidebar showing metadata: chapter tag (ChapterChip), reply count from distinct authors, and thread age.
+- `[x]` **DISC-UI-013**: When a user clicks "Reply" on a comment, an inline comment composer SHALL appear indented below it with a blue left border accent.
+
+## Spoiler Mismatch Detection in Compose
+
+- `[x]` **DISC-UI-014**: When creating a new thread, if the body text mentions chapter numbers that exceed the chapter_tag (e.g., "happens in Chapter 12" but tagged "Ch. 5"), the system SHALL detect the mismatch in real time.
+- `[x]` **DISC-UI-015**: On spoiler mismatch, the body textarea SHALL display an amber border, a warning banner SHALL appear ("⚠ Possible spoiler. Your post mentions chapter N but is tagged X. Bump the tag or rephrase."), and the Post button SHALL be disabled with label "Resolve spoiler warning".
+- `[x]` **DISC-UI-016**: The chapter_tag input SHALL display a live ChapterChip preview inline as the user types (e.g., showing "Ch. 5–8" as a chip).
+- `[x]` **DISC-UI-017**: If no spoiler mismatch, a "💡 Spoiler-safe by default" info card SHALL explain visibility rules.
 
 ## Deferred
 

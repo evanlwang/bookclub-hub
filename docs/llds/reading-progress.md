@@ -32,51 +32,18 @@ When the member enters a page number and `total_pages` is known, `percentage` is
 
 The `current_chapter` field is entered separately by the member. It is not derived from page number because chapter lengths vary unpredictably. This field drives the discussion spoiler filter.
 
-## Progress Update UI
+## Progress Update Interface
 
-```
-┌──────────────────────────────────────────┐
-│  Your Progress: Dune                     │
-│  304 pages                               │
-│                                          │
-│  ┌──────────────────────────────────┐    │
-│  │ Page: [187_____] / 304           │    │
-│  │ ████████████░░░░░░░░  61%        │    │
-│  │                                  │    │
-│  │ Current chapter: [12___]         │    │
-│  │                                  │    │
-│  │ Status: ( ) Not started          │    │
-│  │         (●) Reading              │    │
-│  │         ( ) Finished             │    │
-│  └──────────────────────────────────┘    │
-│  [Update]                                │
-│                                          │
-│  Last updated: 2 hours ago               │
-└──────────────────────────────────────────┘
-```
+Members can update their progress via a modal or dedicated page. Input options include current page number, percentage complete, current chapter (for spoiler filtering), and reading status (not started, reading, finished). The UI displays a live progress bar visualization as the member enters values.
 
-## Club Progress Dashboard (Organizer View)
+For visual implementation of the progress update modal, progress bar styling, and the aggregate club dashboard, see `docs/bookclub-hub-designs/project/artboards/progress.jsx` and `docs/design-system.md` → Components (progress bar, Badge, Avatar).
 
-```
-┌──────────────────────────────────────────────┐
-│  Club Progress: Dune                         │
-│  8 members                                   │
-│                                              │
-│  ████████████████████████  100% ── Carol     │
-│  ██████████████████░░░░░░   75% ── Dave      │
-│  ████████████████░░░░░░░░   65% ── Alice     │
-│  ████████████░░░░░░░░░░░░   50% ── Eve       │
-│  ████████░░░░░░░░░░░░░░░░   33% ── Bob       │
-│  ░░░░░░░░░░░░░░░░░░░░░░░░    0% ── Frank    │
-│  ── (not started) ──         -- Grace, Hank  │
-│                                              │
-│  Median: 57%  · 3 members past Ch. 10        │
-│                                              │
-│  [Schedule Meeting]                          │
-└──────────────────────────────────────────────┘
-```
+## Club Progress Dashboard
 
-Individual progress bars are visible to all club members. The aggregate summary (median, chapter distribution) is visible to all but primarily useful to the organizer.
+Individual progress bars are visible to all club members. The aggregate summary (median, chapter distribution) is visible to all but primarily useful to the organizer. The dashboard shows:
+- Horizontal progress bars per member with percentage label
+- Median progress and chapter distribution summary
+- "Schedule Meeting" call-to-action for organizing around reading pace
 
 ## API Contracts
 
@@ -114,9 +81,59 @@ Endpoints below are logical contracts. The implementation uses tRPC procedures (
 2. **Progress reminders.** "You haven't updated your progress in 2 weeks." Could be useful but risks feeling nagging.
 3. **Historical reading pace.** "You read 50 pages/week on average." Requires storing update history.
 
+## Design Reference
+
+**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/progress.jsx` (interactive progress dashboard with book selector and update modal).
+
+**Design tokens & components:**
+- Progress bar: `.progress-track` and `.progress-fill` (8px height, rounded ends)
+- Progress fill color: `--primary` (teal) for reading, `--accent` (amber) for finished, `--ink-4` (disabled) for not started
+- Progress row: `.bar-anim` class for stagger-in animation (0.5s cubic-bezier)
+- Status badges: `Badge` with tones (neutral for "not started", primary for "reading", success for "finished")
+- Book cover: small size (48×70) displayed next to progress summary
+- Avatars: stacked overflow style for member list (small 24px size)
+
+**Key patterns:**
+- **Progress update modal:**
+  - Book selector: dropdown or searchable list showing current book + recent books
+  - Current page input: number field (optional if percentage known)
+  - Total pages display: read-only (sourced from Book metadata)
+  - Percentage input: number field 0-100 (optional if pages known)
+  - Progress bar: live visual as user enters values
+  - Current chapter input: free-form text (optional, for spoiler filtering)
+  - Status radio buttons: "Not started", "Reading", "Finished"
+  - `btn-primary` for submit, timestamp of last update shown below
+
+- **Club progress dashboard (list view):**
+  - Member name + avatar (left aligned, 32px avatar)
+  - Horizontal progress bar (full width, responsive)
+  - Percentage label (right aligned, tabular-nums)
+  - Median summary at bottom: caption text (12px)
+  - Chapter distribution: text summary (e.g., "3 members past Ch. 10")
+
+- **Aggregate view (for organizers):**
+  - Book cover (small, 48×70)
+  - "Currently reading" or book title (Title serif, 20px)
+  - Progress bar with median % overlay
+  - Metadata: "4 of 7 members underway", "median 52%", "page 214 / 412"
+  - "Schedule Meeting" button: `btn-primary`
+
+**Typography & spacing:**
+- Member name: 15px, 600 weight
+- Percentage: 12px, monospace, 600 weight (tabular-nums)
+- Page numbers: caption (12px, secondary ink)
+- Spacing between rows: 12px
+- Progress bar height: 8px, rounded fully (border-radius 999px)
+
+**Animation:**
+- Progress fill: smooth 0.6s transition (cubic-bezier(0.4, 0, 0.2, 1))
+- Row stagger: each row animates in with 0.5s barFill animation
+- Transform origin: left center (grows from left to right)
+
 ## References
 
 - `docs/high-level-design.md`
 - `docs/llds/discussion-threads.md` — progress drives spoiler filtering
 - `docs/llds/club-management.md` — progress is club-scoped
 - `docs/specs/prog-specs.md`
+- `docs/design-system.md` — design tokens, progress bar component, Badge variants, Avatar component

@@ -29,7 +29,15 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **VOTE-BE-003**: The system shall enforce that a member cannot approve more than `max_approvals_per_member` nominations in a single round.
 - `[x]` **VOTE-UI-001**: While a round is in "voting" status, the system SHALL hide vote tallies from all members (only show whether the current user has voted).
 - `[x]` **VOTE-UI-002**: When a round reaches "decided" status, the system SHALL display the full vote tallies and winner to all members.
+- `[x]` **VOTE-UI-003**: During voting phase, the submit button SHALL display a live count of selections: "Submit N votes", disabled until at least one nomination is selected.
+- `[x]` **VOTE-UI-004**: After submitting votes, the button SHALL change to "✓ Voted — update N?" to indicate the user can re-vote before the deadline if desired.
+- `[x]` **VOTE-UI-005**: The voting sidebar SHALL display an approval-cap indicator showing used/remaining slots as filled and empty circles (e.g., ◉◉○ — "2 of 3 used").
 - `[x]` **VOTE-DATA-002**: The system shall enforce one vote per (round_id, nomination_id, user_id) tuple.
+
+## Voting UI — Decided Phase
+
+- `[x]` **VOTE-UI-006**: On the decided screen, the winner shall display in a gradient banner card with book cover, title, author, vote count (N / total members), and two CTAs: "Set up first meeting" and "View on Open Library".
+- `[x]` **VOTE-UI-007**: Below the winner, all nominations shall be ranked by vote count in a tally list with position indicators (①, 2️⃣, etc.), per-book progress bars (width = votes / winner_votes * 100%), and the winner's row tinted.
 
 ## Book Metadata
 

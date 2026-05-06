@@ -9,10 +9,16 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Club Creation
 
-- `[ ]` **CLUB-API-001**: When an authenticated user calls `clubs.create` with name and code, the system SHALL create the club and assign the user as owner.
-- `[ ]` **CLUB-DATA-001**: Club codes shall be unique across all active clubs (case-insensitive, stored uppercase).
-- `[ ]` **CLUB-DATA-002**: Club codes shall be 4–16 characters, alphanumeric only.
-- `[ ]` **CLUB-API-002**: When a user attempts to create a club with a code already in use by an active club, the system SHALL throw a conflict error.
+- `[x]` **CLUB-API-001**: When an authenticated user calls `clubs.create` with name and code, the system SHALL create the club and assign the user as owner.
+- `[x]` **CLUB-DATA-001**: Club codes shall be unique across all active clubs (case-insensitive, stored uppercase).
+- `[x]` **CLUB-DATA-002**: Club codes shall be 4–16 characters, alphanumeric only.
+- `[x]` **CLUB-API-002**: When a user attempts to create a club with a code already in use by an active club, the system SHALL throw a conflict error.
+
+## Club Creation UI (Entry Flow)
+
+- `[x]` **CLUB-UI-001**: The create branch (Step 3b) SHALL auto-derive an invite code from the club name (alphanumeric, uppercase, max 10 chars) and display it as an editable input field.
+- `[x]` **CLUB-UI-002**: When the user modifies the auto-derived code, the system SHALL validate the new code against existing clubs and show an error if the code is already in use.
+- `[x]` **CLUB-UI-003**: On successful club creation, the system SHALL display the invite code prominently on the success screen (Step 4) with a copy-to-clipboard button for easy sharing.
 
 ## Joining Clubs
 

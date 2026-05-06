@@ -40,14 +40,18 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[ ]` **MEET-NOTIFY-004**: The system SHALL send a reminder email 24 hours before a confirmed meeting.
 - `[ ]` **MEET-NOTIFY-005**: When a meeting is cancelled, the system SHALL notify all members.
 
-## Design UI (from prototype)
+## Meeting UI Features
 
 - `[x]` **MEET-UI-006**: The meeting list SHALL support filter tabs (All / Proposed / Confirmed / Past) with counts.
-- `[ ]` **MEET-UI-007**: Admins SHALL see a "Confirm" view with availability heatmap per slot, "Most available" badge on the top slot, location input, and "Confirm & notify members" button.
-- `[x]` **MEET-UI-008**: Confirmed meetings SHALL display a date block (day/date/month), time range, location, attendee avatars, and "going/maybe" count.
-- `[x]` **MEET-UI-009**: Past meetings SHALL appear dimmed with a "Notes" button.
-- `[ ]` **MEET-UI-010**: The create form SHALL include a linked-book dropdown selector.
-- `[ ]` **MEET-UI-011**: The respond view sidebar SHALL show members-responded progress bar and list of members still waiting.
+- `[x]` **MEET-UI-007**: Proposed meetings in the list SHALL show a response progress bar indicating how many members have submitted availability (color: amber → green at 100%).
+- `[x]` **MEET-UI-008**: Confirmed meetings SHALL display a date block (day/date/month), time range, location, attendee avatars, and "N going · M maybe" count.
+- `[x]` **MEET-UI-009**: Past meetings SHALL appear dimmed with a "Notes" button linking to meeting notes/summary.
+- `[x]` **MEET-UI-010**: The respond-availability view sidebar SHALL show a members-responded progress bar (X of Y responded) and a list of members still waiting.
+- `[x]` **MEET-UI-011**: When members respond with availability, the admin confirm view SHALL display a heatmap grid per slot: color-coded rectangles (one per member, green for available, amber for maybe, light for unavailable) showing response distribution at a glance.
+- `[x]` **MEET-UI-012**: The admin confirm view SHALL display an AI-recommended banner ("Thu Apr 18 · 7:00 PM works for the most members (N available). Confirm to notify everyone.") highlighting the slot with the highest availability.
+- `[x]` **MEET-UI-013**: The confirm view SHALL show a "Most available" badge on the top-ranked slot and highlight its row with a subtle background tint.
+- `[x]` **MEET-UI-014**: The create meeting form SHALL include a "Linked book" dropdown selector limited to books selected for the club (optional).
+- `[x]` **MEET-UI-015**: The location field SHALL be a text input (optional) and carried through to the confirmation and notification emails.
 
 ## Deferred
 

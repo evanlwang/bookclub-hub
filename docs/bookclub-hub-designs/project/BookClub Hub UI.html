@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>BookClub Hub — UI design canvas</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <style>
+    html, body, #root { height: 100%; margin: 0; }
+    /* Constrain artboard text — it's all inside scaled frames */
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="primitives.jsx"></script>
+  <script type="text/babel" src="artboards/design-system.jsx"></script>
+  <script type="text/babel" src="artboards/landing-join.jsx"></script>
+  <script type="text/babel" src="artboards/dashboard.jsx"></script>
+  <script type="text/babel" src="artboards/voting.jsx"></script>
+  <script type="text/babel" src="artboards/meetings.jsx"></script>
+  <script type="text/babel" src="artboards/discussions.jsx"></script>
+  <script type="text/babel" src="artboards/progress.jsx"></script>
+
+  <script type="text/babel">
+    function App() {
+      return (
+        <DesignCanvas title="BookClub Hub — UI design canvas" subtitle="Warm, literary system across 7 feature areas. Pan, zoom, and click any artboard to focus.">
+          <DCSection id="foundation" title="01 · Foundation" subtitle="The system everything else is built from">
+            <DCArtboard id="ds" label="Design system" width={1100} height={2000}>
+              <DesignSystemArtboard/>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="entry" title="02 · Entry points" subtitle="Where new readers land and how they get into a club">
+            <DCArtboard id="landing" label="Landing page (/)" width={1280} height={920}>
+              <LandingArtboard/>
+            </DCArtboard>
+            <DCArtboard id="join" label="Join flow (/join) — interactive · 4 steps" width={520} height={880}>
+              <JoinFlowArtboard/>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="hub" title="03 · The club hub" subtitle="The authenticated shell and the dashboard inside it">
+            <DCArtboard id="dashboard" label="Dashboard + sidebar shell" width={1360} height={920}>
+              <DashboardArtboard/>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="voting" title="04 · Voting rounds" subtitle="Three phases, one artboard. Toggle between Nominating, Voting, and Decided.">
+            <DCArtboard id="vote" label="Voting — three phases (interactive)" width={1280} height={1100}>
+              <VotingArtboard/>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="meetings" title="05 · Meeting scheduling" subtitle="List, member-respond, admin-confirm, and create flow">
+            <DCArtboard id="meet" label="Meetings — four views (interactive)" width={1280} height={1100}>
+              <MeetingsArtboard/>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="discussions" title="06 · Spoiler-safe discussions" subtitle="Filter by chapter — readers behind don't get spoiled">
+            <DCArtboard id="threads" label="Discussions — list, detail, compose (interactive)" width={1280} height={1200}>
+              <DiscussionsArtboard/>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="progress" title="07 · Reading progress" subtitle="Where everyone is, and how to update where you are">
+            <DCArtboard id="progress" label="Progress dashboard + update modal (interactive)" width={1280} height={1100}>
+              <ProgressArtboard/>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>

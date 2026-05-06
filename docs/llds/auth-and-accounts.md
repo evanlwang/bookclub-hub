@@ -10,14 +10,47 @@ Traces to the HLD's Identity key design decision (email + display name, no passw
 
 ## How It Works
 
-### First Visit (New User)
+### New Entry Flow (4-step: Join or Create)
 
-1. User navigates to the app or opens a club join page
-2. User enters: club code, email, display name
-3. Server looks up email — no existing user found
-4. Server creates User record, creates Membership, creates session
-5. Session token stored in HttpOnly cookie (30-day expiry, sliding)
-6. User lands in the club
+**Step 1 — Identity**
+1. User navigates to `/join`
+2. User enters email + display name
+3. On "Continue", server calls `auth.enter` → creates User (if new), creates Session → sets cookie
+4. User advances to Step 2 (path choice)
+
+**Step 2 — Path Choice**
+1. User sees two options: "Join an existing club" or "Create a new club"
+2. Click one to advance to Step 3
+
+**Step 3a — Join Branch**
+1. User enters club code
+2. Debounced `clubs.lookup` validates the code
+3. On valid code, user submits with `clubs.join` (already authenticated from Step 1)
+4. Server adds Membership, user advances to success
+
+**Step 3b — Create Branch**
+1. User enters club name
+2. Auto-derived invite code (from club name, editable)
+3. Selects voting cadence (monthly / 6 weeks / flexible)
+4. On submit, `clubs.create` creates Club + Membership (already authenticated from Step 1)
+5. User advances to success with invite code displayed
+
+**Step 4 — Success**
+1. Join branch: "Welcome to [Club]!" → redirects to `/clubs/[id]`
+2. Create branch: "[Club] is live!" + invite code chip with copy button → redirects to `/clubs/[id]`
+
+**Key difference from old flow**: Session created at Step 1 (when identity is confirmed), not at final submit. This enables the create branch to use authenticated procedures downstream.
+
+### Smart Detection (Returning Users)
+
+After Step 1 succeeds, the client immediately calls `auth.me` with the new session cookie to fetch the user's clubs. The flow then branches:
+
+- If `clubs.length > 0`, the user is a returning member. The wizard skips Step 2 entirely and redirects to `/clubs` (the dashboard). This is the invisible "login" path: a returning user just types email + name and lands home.
+- If `clubs.length === 0`, the user is new (or has no memberships yet). The wizard continues to Step 2 (path choice) as in the new-user flow.
+
+The redirect is bypassed when the user arrives with an explicit `?path=join` or `?path=create` query parameter — for example, an existing member creating a second club. In that case the explicit intent wins and the wizard advances directly to Step 3 with the requested branch pre-selected.
+
+If `auth.me` fails (network error), the wizard falls through to Step 2. The user can still proceed; the smart-detection check is best-effort.
 
 ### Return Visit (Same Device)
 
@@ -27,15 +60,17 @@ Traces to the HLD's Identity key design decision (email + display name, no passw
 ### Return Visit (New Device)
 
 1. No session cookie
-2. User enters email on a "Welcome back" screen
-3. Server finds existing user, creates new session
-4. User sees all their clubs
+2. User navigates to `/join` (directly, or bounced from a club page)
+3. Enters email + name in Step 1
+4. `auth.enter` creates a session; smart detection (`auth.me`) finds existing memberships
+5. Wizard auto-redirects to `/clubs` — no path-choice step
 
 ### First Visit to a New Club (Existing User)
 
 1. User is already logged in (has session)
-2. User enters club code
-3. Server adds membership, redirects to club
+2. User navigates to `/join` with a club code
+3. Skips Steps 1–2, goes straight to Step 3a (join branch)
+4. Or from dashboard, clicks "Create a club" → goes to Step 2, then Step 3b
 
 ## Data Model
 
@@ -76,50 +111,6 @@ Sessions are server-side, stored in PostgreSQL (Neon). Session ID is a cryptogra
 
 Logout destroys the server-side session and clears the cookie.
 
-## Visual Layout
-
-### New User / New Device
-
-```
-┌──────────────────────────────────────┐
-│          BookClub Hub                │
-│                                      │
-│   Email: [________________________]  │
-│   Name:  [________________________]  │
-│                                      │
-│   [Continue]                         │
-│                                      │
-│   Already have a session? You'll be  │
-│   signed in automatically.           │
-└──────────────────────────────────────┘
-```
-
-### Joining a Club (Logged In)
-
-```
-┌──────────────────────────────────────┐
-│   Join a Book Club                   │
-│                                      │
-│   Club code: [____________]          │
-│                                      │
-│   [Join]                             │
-└──────────────────────────────────────┘
-```
-
-### Joining a Club (Not Logged In)
-
-```
-┌──────────────────────────────────────┐
-│   Join a Book Club                   │
-│                                      │
-│   Club code: [____________]          │
-│   Email:     [____________]          │
-│   Name:      [____________]          │
-│                                      │
-│   [Join]                             │
-└──────────────────────────────────────┘
-```
-
 ## Security Considerations
 
 This auth model is intentionally weak by traditional standards. The trade-offs:
@@ -153,7 +144,25 @@ If security needs escalate later (e.g., the app grows beyond trusted friend grou
 2. **Display name per club.** Some users might want different names in different clubs. Requires moving display_name to Membership. Not needed for v1.
 3. **Account deletion.** Delete User and cascade through memberships, votes, comments. Needed for GDPR if the app grows. Simple cascade from User.id.
 
+## Design Reference
+
+**Visual implementation:** See `docs/bookclub-hub-designs/project/artboards/landing-join.jsx` (Join Flow section, 4 interactive steps).
+
+**Design tokens & components:**
+- Form inputs: `--input` styling with focus ring (primary border + oklch highlight)
+- Button variants: `btn-primary` for "Join", `btn-secondary` for secondary options
+- Field labels: `label` class (13px, medium weight, secondary ink color)
+- Hints: `hint` class (12px, tertiary ink, 6px margin-top)
+- Typography: Body text at 15px with 1.55 line-height for instructions
+
+**Key patterns:**
+- Paper background (`--bg`) for maximum contrast on form inputs
+- Clear visual hierarchy with display serif for headings
+- Generous vertical spacing between form sections (16–24px)
+- Toast notifications for async feedback (e.g., "Session created")
+
 ## References
 
 - `docs/high-level-design.md`
 - `docs/specs/auth-specs.md`
+- `docs/design-system.md` — design tokens, typography, components

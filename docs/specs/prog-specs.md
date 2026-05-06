@@ -38,34 +38,35 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Progress Update UI
 
-- `[x]` **PROG-UI-001**: The progress update modal SHALL include three status option buttons (Not Started / Reading / Finished) displayed as mutually exclusive card buttons.
-- `[x]` **PROG-UI-002**: The progress update modal SHALL include a numeric input field for current page, labeled "Current Page", with min=0 and max=totalPages.
-- `[x]` **PROG-UI-003**: When the user enters a page number > 0 and status is "not_started", the system SHALL automatically change status to "reading".
-- `[x]` **PROG-UI-004**: When status is set to "finished", the page input SHALL be disabled and the page value SHALL be set to totalPages.
-- `[x]` **PROG-UI-005**: The progress update modal SHALL display a read-only percentage display field showing the computed percentage based on the page input and totalPages.
-- `[x]` **PROG-UI-006**: The progress update modal SHALL include an optional numeric input field for current chapter, labeled "Chapter (optional)".
+- `[x]` **PROG-UI-001**: The progress update modal SHALL display three large radio-card buttons for status selection (Not Started / Reading / Finished) with radio dot, label, and descriptive subtext.
+- `[x]` **PROG-UI-002**: The progress update modal SHALL include a range slider input (HTML `<input type="range">`) synchronized bidirectionally with a numeric "Current Page" input field.
+- `[x]` **PROG-UI-003**: When the user selects "Finished" status, the page slider and number input SHALL auto-lock to totalPages value and become disabled for editing.
+- `[x]` **PROG-UI-004**: When the user selects "Not started" status, page and chapter inputs SHALL clear/reset to 0 and null.
+- `[x]` **PROG-UI-005**: The progress update modal SHALL display a live preview progress bar below the inputs showing the current status-class fill color and percentage.
+- `[x]` **PROG-UI-006**: The modal SHALL include an optional numeric input field for current chapter, labeled "Chapter (optional)".
 - `[x]` **PROG-UI-007**: The update modal SHALL include Cancel and Save Progress buttons at the bottom.
-- `[x]` **PROG-UI-008**: On successful save, the modal SHALL close and the page SHALL refresh to show updated progress.
-- `[ ]` **PROG-UI-009**: The progress update modal SHALL include a range slider input for page number in addition to the numeric input field (allows quicker approximate updates).
+- `[x]` **PROG-UI-008**: On successful save, the system SHALL display a floating toast notification at bottom-right ("Progress saved · page N") with an Undo button and 4-second auto-dismiss.
+- `[x]` **PROG-UI-009**: The toast Undo button SHALL be highlighted in accent color and available for manual dismissal; clicking it reverts the progress update and re-opens the modal.
 
 ## Progress Dashboard Display
 
 - `[x]` **PROG-UI-DASH-001**: The progress dashboard header SHALL display the title "Reading Progress" and an "Update My Progress" button.
 - `[x]` **PROG-UI-DASH-002**: When no progress records exist for a book, the system SHALL display a card with the message "No progress tracked yet."
-- `[x]` **PROG-UI-DASH-003**: The dashboard SHALL display a summary card with a circular SVG ring chart showing the club's median reading percentage as a filled ring (blue) against an unfilled background (light gray).
-- `[x]` **PROG-UI-DASH-004**: Inside the ring chart, the median percentage value SHALL be displayed as a large number.
-- `[x]` **PROG-UI-DASH-005**: Below the ring, a horizontal segmented bar SHALL show the proportions of members by status: finished (gold), reading (blue), not_started (gray). The bar height is 12px (h-3).
-- `[x]` **PROG-UI-DASH-006**: A legend below the distribution bar SHALL show label and count for each status: "Finished [N]", "Reading [N]", "Not started [N]".
-- `[x]` **PROG-UI-DASH-007**: The summary text SHALL read: "[reading + finished] of [total] reading · median at [median]% · [finished] finished" (with the "finished" part omitted if count is 0).
+- `[x]` **PROG-UI-DASH-003**: The dashboard SHALL display a summary card with an SVG animated progress ring showing the club's median reading percentage (e.g., "61%") with label "median" below.
+- `[x]` **PROG-UI-DASH-004**: The progress ring SHALL be animated via stroke-dasharray/stroke-dashoffset transition (1s cubic-bezier, duration 500ms ease-out) filling from 0% to the target percentage on load.
+- `[x]` **PROG-UI-DASH-005**: Two ring sizes SHALL be supported: full (130px / 12px stroke) for main dashboard and compact (64px / 7px stroke) for the dashboard hero card variant.
+- `[x]` **PROG-UI-DASH-006**: Below the ring, a horizontal segmented bar SHALL show the proportions of members by status: finished (accent color), reading (primary color), not_started (ink-4 color). The bar height is 8px.
+- `[x]` **PROG-UI-DASH-007**: A legend below the distribution bar SHALL show colored square dots and labels with counts: "Finished [N]", "Reading [N]", "Not started [N]".
 - `[x]` **PROG-UI-DASH-008**: The member list SHALL be titled "Where everyone is" with a subtitle "Sorted by progress".
 - `[x]` **PROG-UI-DASH-009**: Each member progress row SHALL display: avatar, name, status/page info, an animated progress bar, percentage in right-aligned large text, and a status badge.
-- `[x]` **PROG-UI-DASH-010**: Progress bars SHALL animate with a staggered 60ms delay per row (duration 500ms, easing ease-out).
-- `[x]` **PROG-UI-DASH-011**: The status badge SHALL show one of: "Done" (gold), "Reading" (blue with dot), or "Waiting" (gray), matching the member's progress status.
-- `[x]` **PROG-UI-DASH-012**: For members with status "finished", a gold checkmark icon SHALL appear next to the name (inside a small circular background).
+- `[x]` **PROG-UI-DASH-010**: Progress bars in the member list SHALL animate with a staggered 60ms delay per row (e.g., row 0: 0ms, row 1: 60ms, row 2: 120ms), duration 500ms, easing ease-out.
+- `[x]` **PROG-UI-DASH-011**: The status badge SHALL show one of: "Done" (accent bg), "Reading" (primary bg with dot), or "Waiting" (neutral bg), matching the member's progress status.
+- `[x]` **PROG-UI-DASH-012**: For members with status "finished", a gold checkmark icon SHALL appear next to the name.
 - `[x]` **PROG-UI-DASH-013**: The page/chapter info line for each member SHALL display:
   - If "not_started": "Not started yet"
   - If "finished": "Finished · [totalPages] pages"
   - If "reading": "Page [currentPage][optional · ch. [currentChapter]]"
+- `[x]` **PROG-UI-DASH-014**: A compact dashboard card variant (360px width, small ring size, mini distribution bar, two-line summary text) SHALL be designed for use on the main club dashboard as a read-only progress preview.
 
 ## Spoiler Integration
 

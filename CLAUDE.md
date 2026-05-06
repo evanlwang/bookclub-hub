@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+This project is developed with linked-intent driven development and test driven developemnt. Always plan and consult these files first, then write tests, then implement source code:
+- CLAUDE.md for architecture, commands, and development patterns
+- docs/high-level-design.md for system vision and key design decisions
+- docs/specs/ for EARS requirement IDs and feature scope
+- docs/llds/ for component-level contracts (data models, API shapes, visual layouts)
+
 ## Project Overview
 
 **BookClub Hub** is a full-stack application that coordinates the complete lifecycle of book club activity: voting on books, scheduling meetings, discussing chapters, and tracking reading progress. It consolidates what would otherwise be scattered across group chats, spreadsheets, and scheduling tools into a single, purpose-built application.

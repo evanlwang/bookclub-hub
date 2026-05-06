@@ -14,12 +14,18 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[ ]` **DASH-UI-003**: The topbar SHALL display a breadcrumb (`Club > Page`) and the club's invite code as a copyable chip.
 - `[ ]` **DASH-UI-004**: The topbar SHALL include an "Invite" button that copies the club join link.
 
+## Attention Banner
+
+- `[x]` **DASH-UI-005**: The attention banner SHALL display when the user has unvoted active rounds or unresponded meeting proposals, showing action items with colored dot indicators and a primary CTA ("Cast my vote" / "Respond to meetings").
+- `[x]` **DASH-UI-006**: The attention banner SHALL contain one or more action items (e.g., "Voting closes in 3 days · you haven't voted yet"; "Mid-book check-in awaits your availability").
+
 ## Dashboard Main Content
 
-- `[ ]` **DASH-UI-005**: The dashboard SHALL display a personalized greeting with the current date and an attention summary ("N things need your attention this week").
-- `[x]` **DASH-UI-006**: The currently-reading hero card SHALL show book cover, title, author, selection date, and a progress bar with avatar tick-marks positioned at each member's percentage.
-- `[x]` **DASH-UI-007**: The hero card SHALL display three stats: median progress (with trend), finished count (with names), and not-started count (with nudge suggestion).
-- `[x]` **DASH-UI-008**: Below the hero, three preview cards SHALL show: active vote (with nominee covers and "Cast my vote" CTA), next confirmed meeting (with date block, time, location, attendees), and recent discussions (with chapter chips and reply counts).
+- `[x]` **DASH-UI-007**: The currently-reading hero card SHALL show book cover, title, author, selection date, and a progress bar with per-member avatar tick-marks positioned at their exact percentage.
+- `[x]` **DASH-UI-008**: Avatar tick-marks on the progress bar SHALL be hoverable, revealing a tooltip with the member's name and current chapter.
+- `[x]` **DASH-UI-009**: The hero card SHALL display three stats: median progress (with label "median"), finished count (with names), and not-started count.
+- `[x]` **DASH-UI-010**: Below the hero, three preview cards SHALL show: active vote (with nominee covers and "Cast my vote" CTA), next confirmed meeting (with date block, time, location, attendees), and recent discussions (with chapter chips and reply counts).
+- `[x]` **DASH-UI-011**: The club invite code SHALL be displayed in the topbar as a copyable monospace chip (e.g., "OAKWOOD-7Q · Copy").
 
 ## Attention Banner
 
