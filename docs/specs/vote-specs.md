@@ -13,7 +13,7 @@ Status markers: `[x]` implemented · `[ ]` gap (not yet built) · `[D]` deferred
 ## Voting Round Lifecycle
 
 State: nominating — buttons shown: "Search & nominate" (all members), "Advance to Voting" (admin, ≥2 nominations) — transitions: nominating → voting (admin clicks "Advance to Voting"), nominating → cancelled (admin via `rounds.cancel` API)
-State: voting — buttons shown: nomination cards (toggle), "Submit N votes" / "✓ Voted — Update N?" (all members) — transitions: voting → decided (admin via `rounds.advance` API; no UI button), voting → cancelled (admin via `rounds.cancel` API)
+State: voting — buttons shown: nomination cards (toggle), "Submit N votes" / "✓ Voted — Update N?" (all members), "Close voting & reveal winner" + "Cancel round" (admin) — transitions: voting → decided (admin clicks "Close voting" → `rounds.advance`), voting → cancelled (admin clicks "Cancel round" → `rounds.cancel`)
 State: decided — buttons shown: "Start new round" (admin) — transitions: terminal; admin starts a new round via `rounds.create`
 State: cancelled — buttons shown: none (round excluded from active list) — transitions: terminal
 
@@ -83,11 +83,11 @@ These specs cover what happens when a member revisits the voting page after they
 
 - `[x]` **VOTE-DATA-VOTE-PERSIST-001**: User votes SHALL persist in the `Vote` table across sessions. On resubmit, the system SHALL atomically replace the user's previous votes for that round (delete-then-createMany inside a single procedure). (`votes.ts:54-67`)
 - `[x]` **VOTE-API-MY-VOTES-001**: During the "voting" phase, `rounds.get` SHALL return each nomination's `votes` array filtered to the calling user's own votes only (other members' votes hidden until "decided"). Clients derive the user's prior selections from `nominations[i].votes[*].nominationId`. (`rounds.ts:85-93`)
-- `[ ]` **VOTE-UI-PRIOR-VOTES-001**: When a member loads the voting page after having previously submitted votes, the UI SHALL pre-select their prior selections so the displayed state matches what is persisted server-side. Today the page passes `myVotes={[]}` to `<VoteRound>` (`vote/page.tsx:16, 102`); fix is to derive `myVotes` from `activeRoundDetail.nominations.flatMap(n => n.votes).map(v => v.nominationId)`. Without this, a returning user sees a blank slate even though their votes are recorded — confusing and easy to accidentally re-submit a different selection.
-- `[ ]` **VOTE-UI-PRIOR-VOTES-002**: When prior votes are present on page load, the submit button SHALL render in "update mode" from the start — label "✓ Voted — Update {N}?" — matching the post-submit state in the same session. The picks pill area SHALL also include a subtle hint such as "You voted previously" so the user understands they're editing, not voting fresh. Today the "update" label only triggers after an in-session submit (`hasVoted` flag in `vote-round.tsx:213-215`).
-- `[ ]` **VOTE-UI-TURNOUT-LIVE-001**: After a successful `votes.submit` (first vote or update), the "Voter turnout" card SHALL refresh to reflect the new count **without a manual page reload**. The current behavior reads `voterCount` and `memberCount` from a server-rendered prop computed at page load (`vote/page.tsx:39-50`) and never updates them, so the card stays stale until the user reloads. Implementation hint: call `router.refresh()` in `handleSubmitVotes`'s success path (`vote-round.tsx:84-86`) to re-run the server component.
-- `[ ]` **VOTE-UI-TURNOUT-CHANGE-COUNT-001**: When the current user has not yet voted in this round, submitting their first vote SHALL increment the turnout count (e.g., "3 of 6 have voted" → "4 of 6 have voted"). When the current user is updating an existing vote, the turnout count SHALL remain unchanged (the `voters distinct on userId` query in `vote/page.tsx:44-49` already handles this — surfacing here so the spec is explicit).
-- `[ ]` **VOTE-UI-UPDATE-CONFIRM-001**: The success message under the submit button SHALL distinguish between an initial vote and an update: "✓ Your votes have been recorded" on first submit, "✓ Your votes have been updated" on subsequent submits. Today both states show the same string (`vote-round.tsx:218-222`).
+- `[x]` **VOTE-UI-PRIOR-VOTES-001**: When a member loads the voting page after having previously submitted votes, the UI SHALL pre-select their prior selections so the displayed state matches what is persisted server-side. (`vote/page.tsx:38-43` derives `myVotes` from `activeRoundDetail.nominations` via `derivePriorVotes`; `vote-round.tsx:54-66` initializes `selected` from the prop and re-syncs on `router.refresh()`.)
+- `[x]` **VOTE-UI-PRIOR-VOTES-002**: When prior votes are present on page load, the submit button SHALL render in "update mode" from the start ("✓ Voted — Update {N}?") and the picks area SHALL show "You voted previously — toggle a selection to update." (`vote-round.tsx:55` initializes `hasVoted = initialVotes.length > 0`; the hint renders at `vote-round.tsx:155-163` with `data-testid="prior-vote-hint"`.)
+- `[x]` **VOTE-UI-TURNOUT-LIVE-001**: After a successful `votes.submit`, the "Voter turnout" card SHALL refresh without a manual page reload. (`vote-round.tsx:97-103` calls `router.refresh()` in the success path; the server component re-fetches the distinct voter count and the new value renders in place.)
+- `[x]` **VOTE-UI-TURNOUT-CHANGE-COUNT-001**: First vote increments the turnout count; updating an existing vote leaves it unchanged. The DB-level distinct-on-userId count already gives this semantic (`vote/page.tsx:48-54`), and `router.refresh()` surfaces the latest value to the UI.
+- `[x]` **VOTE-UI-UPDATE-CONFIRM-001**: Distinct success messages — "✓ Your votes have been recorded" on first submit, "✓ Your votes have been updated" on subsequent submits. (`vote-round.tsx:99-101` tracks `lastSubmitWasUpdate`; `vote-round.tsx:251-256` renders via `successMessage(lastSubmitWasUpdate)`.) The toast also clears as soon as the user toggles a nomination again (`vote-round.tsx:79`).
 
 ## Voting UI — Decided Phase
 
@@ -100,13 +100,24 @@ These specs cover what happens when a member revisits the voting page after they
 
 ## Voting UI — Voting → Decided (Manual Close)
 
-- `[!]` **VOTE-UI-CLOSE-001**: The mutation `rounds.advance` supports voting → decided (`rounds.ts:128-181`), but **no UI button calls it during the voting phase**. The only path to decided today is through the deadline (if implemented) or directly invoking the API. Treat as a gap:
-  - `[ ]` **VOTE-UI-CLOSE-BTN-001**: An admin-only "Close voting" / "Reveal results" button in the voting phase that calls `rounds.advance`.
+- `[x]` **VOTE-UI-CLOSE-001**: The voting phase SHALL surface an admin-only UI control that calls `rounds.advance` to transition the round to "decided". Implemented per VOTE-UI-CLOSE-002+.
+- `[x]` **VOTE-UI-CLOSE-BTN-001**: An admin-only "Close voting" / "Reveal results" button in the voting phase that calls `rounds.advance`. (Replaced by VOTE-UI-CLOSE-002+.)
+- `[x]` **VOTE-UI-CLOSE-002**: During the voting phase, an admin+ SHALL see a "Close voting & reveal winner" button in the round panel. Members SHALL NOT see it.
+- `[x]` **VOTE-UI-CLOSE-003**: Clicking the button SHALL open a confirmation dialog showing the top 3 books by current approval count, with the leader marked "Will become the current book".
+- `[x]` **VOTE-UI-CLOSE-004**: The dialog SHALL warn that closing is irreversible, require an explicit "Close voting" confirm click, and call `rounds.advance` on confirm.
+- `[x]` **VOTE-UI-CLOSE-005**: If a tie exists at close time, the dialog SHALL display "Tied with N other(s) — earliest nomination wins" next to the leader, naming the rule applied (per VOTE-BE-001).
+- `[x]` **VOTE-UI-CLOSE-006**: After successful close, the page SHALL transition to the decided view without a hard reload, and the club dashboard's "Current Book" card SHALL reflect the new pick on next visit (already wired via `BookSelection.isCurrent`).
+- `[x]` **VOTE-UI-CLOSE-007**: The Close button SHALL be disabled with helper text "No votes cast yet" if zero approvals exist across all nominations.
 
 ## Cancel Round UI
 
-- `[!]` **VOTE-UI-CANCEL-001**: The mutation `rounds.cancel` exists (`rounds.ts:189-217`) but no UI button invokes it. Treat as a gap:
-  - `[ ]` **VOTE-UI-CANCEL-BTN-001**: An admin-only "Cancel round" button on nominating and voting phases that calls `rounds.cancel`, with a confirmation dialog.
+- `[x]` **VOTE-UI-CANCEL-001**: The voting and nominating phases SHALL surface an admin-only "Cancel round" action that calls `rounds.cancel`. Implemented per VOTE-UI-CANCEL-002.
+- `[x]` **VOTE-UI-CANCEL-BTN-001**: An admin-only "Cancel round" button on nominating and voting phases that calls `rounds.cancel`, with a confirmation dialog. (Replaced by VOTE-UI-CANCEL-002.)
+- `[x]` **VOTE-UI-CANCEL-002**: An admin+ SHALL see a secondary "Cancel round" action in nominating and voting phases that calls `rounds.cancel` with a typed-confirmation dialog (user types the word "cancel").
+
+## Deferred — Manual Tie Override
+
+- `[D]` **VOTE-BE-TIE-MANUAL-001**: When a tie exists at close time, the system MAY return a `tiedBookIds[]` payload and let the owner manually pick the winner before committing. Not in v1 — current behavior uses automatic earliest-nomination tie-break per VOTE-BE-001.
 
 ## Deadlines
 

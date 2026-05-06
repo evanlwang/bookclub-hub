@@ -40,7 +40,7 @@ Create flow (in `/join`, see auth-and-accounts.md for full inventory of Step 3b)
 ## Gaps (UI not built)
 
 Settings page — `[ ]` admin: name/desc/code edit, archive/unarchive, delete (30-day notice). Mutations exist.
-Member management UI — `[ ]` admin: list with remove and promote/demote actions. `clubs.members.remove`, `clubs.members.updateRole` exist.
+Member management UI — `[x]` admin: list with remove and promote/demote actions. `clubs.members.remove`, `clubs.members.updateRole`, `clubs.members.transferOwnership`, `clubs.leave`. (`/clubs/[clubId]/members`)
 Topbar invite chip ("OAKWOOD-7Q · Copy") — `[ ]` not in any topbar; invite code is shown only on the dashboard header and on Step 4 success.
 Topbar "Invite" button — `[ ]` not implemented.
 Real-time code-availability check during create — `[ ]` only on submit today.
@@ -150,7 +150,9 @@ The sidebar's clubs list is loaded server-side via `auth.me` in `clubs/[clubId]/
 | `clubs.delete` | owner | `{ clubId }` | (soft delete) |
 | `clubs.members.list` | member | `{ clubId }` | `[{ user, role, joinedAt }]` |
 | `clubs.members.remove` | admin+ (or self) | `{ clubId, userId }` | - |
-| `clubs.members.updateRole` | owner | `{ clubId, userId, role }` | - |
+| `clubs.members.updateRole` | owner | `{ clubId, userId, role: "admin" \| "member" }` | - |
+| `clubs.members.transferOwnership` | owner | `{ clubId, newOwnerUserId }` | `{ ok: true }` |
+| `clubs.leave` | member+ | `{ clubId }` | `{ ok: true }` (owner blocked) |
 | `clubs.join` | optional | `{ code, email?, displayName? }` | `{ club }` |
 | `clubs.lookup` | none | `{ code }` | `{ clubName, memberCount }` or 404 |
 
@@ -161,10 +163,53 @@ The sidebar's clubs list is loaded server-side via `auth.me` in `clubs/[clubId]/
 | View club data | member+ |
 | Edit club settings | admin+ |
 | Change club code | owner |
-| Manage members (remove, promote) | admin+ |
+| Remove non-owner member | admin+ |
+| Promote member ↔ admin | owner |
 | Delete club | owner |
 | Transfer ownership | owner |
-| Leave club | member+ (owner cannot leave without transferring; not enforced) |
+| Leave club | member+ (owner blocked by `clubs.leave`; must transfer first) |
+
+## Members Page Flow
+
+Route: `/clubs/[clubId]/members`. Server component loads `clubs.members.list` + the caller's role from `clubs.get` and renders a client table. Members at role="member" are redirected (or shown a 403 error card) — only admins and owners may view.
+
+Each row exposes a role-gated action menu:
+
+```
+viewer   target            actions surfaced
+─────────────────────────────────────────────────────────────────
+admin    member            Remove
+admin    admin             Remove
+admin    owner             (none)
+admin    self              Leave club
+owner    member            Promote to admin · Remove
+owner    admin             Demote to member · Transfer ownership · Remove
+owner    owner (self)      (no Leave; row hint: "Transfer ownership to leave")
+```
+
+Mutations call existing/new tRPC procedures and `router.refresh()` on success so the table re-fetches without a hard reload. Destructive actions (Remove, Leave) use a name-confirmation dialog. Transfer ownership uses a typed-confirmation dialog (user types the target's display name).
+
+## Ownership Transfer
+
+A new tRPC mutation `clubs.members.transferOwnership` (owner-only):
+
+```
+input  : { clubId, newOwnerUserId }
+guards : - caller is the current owner of the club
+         - newOwnerUserId is an existing admin (UI restricts; API also enforces)
+         - newOwnerUserId !== caller.id
+runs   : prisma.$transaction([
+           membership.update(currentOwner → role="admin"),
+           membership.update(newOwner → role="owner"),
+         ])
+returns: { ok: true }
+```
+
+The transaction enforces `CLUB-DATA-003` (exactly one owner) by demoting and promoting in a single statement. After success the client calls `router.refresh()`; the former owner sees themselves as admin on the next render.
+
+## Owner-Cannot-Leave Enforcement
+
+`clubs.leave` (member+) removes the caller's own membership. If the caller's role is `owner`, the procedure throws `FORBIDDEN` with the message "Transfer ownership before leaving." This is the API-level enforcement of `CLUB-BE-003`. The UI parallels this: the owner's own row shows a hint instead of a Leave action.
 
 ## Decisions & Alternatives
 

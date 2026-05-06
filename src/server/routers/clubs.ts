@@ -267,7 +267,96 @@ export const clubsRouter = router({
 
         return { success: true };
       }),
+
+    // @spec CLUB-API-OWNERSHIP-001, CLUB-DATA-003
+    transferOwnership: protectedProcedure
+      .input(
+        z.object({
+          clubId: z.string().uuid(),
+          newOwnerUserId: z.string().uuid(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (input.newOwnerUserId === ctx.user.id) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot transfer ownership to yourself",
+          });
+        }
+
+        const callerMembership = await ctx.db.membership.findUnique({
+          where: {
+            clubId_userId: { clubId: input.clubId, userId: ctx.user.id },
+          },
+        });
+        if (!callerMembership || callerMembership.role !== "owner") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only the owner can transfer ownership",
+          });
+        }
+
+        const targetMembership = await ctx.db.membership.findUnique({
+          where: {
+            clubId_userId: { clubId: input.clubId, userId: input.newOwnerUserId },
+          },
+        });
+        if (!targetMembership) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Target user is not a member of this club",
+          });
+        }
+        if (targetMembership.role !== "admin") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "New owner must already be an admin",
+          });
+        }
+
+        await ctx.db.$transaction([
+          ctx.db.membership.update({
+            where: { id: callerMembership.id },
+            data: { role: "admin" },
+          }),
+          ctx.db.membership.update({
+            where: { id: targetMembership.id },
+            data: { role: "owner" },
+          }),
+        ]);
+
+        return { ok: true as const };
+      }),
   }),
+
+  // @spec CLUB-BE-LEAVE-001, CLUB-BE-003
+  leave: protectedProcedure
+    .input(z.object({ clubId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.membership.findUnique({
+        where: {
+          clubId_userId: { clubId: input.clubId, userId: ctx.user.id },
+        },
+      });
+
+      if (!membership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "You are not a member of this club",
+        });
+      }
+
+      if (membership.role === "owner") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Transfer ownership before leaving",
+        });
+      }
+
+      await ctx.db.membership.delete({ where: { id: membership.id } });
+
+      return { ok: true as const };
+    }),
 
   join: publicProcedure
     .input(

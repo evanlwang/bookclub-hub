@@ -1,4 +1,4 @@
-// @spec DASH-UI-001, DASH-UI-002, AUTH-UI-LOGOUT-001, CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-010
+// @spec DASH-UI-001, DASH-UI-002, AUTH-UI-LOGOUT-001, CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-010, CLUB-NAV-MEMBERS-001
 "use client";
 
 import { useState } from "react";
@@ -11,17 +11,19 @@ import {
   CalendarIcon,
   ChatIcon,
   TrendIcon,
+  UsersIcon,
   Avatar,
   Badge,
 } from "@/components/ui";
 import { ClubSwitcherModal } from "@/components/club/club-switcher-modal";
 
 const navItems = [
-  { label: "Dashboard", href: "", icon: BookIcon },
-  { label: "Voting", href: "/vote", icon: VoteIcon },
-  { label: "Meetings", href: "/meetings", icon: CalendarIcon },
-  { label: "Discussions", href: "/discussions", icon: ChatIcon },
-  { label: "Progress", href: "/progress", icon: TrendIcon },
+  { label: "Dashboard", href: "", icon: BookIcon, adminOnly: false },
+  { label: "Voting", href: "/vote", icon: VoteIcon, adminOnly: false },
+  { label: "Meetings", href: "/meetings", icon: CalendarIcon, adminOnly: false },
+  { label: "Discussions", href: "/discussions", icon: ChatIcon, adminOnly: false },
+  { label: "Progress", href: "/progress", icon: TrendIcon, adminOnly: false },
+  { label: "Members", href: "/members", icon: UsersIcon, adminOnly: true },
 ];
 
 type ClubInfo = { id: string; name: string; code: string; role: string };
@@ -127,6 +129,9 @@ export function ClubSidebar({
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-0.5">
         {navItems.map((item) => {
+          if (item.adminOnly && currentClub?.role !== "admin" && currentClub?.role !== "owner") {
+            return null;
+          }
           const href = `${basePath}${item.href}`;
           const isActive =
             item.href === ""
@@ -138,6 +143,7 @@ export function ClubSidebar({
             <Link
               key={item.label}
               href={href}
+              data-testid={`sidebar-nav-${item.label.toLowerCase()}`}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-colors duration-150 ${
                 isActive
                   ? "bg-primary-soft text-primary-ink"

@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button, Card, Badge, BookCover, Avatar } from "@/components/ui";
 import { NominateModal } from "./nominate-modal";
 import { successMessage } from "@/lib/voting/prior-votes";
+import {
+  CloseVotingDialog,
+  CancelRoundDialog,
+  type ClosePreview,
+} from "./close-voting-dialog";
 
 type Nomination = {
   id: string;
@@ -25,6 +30,7 @@ interface VoteRoundProps {
   isAdmin: boolean;
   memberCount?: number;
   voterCount?: number;
+  closePreview?: ClosePreview | null;
 }
 
 function relativeTime(dateStr?: string): string {
@@ -49,10 +55,17 @@ export function VoteRound({
   isAdmin,
   memberCount = 0,
   voterCount = 0,
+  closePreview = null,
 }: VoteRoundProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>(initialVotes);
   const [hasVoted, setHasVoted] = useState(initialVotes.length > 0);
+  // @spec VOTE-UI-CLOSE-002, VOTE-UI-CANCEL-002
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
+  const [adminActionError, setAdminActionError] = useState("");
+  const [cancelConfirmText, setCancelConfirmText] = useState("");
   // Tracks the just-completed in-session submit so we can show a confirmation
   // toast that disappears on the next interaction. Distinct from `hasVoted`,
   // which persists across reloads to drive the "Update N?" button label.
@@ -113,6 +126,61 @@ export function VoteRound({
       setError("Something went wrong");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // @spec VOTE-UI-CLOSE-004, VOTE-UI-CLOSE-006, VOTE-API-003
+  async function handleCloseVoting() {
+    if (adminActionLoading) return;
+    setAdminActionLoading(true);
+    setAdminActionError("");
+    try {
+      const res = await fetch("/api/trpc/rounds.advance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubId, roundId }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setAdminActionError(data.error.message || "Failed to close voting");
+        return;
+      }
+      setCloseOpen(false);
+      router.refresh();
+    } catch {
+      setAdminActionError("Something went wrong");
+    } finally {
+      setAdminActionLoading(false);
+    }
+  }
+
+  // @spec VOTE-UI-CANCEL-002, VOTE-API-004
+  async function handleCancelRound() {
+    if (adminActionLoading) return;
+    if (cancelConfirmText.trim().toLowerCase() !== "cancel") {
+      setAdminActionError('Type "cancel" to confirm');
+      return;
+    }
+    setAdminActionLoading(true);
+    setAdminActionError("");
+    try {
+      const res = await fetch("/api/trpc/rounds.cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubId, roundId }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setAdminActionError(data.error.message || "Failed to cancel round");
+        return;
+      }
+      setCancelOpen(false);
+      setCancelConfirmText("");
+      router.refresh();
+    } catch {
+      setAdminActionError("Something went wrong");
+    } finally {
+      setAdminActionLoading(false);
     }
   }
 
@@ -256,6 +324,85 @@ export function VoteRound({
             <p className="text-xs text-success text-center mt-2 animate-fade-in" data-testid="vote-success">
               {successMessage(lastSubmitWasUpdate)}
             </p>
+          )}
+
+          {/* @spec VOTE-UI-CLOSE-002, VOTE-UI-CLOSE-007, VOTE-UI-CANCEL-002 */}
+          {isAdmin && (
+            <div
+              data-testid="admin-round-actions"
+              className="mt-6 pt-5 border-t border-line flex items-center justify-between gap-3 flex-wrap"
+            >
+              <div className="flex flex-col">
+                <span className="text-xs uppercase tracking-wider text-ink-3">Admin actions</span>
+                {closePreview && closePreview.totalVotes === 0 && (
+                  <span
+                    data-testid="close-disabled-hint"
+                    className="text-[11px] text-ink-3 italic mt-0.5"
+                  >
+                    No votes cast yet
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAdminActionError("");
+                    setCancelOpen(true);
+                  }}
+                  data-testid="cancel-round-btn"
+                >
+                  Cancel round
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  disabled={!closePreview || closePreview.totalVotes === 0}
+                  onClick={() => {
+                    setAdminActionError("");
+                    setCloseOpen(true);
+                  }}
+                  data-testid="close-voting-btn"
+                >
+                  Close voting & reveal winner
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {closeOpen && closePreview && (
+            <CloseVotingDialog
+              preview={closePreview}
+              submitting={adminActionLoading}
+              error={adminActionError}
+              onConfirm={handleCloseVoting}
+              onCancel={() => {
+                if (!adminActionLoading) {
+                  setCloseOpen(false);
+                  setAdminActionError("");
+                }
+              }}
+            />
+          )}
+
+          {cancelOpen && (
+            <CancelRoundDialog
+              submitting={adminActionLoading}
+              error={adminActionError}
+              confirmText={cancelConfirmText}
+              onConfirmTextChange={setCancelConfirmText}
+              onConfirm={handleCancelRound}
+              onCancel={() => {
+                if (!adminActionLoading) {
+                  setCancelOpen(false);
+                  setCancelConfirmText("");
+                  setAdminActionError("");
+                }
+              }}
+            />
           )}
         </div>
 
@@ -473,7 +620,7 @@ export function VoteRound({
       </div>
 
       {isAdmin && (
-        <div className="mt-6 flex gap-3">
+        <div className="mt-6 flex gap-3 items-center">
           <Button
             variant="primary"
             size="md"
@@ -487,9 +634,39 @@ export function VoteRound({
           {nominations.length < 2 && (
             <span className="text-xs text-ink-3 self-center">Needs at least 2 nominations</span>
           )}
+          {/* @spec VOTE-UI-CANCEL-002 */}
+          <Button
+            variant="ghost"
+            size="md"
+            className="ml-auto"
+            onClick={() => {
+              setAdminActionError("");
+              setCancelOpen(true);
+            }}
+            data-testid="cancel-round-btn"
+          >
+            Cancel round
+          </Button>
         </div>
       )}
       {error && <p className="text-sm text-danger mt-2">{error}</p>}
+
+      {cancelOpen && (
+        <CancelRoundDialog
+          submitting={adminActionLoading}
+          error={adminActionError}
+          confirmText={cancelConfirmText}
+          onConfirmTextChange={setCancelConfirmText}
+          onConfirm={handleCancelRound}
+          onCancel={() => {
+            if (!adminActionLoading) {
+              setCancelOpen(false);
+              setCancelConfirmText("");
+              setAdminActionError("");
+            }
+          }}
+        />
+      )}
 
       <NominateModal
         isOpen={isNominateModalOpen}

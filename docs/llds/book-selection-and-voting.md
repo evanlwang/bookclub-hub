@@ -19,7 +19,7 @@ voting → cancelled
 ```
 
 State: nominating — buttons shown: "Search & nominate", "Advance to Voting" (admin) — transitions: → voting (admin clicks "Advance to Voting"; needs ≥2 nominations); → cancelled (admin via API only)
-State: voting — buttons shown: nomination cards, "Submit N votes" / "✓ Voted — Update N?" — transitions: → decided (`rounds.advance` API; **no UI button**); → cancelled (API only)
+State: voting — buttons shown: nomination cards, "Submit N votes" / "✓ Voted — Update N?", "Close voting & reveal winner" (admin), "Cancel round" (admin) — transitions: → decided (admin clicks Close voting → `rounds.advance`); → cancelled (admin clicks Cancel round → `rounds.cancel`)
 State: decided — buttons shown: "Start new round" (admin) — transitions: terminal
 State: cancelled — buttons shown: none — transitions: terminal
 
@@ -37,6 +37,8 @@ Button: "Search & nominate" — `vote-round.tsx:402-409` — visible: status="no
 Button: "Advance to Voting" — `vote-round.tsx:440-449` — visible: status="nominating" AND isAdmin — enabled: nominations.length ≥ 2 — handler: `rounds.advance`
 Button: nomination card (clickable) — `vote-round.tsx:155-196` — visible: status="voting" — enabled: not (selected.length ≥ maxApprovals AND !isSelected) — handler: toggleSelection
 Button: "Submit {N} votes" / "✓ Voted — Update {N}?" — `vote-round.tsx:204-216` — visible: status="voting" — enabled: selected.length ≥ 1 — handler: `votes.submit`
+Button: "Close voting & reveal winner" — visible: status="voting" AND isAdmin — enabled: at least one approval cast — handler: opens close-voting dialog → on confirm calls `rounds.advance` (CLOSE-002..006)
+Button: "Cancel round" — visible: (status="nominating" OR "voting") AND isAdmin — enabled: always — handler: opens typed-confirmation dialog → calls `rounds.cancel` (CANCEL-002)
 Button: "Start new round" — `vote-round.tsx:331-339` — visible: status="decided" AND isAdmin — enabled: always — handler: `rounds.create`
 Button: search input (debounced) — `nominate-modal.tsx:230-247` — visible: modal open, search tab — handler: `books.search` after 300ms debounce
 Button: "Nominate" (per result row) — `nominate-modal.tsx:272-283` — visible: search results present — handler: `nominations.create`
@@ -45,10 +47,30 @@ Button: "Create & Nominate" — `nominate-modal.tsx:398-406` — visible: manual
 Button: "Back" — `nominate-modal.tsx:383-394` — visible: manual tab — handler: returns to search tab, resets manual fields
 Button: "Cancel" — `nominate-modal.tsx:311-318` — visible: search tab — handler: closes modal
 
+## Close-Voting Flow
+
+Sequence when an admin closes voting from the UI:
+
+```
+admin → "Close voting & reveal winner" button (voting phase)
+      → opens CloseVotingDialog
+            → preview: top 3 nominations by approval count (computed client-side)
+            → leader marked "Will become the current book"
+            → if tied: "Tied with N other(s) — earliest nomination wins"
+            → "Close voting" confirm button (irreversible)
+      → rounds.advance(roundId)
+            → server tallies via tallyVotes (VOTE-BE-001 — earliest nomination breaks ties)
+            → sets winningBookId, marks BookSelection.isCurrent=true,
+              demotes prior current selection
+      → router.refresh() → page re-renders with status="decided"
+            → winner banner, full tallies revealed (VOTE-API-VISIBILITY-002)
+            → club dashboard "Current Book" card reflects new pick on next visit
+```
+
+The Close button is disabled with helper text "No votes cast yet" when zero approvals exist across nominations (CLOSE-007). Tie-break behavior is the existing `VOTE-BE-001` rule — surfaced in copy rather than overridable. Manual tie override is deferred (`VOTE-BE-TIE-MANUAL-001`).
+
 ## Gaps (UI not yet built; mutations exist)
 
-Button: "Close voting" / "Reveal results" — `[ ]` not in UI — should call `rounds.advance` (voting → decided). Today the only path to decided is server-side direct invocation.
-Button: "Cancel round" — `[ ]` not in UI — should call `rounds.cancel`. Mutation exists at `rounds.ts:189-217`.
 Button: "Set up first meeting" CTA on winner banner — `[!]` listed in older spec, not implemented.
 Button: "View on Open Library" CTA on winner banner — `[!]` listed in older spec, not implemented.
 Pitch textarea in NominateModal — `[ ]` data field exists on Nomination but no UI input.

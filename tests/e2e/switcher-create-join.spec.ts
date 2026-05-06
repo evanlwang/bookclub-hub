@@ -1,6 +1,6 @@
 // @spec CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-002, CLUB-NAV-MODAL-003, CLUB-NAV-MODAL-004, CLUB-NAV-MODAL-005, CLUB-NAV-MODAL-006, CLUB-NAV-MODAL-007, CLUB-NAV-MODAL-008, CLUB-NAV-MODAL-010
 import { test, expect, type Page } from "@playwright/test";
-import { loginAs, getClubByCode } from "./helpers";
+import { loginAs, getClubByCode, getDb } from "./helpers";
 
 async function openSwitcherModal(page: Page) {
   // Open the sidebar dropdown by clicking the club header switcher button.
@@ -10,9 +10,23 @@ async function openSwitcherModal(page: Page) {
   await expect(page.getByTestId("club-switcher-modal")).toBeVisible();
 }
 
+// Other test files (members-management) can transiently remove carol's
+// WEDREADS membership while running in parallel. Make sure she's in before each test.
+async function ensureCarolInWedreads() {
+  const db = getDb();
+  const club = await db.club.findUniqueOrThrow({ where: { code: "WEDREADS" } });
+  const carol = await db.user.findUniqueOrThrow({ where: { email: "carol@example.com" } });
+  await db.membership.upsert({
+    where: { clubId_userId: { clubId: club.id, userId: carol.id } },
+    update: { role: "admin" },
+    create: { clubId: club.id, userId: carol.id, role: "admin" },
+  });
+}
+
 test.describe.configure({ mode: "serial" });
 
 test.describe("Switcher Create/Join Modal", () => {
+  test.beforeEach(ensureCarolInWedreads);
   // @spec CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-010
   test("clicking 'Create or join a club' opens the centered modal in place", async ({ page }) => {
     await loginAs(page, "carol@example.com");

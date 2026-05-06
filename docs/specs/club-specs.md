@@ -76,21 +76,36 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 
 ## Roles and Authorization
 
-- `[x]` **CLUB-BE-002**: Role-based access enforcement: member+ for viewing, admin+ for editing settings and managing members, owner for deletion and ownership transfer. (Enforced at tRPC procedure level via `memberProcedure` / `adminProcedure`.)
+- `[x]` **CLUB-BE-002**: Role-based access enforcement: member+ for viewing, admin+ for editing settings and managing members, owner for deletion and ownership transfer. (Enforced at tRPC procedure level via `memberProcedure` / `adminProcedure`.) Note: `members.remove` is admin+; `members.updateRole` is owner-only; `members.transferOwnership` is owner-only.
 - `[x]` **CLUB-API-009**: When a non-member attempts to access any club-scoped procedure, the system SHALL throw a FORBIDDEN error.
-- `[ ]` **CLUB-BE-003**: The owner SHALL NOT be able to leave the club without first transferring ownership.
+- `[x]` **CLUB-BE-003**: The owner SHALL NOT be able to leave the club without first transferring ownership. Enforced by `clubs.leave` (CLUB-BE-LEAVE-001).
 
 ## Club Lifecycle Gaps
 
 - `[ ]` **CLUB-BE-004**: When the owner deletes a club, the system SHALL soft-delete (status="deleted", deleted_at timestamp).
 - `[ ]` **CLUB-BE-005**: Soft-deleted clubs SHALL be hard-deleted after 30 days.
 - `[ ]` **CLUB-BE-006**: When the owner archives, the system SHALL set status="archived" and reject all writes except un-archive.
-- `[ ]` **CLUB-DATA-003**: Exactly one owner per club at all times.
+- `[x]` **CLUB-DATA-003**: Exactly one owner per club at all times. Maintained by `transferOwnership` running inside `prisma.$transaction` (demote + promote in one statement) and by `clubs.leave` rejecting owner self-removal.
+
+## Member Management
+
+- `[x]` **CLUB-UI-MEMBERS-001**: A members page SHALL exist at `/clubs/[clubId]/members` exposing the table/cards with avatar, name, email, role, joined date, and role-gated actions (remove, promote/demote, transfer, leave). (Implemented by CLUB-UI-MEMBERS-002+.)
+- `[x]` **CLUB-UI-MEMBERS-002**: The members page SHALL render a table of all club members with avatar, display name, email, role badge, and joined date — visible to admin+. Members not at admin+ SHALL be redirected (or shown an authorization error) on this route.
+- `[x]` **CLUB-UI-MEMBERS-003**: An admin+ SHALL see a "Remove" action on each non-owner row; clicking it SHALL open a confirmation dialog naming the member, and on confirm SHALL call `clubs.members.remove`.
+- `[x]` **CLUB-UI-MEMBERS-004**: An owner SHALL see "Promote to admin" / "Demote to member" actions on member/admin rows respectively, calling `clubs.members.updateRole`. Admins SHALL NOT see these actions.
+- `[x]` **CLUB-UI-MEMBERS-005**: The owner row SHALL be visually marked (badge tone="primary") and SHALL NOT expose Remove or Demote actions.
+- `[x]` **CLUB-UI-MEMBERS-006**: After any successful mutation, the table SHALL refresh (`router.refresh()`) without a full page reload.
+- `[x]` **CLUB-NAV-MEMBERS-001**: The sidebar SHALL render a "Members" nav link, visible only when the current user's role on the club is `admin` or `owner`.
+- `[x]` **CLUB-API-OWNERSHIP-001**: A new mutation `clubs.members.transferOwnership` (owner-only) SHALL atomically demote the caller to "admin" and promote the target user (must be an existing member) to "owner". The transaction SHALL maintain the CLUB-DATA-003 invariant.
+- `[x]` **CLUB-UI-OWNERSHIP-001**: Ownership transfer UI with confirmation dialog. (Implemented by CLUB-UI-OWNERSHIP-002+.)
+- `[x]` **CLUB-UI-OWNERSHIP-002**: An owner SHALL see a "Transfer ownership" action on every admin row (admins only — promote a member first if needed). Clicking it SHALL open a typed-confirmation dialog (user types the target's display name) before calling `clubs.members.transferOwnership`.
+- `[x]` **CLUB-UI-OWNERSHIP-003**: After a successful transfer, the system SHALL refresh the page so the (former) owner now sees themselves as admin and the new owner is highlighted.
+- `[x]` **CLUB-BE-LEAVE-001**: A new mutation `clubs.leave` (member+) SHALL remove the caller's own membership. If the caller is the owner, it SHALL throw `FORBIDDEN` with message "Transfer ownership before leaving."
+- `[x]` **CLUB-UI-MEMBERS-LEAVE-001**: A non-owner SHALL see a "Leave club" action on their own row; on confirm it SHALL call `clubs.leave` and redirect to `/clubs`. The owner SHALL NOT see this action — instead, the row SHALL display a hint reading "Transfer ownership to leave."
 
 ## Settings Page Gaps
 
 - `[ ]` **CLUB-UI-SETTINGS-001**: Admin Settings page (name / description / code edit, archive/unarchive toggle, delete with 30-day notice). Mutations may exist on `clubs.update` / `clubs.delete`; no UI surfaces them.
-- `[ ]` **CLUB-UI-MEMBERS-001**: Member management UI (table/cards with avatar, name, role, joined date; remove, promote/demote actions). Mutations exist (`clubs.members.remove`, `clubs.members.updateRole`); no UI.
 
 ## Topbar Gaps
 
@@ -102,4 +117,4 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 ## Deferred
 
 - `[D]` **CLUB-BE-007**: Configurable maximum member limit per club.
-- `[D]` **CLUB-UI-OWNERSHIP-001**: Ownership transfer UI with confirmation dialog and notification.
+- `[D]` **CLUB-UI-OWNERSHIP-NOTIFY-001**: Email/notification to the new owner upon ownership transfer. (CLUB-UI-OWNERSHIP-001 is now implemented for the UI surface; transactional notification deferred.)

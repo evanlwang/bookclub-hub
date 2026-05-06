@@ -221,4 +221,116 @@ describe("clubs", () => {
       ).rejects.toThrow("Only the owner can change roles");
     });
   });
+
+  // @spec CLUB-API-OWNERSHIP-001, CLUB-DATA-003
+  describe("clubs.members.transferOwnership", () => {
+    beforeEach(async () => {
+      // alice=owner, bob=admin, carol=member
+      await seedClubWithMembers(db, wedReads, alice, [bob], [carol]);
+    });
+
+    it("atomically demotes owner and promotes admin", async () => {
+      const caller = await createAuthenticatedCaller(db, alice);
+      await caller.clubs.members.transferOwnership({
+        clubId: wedReads.id,
+        newOwnerUserId: bob.id,
+      });
+
+      const aliceM = await db.membership.findUnique({
+        where: { clubId_userId: { clubId: wedReads.id, userId: alice.id } },
+      });
+      const bobM = await db.membership.findUnique({
+        where: { clubId_userId: { clubId: wedReads.id, userId: bob.id } },
+      });
+      expect(aliceM?.role).toBe("admin");
+      expect(bobM?.role).toBe("owner");
+
+      // Exactly one owner.
+      const owners = await db.membership.findMany({
+        where: { clubId: wedReads.id, role: "owner" },
+      });
+      expect(owners).toHaveLength(1);
+    });
+
+    it("rejects transfer to a non-admin (member target)", async () => {
+      const caller = await createAuthenticatedCaller(db, alice);
+      await expect(
+        caller.clubs.members.transferOwnership({
+          clubId: wedReads.id,
+          newOwnerUserId: carol.id,
+        })
+      ).rejects.toThrow("must already be an admin");
+    });
+
+    it("rejects transfer to self", async () => {
+      const caller = await createAuthenticatedCaller(db, alice);
+      await expect(
+        caller.clubs.members.transferOwnership({
+          clubId: wedReads.id,
+          newOwnerUserId: alice.id,
+        })
+      ).rejects.toThrow("Cannot transfer ownership to yourself");
+    });
+
+    it("rejects transfer by a non-owner caller", async () => {
+      // bob is admin, attempts to transfer to carol (member)
+      const caller = await createAuthenticatedCaller(db, bob);
+      await expect(
+        caller.clubs.members.transferOwnership({
+          clubId: wedReads.id,
+          newOwnerUserId: carol.id,
+        })
+      ).rejects.toThrow("Only the owner can transfer ownership");
+    });
+  });
+
+  // @spec CLUB-BE-LEAVE-001, CLUB-BE-003
+  describe("clubs.leave", () => {
+    beforeEach(async () => {
+      await seedClubWithMembers(db, wedReads, alice, [bob], [carol]);
+    });
+
+    it("non-owner can leave", async () => {
+      const caller = await createAuthenticatedCaller(db, carol);
+      await caller.clubs.leave({ clubId: wedReads.id });
+
+      const m = await db.membership.findUnique({
+        where: { clubId_userId: { clubId: wedReads.id, userId: carol.id } },
+      });
+      expect(m).toBeNull();
+    });
+
+    it("admin can leave", async () => {
+      const caller = await createAuthenticatedCaller(db, bob);
+      await caller.clubs.leave({ clubId: wedReads.id });
+
+      const m = await db.membership.findUnique({
+        where: { clubId_userId: { clubId: wedReads.id, userId: bob.id } },
+      });
+      expect(m).toBeNull();
+    });
+
+    it("owner is blocked from leaving without transferring", async () => {
+      const caller = await createAuthenticatedCaller(db, alice);
+      await expect(
+        caller.clubs.leave({ clubId: wedReads.id })
+      ).rejects.toThrow("Transfer ownership before leaving");
+
+      const m = await db.membership.findUnique({
+        where: { clubId_userId: { clubId: wedReads.id, userId: alice.id } },
+      });
+      expect(m?.role).toBe("owner");
+    });
+
+    it("non-member cannot leave (NOT_FOUND)", async () => {
+      // Remove carol first
+      await db.membership.delete({
+        where: { clubId_userId: { clubId: wedReads.id, userId: carol.id } },
+      });
+      const caller = await createAuthenticatedCaller(db, carol);
+      await expect(
+        caller.clubs.leave({ clubId: wedReads.id })
+      ).rejects.toThrow("not a member");
+    });
+  });
 });
