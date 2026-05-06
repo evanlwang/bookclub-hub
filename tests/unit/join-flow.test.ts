@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('Join Flow — Unit Tests', () => {
   describe('Email validation', () => {
+    // @spec AUTH-UI-001
     it('should validate email format', () => {
       const isValidEmail = (email: string) =>
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -17,6 +18,7 @@ describe('Join Flow — Unit Tests', () => {
       expect(isValidEmail('@example.com')).toBe(false);
     });
 
+    // @spec AUTH-UI-001
     it('should trim and lowercase email input', () => {
       const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
@@ -26,6 +28,7 @@ describe('Join Flow — Unit Tests', () => {
   });
 
   describe('Display name validation', () => {
+    // @spec AUTH-UI-001
     it('should require non-empty display name', () => {
       const isValidName = (name: string) => name.trim().length > 0;
 
@@ -34,6 +37,7 @@ describe('Join Flow — Unit Tests', () => {
       expect(isValidName('   ')).toBe(false);
     });
 
+    // @spec AUTH-UI-001
     it('should accept names up to 100 chars', () => {
       const isValidName = (name: string) => name.length <= 100 && name.trim().length > 0;
       const shortName = 'Alice Chen';
@@ -47,6 +51,7 @@ describe('Join Flow — Unit Tests', () => {
   });
 
   describe('Identity step validation (Step 1)', () => {
+    // @spec AUTH-UI-001
     it('should enable Continue button only when email and name are valid', () => {
       const isIdentityValid = (email: string, name: string) => {
         return email.includes('@') && name.trim().length > 0;
@@ -60,10 +65,7 @@ describe('Join Flow — Unit Tests', () => {
   });
 
   describe('Club code derivation (Step 3b — Create branch)', () => {
-    /**
-     * @spec CLUB-UI-002: The create branch SHALL pre-populate the club code
-     * from the club name (normalized to uppercase alphanumeric) and allow the user to edit it.
-     */
+    // @spec CLUB-UI-002
     it('should derive club code from club name', () => {
       const deriveCode = (clubName: string) => {
         return clubName
@@ -80,6 +82,7 @@ describe('Join Flow — Unit Tests', () => {
       expect(deriveCode('')).toBe('CLUB'); // fallback
     });
 
+    // @spec CLUB-UI-002
     it('should strip special characters from code', () => {
       const deriveCode = (clubName: string) => {
         return clubName
@@ -94,6 +97,7 @@ describe('Join Flow — Unit Tests', () => {
       expect(deriveCode('***Test***')).toBe('TEST');
     });
 
+    // @spec CLUB-UI-002
     it('should enforce 4-16 char limit on final code (user-edited)', () => {
       const isValidCode = (code: string) => {
         const alphanumeric = /^[A-Z0-9]+$/;
@@ -109,6 +113,7 @@ describe('Join Flow — Unit Tests', () => {
   });
 
   describe('Club code normalization (Step 3a — Join branch)', () => {
+    // @spec CLUB-UI-001
     it('should uppercase club code input', () => {
       const normalizeCode = (code: string) => code.toUpperCase();
 
@@ -118,10 +123,7 @@ describe('Join Flow — Unit Tests', () => {
   });
 
   describe('Path choice validation (Step 2)', () => {
-    /**
-     * @spec AUTH-UI-002: After identity entry, the system SHALL present
-     * a choice between joining an existing club and creating a new one.
-     */
+    // @spec AUTH-UI-002
     it('should accept only "join" or "create" as valid paths', () => {
       const isValidPath = (path: unknown): path is 'join' | 'create' => {
         return path === 'join' || path === 'create';
@@ -136,6 +138,7 @@ describe('Join Flow — Unit Tests', () => {
   });
 
   describe('Create branch validation (Step 3b)', () => {
+    // @spec CLUB-UI-002
     it('should require club name of at least 3 chars', () => {
       const isCreateReady = (clubName: string) => clubName.trim().length >= 3;
 
@@ -145,6 +148,7 @@ describe('Join Flow — Unit Tests', () => {
       expect(isCreateReady('   ')).toBe(false);
     });
 
+    // @spec AUTH-UI-002
     it('should accept cadence values (monthly, six_weeks, flexible)', () => {
       const isValidCadence = (cadence: unknown): cadence is 'monthly' | 'six_weeks' | 'flexible' => {
         return cadence === 'monthly' || cadence === 'six_weeks' || cadence === 'flexible';
@@ -159,10 +163,7 @@ describe('Join Flow — Unit Tests', () => {
   });
 
   describe('Join branch validation (Step 3a)', () => {
-    /**
-     * @spec CLUB-UI-001: The join branch SHALL show a debounced club lookup
-     * with a "found" card before allowing submission.
-     */
+    // @spec CLUB-UI-001
     it('should require valid club info before Join button is enabled', () => {
       const isJoinReady = (clubInfo: { name: string; memberCount: number } | null) => {
         return clubInfo !== null && typeof clubInfo === 'object';
@@ -172,6 +173,7 @@ describe('Join Flow — Unit Tests', () => {
       expect(isJoinReady({ name: 'Test Club', memberCount: 5 })).toBe(true);
     });
 
+    // @spec CLUB-UI-001
     it('should require minimum code length before lookup', () => {
       const shouldLookup = (code: string) => code.length >= 4;
 
@@ -182,11 +184,7 @@ describe('Join Flow — Unit Tests', () => {
   });
 
   describe('Smart detection branching (Step 1 → ?)', () => {
-    /**
-     * @spec AUTH-UI-004: After Step 1 succeeds, smart detection branches the
-     * wizard based on club membership and ?path= query param. This is the
-     * pure decision function that mirrors the logic in handleIdentityContinue.
-     */
+    // Pure decision function mirroring handleIdentityContinue.
     type Decision = 'redirect' | 'step2' | 'step3-join' | 'step3-create';
 
     function decideNextStep(args: {
@@ -201,36 +199,42 @@ describe('Join Flow — Unit Tests', () => {
       return 'step2';
     }
 
+    // @spec AUTH-UI-004
     it('redirects when user has clubs and no path override', () => {
       expect(
         decideNextStep({ clubsCount: 2, pathOverride: null, authMeFailed: false })
       ).toBe('redirect');
     });
 
+    // @spec AUTH-UI-004
     it('falls through to step2 when user has 0 clubs', () => {
       expect(
         decideNextStep({ clubsCount: 0, pathOverride: null, authMeFailed: false })
       ).toBe('step2');
     });
 
+    // @spec AUTH-UI-004
     it('honors ?path=join override even if user has clubs', () => {
       expect(
         decideNextStep({ clubsCount: 3, pathOverride: 'join', authMeFailed: false })
       ).toBe('step3-join');
     });
 
+    // @spec AUTH-UI-004
     it('honors ?path=create override even if user has clubs', () => {
       expect(
         decideNextStep({ clubsCount: 3, pathOverride: 'create', authMeFailed: false })
       ).toBe('step3-create');
     });
 
+    // @spec AUTH-UI-004
     it('falls through to step2 when auth.me fails', () => {
       expect(
         decideNextStep({ clubsCount: 0, pathOverride: null, authMeFailed: true })
       ).toBe('step2');
     });
 
+    // @spec AUTH-UI-004
     it('treats unknown ?path= values as no override (falls through to detection)', () => {
       // Unknown value, has clubs → smart detection still applies → redirect
       expect(

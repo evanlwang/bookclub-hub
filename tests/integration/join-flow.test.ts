@@ -15,6 +15,7 @@ describe("Join Flow — Integration Tests", () => {
   });
 
   describe("Step 1: Identity Entry (auth.enter)", () => {
+    // @spec AUTH-UI-001, AUTH-UI-003
     it("creates new user and session", async () => {
       const caller = createAnonymousCaller(db);
       const result = await caller.auth.enter({
@@ -35,6 +36,7 @@ describe("Join Flow — Integration Tests", () => {
       expect(session?.userId).toBe(result.user.id);
     });
 
+    // @spec AUTH-UI-001
     it("recognizes returning user by normalized email", async () => {
       const caller = createAnonymousCaller(db);
 
@@ -51,6 +53,7 @@ describe("Join Flow — Integration Tests", () => {
       expect(second.user.displayName).toBe("Test User Updated");
     });
 
+    // @spec AUTH-UI-001
     it("requires valid email format", async () => {
       const caller = createAnonymousCaller(db);
 
@@ -62,6 +65,7 @@ describe("Join Flow — Integration Tests", () => {
       ).rejects.toThrow();
     });
 
+    // @spec AUTH-UI-001
     it("requires non-empty display name", async () => {
       const caller = createAnonymousCaller(db);
 
@@ -73,6 +77,7 @@ describe("Join Flow — Integration Tests", () => {
       ).rejects.toThrow();
     });
 
+    // @spec AUTH-UI-001
     it("enforces max 100 chars on display name", async () => {
       const caller = createAnonymousCaller(db);
 
@@ -86,11 +91,7 @@ describe("Join Flow — Integration Tests", () => {
   });
 
   describe("Smart detection — auth.me after auth.enter", () => {
-    /**
-     * @spec AUTH-UI-004: After Step 1 the client calls auth.me to detect
-     * existing memberships. These tests verify the data the client uses
-     * to make the routing decision.
-     */
+    // @spec AUTH-UI-004
     it("returns 0 clubs for brand-new user (falls through to Step 2)", async () => {
       const enter = await createAnonymousCaller(db).auth.enter({
         email: "brandnew@example.com",
@@ -107,6 +108,7 @@ describe("Join Flow — Integration Tests", () => {
       expect(me.clubs).toHaveLength(0);
     });
 
+    // @spec AUTH-UI-004
     it("returns N clubs for returning user with memberships (smart detection redirects)", async () => {
       await seedClubWithMembers(db, wedReads, alice, [], []);
 
@@ -126,6 +128,7 @@ describe("Join Flow — Integration Tests", () => {
       expect(me.clubs[0]).toMatchObject({ code: "WEDREADS" });
     });
 
+    // @spec AUTH-UI-004
     it("returns multiple clubs for user with several memberships", async () => {
       await seedClubWithMembers(db, wedReads, alice, [], []);
       // Alice creates a second club via the API
@@ -145,6 +148,7 @@ describe("Join Flow — Integration Tests", () => {
     });
 
     describe("clubs.lookup — debounced code validation", () => {
+      // @spec CLUB-UI-001
       it("returns club name and member count for valid code", async () => {
         const caller = createAnonymousCaller(db);
         const result = await caller.clubs.lookup({ code: "WEDREADS" });
@@ -153,6 +157,7 @@ describe("Join Flow — Integration Tests", () => {
         expect(result.memberCount).toBe(3);
       });
 
+      // @spec CLUB-UI-001
       it("works with lowercase code input", async () => {
         const caller = createAnonymousCaller(db);
         const result = await caller.clubs.lookup({ code: "wedreads" });
@@ -160,6 +165,7 @@ describe("Join Flow — Integration Tests", () => {
         expect(result.clubName).toBe("Wednesday Night Reads");
       });
 
+      // @spec CLUB-UI-001
       it("throws NOT_FOUND for invalid code", async () => {
         const caller = createAnonymousCaller(db);
 
@@ -168,6 +174,7 @@ describe("Join Flow — Integration Tests", () => {
         ).rejects.toThrow("Club not found");
       });
 
+      // @spec CLUB-UI-001
       it("throws NOT_FOUND for archived club", async () => {
         await db.club.update({
           where: { id: wedReads.id },
@@ -183,6 +190,7 @@ describe("Join Flow — Integration Tests", () => {
     });
 
     describe("Complete join journey: unauthenticated", () => {
+      // @spec CLUB-UI-001
       it("allows new user to join with email and name", async () => {
         const caller = createAnonymousCaller(db);
 
@@ -212,6 +220,7 @@ describe("Join Flow — Integration Tests", () => {
         expect(membership?.role).toBe("member");
       });
 
+      // @spec CLUB-UI-001, AUTH-UI-003
       it("returns sessionId for unauthenticated join", async () => {
         const caller = createAnonymousCaller(db);
         const result = await caller.clubs.join({
@@ -229,6 +238,7 @@ describe("Join Flow — Integration Tests", () => {
         expect(session).toBeTruthy();
       });
 
+      // @spec CLUB-UI-001
       it("requires email and display name for unauthenticated join", async () => {
         const caller = createAnonymousCaller(db);
 
@@ -242,6 +252,7 @@ describe("Join Flow — Integration Tests", () => {
     });
 
     describe("Complete join journey: authenticated (Step 1 already done)", () => {
+      // @spec CLUB-UI-001, AUTH-UI-003
       it("allows authenticated user to join club", async () => {
         const caller = await createAuthenticatedCaller(db, dave);
 
@@ -260,6 +271,7 @@ describe("Join Flow — Integration Tests", () => {
         expect(membership?.role).toBe("member");
       });
 
+      // @spec CLUB-UI-001
       it("returns alreadyMember=true if user already in club", async () => {
         const caller = await createAuthenticatedCaller(db, alice);
 
@@ -270,6 +282,7 @@ describe("Join Flow — Integration Tests", () => {
     });
 
     describe("Join branch error cases", () => {
+      // @spec CLUB-UI-001
       it("rejects join if club is archived", async () => {
         await db.club.update({
           where: { id: wedReads.id },
@@ -287,6 +300,7 @@ describe("Join Flow — Integration Tests", () => {
         ).rejects.toThrow("no longer active");
       });
 
+      // @spec CLUB-UI-001
       it("rejects join with invalid email", async () => {
         const caller = createAnonymousCaller(db);
 
@@ -303,6 +317,7 @@ describe("Join Flow — Integration Tests", () => {
 
   describe("Step 3b: Create Branch (clubs.create)", () => {
     describe("Complete create journey: authenticated user", () => {
+      // @spec CLUB-UI-002
       it("creates club with custom code", async () => {
         const caller = await createAuthenticatedCaller(db, alice);
 
@@ -323,6 +338,7 @@ describe("Join Flow — Integration Tests", () => {
         expect(membership?.role).toBe("owner");
       });
 
+      // @spec CLUB-UI-002
       it("derives code from club name when needed", async () => {
         const caller = await createAuthenticatedCaller(db, bob);
 
@@ -342,6 +358,7 @@ describe("Join Flow — Integration Tests", () => {
         expect(result.club.code).toBe("SLOWREADS");
       });
 
+      // @spec CLUB-UI-002
       it("normalizes code to uppercase", async () => {
         const caller = await createAuthenticatedCaller(db, alice);
 
@@ -353,6 +370,7 @@ describe("Join Flow — Integration Tests", () => {
         expect(result.club.code).toBe("TESTCLUB");
       });
 
+      // @spec CLUB-UI-002
       it("stores club description (cadence field)", async () => {
         const caller = await createAuthenticatedCaller(db, alice);
 
@@ -367,6 +385,7 @@ describe("Join Flow — Integration Tests", () => {
     });
 
     describe("Create branch error cases", () => {
+      // @spec CLUB-UI-002
       it("rejects duplicate code", async () => {
         const caller = await createAuthenticatedCaller(db, alice);
 
@@ -383,6 +402,7 @@ describe("Join Flow — Integration Tests", () => {
         ).rejects.toThrow("Club code already in use");
       });
 
+      // @spec CLUB-UI-002
       it("blocks reuse of soft-deleted club code (DB unique constraint)", async () => {
         const caller = await createAuthenticatedCaller(db, alice);
 
@@ -398,6 +418,7 @@ describe("Join Flow — Integration Tests", () => {
         ).rejects.toThrow();
       });
 
+      // @spec CLUB-UI-002
       it("validates code format (4-16 chars, alphanumeric)", async () => {
         const caller = await createAuthenticatedCaller(db, alice);
 
@@ -426,6 +447,7 @@ describe("Join Flow — Integration Tests", () => {
         ).rejects.toThrow();
       });
 
+      // @spec CLUB-UI-002
       it("requires non-empty club name", async () => {
         const caller = await createAuthenticatedCaller(db, alice);
 
@@ -437,6 +459,7 @@ describe("Join Flow — Integration Tests", () => {
         ).rejects.toThrow();
       });
 
+      // @spec CLUB-UI-002, AUTH-UI-003
       it("requires auth (protectedProcedure)", async () => {
         const caller = createAnonymousCaller(db);
 
@@ -451,6 +474,7 @@ describe("Join Flow — Integration Tests", () => {
   });
 
   describe("Step 4: Success states (post-flow)", () => {
+    // @spec CLUB-UI-001
     it("join branch success: user redirects to club with membership", async () => {
       await seedClubWithMembers(db, wedReads, alice, [], []);
 
@@ -482,6 +506,7 @@ describe("Join Flow — Integration Tests", () => {
       expect(joinResult.sessionId).toBeTruthy();
     });
 
+    // @spec CLUB-UI-002, CLUB-UI-003
     it("create branch success: user has owner role in new club", async () => {
       const caller = await createAuthenticatedCaller(db, alice);
 
@@ -504,6 +529,7 @@ describe("Join Flow — Integration Tests", () => {
       await seedClubWithMembers(db, wedReads, alice, [], []);
     });
 
+    // @spec CLUB-UI-001
     it("shows real-time feedback while typing code", async () => {
       const caller = createAnonymousCaller(db);
 
@@ -522,6 +548,7 @@ describe("Join Flow — Integration Tests", () => {
       expect(result.clubName).toBe("Wednesday Night Reads");
     });
 
+    // @spec CLUB-UI-001
     it("handles case insensitivity in lookup", async () => {
       const caller = createAnonymousCaller(db);
 
@@ -535,6 +562,7 @@ describe("Join Flow — Integration Tests", () => {
   });
 
   describe("Code derivation algorithm validation", () => {
+    // @spec CLUB-UI-002
     it("handles special characters in club name", async () => {
       const caller = await createAuthenticatedCaller(db, alice);
 
@@ -554,6 +582,7 @@ describe("Join Flow — Integration Tests", () => {
       expect(result.club.code).toBe("THEBOOKCLU");
     });
 
+    // @spec CLUB-UI-002
     it("applies 10-char max truncation", async () => {
       const caller = await createAuthenticatedCaller(db, alice);
 
@@ -574,6 +603,7 @@ describe("Join Flow — Integration Tests", () => {
       expect(result.club.code.length).toBeLessThanOrEqual(10);
     });
 
+    // @spec CLUB-UI-002
     it("uses CLUB fallback for empty derived code", async () => {
       const caller = await createAuthenticatedCaller(db, alice);
 
@@ -595,6 +625,7 @@ describe("Join Flow — Integration Tests", () => {
   });
 
   describe("Session persistence across steps", () => {
+    // @spec AUTH-UI-003
     it("session created in Step 1 is usable in Step 3", async () => {
       await seedClubWithMembers(db, wedReads, alice, [], []);
 
