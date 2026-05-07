@@ -66,9 +66,9 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 
 - `[!]` **PROG-UI-005**: Older spec required a live preview progress bar in the modal. **Not implemented**; only the read-only "Progress: {N}%" text exists.
   - `[ ]` **PROG-UI-MODAL-PREVIEW-001**: Animated live preview progress bar showing status-class fill color and percentage.
-- `[!]` **PROG-UI-008** & **PROG-UI-009**: Older spec required a floating toast on save with an Undo button and 4-second auto-dismiss. **Not implemented**; the save handler calls `router.refresh()` and closes the modal silently.
-  - `[ ]` **PROG-UI-MODAL-TOAST-001**: Toast notification "Progress saved · page N" with Undo button, 4s auto-dismiss.
-  - `[ ]` **PROG-UI-MODAL-UNDO-001**: Undo button reverts the update and re-opens the modal.
+- `[x]` **PROG-UI-008** & **PROG-UI-009**: Implemented via the toast/undo pair below.
+  - `[x]` **PROG-UI-MODAL-TOAST-001**: After a successful `progress.update`, the modal SHALL close and a toast SHALL appear at the bottom of the viewport reading "Progress saved · page {N}" (where N is the saved page; "Progress saved" alone if `totalPages` is null). The toast SHALL auto-dismiss after 4 seconds. `data-testid="progress-saved-toast"`.
+  - `[x]` **PROG-UI-MODAL-UNDO-001**: The toast SHALL include an "Undo" button (`data-testid="progress-undo-btn"`). Clicking Undo SHALL (a) re-issue `progress.update` with the previous values captured before save, (b) dismiss the toast, (c) re-open the modal pre-filled with the previous values, and (d) refresh the dashboard so the reverted state is visible. If there were no previous values (no prior progress record), the toast SHALL omit the Undo button.
 - `[ ]` **PROG-UI-MODAL-TIMESTAMP-001**: "Last updated" timestamp shown below modal body.
 
 ## Progress Dashboard Display

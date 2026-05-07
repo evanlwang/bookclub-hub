@@ -1,35 +1,100 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
+
+type ProgressSnapshot = {
+  currentPage?: number;
+  percentage?: number;
+  currentChapter?: number;
+  status?: string;
+};
 
 interface UpdateModalProps {
   clubId: string;
   bookId: string;
   totalPages: number;
-  currentProgress?: {
-    currentPage?: number;
-    percentage?: number;
-    currentChapter?: number;
-    status?: string;
-  };
+  currentProgress?: ProgressSnapshot;
 }
 
+const TOAST_DISMISS_MS = 4000;
+
+// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001
 export function UpdateProgressButton(props: UpdateModalProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [overrideProgress, setOverrideProgress] = useState<ProgressSnapshot | null>(null);
+  const [toast, setToast] = useState<{
+    savedPage: number | null;
+    previous: ProgressSnapshot | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), TOAST_DISMISS_MS);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  function handleSaved(savedPage: number | null, previous: ProgressSnapshot | null) {
+    setOpen(false);
+    setOverrideProgress(null);
+    setToast({ savedPage, previous });
+  }
+
+  async function handleUndo() {
+    if (!toast) return;
+    const previous = toast.previous;
+    if (previous) {
+      await fetch("/api/trpc/progress.update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clubId: props.clubId,
+          bookId: props.bookId,
+          currentPage: previous.currentPage ?? 0,
+          percentage: previous.percentage ?? 0,
+          currentChapter: previous.currentChapter,
+          status: previous.status ?? "not_started",
+          totalPages: props.totalPages,
+        }),
+      });
+    }
+    setToast(null);
+    setOverrideProgress(previous);
+    setOpen(true);
+    router.refresh();
+  }
 
   return (
     <>
       <Button
         variant="primary"
         size="md"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOverrideProgress(null);
+          setOpen(true);
+        }}
         data-testid="update-progress-btn"
       >
         Update My Progress
       </Button>
-      {open && <UpdateModal {...props} onClose={() => setOpen(false)} />}
+      {open && (
+        <UpdateModal
+          {...props}
+          currentProgress={overrideProgress ?? props.currentProgress}
+          onClose={() => setOpen(false)}
+          onSaved={handleSaved}
+        />
+      )}
+      {toast && (
+        <SavedToast
+          savedPage={toast.savedPage}
+          canUndo={toast.previous !== null}
+          onUndo={handleUndo}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </>
   );
 }
@@ -40,7 +105,11 @@ function UpdateModal({
   totalPages,
   currentProgress,
   onClose,
-}: UpdateModalProps & { onClose: () => void }) {
+  onSaved,
+}: UpdateModalProps & {
+  onClose: () => void;
+  onSaved: (savedPage: number | null, previous: ProgressSnapshot | null) => void;
+}) {
   const router = useRouter();
   const [page, setPage] = useState(currentProgress?.currentPage ?? 0);
   const [chapter, setChapter] = useState(currentProgress?.currentChapter ?? 0);
@@ -87,8 +156,17 @@ function UpdateModal({
       if (data.error) {
         setError(data.error.message || "Failed to save");
       } else {
+        const savedPage = totalPages > 0 ? page : null;
+        const previous: ProgressSnapshot | null = currentProgress
+          ? {
+              currentPage: currentProgress.currentPage,
+              percentage: currentProgress.percentage,
+              currentChapter: currentProgress.currentChapter,
+              status: currentProgress.status,
+            }
+          : null;
         router.refresh();
-        onClose();
+        onSaved(savedPage, previous);
       }
     } catch {
       setError("Something went wrong");
@@ -102,18 +180,15 @@ function UpdateModal({
       className="fixed inset-0 z-50 flex items-center justify-center"
       data-testid="progress-modal"
     >
-      {/* Backdrop */}
       <div
         className="absolute inset-0 backdrop-blur-md bg-bg/40"
         onClick={onClose}
       />
-      {/* Modal */}
       <div className="relative bg-bg border border-line rounded-[var(--radius-xl)] shadow-lg p-6 w-full max-w-md mx-4 animate-slide-down">
         <h2 className="font-[var(--font-display)] text-xl font-semibold text-ink mb-6">
           Update Progress
         </h2>
 
-        {/* Status radio cards */}
         <div className="grid grid-cols-3 gap-2 mb-6">
           {(
             [
@@ -138,7 +213,6 @@ function UpdateModal({
           ))}
         </div>
 
-        {/* Page input */}
         <div className="mb-4">
           <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
             Current Page
@@ -163,7 +237,6 @@ function UpdateModal({
           </p>
         </div>
 
-        {/* Percentage display */}
         <div className="mb-4 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line">
           <span className="text-sm text-ink-2">Progress: </span>
           <span
@@ -174,7 +247,6 @@ function UpdateModal({
           </span>
         </div>
 
-        {/* Chapter input */}
         <div className="mb-6">
           <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
             Chapter (optional)
@@ -196,7 +268,6 @@ function UpdateModal({
           </p>
         )}
 
-        {/* Actions */}
         <div className="flex gap-3 justify-end">
           <Button variant="ghost" size="md" onClick={onClose}>
             Cancel
@@ -212,6 +283,49 @@ function UpdateModal({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SavedToast({
+  savedPage,
+  canUndo,
+  onUndo,
+  onDismiss,
+}: {
+  savedPage: number | null;
+  canUndo: boolean;
+  onUndo: () => void;
+  onDismiss: () => void;
+}) {
+  const message =
+    savedPage != null ? `Progress saved · page ${savedPage}` : "Progress saved";
+
+  return (
+    <div
+      data-testid="progress-saved-toast"
+      role="status"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] border border-line bg-bg shadow-lg animate-slide-up"
+    >
+      <span className="text-sm text-ink">{message}</span>
+      {canUndo && (
+        <button
+          type="button"
+          onClick={onUndo}
+          data-testid="progress-undo-btn"
+          className="text-sm font-medium text-primary hover:text-primary-ink transition-colors"
+        >
+          Undo
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="text-ink-3 hover:text-ink transition-colors text-sm leading-none"
+      >
+        ×
+      </button>
     </div>
   );
 }
