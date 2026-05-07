@@ -8,6 +8,7 @@ import {
   summarizeSlot,
   type ResponseStatus,
 } from "@/lib/meetings/availability";
+import { CancelMeetingButton } from "./cancel-meeting-button";
 
 type Slot = {
   id: string;
@@ -23,16 +24,20 @@ type Slot = {
 interface AdminConfirmSectionProps {
   clubId: string;
   meetingId: string;
+  meetingTitle: string;
   slots: Slot[];
   onConfirmed?: (slotId: string) => void;
+  onCancelled?: () => void;
 }
 
-// @spec MEET-UI-CONFIRM-BTN-001, MEET-UI-CONFIRM-HEATMAP-001, MEET-UI-CONFIRM-BADGE-001
+// @spec MEET-UI-CONFIRM-BTN-001, MEET-UI-CONFIRM-HEATMAP-001, MEET-UI-CONFIRM-BADGE-001, MEET-UI-CANCEL-BTN-001
 export function AdminConfirmSection({
   clubId,
   meetingId,
+  meetingTitle,
   slots,
   onConfirmed,
+  onCancelled,
 }: AdminConfirmSectionProps) {
   const router = useRouter();
   const [confirmingSlotId, setConfirmingSlotId] = useState<string | null>(null);
@@ -231,6 +236,15 @@ export function AdminConfirmSection({
           {error}
         </p>
       )}
+
+      <div className="mt-4 pt-3 border-t border-line flex justify-end">
+        <CancelMeetingButton
+          clubId={clubId}
+          meetingId={meetingId}
+          meetingTitle={meetingTitle}
+          onCancelled={onCancelled}
+        />
+      </div>
     </div>
   );
 }

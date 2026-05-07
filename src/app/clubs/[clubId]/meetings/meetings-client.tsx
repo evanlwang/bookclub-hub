@@ -6,6 +6,7 @@ import { Card, Badge, Button, AvatarStack } from "@/components/ui";
 import { CreateMeetingForm, ProposeMeetingTrigger } from "./create-meeting";
 import { RespondMeeting } from "./respond-meeting";
 import { AdminConfirmSection } from "./admin-confirm";
+import { CancelMeetingButton } from "./cancel-meeting-button";
 
 type ViewerRole = "owner" | "admin" | "member";
 
@@ -81,6 +82,16 @@ export function MeetingsClient({
           confirmedTime: slot?.proposedTime ?? m.confirmedTime,
         };
       }),
+    );
+    setExpandedId(null);
+    router.refresh();
+  }
+
+  function applyCancelledMeeting(meetingId: string) {
+    setMeetings((prev) =>
+      prev.map((m) =>
+        m.id === meetingId ? { ...m, status: "cancelled" } : m,
+      ),
     );
     setExpandedId(null);
     router.refresh();
@@ -213,7 +224,12 @@ export function MeetingsClient({
             <li key={meeting.id} data-testid={`meeting-${meeting.id}`}>
               <Card className="p-5">
                 {meeting.status === "confirmed" && (
-                  <ConfirmedMeetingRow meeting={meeting} />
+                  <ConfirmedMeetingRow
+                    meeting={meeting}
+                    clubId={clubId}
+                    isAdmin={isAdmin}
+                    onCancelled={() => applyCancelledMeeting(meeting.id)}
+                  />
                 )}
                 {meeting.status === "proposed" && (
                   <ProposedMeetingRow
@@ -225,6 +241,7 @@ export function MeetingsClient({
                     isAdmin={isAdmin}
                     onResponsesUpdated={(next) => applyViewerResponses(meeting.id, next)}
                     onConfirmed={(slotId) => applyConfirmedSlot(meeting.id, slotId)}
+                    onCancelled={() => applyCancelledMeeting(meeting.id)}
                     onDone={() => setExpandedId(null)}
                   />
                 )}
@@ -240,44 +257,66 @@ export function MeetingsClient({
   );
 }
 
-// @spec MEET-UI-008
-function ConfirmedMeetingRow({ meeting }: { meeting: any }) {
+// @spec MEET-UI-008, MEET-UI-CANCEL-BTN-001
+function ConfirmedMeetingRow({
+  meeting,
+  clubId,
+  isAdmin,
+  onCancelled,
+}: {
+  meeting: any;
+  clubId: string;
+  isAdmin: boolean;
+  onCancelled: () => void;
+}) {
   const attendeeNames = getAttendeeNames(meeting);
   const { going, maybe } = getResponseCounts(meeting);
   const time = meeting.confirmedTime ? new Date(meeting.confirmedTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
 
   return (
-    <div className="grid grid-cols-[auto_1fr_auto] gap-5 items-center">
-      {meeting.confirmedTime && <DateBlock date={new Date(meeting.confirmedTime)} />}
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Badge tone="success" dot>Confirmed</Badge>
-          {meeting.book && <span className="text-xs text-ink-3">· {meeting.book.title}</span>}
-        </div>
-        <p className="text-sm font-medium text-ink mb-1.5">{meeting.title}</p>
-        <div className="flex items-center gap-3.5 text-xs text-ink-2">
-          {time && (
-            <span className="inline-flex items-center gap-1">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-              {time}
-            </span>
-          )}
-          {meeting.location && (
-            <span className="inline-flex items-center gap-1">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
-              {meeting.location}
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="text-right">
-        {attendeeNames.length > 0 && (
-          <div className="flex justify-end mb-1.5">
-            <AvatarStack names={attendeeNames} max={5} size="sm" />
+    <div>
+      <div className="grid grid-cols-[auto_1fr_auto] gap-5 items-center">
+        {meeting.confirmedTime && <DateBlock date={new Date(meeting.confirmedTime)} />}
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Badge tone="success" dot>Confirmed</Badge>
+            {meeting.book && <span className="text-xs text-ink-3">· {meeting.book.title}</span>}
           </div>
-        )}
-        <p className="text-[11px] text-ink-3">{going} going{maybe > 0 ? ` · ${maybe} maybe` : ""}</p>
+          <p className="text-sm font-medium text-ink mb-1.5">{meeting.title}</p>
+          <div className="flex items-center gap-3.5 text-xs text-ink-2">
+            {time && (
+              <span className="inline-flex items-center gap-1">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                {time}
+              </span>
+            )}
+            {meeting.location && (
+              <span className="inline-flex items-center gap-1">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                {meeting.location}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-right">
+          {attendeeNames.length > 0 && (
+            <div className="flex justify-end mb-1.5">
+              <AvatarStack names={attendeeNames} max={5} size="sm" />
+            </div>
+          )}
+          <p className="text-[11px] text-ink-3">{going} going{maybe > 0 ? ` · ${maybe} maybe` : ""}</p>
+        </div>
       </div>
+      {isAdmin && (
+        <div className="mt-3 pt-3 border-t border-line flex justify-end">
+          <CancelMeetingButton
+            clubId={clubId}
+            meetingId={meeting.id}
+            meetingTitle={meeting.title}
+            onCancelled={onCancelled}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -291,6 +330,7 @@ function ProposedMeetingRow({
   isAdmin,
   onResponsesUpdated,
   onConfirmed,
+  onCancelled,
   onDone,
 }: {
   meeting: any;
@@ -301,6 +341,7 @@ function ProposedMeetingRow({
   isAdmin: boolean;
   onResponsesUpdated: (next: { slotId: string; status: ResponseStatus }[]) => void;
   onConfirmed: (slotId: string) => void;
+  onCancelled: () => void;
   onDone: () => void;
 }) {
   const { responded } = getResponseCounts(meeting);
@@ -368,8 +409,10 @@ function ProposedMeetingRow({
             <AdminConfirmSection
               clubId={clubId}
               meetingId={meeting.id}
+              meetingTitle={meeting.title}
               slots={meeting.slots}
               onConfirmed={onConfirmed}
+              onCancelled={onCancelled}
             />
           )}
         </div>

@@ -45,9 +45,9 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
   - `[x]` **MEET-UI-CONFIRM-HEATMAP-001**: The admin section SHALL render a heatmap with one row per responder (any member who has submitted at least one availability response for this meeting) and one column per slot. Each cell SHALL render a colored dot — `available`=success, `maybe`=warning, `unavailable`=danger, no-response=neutral. `data-testid="heatmap-cell-{userId}-{slotId}"` carries `data-status="available|maybe|unavailable|none"`.
   - `[D]` **MEET-UI-CONFIRM-RECOMMEND-001**: Deferred — superseded by `MEET-UI-CONFIRM-BADGE-001`. The "Most available" badge IS the recommendation. Reintroduce only if a richer recommendation surface is required.
   - `[x]` **MEET-UI-CONFIRM-BADGE-001**: The slot with the highest `available` response count SHALL display a "Most available" Badge (`data-testid="most-available-badge"`). Ties broken by `available + maybe` count, then by `proposedTime ASC`. If no slot has any responses, no badge SHALL be shown. Ranking computed by `src/lib/meetings/availability.ts#pickMostAvailableSlot` (unit tested).
-- `[!]` **MEET-UI-EDIT-001**: `meetings.update` and `meetings.cancel` exist; no UI surfaces them. Treat as gaps:
+- `[!]` **MEET-UI-EDIT-001**: `meetings.update` exists; no UI surfaces it. (Cancel UI is now wired — see `MEET-UI-CANCEL-BTN-001` below.)
   - `[ ]` **MEET-UI-EDIT-BTN-001**: Admin "Edit meeting" button on proposed/confirmed meetings.
-  - `[ ]` **MEET-UI-CANCEL-BTN-001**: Admin "Cancel meeting" button on proposed/confirmed meetings.
+  - `[x]` **MEET-UI-CANCEL-BTN-001**: An owner or admin viewing a proposed or confirmed meeting SHALL see a "Cancel meeting" link (`data-testid="cancel-meeting-{meetingId}"`). Clicking opens a focus-trapped dialog (`data-testid="cancel-meeting-dialog"`); confirming POSTs to `meetings.cancel` and the parent flips the meeting to status `cancelled` optimistically.
 
 ## Time Handling
 
