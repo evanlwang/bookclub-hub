@@ -16,7 +16,7 @@ export default function Home() {
   return (
     <main id="main-content" className="min-h-screen" style={{ background: paperBg }}>
       {/* Top Nav */}
-      <nav className="flex items-center justify-between" style={{ padding: "20px 56px" }}>
+      <nav className="flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 lg:px-14 py-5">
         <Link href="/" className="flex items-center gap-2.5">
           <LogoIcon size={26} />
           <span className="font-[var(--font-display)] text-xl font-semibold text-ink">
@@ -40,10 +40,7 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section
-        className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center"
-        style={{ padding: "56px 56px 72px" }}
-      >
+      <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center px-4 md:px-8 lg:px-14 py-12 md:py-16 lg:pt-14 lg:pb-[72px]">
         {/* Left column */}
         <div>
           {/* Eyebrow pill */}
@@ -52,7 +49,7 @@ export default function Home() {
             Spoiler-safe by default
           </div>
 
-          <h1 className="font-[var(--font-display)] text-[72px] font-semibold leading-none tracking-[-0.03em] mb-5 text-ink">
+          <h1 className="font-[var(--font-display)] text-5xl md:text-6xl lg:text-[72px] font-semibold leading-[1.05] lg:leading-none tracking-[-0.03em] mb-5 text-ink">
             Your book club,
             <br />
             <em className="italic" style={{ color: "var(--color-primary)" }}>
@@ -177,10 +174,7 @@ export default function Home() {
       </section>
 
       {/* Feature row */}
-      <section
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
-        style={{ padding: "0 56px 72px" }}
-      >
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 md:px-8 lg:px-14 pb-16 lg:pb-[72px]">
         <FeatureCard
           icon={<VoteIcon size={20} />}
           title="Approval voting"
@@ -199,8 +193,8 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-line text-[13px] text-ink-3 flex items-center" style={{ padding: "28px 56px" }}>
-        <div className="flex items-center gap-2">
+      <footer className="border-t border-line text-[13px] text-ink-3 flex items-center px-4 md:px-8 lg:px-14 py-7">
+        <div className="flex flex-wrap items-center gap-2">
           <LogoIcon size={18} />
           <span>BookClub Hub</span>
           <span>·</span>

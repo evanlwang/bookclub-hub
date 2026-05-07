@@ -9,35 +9,24 @@ interface CreateMeetingProps {
 
 type Slot = { time: string; durationMinutes: number };
 
-export function CreateMeetingButton({ clubId }: CreateMeetingProps) {
-  const [open, setOpen] = useState(false);
-
-  if (!open) {
-    return (
-      <Button
-        variant="primary"
-        size="md"
-        onClick={() => setOpen(true)}
-        data-testid="propose-meeting-btn"
-      >
-        Propose Meeting
-      </Button>
-    );
-  }
-
+export function ProposeMeetingTrigger({
+  onClick,
+}: {
+  onClick: () => void;
+}) {
   return (
-    <CreateMeetingForm
-      clubId={clubId}
-      onCreated={() => {
-        // Full reload to get fresh server data
-        window.location.reload();
-      }}
-      onCancel={() => setOpen(false)}
-    />
+    <Button
+      variant="primary"
+      size="md"
+      onClick={onClick}
+      data-testid="propose-meeting-btn"
+    >
+      Propose Meeting
+    </Button>
   );
 }
 
-function CreateMeetingForm({
+export function CreateMeetingForm({
   clubId,
   onCreated,
   onCancel,
@@ -114,7 +103,7 @@ function CreateMeetingForm({
     <form
       onSubmit={handleSubmit}
       data-testid="create-meeting-form"
-      className="bg-bg border border-line rounded-[var(--radius-lg)] p-5 mb-6 animate-slide-down"
+      className="bg-bg border border-line rounded-[var(--radius-lg)] p-4 sm:p-5 mb-6 animate-slide-down"
     >
       <h3 className="font-medium text-ink text-sm mb-4">Propose Meeting</h3>
 
@@ -156,36 +145,43 @@ function CreateMeetingForm({
           Time Options
         </label>
         {slots.map((slot, i) => (
-          <div key={i} className="flex items-center gap-2" data-testid={`slot-row-${i}`}>
+          <div
+            key={i}
+            className="flex flex-col sm:flex-row sm:items-center gap-2"
+            data-testid={`slot-row-${i}`}
+          >
             <input
               type="datetime-local"
               value={slot.time}
               onChange={(e) => updateSlot(i, "time", e.target.value)}
               data-testid={`slot-time-${i}`}
-              className="flex-1 text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+              className="min-w-0 flex-1 text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
             />
-            <select
-              value={slot.durationMinutes}
-              onChange={(e) =>
-                updateSlot(i, "durationMinutes", Number(e.target.value))
-              }
-              className="text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-2 py-2 text-ink"
-            >
-              <option value={30}>30 min</option>
-              <option value={60}>1 hr</option>
-              <option value={90}>1.5 hr</option>
-              <option value={120}>2 hr</option>
-            </select>
-            {slots.length > 2 && (
-              <button
-                type="button"
-                onClick={() => removeSlot(i)}
-                data-testid={`remove-slot-${i}`}
-                className="w-7 h-7 flex items-center justify-center rounded-full text-ink-3 hover:text-danger hover:bg-danger-soft transition-colors"
+            <div className="flex items-center gap-2">
+              <select
+                value={slot.durationMinutes}
+                onChange={(e) =>
+                  updateSlot(i, "durationMinutes", Number(e.target.value))
+                }
+                className="flex-1 sm:flex-none text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-2 py-2 text-ink"
               >
-                ×
-              </button>
-            )}
+                <option value={30}>30 min</option>
+                <option value={60}>1 hr</option>
+                <option value={90}>1.5 hr</option>
+                <option value={120}>2 hr</option>
+              </select>
+              {slots.length > 2 && (
+                <button
+                  type="button"
+                  onClick={() => removeSlot(i)}
+                  data-testid={`remove-slot-${i}`}
+                  className="w-7 h-7 shrink-0 flex items-center justify-center rounded-full text-ink-3 hover:text-danger hover:bg-danger-soft transition-colors"
+                  aria-label="Remove time slot"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
         ))}
         {slots.length < 5 && (

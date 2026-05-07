@@ -92,7 +92,7 @@ export default async function ProgressPage({
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Reading Progress
         </h1>
@@ -108,6 +108,7 @@ export default async function ProgressPage({
                     percentage: myProgress.percentage ?? undefined,
                     currentChapter: myProgress.currentChapter ?? undefined,
                     status: myProgress.status ?? undefined,
+                    updatedAt: myProgress.updatedAt ?? undefined,
                   }
                 : undefined
             }
@@ -159,7 +160,7 @@ export default async function ProgressPage({
       ) : (
         <>
           <Card className="p-6 mb-6">
-            <div className="flex items-center gap-8">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
               <div data-testid="progress-ring" className="relative w-[100px] h-[100px] flex-shrink-0">
                 <svg width="100" height="100" className="-rotate-90">
                   <circle cx="50" cy="50" r="42" fill="none" stroke="var(--bg-sunken, #eee)" strokeWidth="10" />
@@ -196,7 +197,7 @@ export default async function ProgressPage({
                   )}
                 </div>
 
-                <div className="flex gap-4 text-xs">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
                   <span data-testid="legend-finished" className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-sm bg-[var(--accent,oklch(0.78_0.13_75))]" />
                     Finished <strong className="text-ink">{finished}</strong>
@@ -225,13 +226,13 @@ export default async function ProgressPage({
                 <li
                   key={p.userId}
                   data-testid={`progress-${p.userId}`}
-                  className="flex items-center gap-4 px-5 py-3.5"
+                  className="flex flex-wrap items-center gap-3 sm:gap-4 px-5 py-3.5"
                 >
                   <Avatar
                     name={p.user?.displayName ?? ""}
                     size="md"
                   />
-                  <div className="w-40">
+                  <div className="min-w-0 flex-1 sm:flex-none sm:w-40">
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-medium text-ink truncate">
                         {p.user?.displayName ?? "Member"}
@@ -252,7 +253,7 @@ export default async function ProgressPage({
                           : `Page ${p.currentPage ?? 0}${p.currentChapter != null ? ` · ch. ${p.currentChapter}` : ""}`}
                     </p>
                   </div>
-                  <div className="flex-1">
+                  <div className="order-last basis-full sm:order-none sm:basis-auto sm:flex-1 sm:min-w-0">
                     <ProgressBar
                       percentage={p.percentage ?? 0}
                       status={p.status ?? "not_started"}
@@ -260,7 +261,7 @@ export default async function ProgressPage({
                       delay={i * 60}
                     />
                   </div>
-                  <div className="text-right w-14">
+                  <div className="text-right w-14 ml-auto sm:ml-0">
                     <span className="font-[var(--font-display)] text-lg font-semibold tabular-nums">{p.percentage ?? 0}</span>
                     <span className="text-ink-3 text-sm">%</span>
                   </div>

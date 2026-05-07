@@ -148,7 +148,7 @@ function DiscussionsContent() {
       {/* Spoiler filter */}
       <div
         data-testid="chapter-filter"
-        className="flex items-center gap-3 mb-6 p-3 bg-primary-soft rounded-[var(--radius-md)] border border-primary/20"
+        className="flex flex-wrap items-center gap-3 mb-6 p-3 bg-primary-soft rounded-[var(--radius-md)] border border-primary/20"
       >
         <label className="flex items-center gap-2 text-sm text-ink-2">
           <span>I&apos;m on chapter:</span>
@@ -179,7 +179,7 @@ function DiscussionsContent() {
       </div>
 
       {/* Sort controls */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <span className="text-xs text-ink-3">{threads.length} thread{threads.length !== 1 ? "s" : ""}</span>
         <div className="flex gap-1 p-0.5 bg-bg-soft rounded-[var(--radius-md)] border border-line">
           <button
@@ -209,7 +209,7 @@ function DiscussionsContent() {
           {threads.map((thread) => (
             <li key={thread.id} data-testid={`thread-${thread.id}`}>
               <Card className="p-4 hover:border-line-strong transition-colors duration-150 cursor-pointer">
-                <div className="flex items-center gap-3 mb-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1">
                   {thread.chapterTag && (
                     <span data-testid="chapter-tag">
                       <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
@@ -259,11 +259,6 @@ export default function DiscussionsPage() {
         Dashboard
       </Link>
 
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
-          Discussions
-        </h1>
-      </div>
       <Suspense fallback={<p data-testid="loading" className="text-ink-3 text-sm">Loading...</p>}>
         <DiscussionsContent />
       </Suspense>

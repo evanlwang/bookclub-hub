@@ -127,8 +127,8 @@ export default async function ClubDashboard({
               "linear-gradient(135deg, oklch(0.96 0.02 195 / 0.4), oklch(0.98 0.005 195 / 0.2))",
           }}
         >
-          <div className="grid grid-cols-[auto_1fr_auto] gap-4 items-center">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:items-center">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -170,7 +170,7 @@ export default async function ClubDashboard({
       {/* Currently Reading hero */}
       {currentBook?.book ? (
         <Card className="p-6 mb-6">
-          <div className="flex gap-6">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
             <BookCover
               title={currentBook.book.title}
               author={currentBook.book.author}
@@ -191,7 +191,7 @@ export default async function ClubDashboard({
               {/* Progress stats */}
               {progress.length > 0 && (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-4 text-xs text-ink-2">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-2">
                     <span className="font-[var(--font-display)] text-lg font-semibold text-ink">{median}%</span>
                     <span>median</span>
                     <span className="text-ink-4">·</span>
@@ -328,15 +328,17 @@ export default async function ClubDashboard({
           {threads.length > 0 ? (
             <ul className="space-y-2.5">
               {threads.map((thread: any) => (
-                <li key={thread.id} className="flex items-center gap-2 text-sm">
+                <li key={thread.id} className="flex items-center gap-2 text-sm min-w-0">
                   {thread.chapterTag && (
-                    <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
+                    <span className="shrink-0">
+                      <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
+                    </span>
                   )}
-                  <span className="text-ink font-medium truncate">
+                  <span className="text-ink font-medium truncate min-w-0 flex-1">
                     {thread.title}
                   </span>
                   {thread.commentCount != null && (
-                    <span className="text-[11px] text-ink-3 ml-auto shrink-0">{thread.commentCount}</span>
+                    <span className="text-[11px] text-ink-3 shrink-0">{thread.commentCount}</span>
                   )}
                 </li>
               ))}

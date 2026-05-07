@@ -221,7 +221,7 @@ function MemberTableRow({
       </td>
       <td className="px-5 py-3 text-ink-3">{joined}</td>
       <td className="px-5 py-3">
-        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {canPromote && (
             <Button
               size="sm"

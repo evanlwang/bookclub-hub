@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Badge, Button, AvatarStack } from "@/components/ui";
-import { CreateMeetingButton } from "./create-meeting";
+import { CreateMeetingForm, ProposeMeetingTrigger } from "./create-meeting";
 import { RespondMeeting } from "./respond-meeting";
 
 interface MeetingsClientProps {
@@ -56,6 +56,7 @@ export function MeetingsClient({ clubId, initialMeetings, viewerId }: MeetingsCl
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [meetings, setMeetings] = useState<any[]>(initialMeetings);
+  const [proposing, setProposing] = useState(false);
 
   // Apply the viewer's freshly saved availability to local state so the responded
   // count refreshes without a round trip to the server. We also kick the layout
@@ -102,12 +103,25 @@ export function MeetingsClient({ clubId, initialMeetings, viewerId }: MeetingsCl
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Meetings
         </h1>
-        <CreateMeetingButton clubId={clubId} />
+        {!proposing && (
+          <ProposeMeetingTrigger onClick={() => setProposing(true)} />
+        )}
       </div>
+
+      {proposing && (
+        <CreateMeetingForm
+          clubId={clubId}
+          onCreated={() => {
+            setProposing(false);
+            router.refresh();
+          }}
+          onCancel={() => setProposing(false)}
+        />
+      )}
 
       {/* Filter tabs */}
       <div className="flex gap-1 p-0.5 bg-bg-soft rounded-[var(--radius-md)] border border-line mb-6 w-fit">

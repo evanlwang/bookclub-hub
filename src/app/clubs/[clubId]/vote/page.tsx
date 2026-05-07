@@ -125,7 +125,7 @@ export default async function VotePage({
         Dashboard
       </Link>
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Voting Rounds
         </h1>
@@ -195,8 +195,8 @@ export default async function VotePage({
           {rounds.map((round: any) => (
             <li key={round.id} data-testid={`round-${round.id}`}>
               <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
                     <Badge
                       tone={
                         round.status === "decided"

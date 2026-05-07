@@ -643,7 +643,7 @@ function JoinPageInner() {
                 <label htmlFor="cadence" className="block text-[13px] font-medium text-ink-2 mb-1.5">
                   Voting cadence
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
                     { value: "monthly", label: "Monthly", sub: "12 books/yr" },
                     { value: "six_weeks", label: "6 weeks", sub: "~9 books/yr" },

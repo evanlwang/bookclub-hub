@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Badge, BookCover, Avatar } from "@/components/ui";
+import { SearchIcon } from "@/components/ui/icons";
 import { NominateModal } from "./nominate-modal";
 import { successMessage } from "@/lib/voting/prior-votes";
 import {
@@ -355,7 +356,7 @@ export function VoteRound({
           {isAdmin && (
             <div
               data-testid="admin-round-actions"
-              className="mt-6 pt-5 border-t border-line flex items-center justify-between gap-3 flex-wrap"
+              className="mt-6 pt-5 border-t border-line flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
             >
               <div className="flex flex-col">
                 <span className="text-xs uppercase tracking-wider text-ink-3">Admin actions</span>
@@ -507,7 +508,7 @@ export function VoteRound({
             <div className="absolute -top-5 -right-5 text-[200px] opacity-[0.06] font-[var(--font-display)] font-bold leading-none" style={{ color: "oklch(0.45 0.10 30)" }}>
               ✦
             </div>
-            <div className="grid grid-cols-[auto_1fr] gap-7 items-center relative">
+            <div className="flex flex-col sm:grid sm:grid-cols-[auto_1fr] gap-5 sm:gap-7 sm:items-center relative">
               <BookCover title={winner.book.title} author={winner.book.author} size="lg" />
               <div>
                 <div className="flex items-center gap-2.5 mb-2">
@@ -534,7 +535,7 @@ export function VoteRound({
         )}
 
         {/* Final tallies */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 className="font-[var(--font-display)] text-lg font-semibold">Final tallies</h3>
           {isAdmin && (
             <Button
@@ -551,7 +552,10 @@ export function VoteRound({
 
         <Card className="divide-y divide-line">
           {nominations.map((nom, i) => (
-            <div key={nom.id} className={`grid grid-cols-[40px_auto_1fr_180px_auto] gap-4 items-center px-5 py-3.5 ${i === 0 ? "bg-[oklch(0.97_0.02_75)]" : ""}`}>
+            <div
+              key={nom.id}
+              className={`grid grid-cols-[32px_auto_1fr_auto] md:grid-cols-[40px_auto_1fr_180px_auto] gap-3 md:gap-4 items-center px-5 py-3.5 ${i === 0 ? "bg-[oklch(0.97_0.02_75)]" : ""}`}
+            >
               <span className={`font-[var(--font-mono)] text-sm font-semibold ${i === 0 ? "text-accent-ink" : "text-ink-3"}`}>
                 {i === 0 ? "①" : `0${i + 1}`}
               </span>
@@ -560,7 +564,7 @@ export function VoteRound({
                 <p className="text-sm font-medium text-ink truncate">{nom.book.title}</p>
                 <p className="text-xs text-ink-3 italic">by {nom.book.author}</p>
               </div>
-              <div className="h-1.5 bg-bg-sunken rounded-full overflow-hidden">
+              <div className="hidden md:block h-1.5 bg-bg-sunken rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${i === 0 ? "bg-accent" : "bg-primary"}`}
                   style={{ width: `${((nom.voteCount ?? 0) / maxVotes) * 100}%` }}
@@ -604,17 +608,19 @@ export function VoteRound({
 
   return (
     <div data-testid="nominating-phase">
-      <div className="flex items-baseline justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <p className="text-sm text-ink-2">
           {nominations.length} nomination{nominations.length !== 1 ? "s" : ""} so far. Anyone can nominate.
         </p>
         <Button
-          variant="secondary"
-          size="sm"
+          variant="primary"
+          size="md"
           onClick={() => setIsNominateModalOpen(true)}
           data-testid="search-and-nominate-btn"
+          className="inline-flex items-center gap-2"
         >
-          Search & nominate
+          <SearchIcon size={16} />
+          Search & nominate a book
         </Button>
       </div>
 
