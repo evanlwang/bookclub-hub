@@ -52,6 +52,11 @@ export function AdminConfirmSection({
   const [error, setError] = useState("");
 
   const mostAvailable = useMemo(() => pickMostAvailableSlot(slots), [slots]);
+  const totalResponses = useMemo(
+    () => slots.reduce((acc, s) => acc + s.responses.length, 0),
+    [slots],
+  );
+  const noResponses = totalResponses === 0;
 
   const responders = useMemo(() => {
     const byUser = new Map<string, string>();
@@ -102,7 +107,16 @@ export function AdminConfirmSection({
     >
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="text-sm font-semibold text-ink">Pick a time</h3>
-        <span className="text-xs text-ink-3">Admin · confirms the meeting</span>
+        {noResponses ? (
+          <span
+            data-testid="confirm-disabled-hint"
+            className="text-[11px] text-ink-3 italic"
+          >
+            Wait for at least one response before confirming
+          </span>
+        ) : (
+          <span className="text-xs text-ink-3">Admin · confirms the meeting</span>
+        )}
       </div>
 
       <ul className="space-y-2">
@@ -167,6 +181,7 @@ export function AdminConfirmSection({
                   variant={isMostAvailable ? "primary" : "ghost"}
                   size="sm"
                   loading={isConfirming}
+                  disabled={noResponses}
                   onClick={() => handleConfirm(slot.id)}
                   data-testid={`confirm-slot-${slot.id}`}
                 >
