@@ -163,6 +163,14 @@ export function CreateMeetingForm({
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                if (!loading) {
+                  void handleSubmit(e as unknown as React.FormEvent);
+                }
+              }
+            }}
             placeholder="Description"
             data-testid="meeting-desc-input"
             rows={2}

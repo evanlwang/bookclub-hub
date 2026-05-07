@@ -97,6 +97,14 @@ function CreateThreadForm({
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              if (canSubmit && !loading) {
+                void handleSubmit(e as unknown as React.FormEvent);
+              }
+            }
+          }}
           required
           autoFocus
           placeholder="What's on your mind?"
