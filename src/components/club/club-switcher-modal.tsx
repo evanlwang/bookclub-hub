@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button, Card, CheckIcon } from "@/components/ui";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 type Tab = "join" | "create";
 
@@ -36,6 +37,8 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
   const [createdClub, setCreatedClub] = useState<{ id: string; name: string; code: string } | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, isOpen);
 
   const derivedCode = clubName
     .trim()
@@ -233,10 +236,12 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
 
   return createPortal(
     <div
+      ref={dialogRef}
       data-testid="club-switcher-modal"
       role="dialog"
       aria-modal="true"
       aria-labelledby="club-switcher-modal-title"
+      tabIndex={-1}
       className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
       onClick={handleClose}
     >

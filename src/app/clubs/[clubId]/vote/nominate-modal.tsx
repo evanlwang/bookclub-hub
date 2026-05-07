@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Button, Card } from "@/components/ui";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 interface Book {
   id: string;
@@ -42,6 +43,19 @@ export function NominateModal({
   // Debounce search with 300ms delay
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, isOpen);
+
+  // Escape closes
+  useEffect(() => {
+    if (!isOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
 
   const handleQueryChange = useCallback(
     (value: string) => {
@@ -207,6 +221,11 @@ export function NominateModal({
 
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="nominate-modal-title"
+      tabIndex={-1}
       className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
@@ -215,7 +234,10 @@ export function NominateModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-[var(--font-display)] text-lg font-semibold text-ink">
+          <h2
+            id="nominate-modal-title"
+            className="font-[var(--font-display)] text-lg font-semibold text-ink"
+          >
             Nominate a Book
           </h2>
           <button

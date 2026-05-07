@@ -1,8 +1,9 @@
 // @spec VOTE-UI-CLOSE-003, VOTE-UI-CLOSE-004, VOTE-UI-CLOSE-005, VOTE-UI-CLOSE-006
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Button, Card } from "@/components/ui";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 export interface ClosePreview {
   top3: Array<{ id: string; title: string; author: string; voteCount: number }>;
@@ -23,6 +24,8 @@ export function CloseVotingDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, true);
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape" && !submitting) onCancel();
@@ -36,10 +39,12 @@ export function CloseVotingDialog({
 
   return (
     <div
+      ref={dialogRef}
       data-testid="close-voting-dialog"
       role="dialog"
       aria-modal="true"
       aria-labelledby="close-voting-title"
+      tabIndex={-1}
       className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget && !submitting) onCancel();
@@ -156,6 +161,8 @@ export function CancelRoundDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, true);
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape" && !submitting) onCancel();
@@ -166,16 +173,22 @@ export function CancelRoundDialog({
 
   return (
     <div
+      ref={dialogRef}
       data-testid="cancel-round-dialog"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="cancel-round-title"
+      tabIndex={-1}
       className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget && !submitting) onCancel();
       }}
     >
       <Card className="w-full max-w-md bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg">
-        <h2 className="font-[var(--font-display)] text-lg font-semibold text-ink mb-2">
+        <h2
+          id="cancel-round-title"
+          className="font-[var(--font-display)] text-lg font-semibold text-ink mb-2"
+        >
           Cancel this round?
         </h2>
         <p className="text-sm text-ink-2 mb-4">

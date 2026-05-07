@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ProgressBar } from "@/components/ui";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 type ProgressStatus = "not_started" | "reading" | "finished";
 
@@ -123,6 +124,17 @@ function UpdateModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(dialogRef, true);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && !loading) onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [loading, onClose]);
+
   const percentage =
     status === "finished"
       ? 100
@@ -205,15 +217,25 @@ function UpdateModal({
 
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="update-progress-title"
+      tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center"
       data-testid="progress-modal"
     >
       <div
         className="absolute inset-0 backdrop-blur-md bg-bg/40"
-        onClick={onClose}
+        onClick={() => {
+          if (!loading) onClose();
+        }}
       />
       <div className="relative bg-bg border border-line rounded-[var(--radius-xl)] shadow-lg p-6 w-full max-w-md mx-4 animate-slide-down">
-        <h2 className="font-[var(--font-display)] text-xl font-semibold text-ink mb-6">
+        <h2
+          id="update-progress-title"
+          className="font-[var(--font-display)] text-xl font-semibold text-ink mb-6"
+        >
           Update Progress
         </h2>
 
