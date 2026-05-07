@@ -7,7 +7,6 @@ interface Book {
   id: string;
   title: string;
   author: string;
-  coverUrl?: string;
   pageCount?: number;
 }
 
@@ -73,10 +72,13 @@ export function NominateModal({
     setIsSearching(true);
     setApiError("");
 
-    fetch("/api/trpc/books.search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: debouncedQuery }),
+    // books.search is a tRPC `.query()` — fetched via GET with input as a
+    // URL-encoded JSON param. POSTing here returns an empty result and the
+    // user sees "no books found".
+    const input = encodeURIComponent(JSON.stringify({ query: debouncedQuery }));
+    const controller = new AbortController();
+    fetch(`/api/trpc/books.search?input=${input}`, {
+      signal: controller.signal,
     })
       .then((res) => res.json())
       .then((data) => {
@@ -87,13 +89,16 @@ export function NominateModal({
           setResults(data.result?.data || []);
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
         setResults([]);
         setApiError("Search failed. Try entering manually.");
       })
       .finally(() => {
         setIsSearching(false);
       });
+
+    return () => controller.abort();
   }, [debouncedQuery]);
 
   const handleNominate = async (bookId: string) => {
@@ -252,25 +257,18 @@ export function NominateModal({
                 {results.map((book) => (
                   <div
                     key={book.id}
-                    className="p-3 rounded-md border border-line hover:border-line-strong hover:bg-bg-soft transition-colors cursor-pointer flex gap-3 items-start"
+                    className="p-3 rounded-md border border-line hover:border-line-strong hover:bg-bg-soft transition-colors cursor-pointer flex gap-3 items-center"
                     onClick={() => handleNominate(book.id)}
                   >
-                    <div className="shrink-0 w-10 h-14 rounded bg-bg-soft flex items-center justify-center">
-                      {book.coverUrl ? (
-                        <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover rounded" />
-                      ) : (
-                        <span className="text-2xl">📖</span>
-                      )}
-                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-ink truncate">{book.title}</p>
-                      <p className="text-xs text-ink-3 italic truncate">by {book.author}</p>
-                      {book.pageCount && (
-                        <p className="text-xs text-ink-3 mt-1">{book.pageCount}pp</p>
-                      )}
+                      <p className="text-xs text-ink-3 italic truncate">
+                        by {book.author}
+                        {book.pageCount ? ` · ${book.pageCount}pp` : ""}
+                      </p>
                     </div>
                     <Button
-                      variant="secondary"
+                      variant="primary"
                       size="sm"
                       className="shrink-0"
                       onClick={(e) => {
