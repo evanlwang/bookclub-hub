@@ -32,6 +32,10 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[x]` **DISC-UI-003**: Button: "Show all" (`discussions/page.tsx:138-144`) — visible: `hiddenCount > 0 && !showAll` — handler: sets local `showAll=true` (per-session, not persisted). Note: actual label is "Show all" (older spec said "Show all anyway").
 - `[x]` **DISC-UI-004**: The spoiler filter bar SHALL include a chapter number input ("I'm on chapter:") with live update to the thread list. (`discussions/page.tsx:117-134`)
 - `[x]` **DISC-BE-001**: Threads with `chapterNumber = null` (unparseable tags or no tag) SHALL always be shown regardless of progress filter.
+- `[x]` **DISC-UI-PROGRESS-AUTOFILTER-001**: When the discussions page loads and the viewer has a recorded `currentChapter` for the current book, the page SHALL initialize `maxChapter` from that value so threads are spoiler-filtered by default. The viewer can still override the input or click "Show all". (`discussions/page.tsx`)
+- `[x]` **DISC-UI-PROGRESS-AUTOFILTER-002**: When the viewer has no `currentChapter` recorded for the current book (no progress row, or `currentChapter` is null), the discussions page SHALL apply no spoiler filter and show all threads.
+- `[x]` **DISC-UI-DASH-FEED-AUTOFILTER-001**: The dashboard "Recent Discussions" feed SHALL exclude threads tagged above the viewer's `currentChapter` (or omit the filter when no progress is recorded), so the dashboard never leaks spoilers via the recent feed. (`page.tsx` server loader)
+- `[x]` **DISC-LIB-CUTOFF-001**: `deriveSpoilerCutoff(progress)` SHALL return the viewer's `currentChapter` (>= 0) or `null` when no progress / no chapter is recorded. Both UI surfaces SHALL use this helper to compute the `maxChapter` they pass to `threads.list`. (`src/lib/discussions/spoiler-cutoff.ts`)
 
 ## Comments API
 

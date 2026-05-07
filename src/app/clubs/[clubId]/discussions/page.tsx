@@ -1,4 +1,4 @@
-// @spec DISC-UI-001, DISC-UI-002, DISC-UI-003, DISC-UI-005, DISC-UI-011
+// @spec DISC-UI-001, DISC-UI-002, DISC-UI-003, DISC-UI-005, DISC-UI-011, DISC-UI-PROGRESS-AUTOFILTER-001, DISC-UI-PROGRESS-AUTOFILTER-002
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, ChapterChip, Avatar } from "@/components/ui";
 import { ChevronLeftIcon } from "@/components/ui/icons";
+import { deriveSpoilerCutoff } from "@/lib/discussions/spoiler-cutoff";
 import { CreateThreadButton } from "./create-thread";
 
 type Thread = {
@@ -43,6 +44,7 @@ function DiscussionsContent() {
   const [sort, setSort] = useState<"recent" | "comments">("recent");
   const [error, setError] = useState("");
   const [currentBookId, setCurrentBookId] = useState<string | null>(bookIdParam);
+  const [progressLoaded, setProgressLoaded] = useState(false);
 
   useEffect(() => {
     if (currentBookId) return;
@@ -63,8 +65,38 @@ function DiscussionsContent() {
     fetchCurrentBook();
   }, [clubId, currentBookId]);
 
+  // @spec DISC-UI-PROGRESS-AUTOFILTER-001, DISC-UI-PROGRESS-AUTOFILTER-002
+  // Once we know the current book, fetch the viewer's progress and seed the
+  // chapter input. We only prefill once — the user is free to override after.
+  useEffect(() => {
+    if (!currentBookId || progressLoaded) return;
+    let cancelled = false;
+    async function loadViewerProgress() {
+      try {
+        const input = encodeURIComponent(
+          JSON.stringify({ clubId, bookId: currentBookId })
+        );
+        const res = await fetch(`/api/trpc/progress.me?input=${input}`);
+        const data = await res.json();
+        if (cancelled) return;
+        const cutoff = deriveSpoilerCutoff(data.result?.data ?? null);
+        if (cutoff != null) setMaxChapter(cutoff);
+      } catch {
+        // Soft-fail: leave the filter unset so we surface all threads.
+      } finally {
+        if (!cancelled) setProgressLoaded(true);
+      }
+    }
+    loadViewerProgress();
+    return () => {
+      cancelled = true;
+    };
+  }, [clubId, currentBookId, progressLoaded]);
+
   const loadThreads = useCallback(async () => {
-    if (!currentBookId) return;
+    // Wait until viewer progress has been fetched so the first thread query
+    // already reflects the spoiler cutoff (avoids a one-frame full-list flash).
+    if (!currentBookId || !progressLoaded) return;
     try {
       const queryInput: Record<string, unknown> = { clubId, bookId: currentBookId, sort };
       if (maxChapter !== null && !showAll) {
@@ -84,7 +116,7 @@ function DiscussionsContent() {
     } catch {
       setError("Failed to load threads");
     }
-  }, [clubId, currentBookId, maxChapter, showAll, sort]);
+  }, [clubId, currentBookId, maxChapter, showAll, sort, progressLoaded]);
 
   useEffect(() => {
     loadThreads();

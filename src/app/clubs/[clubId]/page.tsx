@@ -1,8 +1,9 @@
-// @spec DASH-UI-006, DASH-UI-007, DASH-UI-008, DASH-UI-011
+// @spec DASH-UI-006, DASH-UI-007, DASH-UI-008, DASH-UI-011, DISC-UI-DASH-FEED-AUTOFILTER-001
 import { getServerCaller } from "@/trpc/server";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { Card, Badge, BookCover, ProgressBar, AvatarStack, ChapterChip, Avatar } from "@/components/ui";
+import { deriveSpoilerCutoff } from "@/lib/discussions/spoiler-cutoff";
 
 export default async function ClubDashboard({
   params,
@@ -60,9 +61,18 @@ export default async function ClubDashboard({
     }
 
     if (currentBook?.book?.id) {
+      // @spec DISC-UI-DASH-FEED-AUTOFILTER-001 — fetch viewer progress so the
+      // recent-discussions feed never leaks spoilers above the viewer's chapter.
+      const myProgress = await caller.progress.me({
+        clubId,
+        bookId: currentBook.book.id,
+      });
+      const cutoff = deriveSpoilerCutoff(myProgress);
+
       const threadResult = await caller.threads.list({
         clubId,
         bookId: currentBook.book.id,
+        ...(cutoff != null ? { maxChapter: cutoff } : {}),
       });
       threads = threadResult.threads?.slice(0, 3) ?? [];
 
