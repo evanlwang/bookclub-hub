@@ -5,11 +5,15 @@ import { useRouter } from "next/navigation";
 import { Card, Badge, Button, AvatarStack } from "@/components/ui";
 import { CreateMeetingForm, ProposeMeetingTrigger } from "./create-meeting";
 import { RespondMeeting } from "./respond-meeting";
+import { AdminConfirmSection } from "./admin-confirm";
+
+type ViewerRole = "owner" | "admin" | "member";
 
 interface MeetingsClientProps {
   clubId: string;
   initialMeetings: any[];
   viewerId: string;
+  viewerRole: ViewerRole;
 }
 
 type ResponseStatus = "available" | "maybe" | "unavailable";
@@ -51,12 +55,36 @@ function getAttendeeNames(meeting: any): string[] {
 }
 
 // @spec MEET-UI-006, MEET-UI-008, MEET-UI-009
-export function MeetingsClient({ clubId, initialMeetings, viewerId }: MeetingsClientProps) {
+export function MeetingsClient({
+  clubId,
+  initialMeetings,
+  viewerId,
+  viewerRole,
+}: MeetingsClientProps) {
   const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [meetings, setMeetings] = useState<any[]>(initialMeetings);
   const [proposing, setProposing] = useState(false);
+  const isAdmin = viewerRole === "admin" || viewerRole === "owner";
+
+  // After confirm, optimistically flip the meeting to "confirmed" so it moves
+  // to the Confirmed list without waiting for the route refresh.
+  function applyConfirmedSlot(meetingId: string, slotId: string) {
+    setMeetings((prev) =>
+      prev.map((m) => {
+        if (m.id !== meetingId) return m;
+        const slot = m.slots?.find((s: any) => s.id === slotId);
+        return {
+          ...m,
+          status: "confirmed",
+          confirmedTime: slot?.proposedTime ?? m.confirmedTime,
+        };
+      }),
+    );
+    setExpandedId(null);
+    router.refresh();
+  }
 
   // Apply the viewer's freshly saved availability to local state so the responded
   // count refreshes without a round trip to the server. We also kick the layout
@@ -174,7 +202,9 @@ export function MeetingsClient({ clubId, initialMeetings, viewerId }: MeetingsCl
                     onToggle={() => setExpandedId(expandedId === meeting.id ? null : meeting.id)}
                     clubId={clubId}
                     viewerId={viewerId}
+                    isAdmin={isAdmin}
                     onResponsesUpdated={(next) => applyViewerResponses(meeting.id, next)}
+                    onConfirmed={(slotId) => applyConfirmedSlot(meeting.id, slotId)}
                     onDone={() => setExpandedId(null)}
                   />
                 )}
@@ -238,7 +268,9 @@ function ProposedMeetingRow({
   onToggle,
   clubId,
   viewerId,
+  isAdmin,
   onResponsesUpdated,
+  onConfirmed,
   onDone,
 }: {
   meeting: any;
@@ -246,7 +278,9 @@ function ProposedMeetingRow({
   onToggle: () => void;
   clubId: string;
   viewerId: string;
+  isAdmin: boolean;
   onResponsesUpdated: (next: { slotId: string; status: ResponseStatus }[]) => void;
+  onConfirmed: (slotId: string) => void;
   onDone: () => void;
 }) {
   const { responded } = getResponseCounts(meeting);
@@ -310,6 +344,14 @@ function ProposedMeetingRow({
             onResponsesUpdated={onResponsesUpdated}
             onDone={onDone}
           />
+          {isAdmin && (
+            <AdminConfirmSection
+              clubId={clubId}
+              meetingId={meeting.id}
+              slots={meeting.slots}
+              onConfirmed={onConfirmed}
+            />
+          )}
         </div>
       )}
     </div>

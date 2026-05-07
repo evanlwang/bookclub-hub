@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { getServerCaller } from "@/trpc/server";
+import { prisma } from "@/lib/db";
 import { Card, Badge } from "@/components/ui";
 import { ChevronLeftIcon } from "@/components/ui/icons";
 import { MeetingsClient } from "./meetings-client";
 
+type ViewerRole = "owner" | "admin" | "member";
+
+// @spec MEET-UI-CONFIRM-BTN-001 — viewerRole threading enables admin-only confirm UI.
 export default async function MeetingsPage({
   params,
 }: {
@@ -13,6 +17,7 @@ export default async function MeetingsPage({
 
   let meetings: any[] = [];
   let viewerId = "";
+  let viewerRole: ViewerRole = "member";
   let error = "";
 
   try {
@@ -23,6 +28,14 @@ export default async function MeetingsPage({
     ]);
     meetings = meetingsResult;
     viewerId = me.user.id;
+
+    const membership = await prisma.membership.findUnique({
+      where: { clubId_userId: { clubId, userId: viewerId } },
+      select: { role: true },
+    });
+    if (membership?.role === "owner" || membership?.role === "admin") {
+      viewerRole = membership.role;
+    }
   } catch (e: unknown) {
     error = e instanceof Error ? e.message : "Error loading meetings";
   }
@@ -40,7 +53,12 @@ export default async function MeetingsPage({
         <ChevronLeftIcon size={14} />
         Dashboard
       </Link>
-      <MeetingsClient clubId={clubId} initialMeetings={meetings} viewerId={viewerId} />
+      <MeetingsClient
+        clubId={clubId}
+        initialMeetings={meetings}
+        viewerId={viewerId}
+        viewerRole={viewerRole}
+      />
     </div>
   );
 }

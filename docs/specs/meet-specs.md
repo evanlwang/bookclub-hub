@@ -40,11 +40,11 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 
 ## Confirmation UI Gaps (mutations exist, UI does not call them)
 
-- `[!]` **MEET-UI-CONFIRM-001**: `meetings.confirm` mutation exists at `meetings.ts:141-180` but **no UI button calls it**. Older spec described a heatmap + AI-recommended banner + "Most available" badge — none implemented. Treat the entire admin confirm flow as a gap:
-  - `[ ]` **MEET-UI-CONFIRM-BTN-001**: Admin "Confirm time" button per slot in proposed-meeting view.
-  - `[ ]` **MEET-UI-CONFIRM-HEATMAP-001**: Color-coded heatmap (green/amber/light per member per slot).
-  - `[ ]` **MEET-UI-CONFIRM-RECOMMEND-001**: AI-recommended banner highlighting best-fit slot.
-  - `[ ]` **MEET-UI-CONFIRM-BADGE-001**: "Most available" badge on top-ranked slot.
+- `[x]` **MEET-UI-CONFIRM-001**: Implemented via the three sub-IDs below. `meetings.confirm` is now wired to an admin-only section inside the proposed-meeting expanded panel.
+  - `[x]` **MEET-UI-CONFIRM-BTN-001**: When the viewer's role for the club is `owner` or `admin`, the proposed-meeting expanded panel SHALL render an admin section (`data-testid="admin-confirm-section"`) listing every slot with a "Confirm time" button (`data-testid="confirm-slot-{slotId}"`). Clicking calls `meetings.confirm({clubId, meetingId, slotId})` and refreshes the route. Plain members SHALL NOT see this section.
+  - `[x]` **MEET-UI-CONFIRM-HEATMAP-001**: The admin section SHALL render a heatmap with one row per responder (any member who has submitted at least one availability response for this meeting) and one column per slot. Each cell SHALL render a colored dot — `available`=success, `maybe`=warning, `unavailable`=danger, no-response=neutral. `data-testid="heatmap-cell-{userId}-{slotId}"` carries `data-status="available|maybe|unavailable|none"`.
+  - `[D]` **MEET-UI-CONFIRM-RECOMMEND-001**: Deferred — superseded by `MEET-UI-CONFIRM-BADGE-001`. The "Most available" badge IS the recommendation. Reintroduce only if a richer recommendation surface is required.
+  - `[x]` **MEET-UI-CONFIRM-BADGE-001**: The slot with the highest `available` response count SHALL display a "Most available" Badge (`data-testid="most-available-badge"`). Ties broken by `available + maybe` count, then by `proposedTime ASC`. If no slot has any responses, no badge SHALL be shown. Ranking computed by `src/lib/meetings/availability.ts#pickMostAvailableSlot` (unit tested).
 - `[!]` **MEET-UI-EDIT-001**: `meetings.update` and `meetings.cancel` exist; no UI surfaces them. Treat as gaps:
   - `[ ]` **MEET-UI-EDIT-BTN-001**: Admin "Edit meeting" button on proposed/confirmed meetings.
   - `[ ]` **MEET-UI-CANCEL-BTN-001**: Admin "Cancel meeting" button on proposed/confirmed meetings.

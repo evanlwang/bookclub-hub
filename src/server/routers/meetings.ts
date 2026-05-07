@@ -21,7 +21,7 @@ export const meetingsRouter = router({
       const meetings = await ctx.db.meeting.findMany({
         where,
         include: {
-          slots: { include: { responses: true } },
+          slots: { include: { responses: { include: { user: true } } } },
           book: true,
         },
         orderBy: { createdAt: "desc" },
