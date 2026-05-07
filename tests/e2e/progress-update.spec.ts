@@ -1,4 +1,4 @@
-// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-001, PROG-UI-MODAL-PAGE-001, PROG-UI-003, PROG-UI-007, PROG-API-001, PROG-BE-001, PROG-BE-006
+// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-001, PROG-UI-MODAL-PAGE-001, PROG-UI-003, PROG-UI-007, PROG-API-001, PROG-BE-001, PROG-BE-006, PROG-UI-MODAL-PCT-EDIT-001
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 
@@ -39,7 +39,7 @@ test.describe("Progress Update Modal", () => {
 
     // Enter page 206 (50% of 412)
     await page.getByTestId("page-input").fill("206");
-    await expect(page.getByTestId("percentage-display")).toContainText("50%");
+    await expect(page.getByTestId("percentage-input")).toHaveValue("50");
   });
 
   // @spec PROG-UI-001, PROG-UI-003, PROG-BE-006
@@ -57,7 +57,7 @@ test.describe("Progress Update Modal", () => {
     await page.getByTestId("update-progress-btn").click();
 
     await page.getByTestId("status-finished").click();
-    await expect(page.getByTestId("percentage-display")).toContainText("100%");
+    await expect(page.getByTestId("percentage-input")).toHaveValue("100");
   });
 
   // @spec PROG-UI-007, PROG-API-001

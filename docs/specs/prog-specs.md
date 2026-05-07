@@ -57,8 +57,8 @@ Auto-transitions: page input change from 0→positive while status="not_started"
   - `[x]` **PROG-UI-MODAL-SLIDER-001**: The modal SHALL render a range slider (`<input type="range">`, `data-testid="page-slider"`, min 0, max totalPages) bidirectionally synced with the page number input. Changing the slider SHALL update the page input and the live preview bar; changing the page input SHALL update the slider. The slider SHALL be disabled when status="finished". Moving the slider from 0 → positive while status="not_started" SHALL auto-bump status to "reading" (same behavior as the page input).
 - `[x]` **PROG-UI-003**: When status="finished", the page input auto-locks to totalPages and is disabled. (`update-modal.tsx:62-63, 157`)
 - `[x]` **PROG-UI-004**: When status="not_started", the page input resets to 0. Chapter input is not auto-cleared. (`update-modal.tsx:64-66`)
-- `[!]` **PROG-UI-MODAL-PCT-001**: The modal shows a read-only "Progress: {N}%" display computed live (`update-modal.tsx:167-175`). Older spec described an editable percentage input — **not implemented**:
-  - `[ ]` **PROG-UI-MODAL-PCT-EDIT-001**: Editable percentage number input (0–100), bidirectionally synced with page input.
+- `[x]` **PROG-UI-MODAL-PCT-001**: Implemented via PROG-UI-MODAL-PCT-EDIT-001 below.
+  - `[x]` **PROG-UI-MODAL-PCT-EDIT-001**: The modal SHALL render an editable percentage number input (`<input type="number">`, `data-testid="percentage-input"`, min 0, max 100) bidirectionally synced with the page input and slider. Changing the percentage SHALL update the page input (`page = round(pct/100 * totalPages)`) and live preview bar; changing the page input SHALL update the percentage. Disabled when status="finished" (locked at 100). Editing the percentage from 0 → positive while status="not_started" SHALL auto-bump status to "reading".
 - `[x]` **PROG-UI-006**: The modal SHALL include an optional numeric "Chapter (optional)" input (`update-modal.tsx:178-191`), placeholder "—".
 - `[x]` **PROG-UI-007**: Buttons: "Cancel" (`update-modal.tsx:201-203`) and "Save Progress" (`update-modal.tsx:204-212`) at the bottom. Save calls `progress.update` and refreshes the route on success.
 
@@ -69,7 +69,7 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-UI-008** & **PROG-UI-009**: Implemented via the toast/undo pair below.
   - `[x]` **PROG-UI-MODAL-TOAST-001**: After a successful `progress.update`, the modal SHALL close and a toast SHALL appear at the bottom of the viewport reading "Progress saved · page {N}" (where N is the saved page; "Progress saved" alone if `totalPages` is null). The toast SHALL auto-dismiss after 4 seconds. `data-testid="progress-saved-toast"`.
   - `[x]` **PROG-UI-MODAL-UNDO-001**: The toast SHALL include an "Undo" button (`data-testid="progress-undo-btn"`). Clicking Undo SHALL (a) re-issue `progress.update` with the previous values captured before save, (b) dismiss the toast, (c) re-open the modal pre-filled with the previous values, and (d) refresh the dashboard so the reverted state is visible. If there were no previous values (no prior progress record), the toast SHALL omit the Undo button.
-- `[ ]` **PROG-UI-MODAL-TIMESTAMP-001**: "Last updated" timestamp shown below modal body.
+- `[x]` **PROG-UI-MODAL-TIMESTAMP-001**: When the user has an existing progress record (`currentProgress.updatedAt` set), the modal SHALL display "Last updated {MMM D, YYYY · h:mm A}" (en-US locale, hardcoded for test determinism) below the chapter input. `data-testid="last-updated"`. Hidden when no prior record (first-time update).
 
 ## Progress Dashboard Display
 
@@ -99,8 +99,8 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 ## Error Handling
 
 - `[x]` **PROG-ERR-001**: If `progress.update` fails, the modal SHALL display the error message inline (`update-modal.tsx:193-197`).
-- `[ ]` **PROG-ERR-002**: If loading the progress list fails, the page SHALL display the specific error.
-- `[ ]` **PROG-ERR-003**: If the user lacks membership, the procedure SHALL return a 403 (handled at middleware level — verify in tests).
+- `[x]` **PROG-ERR-002**: If loading the progress data fails (`selections.list`, `progress.list`, `progress.me`, or book lookup), the page SHALL render the error's `.message` via `data-testid="selections-error"` or `data-testid="progress-error"` (`progress/page.tsx:27-33, 75-77`). Verified end-to-end by the non-member test below.
+- `[x]` **PROG-ERR-003**: Non-members SHALL receive `FORBIDDEN` ("Not a club member") from `progress.list`/`progress.me`/`progress.update`/`selections.list`. Enforced by `memberProcedure` middleware (`src/server/trpc.ts:26-41`); covered by `tests/e2e/progress-membership-403.spec.ts`.
 
 ## Deferred
 
