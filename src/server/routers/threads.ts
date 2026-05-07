@@ -4,6 +4,19 @@ import { TRPCError } from "@trpc/server";
 import { router, memberProcedure } from "../trpc";
 import { parseChapterTag } from "@/lib/validation/chapter-tag";
 
+/**
+ * Title is a vestigial NOT NULL column — the UI no longer collects one.
+ * Derive a stable, short title from the first line/sentence of the body
+ * so DB constraints stay satisfied and any legacy display sites can fall
+ * back without crashing.
+ */
+function deriveTitleFromBody(body: string): string {
+  const firstLine = body.split("\n").find((s) => s.trim().length > 0)?.trim() ?? body.trim();
+  if (firstLine.length === 0) return "(untitled)";
+  if (firstLine.length <= 80) return firstLine;
+  return firstLine.slice(0, 77).trimEnd() + "…";
+}
+
 export const threadsRouter = router({
   list: memberProcedure
     .input(
@@ -60,20 +73,24 @@ export const threadsRouter = router({
       z.object({
         clubId: z.string().uuid(),
         bookId: z.string().uuid(),
-        title: z.string().min(1).max(200),
+        // Title is no longer surfaced in the UI; clients may omit it. We
+        // derive a value from the body so the underlying NOT NULL column
+        // is satisfied without requiring a migration.
+        title: z.string().min(1).max(200).optional(),
         body: z.string().min(1),
         chapterTag: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const chapterNumber = parseChapterTag(input.chapterTag);
+      const title = input.title ?? deriveTitleFromBody(input.body);
 
       const thread = await ctx.db.discussionThread.create({
         data: {
           clubId: input.clubId,
           bookId: input.bookId,
           authorId: ctx.user.id,
-          title: input.title,
+          title,
           body: input.body,
           chapterTag: input.chapterTag,
           chapterNumber,

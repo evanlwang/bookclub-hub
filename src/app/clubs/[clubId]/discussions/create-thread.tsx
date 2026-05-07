@@ -48,14 +48,16 @@ function CreateThreadForm({
   onCreated,
   onCancel,
 }: CreateThreadProps & { onCancel: () => void }) {
-  const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [chapterTag, setChapterTag] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const canSubmit = body.trim().length > 0 && chapterTag.trim().length > 0;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!canSubmit) return;
     setLoading(true);
     setError("");
 
@@ -66,9 +68,8 @@ function CreateThreadForm({
         body: JSON.stringify({
           clubId,
           bookId,
-          title,
-          body,
-          chapterTag: chapterTag || undefined,
+          body: body.trim(),
+          chapterTag: chapterTag.trim(),
         }),
       });
       const data = await res.json();
@@ -92,23 +93,12 @@ function CreateThreadForm({
     >
       <h3 className="font-medium text-ink text-sm mb-4">New Thread</h3>
 
-      <div className="mb-3">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          placeholder="Thread title"
-          data-testid="thread-title-input"
-          className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-        />
-      </div>
-
-      <div className="mb-3">
+      <div className="mb-4">
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           required
+          autoFocus
           placeholder="What's on your mind?"
           data-testid="thread-body-input"
           rows={4}
@@ -116,20 +106,33 @@ function CreateThreadForm({
         />
       </div>
 
-      <div className="mb-4 flex items-center gap-3">
-        <input
-          type="text"
-          value={chapterTag}
-          onChange={(e) => setChapterTag(e.target.value)}
-          placeholder="Chapter tag (e.g. Chapter 5)"
-          data-testid="thread-chapter-input"
-          className="w-48 text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-        />
-        {chapterTag && (
-          <span data-testid="chapter-tag-preview">
-            <ChapterChip tag={chapterTag} />
-          </span>
-        )}
+      <div className="mb-4">
+        <label
+          htmlFor="thread-chapter-input"
+          className="block text-[13px] font-medium text-ink-2 mb-1.5"
+        >
+          Chapter <span className="text-danger" aria-label="required">*</span>
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            id="thread-chapter-input"
+            type="text"
+            value={chapterTag}
+            onChange={(e) => setChapterTag(e.target.value)}
+            required
+            placeholder="e.g. Chapter 5, Prologue, Part II"
+            data-testid="thread-chapter-input"
+            className="flex-1 min-w-[16rem] text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+          />
+          {chapterTag.trim() && (
+            <span data-testid="chapter-tag-preview" className="shrink-0">
+              <ChapterChip tag={chapterTag.trim()} />
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-ink-3 mt-1.5 leading-snug">
+          Used to filter threads by reader progress so members don&rsquo;t see spoilers ahead of where they are.
+        </p>
       </div>
 
       {error && (
@@ -144,6 +147,7 @@ function CreateThreadForm({
           variant="primary"
           size="sm"
           loading={loading}
+          disabled={!canSubmit}
           type="submit"
           data-testid="submit-thread-btn"
         >

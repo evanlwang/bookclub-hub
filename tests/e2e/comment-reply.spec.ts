@@ -29,7 +29,8 @@ test.describe("Thread Detail and Comments", () => {
     await page.goto(`/clubs/${club.id}/discussions/${thread!.id}`);
 
     await expect(page.getByTestId("thread-detail")).toBeVisible();
-    await expect(page.getByText(thread!.title)).toBeVisible();
+    // Detail page no longer renders title; body is the post content.
+    await expect(page.getByTestId("thread-detail")).toContainText(thread!.body);
   });
 
   // @spec DISC-UI-DETAIL-COMPOSER-001, DISC-API-005

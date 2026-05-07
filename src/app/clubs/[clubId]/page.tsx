@@ -329,8 +329,8 @@ export default async function ClubDashboard({
                       <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
                     </span>
                   )}
-                  <span className="text-ink font-medium truncate min-w-0 flex-1">
-                    {thread.title}
+                  <span className="text-ink truncate min-w-0 flex-1">
+                    {thread.body}
                   </span>
                   {thread.commentCount != null && (
                     <span className="text-[11px] text-ink-3 shrink-0">{thread.commentCount}</span>

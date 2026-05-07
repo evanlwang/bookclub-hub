@@ -221,11 +221,11 @@ function DiscussionsContent() {
                     <span className="text-xs text-ink-3 ml-auto">{thread.commentCount} replies</span>
                   )}
                 </div>
-                <span className="text-sm font-medium text-ink">
-                  {thread.title}
-                </span>
                 {thread.body && (
-                  <p data-testid="thread-body-preview" className="text-xs text-ink-3 mt-1 line-clamp-1">
+                  <p
+                    data-testid="thread-body-preview"
+                    className="text-sm text-ink leading-snug line-clamp-2"
+                  >
                     {thread.body}
                   </p>
                 )}

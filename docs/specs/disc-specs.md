@@ -57,19 +57,21 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[x]` **DISC-UI-PAGE-EMPTY-001**: When there are zero matching threads, the list SHALL show "No discussions yet." (`discussions/page.tsx:171-174`)
 - `[x]` **DISC-UI-PAGE-COUNT-001**: The thread count "{N} thread(s)" SHALL be shown above the list. (`discussions/page.tsx:151`)
 - `[x]` **DISC-UI-005**: The thread list SHALL support sort controls "Recent" / "Most comments" as tab-style toggles. (`discussions/page.tsx:152-167`)
-- `[x]` **DISC-UI-PAGE-CARD-001**: Each thread card SHALL show: chapter chip (if any), comment count (right-aligned), title, single-line body preview, and author avatar + name + relative time. (`discussions/page.tsx:178-209`)
+- `[!]` **DISC-UI-PAGE-CARD-001**: Each thread card SHALL show: chapter chip (if any), comment count (right-aligned), a 2-line body excerpt (`line-clamp-2`) as the primary content, and author avatar + name + relative time. **Divergence from older spec:** title removed; body is the prominent text now. (`discussions/page.tsx:213-241`)
 
 ## Compose Thread Form
 
-- `[x]` **DISC-UI-COMPOSE-001**: Form fields: required title input, required body textarea (4 rows), optional chapter tag input. (`create-thread.tsx:95-133`)
-- `[x]` **DISC-UI-016**: The chapter tag input SHALL display a live `ChapterChip` preview inline as the user types. (`create-thread.tsx:128-132`)
-- `[x]` **DISC-UI-COMPOSE-CANCEL-001**: Button: "Cancel" (`create-thread.tsx:140-141`) closes the form via `onCancel`.
-- `[x]` **DISC-UI-COMPOSE-SUBMIT-001**: Button: "Post Thread" (`create-thread.tsx:143-151`) submits via `threads.create`.
+- `[!]` **DISC-UI-COMPOSE-001**: **Replaced.** The form no longer collects a title. Current fields: required body textarea (4 rows), required chapter tag input with helper text. The DB `title` column is preserved (NOT NULL); the server derives a title from the first line of the body when the client omits one. See `DISC-UI-COMPOSE-002` and `DISC-UI-COMPOSE-CHAPTER-REQUIRED-001`.
+- `[x]` **DISC-UI-COMPOSE-002**: The form SHALL render a body textarea (4 rows, autofocus, placeholder "What's on your mind?") followed by a labeled chapter input. No title field. (`create-thread.tsx:48-67`)
+- `[x]` **DISC-UI-COMPOSE-CHAPTER-REQUIRED-001**: The chapter tag input SHALL be marked required (label `"Chapter *"`, HTML `required` attr) and the Post Thread button SHALL be disabled until both body and chapter tag have non-whitespace content. The input is wide enough (`flex-1 min-w-[16rem]`) that the placeholder `"e.g. Chapter 5, Prologue, Part II"` does not truncate. A helper line beneath the input reads "Used to filter threads by reader progress so members don't see spoilers ahead of where they are." (`create-thread.tsx:69-95`)
+- `[x]` **DISC-UI-016**: The chapter tag input SHALL display a live `ChapterChip` preview inline as the user types. (`create-thread.tsx:84-88`)
+- `[x]` **DISC-UI-COMPOSE-CANCEL-001**: Button: "Cancel" closes the form via `onCancel`. (`create-thread.tsx:103-105`)
+- `[x]` **DISC-UI-COMPOSE-SUBMIT-001**: Button: "Post Thread" submits via `threads.create` (sends body + chapterTag, no title). (`create-thread.tsx:106-114`)
 
 ## Thread Detail UI
 
 - `[x]` **DISC-UI-DETAIL-001**: Back link "Discussions" with chevron returns to the list. (`[threadId]/page.tsx:91-97`)
-- `[x]` **DISC-UI-DETAIL-002**: The header SHALL show: chapter tag badge (if any), title, author avatar + name + date, and the thread body. (`[threadId]/page.tsx:99-118`)
+- `[!]` **DISC-UI-DETAIL-002**: The header SHALL show: chapter tag badge (if any), author avatar + name + date, and the thread body rendered at `text-base` as the post content. **Divergence from older spec:** the title `<h1>` has been removed since the form no longer collects a title. (`[threadId]/page.tsx:124-138`)
 - `[x]` **DISC-UI-DETAIL-EMPTY-001**: When there are zero comments, "No comments yet. Be the first!" SHALL be shown. (`[threadId]/page.tsx:124-126`)
 - `[x]` **DISC-UI-DETAIL-COMMENT-001**: Each top-level comment renders in a Card with avatar, author name, date, body, and a "Reply" button.
 - `[x]` **DISC-UI-013**: Button: per-comment "Reply" (`[threadId]/page.tsx:150-161`) toggles an inline composer indented below the comment with a left-border accent (replyingTo state).

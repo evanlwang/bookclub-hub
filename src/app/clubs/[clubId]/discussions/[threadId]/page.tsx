@@ -122,21 +122,16 @@ export default function ThreadDetailPage() {
 
       {/* Thread header */}
       <div className="mb-6" data-testid="thread-detail">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           {thread.chapterTag && (
             <Badge tone="neutral">[{thread.chapterTag}]</Badge>
           )}
-        </div>
-        <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight mb-2">
-          {thread.title}
-        </h1>
-        <div className="flex items-center gap-2 text-xs text-ink-3 mb-4">
           <Avatar name={authorName} size="sm" />
-          <span>{authorName}</span>
-          <span>·</span>
-          <span>{new Date(thread.createdAt).toLocaleDateString()}</span>
+          <span className="text-xs text-ink-3">
+            {authorName} · {new Date(thread.createdAt).toLocaleDateString()}
+          </span>
         </div>
-        <div className="text-sm text-ink leading-relaxed whitespace-pre-wrap">
+        <div className="text-base text-ink leading-relaxed whitespace-pre-wrap">
           {thread.body}
         </div>
       </div>
