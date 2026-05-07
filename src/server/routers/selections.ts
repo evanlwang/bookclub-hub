@@ -19,7 +19,18 @@ export const selectionsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Mark previous selections as not current
+      // @spec VOTE-API-DECIDED-FINISHED-001 — same demote+stamp pattern as
+      // rounds.advance, so manual admin picks also leave a clean "Finished"
+      // entry in the history picker. Two-step preserves prior finishedAt.
+      const now = new Date();
+      await ctx.db.bookSelection.updateMany({
+        where: {
+          clubId: input.clubId,
+          isCurrent: true,
+          finishedAt: null,
+        },
+        data: { isCurrent: false, finishedAt: now },
+      });
       await ctx.db.bookSelection.updateMany({
         where: { clubId: input.clubId, isCurrent: true },
         data: { isCurrent: false },

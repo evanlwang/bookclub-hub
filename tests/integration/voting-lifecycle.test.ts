@@ -103,6 +103,110 @@ describe("voting lifecycle", () => {
     expect(selection?.bookId).toBe(dune.id);
   });
 
+  // @spec VOTE-API-DECIDED-FINISHED-001
+  it("stamps finishedAt on the prior current selection when a round decides", async () => {
+    const adminCaller = await createAuthenticatedCaller(db, alice);
+    const memberCaller = await createAuthenticatedCaller(db, carol);
+
+    // Seed an existing current selection (Left Hand) with finishedAt unset.
+    const prior = await db.bookSelection.create({
+      data: {
+        clubId: wedReads.id,
+        bookId: leftHand.id,
+        isCurrent: true,
+      },
+    });
+    expect(prior.finishedAt).toBeNull();
+
+    // Run a round to decided with Dune as the only nominee.
+    const { round } = await adminCaller.rounds.create({ clubId: wedReads.id });
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: dune.id,
+    });
+    // Advance needs at least 2 nominations per VOTE-UI rules, but the API allows 1.
+    // Add a second nomination so advance() doesn't reject.
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: kindred.id,
+    });
+    await adminCaller.rounds.advance({ clubId: wedReads.id, roundId: round.id });
+
+    const noms = await db.nomination.findMany({ where: { roundId: round.id } });
+    const nomDune = noms.find((n) => n.bookId === dune.id)!;
+    const aliceCaller = await createAuthenticatedCaller(db, alice);
+    await aliceCaller.votes.submit({
+      clubId: wedReads.id,
+      roundId: round.id,
+      nominationIds: [nomDune.id],
+    });
+    await adminCaller.rounds.advance({ clubId: wedReads.id, roundId: round.id });
+
+    // Prior selection: demoted AND stamped with finishedAt.
+    const updatedPrior = await db.bookSelection.findUniqueOrThrow({
+      where: { id: prior.id },
+    });
+    expect(updatedPrior.isCurrent).toBe(false);
+    expect(updatedPrior.finishedAt).not.toBeNull();
+    expect(updatedPrior.finishedAt!.getTime()).toBeGreaterThan(
+      prior.selectedAt.getTime()
+    );
+
+    // New selection: current and not yet finished.
+    const newCurrent = await db.bookSelection.findFirstOrThrow({
+      where: { clubId: wedReads.id, isCurrent: true },
+    });
+    expect(newCurrent.bookId).toBe(dune.id);
+    expect(newCurrent.finishedAt).toBeNull();
+  });
+
+  // @spec VOTE-API-DECIDED-FINISHED-001
+  it("preserves an already-stamped finishedAt on the prior selection", async () => {
+    const adminCaller = await createAuthenticatedCaller(db, alice);
+    const memberCaller = await createAuthenticatedCaller(db, carol);
+
+    const previouslyStamped = new Date("2025-01-15T00:00:00Z");
+    const prior = await db.bookSelection.create({
+      data: {
+        clubId: wedReads.id,
+        bookId: leftHand.id,
+        isCurrent: true,
+        finishedAt: previouslyStamped,
+      },
+    });
+
+    const { round } = await adminCaller.rounds.create({ clubId: wedReads.id });
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: dune.id,
+    });
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: kindred.id,
+    });
+    await adminCaller.rounds.advance({ clubId: wedReads.id, roundId: round.id });
+
+    const noms = await db.nomination.findMany({ where: { roundId: round.id } });
+    const nomDune = noms.find((n) => n.bookId === dune.id)!;
+    const aliceCaller = await createAuthenticatedCaller(db, alice);
+    await aliceCaller.votes.submit({
+      clubId: wedReads.id,
+      roundId: round.id,
+      nominationIds: [nomDune.id],
+    });
+    await adminCaller.rounds.advance({ clubId: wedReads.id, roundId: round.id });
+
+    const updatedPrior = await db.bookSelection.findUniqueOrThrow({
+      where: { id: prior.id },
+    });
+    // Already stamped — must NOT be overwritten.
+    expect(updatedPrior.finishedAt?.getTime()).toBe(previouslyStamped.getTime());
+  });
+
   it("rejects duplicate nomination (CONFLICT)", async () => {
     const adminCaller = await createAuthenticatedCaller(db, alice);
     const memberCaller = await createAuthenticatedCaller(db, carol);

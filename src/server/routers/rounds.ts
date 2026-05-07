@@ -152,7 +152,19 @@ export const roundsRouter = router({
 
         // Create BookSelection if there's a winner
         if (result.winner) {
-          // Mark previous selections as not current
+          // @spec VOTE-API-DECIDED-FINISHED-001 — demote any prior current
+          // selection AND stamp finishedAt so the history picker labels it
+          // "Finished {MMM YYYY}" instead of falling back to "Selected ...".
+          // Two-step to preserve any already-stamped finishedAt value.
+          const now = new Date();
+          await ctx.db.bookSelection.updateMany({
+            where: {
+              clubId: input.clubId,
+              isCurrent: true,
+              finishedAt: null,
+            },
+            data: { isCurrent: false, finishedAt: now },
+          });
           await ctx.db.bookSelection.updateMany({
             where: { clubId: input.clubId, isCurrent: true },
             data: { isCurrent: false },
