@@ -13,6 +13,7 @@ import { test, expect, type Page } from "@playwright/test";
 async function fillIdentity(page: Page, email: string, name: string) {
   await page.locator("#email").fill(email);
   await page.locator("#name").fill(name);
+  await page.locator("#passcode").fill("test-passcode");
   await page.getByRole("button", { name: /continue/i }).click();
 }
 
@@ -26,14 +27,15 @@ async function chooseCreatePath(page: Page) {
 
 test.describe("New Entry Flow — Step 1: Identity", () => {
   // @spec AUTH-UI-001
-  test("Step 1 renders email + name inputs first", async ({ page }) => {
+  test("Step 1 renders email + name + passcode inputs first", async ({ page }) => {
     await page.goto("/join");
     await expect(page.locator("#email")).toBeVisible();
     await expect(page.locator("#name")).toBeVisible();
+    await expect(page.locator("#passcode")).toBeVisible();
   });
 
   // @spec AUTH-UI-001
-  test("Continue button is disabled until both fields are filled", async ({ page }) => {
+  test("Continue button is disabled until all three fields are filled", async ({ page }) => {
     await page.goto("/join");
     const continueBtn = page.getByRole("button", { name: /continue/i });
     await expect(continueBtn).toBeDisabled();
@@ -42,6 +44,10 @@ test.describe("New Entry Flow — Step 1: Identity", () => {
     await expect(continueBtn).toBeDisabled();
 
     await page.locator("#name").fill("User");
+    // Passcode still empty → still disabled.
+    await expect(continueBtn).toBeDisabled();
+
+    await page.locator("#passcode").fill("test-passcode");
     await expect(continueBtn).toBeEnabled();
   });
 
@@ -349,6 +355,7 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
     // Step 1 — identity for a brand-new user
     await page.locator("#email").fill(email);
     await page.locator("#name").fill("Brand New Creator");
+    await page.locator("#passcode").fill("test-passcode");
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Step 2 — auth.me returns 0 clubs, so the wizard falls through to path choice
@@ -377,6 +384,7 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
     // Step 1 — identity for a brand-new user
     await page.locator("#email").fill(email);
     await page.locator("#name").fill("Brand New Joiner");
+    await page.locator("#passcode").fill("test-passcode");
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Step 2 — auth.me returns 0 clubs, wizard falls through to path choice
@@ -402,6 +410,7 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
 
     await page.locator("#email").fill("alice@example.com");
     await page.locator("#name").fill("Alice Chen");
+    await page.locator("#passcode").fill("test-passcode");
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Smart detection: auth.me finds clubs.length > 0 → router.push(`/clubs/${firstClubId}`)
@@ -422,7 +431,7 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
     // but they have zero memberships (e.g., they typed their email previously
     // but never joined or created a club).
     await request.post("/api/trpc/auth.enter", {
-      data: { email, displayName: "Existing No Clubs" },
+      data: { email, displayName: "Existing No Clubs", passcode: "test-passcode" },
     });
 
     // The browser starts fresh — no session cookie carried in.
@@ -431,6 +440,7 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
     // Step 1 — same form as a new user; auth.enter is idempotent and recognizes them.
     await page.locator("#email").fill(email);
     await page.locator("#name").fill("Existing No Clubs");
+    await page.locator("#passcode").fill("test-passcode");
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Smart detection: auth.me returns clubs:[] → fall through to Step 2.

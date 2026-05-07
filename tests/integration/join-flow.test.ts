@@ -21,6 +21,7 @@ describe("Join Flow — Integration Tests", () => {
       const result = await caller.auth.enter({
         email: "newuser@example.com",
         displayName: "New User",
+        passcode: "test-passcode",
       });
 
       expect(result.user.email).toBe("newuser@example.com");
@@ -43,10 +44,12 @@ describe("Join Flow — Integration Tests", () => {
       const first = await caller.auth.enter({
         email: "Test@Example.COM",
         displayName: "Test User",
+        passcode: "test-passcode",
       });
       const second = await caller.auth.enter({
         email: "test@example.com",
         displayName: "Test User Updated",
+        passcode: "test-passcode",
       });
 
       expect(second.user.id).toBe(first.user.id);
@@ -61,6 +64,7 @@ describe("Join Flow — Integration Tests", () => {
         caller.auth.enter({
           email: "invalid-email",
           displayName: "User",
+          passcode: "test-passcode",
         })
       ).rejects.toThrow();
     });
@@ -73,6 +77,7 @@ describe("Join Flow — Integration Tests", () => {
         caller.auth.enter({
           email: "user@example.com",
           displayName: "",
+          passcode: "test-passcode",
         })
       ).rejects.toThrow();
     });
@@ -85,6 +90,7 @@ describe("Join Flow — Integration Tests", () => {
         caller.auth.enter({
           email: "user@example.com",
           displayName: "A".repeat(101),
+          passcode: "test-passcode",
         })
       ).rejects.toThrow();
     });
@@ -96,6 +102,7 @@ describe("Join Flow — Integration Tests", () => {
       const enter = await createAnonymousCaller(db).auth.enter({
         email: "brandnew@example.com",
         displayName: "Brand New",
+        passcode: "test-passcode",
       });
 
       const authed = await createAuthenticatedCaller(db, {
@@ -115,6 +122,7 @@ describe("Join Flow — Integration Tests", () => {
       const enter = await createAnonymousCaller(db).auth.enter({
         email: alice.email,
         displayName: alice.displayName,
+        passcode: "test-passcode",
       });
 
       const authed = await createAuthenticatedCaller(db, {
@@ -199,6 +207,7 @@ describe("Join Flow — Integration Tests", () => {
           code: "WEDREADS",
           email: "newmember@example.com",
           displayName: "New Member",
+          passcode: "test-passcode",
         });
 
         expect(result.club.id).toBe(wedReads.id);
@@ -633,6 +642,7 @@ describe("Join Flow — Integration Tests", () => {
       const step1 = await createAnonymousCaller(db).auth.enter({
         email: "continuinguser@example.com",
         displayName: "Continuing User",
+        passcode: "test-passcode",
       });
 
       // Step 2: No API call (path choice)

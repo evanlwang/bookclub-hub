@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { normalizeEmail, validateEmail } from "@/lib/validation/email";
 import { generateSessionId, computeNewExpiry } from "@/lib/auth/session";
+import { passcodeOk } from "@/lib/auth/passcode";
 
 export const authRouter = router({
   // @spec AUTH-API-SIGNIN-001
@@ -11,7 +12,7 @@ export const authRouter = router({
   // to create a new user — it returns NOT_FOUND for unknown emails so the UI
   // can route users without an account into the sign-up flow.
   signIn: publicProcedure
-    .input(z.object({ email: z.string() }))
+    .input(z.object({ email: z.string(), passcode: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const emailValidation = validateEmail(input.email);
       if (!emailValidation.valid) {
@@ -19,6 +20,10 @@ export const authRouter = router({
           code: "BAD_REQUEST",
           message: emailValidation.error,
         });
+      }
+
+      if (!passcodeOk(input.passcode)) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Wrong passcode" });
       }
 
       const email = normalizeEmail(input.email);
@@ -48,12 +53,17 @@ export const authRouter = router({
       z.object({
         email: z.string(),
         displayName: z.string().min(1).max(100),
+        passcode: z.string().min(1),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const emailValidation = validateEmail(input.email);
       if (!emailValidation.valid) {
         throw new Error(emailValidation.error);
+      }
+
+      if (!passcodeOk(input.passcode)) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Wrong passcode" });
       }
 
       const email = normalizeEmail(input.email);

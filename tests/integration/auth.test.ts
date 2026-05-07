@@ -19,6 +19,7 @@ describe("auth", () => {
       const result = await caller.auth.enter({
         email: "newuser@example.com",
         displayName: "New User",
+        passcode: "test-passcode",
       });
 
       expect(result.user.email).toBe("newuser@example.com");
@@ -33,10 +34,12 @@ describe("auth", () => {
       const first = await caller.auth.enter({
         email: "alice@example.com",
         displayName: "Alice",
+        passcode: "test-passcode",
       });
       const second = await caller.auth.enter({
         email: "alice@example.com",
         displayName: "Alice",
+        passcode: "test-passcode",
       });
 
       expect(second.user.id).toBe(first.user.id);
@@ -48,10 +51,12 @@ describe("auth", () => {
       const first = await caller.auth.enter({
         email: "Alice@Example.COM",
         displayName: "Alice",
+        passcode: "test-passcode",
       });
       const second = await caller.auth.enter({
         email: "alice@example.com",
         displayName: "Alice",
+        passcode: "test-passcode",
       });
 
       expect(second.user.id).toBe(first.user.id);
@@ -63,10 +68,12 @@ describe("auth", () => {
       await caller.auth.enter({
         email: "alice@example.com",
         displayName: "Alice",
+        passcode: "test-passcode",
       });
       const result = await caller.auth.enter({
         email: "alice@example.com",
         displayName: "Alice Chen",
+        passcode: "test-passcode",
       });
 
       expect(result.user.displayName).toBe("Alice Chen");
@@ -79,7 +86,7 @@ describe("auth", () => {
       await insertUser(db, alice);
       const caller = createAnonymousCaller(db);
 
-      const result = await caller.auth.signIn({ email: alice.email });
+      const result = await caller.auth.signIn({ email: alice.email, passcode: "test-passcode" });
 
       expect(result.user.id).toBe(alice.id);
       expect(result.user.email).toBe(alice.email);
@@ -95,7 +102,7 @@ describe("auth", () => {
       const caller = createAnonymousCaller(db);
 
       await expect(
-        caller.auth.signIn({ email: "ghost@example.com" })
+        caller.auth.signIn({ email: "ghost@example.com", passcode: "test-passcode" })
       ).rejects.toThrow("No account found");
 
       const created = await db.user.findUnique({ where: { email: "ghost@example.com" } });
@@ -107,7 +114,7 @@ describe("auth", () => {
       await insertUser(db, alice);
       const caller = createAnonymousCaller(db);
 
-      const result = await caller.auth.signIn({ email: "ALICE@EXAMPLE.COM" });
+      const result = await caller.auth.signIn({ email: "ALICE@EXAMPLE.COM", passcode: "test-passcode" });
 
       expect(result.user.id).toBe(alice.id);
     });
@@ -117,8 +124,59 @@ describe("auth", () => {
       const caller = createAnonymousCaller(db);
 
       await expect(
-        caller.auth.signIn({ email: "not-an-email" })
+        caller.auth.signIn({ email: "not-an-email", passcode: "test-passcode" })
       ).rejects.toThrow();
+    });
+  });
+
+  describe("PILOT_PASSCODE gate", () => {
+    it("rejects auth.enter with the wrong passcode when PILOT_PASSCODE is set", async () => {
+      const prev = process.env.PILOT_PASSCODE;
+      process.env.PILOT_PASSCODE = "the-real-one";
+      try {
+        const caller = createAnonymousCaller(db);
+        await expect(
+          caller.auth.enter({
+            email: "newcomer@example.com",
+            displayName: "Newcomer",
+            passcode: "wrong",
+          })
+        ).rejects.toThrow(/Wrong passcode|UNAUTHORIZED/);
+      } finally {
+        if (prev === undefined) delete process.env.PILOT_PASSCODE;
+        else process.env.PILOT_PASSCODE = prev;
+      }
+    });
+
+    it("rejects auth.signIn with the wrong passcode when PILOT_PASSCODE is set", async () => {
+      await insertUser(db, alice);
+      const prev = process.env.PILOT_PASSCODE;
+      process.env.PILOT_PASSCODE = "the-real-one";
+      try {
+        const caller = createAnonymousCaller(db);
+        await expect(
+          caller.auth.signIn({ email: alice.email, passcode: "wrong" })
+        ).rejects.toThrow(/Wrong passcode|UNAUTHORIZED/);
+      } finally {
+        if (prev === undefined) delete process.env.PILOT_PASSCODE;
+        else process.env.PILOT_PASSCODE = prev;
+      }
+    });
+
+    it("accepts any passcode when PILOT_PASSCODE is unset (dev bypass)", async () => {
+      const prev = process.env.PILOT_PASSCODE;
+      delete process.env.PILOT_PASSCODE;
+      try {
+        const caller = createAnonymousCaller(db);
+        const result = await caller.auth.enter({
+          email: "dev-bypass@example.com",
+          displayName: "Dev Bypass",
+          passcode: "literally-anything",
+        });
+        expect(result.user.email).toBe("dev-bypass@example.com");
+      } finally {
+        if (prev !== undefined) process.env.PILOT_PASSCODE = prev;
+      }
     });
   });
 

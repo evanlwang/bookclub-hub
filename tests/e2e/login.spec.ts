@@ -12,15 +12,16 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Login Page — /login", () => {
   // @spec AUTH-UI-LOGIN-001
-  test("renders email-only form with no display-name field", async ({ page }) => {
+  test("renders email + passcode form with no display-name field", async ({ page }) => {
     await page.goto("/login");
     await expect(page.locator("#email")).toBeVisible();
+    await expect(page.locator("#passcode")).toBeVisible();
     await expect(page.locator("#name")).toHaveCount(0);
     await expect(page.getByRole("button", { name: /^log in$/i })).toBeVisible();
   });
 
   // @spec AUTH-UI-LOGIN-001
-  test("Log in button is disabled until email looks valid", async ({ page }) => {
+  test("Log in button is disabled until email looks valid AND passcode is filled", async ({ page }) => {
     await page.goto("/login");
     const btn = page.getByRole("button", { name: /^log in$/i });
     await expect(btn).toBeDisabled();
@@ -29,6 +30,10 @@ test.describe("Login Page — /login", () => {
     await expect(btn).toBeDisabled();
 
     await page.locator("#email").fill("alice@example.com");
+    // Email is valid, but passcode is still empty → still disabled.
+    await expect(btn).toBeDisabled();
+
+    await page.locator("#passcode").fill("test-passcode");
     await expect(btn).toBeEnabled();
   });
 
@@ -36,6 +41,7 @@ test.describe("Login Page — /login", () => {
   test("returning user with clubs is dropped into a club dashboard", async ({ page }) => {
     await page.goto("/login");
     await page.locator("#email").fill("alice@example.com");
+    await page.locator("#passcode").fill("test-passcode");
     await page.getByRole("button", { name: /^log in$/i }).click();
 
     await page.waitForURL(/\/clubs\/[^/?#]+(\?.*)?$/, { timeout: 10000 });
@@ -49,6 +55,7 @@ test.describe("Login Page — /login", () => {
     const ghostEmail = `ghost-${Date.now()}@example.com`;
     await page.goto("/login");
     await page.locator("#email").fill(ghostEmail);
+    await page.locator("#passcode").fill("test-passcode");
     await page.getByRole("button", { name: /^log in$/i }).click();
 
     await page.waitForURL(/\/join\?welcome=1/, { timeout: 10000 });
@@ -66,11 +73,12 @@ test.describe("Login Page — /login", () => {
 
     // Pre-create the User record (no memberships) via auth.enter.
     await request.post("/api/trpc/auth.enter", {
-      data: { email, displayName: "Existing No Clubs Login" },
+      data: { email, displayName: "Existing No Clubs Login", passcode: "test-passcode" },
     });
 
     await page.goto("/login");
     await page.locator("#email").fill(email);
+    await page.locator("#passcode").fill("test-passcode");
     await page.getByRole("button", { name: /^log in$/i }).click();
 
     await page.waitForURL(/\/join\?welcome=1/, { timeout: 10000 });

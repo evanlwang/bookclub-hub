@@ -11,6 +11,7 @@ import {
 import { normalizeCode, validateCode } from "@/lib/validation/club-code";
 import { normalizeEmail, validateEmail } from "@/lib/validation/email";
 import { generateSessionId, computeNewExpiry } from "@/lib/auth/session";
+import { passcodeOk } from "@/lib/auth/passcode";
 
 export const clubsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -364,6 +365,7 @@ export const clubsRouter = router({
         code: z.string(),
         email: z.string().optional(),
         displayName: z.string().optional(),
+        passcode: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -396,11 +398,20 @@ export const clubsRouter = router({
       if (ctx.user) {
         userId = ctx.user.id;
       } else {
-        // Unauthenticated join — requires email + displayName
+        // Unauthenticated join — requires email + displayName, plus the
+        // pilot passcode (gated identically to auth.enter so this isn't a
+        // back door around the gate).
         if (!input.email || !input.displayName) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Email and display name required for new users",
+          });
+        }
+
+        if (!passcodeOk(input.passcode ?? "")) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Wrong passcode",
           });
         }
 

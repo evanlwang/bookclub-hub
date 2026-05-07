@@ -24,13 +24,15 @@ function ErrorBox({ children, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
   const [signingIn, setSigningIn] = useState(false);
 
   const emailValid = email.includes("@") && email.includes(".");
+  const canSubmit = emailValid && passcode.length > 0;
 
   async function handleLogin() {
-    if (!emailValid) return;
+    if (!canSubmit) return;
     setSigningIn(true);
     setError("");
 
@@ -38,7 +40,7 @@ export default function LoginPage() {
       const res = await fetch("/api/trpc/auth.signIn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, passcode }),
       });
       const data = await res.json();
 
@@ -122,11 +124,28 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && emailValid && !signingIn) handleLogin();
+                  if (e.key === "Enter" && canSubmit && !signingIn) handleLogin();
                 }}
                 placeholder="you@example.com"
                 className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
                 autoFocus
+              />
+            </div>
+
+            <div>
+              <label htmlFor="passcode" className="block text-[13px] font-medium text-ink-2 mb-1.5">
+                Pilot passcode
+              </label>
+              <input
+                id="passcode"
+                type="password"
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && canSubmit && !signingIn) handleLogin();
+                }}
+                placeholder="Shared with the pilot group"
+                className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
               />
             </div>
 
@@ -141,7 +160,7 @@ export default function LoginPage() {
               variant="primary"
               size="lg"
               className="w-full"
-              disabled={!emailValid || signingIn}
+              disabled={!canSubmit || signingIn}
               onClick={handleLogin}
               iconRight={<ChevronRightIcon size={14} />}
             >
