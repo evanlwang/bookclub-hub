@@ -52,6 +52,46 @@ export function ClubSidebar({
 
   const currentClub = clubs.find((c) => c.id === clubId);
   const hasMultipleClubs = clubs.length > 1;
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  async function handleCopyCode(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!currentClub?.code) return;
+    try {
+      await navigator.clipboard.writeText(currentClub.code);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 1500);
+    } catch {
+      // Clipboard write fails outside secure contexts; silently no-op.
+    }
+  }
+
+  function CodeRow() {
+    if (!currentClub?.code) return null;
+    return (
+      <button
+        type="button"
+        onClick={handleCopyCode}
+        data-testid="sidebar-copy-code"
+        aria-label={codeCopied ? "Invite code copied" : "Copy invite code"}
+        title={codeCopied ? "Copied" : "Copy invite code"}
+        className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-[var(--font-mono)] text-ink-3 hover:text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
+      >
+        <span className="tracking-[0.05em]">{currentClub.code}</span>
+        {codeCopied ? (
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success" aria-hidden="true">
+            <path d="M5 12.5l4.5 4.5L19 7" />
+          </svg>
+        ) : (
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2" />
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+          </svg>
+        )}
+      </button>
+    );
+  }
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -103,7 +143,13 @@ export function ClubSidebar({
               </svg>
             </span>
           </button>
-        ) : (
+        ) : null}
+
+        {hasMultipleClubs && (
+          <div className="mt-2"><CodeRow /></div>
+        )}
+
+        {!hasMultipleClubs && (
           <div className="flex items-center gap-2.5">
             <LogoIcon size={24} />
             <div className="flex-1 min-w-0">
@@ -115,6 +161,7 @@ export function ClubSidebar({
                   {currentClub.role}
                 </span>
               )}
+              <CodeRow />
             </div>
             <button
               type="button"
