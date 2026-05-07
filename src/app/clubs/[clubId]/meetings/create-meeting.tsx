@@ -41,6 +41,7 @@ export function CreateMeetingForm({
   onCancel,
 }: CreateMeetingProps & { onCreated: () => void; onCancel: () => void }) {
   const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [showDesc, setShowDesc] = useState(false);
   const [slots, setSlots] = useState<Slot[]>([
@@ -92,6 +93,7 @@ export function CreateMeetingForm({
         body: JSON.stringify({
           clubId,
           title: title || undefined,
+          location: location.trim() || undefined,
           description: description || undefined,
           slots: validSlots,
         }),
@@ -127,6 +129,25 @@ export function CreateMeetingForm({
           autoFocus
           className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
         />
+      </div>
+
+      <div className="mb-3">
+        <div className="relative">
+          <span className="absolute inset-y-0 left-3 flex items-center text-ink-3 pointer-events-none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12z" />
+              <circle cx="12" cy="9" r="2.5" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Location or address (optional)"
+            data-testid="meeting-location-input"
+            className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] pl-9 pr-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+          />
+        </div>
       </div>
 
       {!showDesc ? (
