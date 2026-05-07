@@ -31,11 +31,9 @@ Button: per-club row in dropdown — `sidebar.tsx:74-84` — handler: navigates 
 Button: "Create or join a club" — `sidebar.tsx` — handler: opens ClubSwitcherModal (CLUB-NAV-MODAL-001)
 Button: Dashboard / Voting / Meetings / Discussions / Progress nav link — `sidebar.tsx:99-126` — visible: always — active styling when path matches
 
-Clubs index (`/clubs`, `clubs/page.tsx`):
-Button: per-club Link card — `clubs/page.tsx:42-62` — handler: navigates to `/clubs/{clubId}`
-Button: "Join a Club →" — `clubs/page.tsx:27-32` — visible: when not authenticated — handler: navigates to `/join`
-
 Create flow (in `/join`, see auth-and-accounts.md for full inventory of Step 3b).
+
+The standalone `/clubs` index page was removed: login/join now route the user straight into a club, and switching is handled by the sidebar dropdown + in-place "Create or join a club" modal (see CLUB-NAV-001 and CLUB-NAV-MODAL-001).
 
 ## Gaps (UI not built)
 

@@ -7,7 +7,7 @@ This project should evolve using linked-intent driven development and test drive
 - docs/high-level-design.md for system vision and key design decisions
 - docs/specs/ for EARS requirement IDs and feature scope
 - docs/llds/ for component-level contracts (data models, API shapes, visual layouts)
-- docs/lids/ for linked-intent driven development docs
+- docs/lid/ for linked-intent driven development docs
 After code has been tested and docs audited, commit with a message.
 
 ## Project Overview

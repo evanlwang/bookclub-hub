@@ -59,7 +59,7 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 - `[x]` **MEET-NOTIFY-001**: When a meeting is proposed, the system SHALL email all club members. (`meetings.ts:31-94`)
 - `[x]` **MEET-NOTIFY-003**: When a meeting is confirmed, the system SHALL email all members with the confirmed time and location. (`meetings.ts:141-180`)
 - `[x]` **MEET-NOTIFY-005**: When a meeting is cancelled, the system SHALL email all members. (`meetings.ts:182-207`)
-- `[x]` **MEET-NOTIFY-REMIND-001**: Voting deadline reminders, mid-book check-ins, and 48h-since-proposed availability nudges are wired into a separate reminder pipeline (`docs/specs/dash-specs.md`, `tests/integration/reminders.test.ts`).
+- `[x]` **MEET-NOTIFY-REMIND-001**: Voting deadline reminders, mid-book check-ins, and 48h-since-proposed availability nudges are wired into a separate reminder pipeline (`docs/specs/dash-specs.md`, `tests/integration/cron-deadline-reminder.test.ts`).
 - `[ ]` **MEET-NOTIFY-002**: 48h-after-proposal availability reminder for non-responders. (Reminder infra exists; this specific trigger may or may not be live — verify before claiming.)
 - `[ ]` **MEET-NOTIFY-004**: 24-hour-before-meeting reminder email.
 

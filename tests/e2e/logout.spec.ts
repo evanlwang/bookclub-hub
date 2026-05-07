@@ -1,4 +1,4 @@
-// @spec AUTH-UI-LOGOUT-001, AUTH-UI-LOGOUT-002, AUTH-UI-LOGOUT-003
+// @spec AUTH-UI-LOGOUT-001, AUTH-UI-LOGOUT-003
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 

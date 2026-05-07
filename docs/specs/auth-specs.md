@@ -25,7 +25,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 ## Login Route (Returning Users)
 
 - `[x]` **AUTH-UI-LOGIN-001**: The `/login` page SHALL render a single email input and a "Log in" button — no display-name prompt. The button is disabled until the email contains `@` and `.`. (`src/app/login/page.tsx`)
-- `[x]` **AUTH-UI-LOGIN-002**: On submit, the system SHALL call `auth.signIn` with the email. On success, it calls `auth.me`; if the user has one or more memberships, it SHALL `router.push("/clubs")`. (`src/app/login/page.tsx`)
+- `[x]` **AUTH-UI-LOGIN-002**: On submit, the system SHALL call `auth.signIn` with the email. On success, it calls `auth.me`; if the user has one or more memberships, it SHALL `router.push("/clubs/{firstClubId}")` so the user lands directly inside a club (the standalone `/clubs` index page was removed). (`src/app/login/page.tsx`)
 - `[x]` **AUTH-UI-LOGIN-003**: When `auth.signIn` returns NOT_FOUND OR the user has zero memberships, the system SHALL `router.push("/join?welcome=1[&email=…]")`. The `/join` page SHALL render a welcome banner above Step 1 and pre-fill the email field. (`src/app/login/page.tsx`, `src/app/join/page.tsx`)
 
 ## Entry Flow
@@ -33,7 +33,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 - `[x]` **AUTH-UI-001**: The system SHALL display an identity form (email + display name) as the first step of the join flow. (`join/page.tsx:466-526`)
 - `[x]` **AUTH-UI-002**: After identity entry (and when smart detection finds no existing memberships), the system SHALL present a choice between joining an existing club and creating a new one. (`join/page.tsx:530-552`)
 - `[x]` **AUTH-UI-003**: The system SHALL create a session immediately on Step 1 completion (when `auth.enter` succeeds) so subsequent steps can use authenticated procedures. (`join/page.tsx:198-254`)
-- `[x]` **AUTH-UI-004**: After Step 1 succeeds, the system SHALL fetch the user's clubs via `auth.me`. If `clubs.length > 0` AND the request did NOT include `?path=join` or `?path=create`, the system SHALL `router.push("/clubs")`. Otherwise it advances to Step 2. If `auth.me` fails, the system falls through to Step 2 (graceful degradation). (`join/page.tsx:226-249`)
+- `[x]` **AUTH-UI-004**: After Step 1 succeeds, the system SHALL fetch the user's clubs via `auth.me`. If `clubs.length > 0` AND the request did NOT include `?path=join` or `?path=create`, the system SHALL `router.push("/clubs/{firstClubId}")` (drop the user straight into their first club). Otherwise it advances to Step 2. If `auth.me` fails, the system falls through to Step 2 (graceful degradation). (`join/page.tsx:226-249`)
 - `[x]` **AUTH-UI-PATH-OVERRIDE-001**: When the URL includes `?path=join` or `?path=create`, the system SHALL skip Step 2 and route directly to the corresponding Step 3 branch (`pathOverride` in `join/page.tsx:158, 226-232`).
 
 ## Step 1 Buttons
@@ -88,8 +88,8 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 ## Sign Out
 
 - `[x]` **AUTH-UI-LOGOUT-001**: The club sidebar (`src/app/clubs/[clubId]/sidebar.tsx`) SHALL render a "Sign out" button in the user footer. Clicking it calls `auth.logout`, clears the `session_id` cookie client-side, and `router.push("/")`.
-- `[x]` **AUTH-UI-LOGOUT-002**: The `/clubs` page (`src/app/clubs/page.tsx`) SHALL render a "Sign out" control in its header that runs the same handler.
-- `[x]` **AUTH-UI-LOGOUT-003**: After sign-out, navigating back to a protected route (e.g. `/clubs`) SHALL render the unauthenticated state — `auth.me` throws UNAUTHORIZED and the page shows the existing "Not authenticated" view (`data-testid="auth-error"`).
+- `[!]` **AUTH-UI-LOGOUT-002**: Originally required the `/clubs` page header to render its own "Sign out" control. The `/clubs` landing page was removed in the post-login-redirect work, so the sidebar (AUTH-UI-LOGOUT-001) is now the only sign-out surface. Row kept for ID stability; the test annotation in `tests/e2e/logout.spec.ts` was updated accordingly.
+- `[x]` **AUTH-UI-LOGOUT-003**: After sign-out, navigating back to a protected route (e.g. `/clubs/{clubId}`) SHALL render the unauthenticated state — `auth.me` throws UNAUTHORIZED and the per-club page shows its error view (`data-testid="club-error"`).
 - `[x]` **AUTH-API-LOGOUT-001**: `auth.logout` SHALL emit a `Set-Cookie: session_id=; Path=/; Max-Age=0` response header so the browser drops the cookie even if the client-side clear is skipped (defense in depth: both server and client clear).
 - `[x]` **AUTH-API-LOGOUT-002**: `auth.logout` called without a valid session SHALL return `{ success: true }` (idempotent) rather than throwing — the procedure becomes a `publicProcedure` so a stale or missing cookie still completes sign-out.
 

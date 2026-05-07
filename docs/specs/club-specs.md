@@ -2,9 +2,9 @@
 
 **LLD**: docs/llds/club-management.md
 **Implementing artifacts**:
-- API: `src/server/routers/clubs.ts`, `memberships.ts`
-- UI: `src/app/clubs/page.tsx`, `src/app/clubs/[clubId]/sidebar.tsx`, create/join via `src/app/join/page.tsx`
-- Tests: `tests/integration/clubs.test.ts`, `tests/e2e/clubs-*.spec.ts`
+- API: `src/server/routers/clubs.ts` (membership procedures live under `clubs.members.*` in the same file)
+- UI: `src/app/clubs/[clubId]/sidebar.tsx`, create/join via `src/app/join/page.tsx`, in-place modal `src/components/club/club-switcher-modal.tsx`
+- Tests: `tests/integration/clubs.test.ts`, `tests/e2e/clubs-*.spec.ts`, `tests/e2e/multi-club-switching.spec.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
@@ -50,7 +50,7 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 - `[x]` **CLUB-NAV-001**: The club switcher UI SHALL be visible on every authenticated club-scoped page via the sidebar dropdown. (`sidebar.tsx:50-95`)
 - `[x]` **CLUB-NAV-002**: The switcher header is a Button that toggles a dropdown listing all clubs the user is a member of. The chevron icon rotates 180° when open. (`sidebar.tsx:51-69`)
 - `[x]` **CLUB-NAV-003**: Each club row in the dropdown is a Link to `/clubs/{clubId}`, displaying the club name and a role Badge ("admin" / "member"). The current club is highlighted with `font-medium text-ink`. (`sidebar.tsx:74-84`)
-- `[!]` **CLUB-NAV-004**: At the bottom of the dropdown, a "Create or join a club" entry SHALL be present. **Today** it opens the Switcher Modal in place rather than routing to `/clubs` (see CLUB-NAV-MODAL-001). The `/clubs` landing page still surfaces its own create/join entry for users with zero memberships.
+- `[x]` **CLUB-NAV-004**: At the bottom of the dropdown, a "Create or join a club" entry SHALL be present. It opens the Switcher Modal in place (see CLUB-NAV-MODAL-001). The legacy `/clubs` landing page was removed once login/join started routing straight into a club, so this dropdown entry is the canonical entry point for adding additional clubs.
 
 ## Switcher Create/Join Modal
 
@@ -62,7 +62,7 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 - `[x]` **CLUB-NAV-MODAL-006**: The Create tab SHALL accept name, auto-derived editable code, and voting cadence — mirroring `/join` Step 3b — and SHALL validate code uniqueness on submit via `clubs.lookup`.
 - `[x]` **CLUB-NAV-MODAL-007**: On a successful create, the modal SHALL surface the invite code with a copy action, and on user dismissal SHALL navigate to the new club and refresh the layout.
 - `[x]` **CLUB-NAV-MODAL-008**: The modal SHALL be dismissible via Escape, backdrop click, and an explicit close button; dismissal SHALL be blocked while a mutation is in flight.
-- `[x]` **CLUB-NAV-MODAL-009**: The "Create or join a club" entry on `/clubs` (the no-club landing) SHALL continue to work as today — the modal is additive to the switcher only.
+- `[!]` **CLUB-NAV-MODAL-009**: Originally required the "Create or join a club" entry on the `/clubs` no-club landing page to keep working alongside the new modal. The `/clubs` landing page was removed in the post-login-redirect work (login/join now drop the user straight into a club), so this row is obsolete; the in-sidebar modal (CLUB-NAV-MODAL-001) is the only surface that needs to keep working.
 - `[x]` **CLUB-NAV-MODAL-010**: When the modal opens, the switcher dropdown SHALL close so it is not stacked behind the Dialog.
 - `[!]` **CLUB-NAV-SWITCH-001** (older "switcher loads target club state under 30s"): Switching is a Link navigation that triggers a full route load. Whether under 30 seconds depends on data fetch performance, not a frontend optimization. Mark as targeted gap rather than implemented:
   - `[ ]` **CLUB-NAV-CLIENT-001**: Client-side switcher (no full route load) prefetching the target club's state.
@@ -71,8 +71,7 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 ## Sidebar Nav (per-club)
 
 - `[x]` **DASH-NAV-001**: The sidebar SHALL render five nav links: Dashboard / Voting / Meetings / Discussions / Progress. The active link uses `bg-primary-soft text-primary-ink`. (`sidebar.tsx:18-126`)
-- `[x]` **CLUB-NAV-LIVE-001**: Badge: "Live" (accent dot) SHALL appear on the Voting nav link when an active round exists for the club (`hasActiveVote`). (`sidebar.tsx:107, 120-122`) — also referenced as `DASH-UI-002` in dash-specs.md (canonical ID lives there).
-- `[ ]` **CLUB-NAV-UNREAD-DISC-001**: Unread count Badge on the Discussions link when new threads exist since last visit. Not implemented. Also referenced as `DASH-UI-NAV-UNREAD-001` in dash-specs.md.
+- Voting "Live" badge and Discussions unread badge are owned by `dash-specs.md` (DASH-UI-002 and DASH-UI-NAV-UNREAD-001 respectively); see that file for status.
 
 ## Roles and Authorization
 

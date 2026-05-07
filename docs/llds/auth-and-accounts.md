@@ -62,14 +62,13 @@ Button: voting cadence radio "Monthly" / "Six Weeks" / "Flexible" — `join/page
 Button: "Back" (step 3b → 2) — `join/page.tsx:676-682`
 Button: "Create club" — `join/page.tsx:685-694` — enabled: createReady (name.trim() ≥ 3) AND !creatingClub — handler: `validateClubCode` then `clubs.create`
 Button: "Copy" (step 4, create branch) — `join/page.tsx:723-730` — handler: `navigator.clipboard.writeText(successClubCode)`
-Button: "Sign out" (club sidebar footer) — `src/app/clubs/[clubId]/sidebar.tsx` — handler: POST `/api/trpc/auth.logout` → clear `session_id` cookie → `router.push("/")`
-Button: "Sign out" (/clubs page header) — `src/app/clubs/page.tsx` — same handler as the sidebar variant
+Button: "Sign out" (club sidebar footer) — `src/app/clubs/[clubId]/sidebar.tsx` — handler: POST `/api/trpc/auth.logout` → clear `session_id` cookie → `router.push("/")` — the only sign-out surface (the legacy `/clubs` page header variant was removed when the standalone `/clubs` index went away)
 
 ## Smart Detection
 
 After Step 1 succeeds (`auth.enter` returns sessionId, cookie is set), the client immediately calls `auth.me` to fetch the user's clubs. The flow then branches:
 
-- If `clubs.length > 0` AND no `?path=` override → `router.push("/clubs")`. This is the invisible "login" path.
+- If `clubs.length > 0` AND no `?path=` override → `router.push("/clubs/{firstClubId}")` (the user is dropped straight into their first club). This is the invisible "login" path.
 - If `clubs.length === 0` → continue to Step 2 (path choice).
 - If the URL had `?path=join` or `?path=create` → skip detection, advance to Step 3 with branch pre-selected.
 - If `auth.me` fails (network error) → fall through to Step 2 (graceful degradation).
@@ -87,7 +86,7 @@ Flow:
 1. User enters email → "Log in" button.
 2. Client POSTs `auth.signIn({ email })`.
    - **Success** (user exists): cookie is set with the new sessionId. Client then calls `auth.me`.
-     - `clubs.length > 0` → `router.push("/clubs")`.
+     - `clubs.length > 0` → `router.push("/clubs/{firstClubId}")` (the user lands straight inside a club).
      - `clubs.length === 0` → `router.push("/join?welcome=1")`. The /join page displays a welcome banner so the user understands why they were bounced.
    - **NOT_FOUND** (no User record): `router.push("/join?welcome=1&email=…")`. The email is carried through and pre-filled on /join's Step 1.
    - **BAD_REQUEST** (malformed email): inline error on /login.
