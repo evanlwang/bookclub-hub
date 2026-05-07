@@ -4,7 +4,7 @@ import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller, createAnonymousCaller } from "@tests/helpers/trpc";
 import { alice, bob, carol, insertUser, insertAllUsers } from "@tests/fixtures/users";
 import { wedReads, sciFiExplorers } from "@tests/fixtures/clubs";
-import { seedClubWithMembers, insertMembership } from "@tests/fixtures/memberships";
+import { seedClubWithMembers } from "@tests/fixtures/memberships";
 
 const db = getTestDb();
 

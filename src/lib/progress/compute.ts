@@ -22,8 +22,8 @@ export interface ProgressOutput {
  * - If totalPages unknown: accept percentage only, currentPage stays null
  */
 export function computeProgress(input: ProgressInput): ProgressOutput {
-  const { status = "reading" } = input;
-  let { currentPage = null, totalPages = null, percentage = null } = input;
+  const { status = "reading", totalPages = null } = input;
+  let { currentPage = null, percentage = null } = input;
 
   // "finished" overrides everything
   if (status === "finished") {
