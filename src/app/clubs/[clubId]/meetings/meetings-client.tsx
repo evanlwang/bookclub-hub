@@ -118,9 +118,29 @@ export function MeetingsClient({
     router.refresh();
   }
 
-  const filteredMeetings = filter === "all"
-    ? meetings
-    : meetings.filter((m: any) => m.status === filter || (filter === "past" && m.status === "completed"));
+  // Active states surface first; completed/cancelled drop to the bottom so a
+  // recently-cancelled meeting can't outrank an active proposed one in "All".
+  const STATUS_RANK: Record<string, number> = {
+    proposed: 0,
+    confirmed: 1,
+    completed: 2,
+    cancelled: 3,
+  };
+  const filteredMeetings = (
+    filter === "all"
+      ? meetings
+      : meetings.filter(
+          (m: any) =>
+            m.status === filter || (filter === "past" && m.status === "completed"),
+        )
+  )
+    .slice()
+    .sort((a: any, b: any) => {
+      const ra = STATUS_RANK[a.status] ?? 99;
+      const rb = STATUS_RANK[b.status] ?? 99;
+      if (ra !== rb) return ra - rb;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   const counts = {
     all: meetings.length,
