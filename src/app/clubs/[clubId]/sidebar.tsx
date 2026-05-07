@@ -12,7 +12,6 @@ import {
   ChatIcon,
   TrendIcon,
   UsersIcon,
-  SearchIcon,
   Avatar,
   Badge,
 } from "@/components/ui";
@@ -24,7 +23,6 @@ const navItems = [
   { label: "Meetings", href: "/meetings", icon: CalendarIcon, adminOnly: false },
   { label: "Discussions", href: "/discussions", icon: ChatIcon, adminOnly: false },
   { label: "Progress", href: "/progress", icon: TrendIcon, adminOnly: false },
-  { label: "Browse books", href: "/catalog", icon: SearchIcon, adminOnly: false },
   { label: "Members", href: "/members", icon: UsersIcon, adminOnly: true },
 ];
 

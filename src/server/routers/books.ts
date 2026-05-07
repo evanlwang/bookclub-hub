@@ -1,4 +1,4 @@
-// @spec VOTE-API-009, VOTE-BE-004, VOTE-API-009-MANUAL, PROG-UI-BOOK-001, CAT-BE-002
+// @spec VOTE-API-009, VOTE-BE-004, VOTE-API-009-MANUAL, PROG-UI-BOOK-001
 import { z } from "zod";
 import { router, protectedProcedure, memberProcedure } from "../trpc";
 import { searchBooks as searchOpenLibrary } from "../services/open-library";
@@ -7,8 +7,10 @@ export const booksRouter = router({
   search: protectedProcedure
     .input(z.object({ query: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      // Check local cache first
-      const cached = await ctx.db.book.findMany({
+      // Run local + Open Library in parallel. We deliberately do NOT
+      // short-circuit on a local hit — that would prevent users from
+      // nominating any book outside the seeded catalog.
+      const localPromise = ctx.db.book.findMany({
         where: {
           OR: [
             { title: { contains: input.query, mode: "insensitive" } },
@@ -19,36 +21,28 @@ export const booksRouter = router({
         take: 10,
       });
 
-      if (cached.length > 0) {
-        return cached;
-      }
-
-      // Query Open Library
-      try {
-        const results = await searchOpenLibrary(input.query);
-
-        // Cache results locally using proper findFirst → create/update logic
-        const books = await Promise.all(
-          results.map(async (r) => {
-            const existing = await ctx.db.book.findFirst({
-              where: { openLibraryId: r.openLibraryId },
-            });
-
-            if (existing) {
-              // Update existing record with latest metadata
-              return ctx.db.book.update({
-                where: { id: existing.id },
-                data: {
-                  title: r.title,
-                  author: r.author,
-                  isbn: r.isbn,
-                  coverUrl: r.coverUrl,
-                  pageCount: r.pageCount,
-                  description: r.description,
-                },
+      const remotePromise = searchOpenLibrary(input.query)
+        .then((results) =>
+          // Persist each Open Library result so the nominate flow can use
+          // the returned bookId. Idempotent via openLibraryId unique constraint.
+          Promise.all(
+            results.map(async (r) => {
+              const existing = await ctx.db.book.findFirst({
+                where: { openLibraryId: r.openLibraryId },
               });
-            } else {
-              // Create new record
+              if (existing) {
+                return ctx.db.book.update({
+                  where: { id: existing.id },
+                  data: {
+                    title: r.title,
+                    author: r.author,
+                    isbn: r.isbn,
+                    coverUrl: r.coverUrl,
+                    pageCount: r.pageCount,
+                    description: r.description,
+                  },
+                });
+              }
               return ctx.db.book.create({
                 data: {
                   title: r.title,
@@ -60,15 +54,23 @@ export const booksRouter = router({
                   description: r.description,
                 },
               });
-            }
-          })
-        );
+            })
+          )
+        )
+        .catch(() => [] as Awaited<ReturnType<typeof ctx.db.book.findMany>>);
 
-        return books;
-      } catch {
-        // API unavailable — return empty, user can enter manually
-        return [];
+      const [local, remote] = await Promise.all([localPromise, remotePromise]);
+
+      // Dedupe by id, prefer local rows so existing nominations stay stable.
+      const seen = new Set<string>();
+      const merged: typeof local = [];
+      for (const b of [...local, ...remote]) {
+        if (seen.has(b.id)) continue;
+        seen.add(b.id);
+        merged.push(b);
+        if (merged.length >= 10) break;
       }
+      return merged;
     }),
 
   // @spec VOTE-API-009-MANUAL
@@ -93,52 +95,6 @@ export const booksRouter = router({
       });
 
       return { book };
-    }),
-
-  // @spec CAT-BE-002
-  // Bridge from catalog discovery (which never writes to Book) into the
-  // nomination flow (which needs an internal bookId). Upsert by openLibraryKey.
-  importFromCatalog: protectedProcedure
-    .input(
-      z.object({
-        openLibraryKey: z.string().regex(/^\/works\/OL\d+W$/),
-        title: z.string().min(1).max(500),
-        authorNames: z.array(z.string().min(1)).min(1),
-        isbn: z.string().nullable().optional(),
-        coverUrl: z.string().url().nullable().optional(),
-        pageCount: z.number().int().positive().nullable().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const author = input.authorNames.join(", ");
-      const existing = await ctx.db.book.findFirst({
-        where: { openLibraryId: input.openLibraryKey },
-      });
-      if (existing) {
-        const updated = await ctx.db.book.update({
-          where: { id: existing.id },
-          data: {
-            title: input.title,
-            author,
-            // Prefer fresh non-null values; preserve existing data we already have.
-            isbn: input.isbn ?? existing.isbn,
-            coverUrl: input.coverUrl ?? existing.coverUrl,
-            pageCount: input.pageCount ?? existing.pageCount,
-          },
-        });
-        return { bookId: updated.id, created: false };
-      }
-      const created = await ctx.db.book.create({
-        data: {
-          title: input.title,
-          author,
-          isbn: input.isbn ?? null,
-          coverUrl: input.coverUrl ?? null,
-          pageCount: input.pageCount ?? null,
-          openLibraryId: input.openLibraryKey,
-        },
-      });
-      return { bookId: created.id, created: true };
     }),
 
   // @spec PROG-UI-BOOK-001

@@ -1,4 +1,4 @@
-// @spec VOTE-API-009, VOTE-API-010, VOTE-BE-004, VOTE-BE-005, CAT-BE-002
+// @spec VOTE-API-009, VOTE-API-010, VOTE-BE-004, VOTE-BE-005
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller } from "@tests/helpers/trpc";
@@ -18,13 +18,14 @@ describe("books and selections", () => {
   });
 
   describe("books.search", () => {
-    it("returns cached results when query matches existing books in DB", async () => {
+    it("includes local DB matches in the results (alongside any Open Library hits)", async () => {
       const caller = await createAuthenticatedCaller(db, alice);
 
-      // Search for "Dune" — should find it in DB
       const results = await caller.books.search({ query: "Dune" });
 
-      expect(results).toHaveLength(1);
+      // Local DB row must be present and surface first (search merges local
+      // before remote, deduped by id, so the seeded Dune leads).
+      expect(results.length).toBeGreaterThanOrEqual(1);
       expect(results[0].title).toBe("Dune");
       expect(results[0].author).toBe("Frank Herbert");
     });
@@ -98,106 +99,6 @@ describe("books and selections", () => {
 
       // Should return empty array when API fails or no results found locally
       expect(Array.isArray(results)).toBe(true);
-    });
-  });
-
-  // @spec CAT-BE-002
-  describe("books.importFromCatalog", () => {
-    const sampleCatalogBook = {
-      openLibraryKey: "/works/OL45804W",
-      title: "Dune",
-      authorNames: ["Frank Herbert"],
-      isbn: "0441172717",
-      coverUrl: "https://covers.openlibrary.org/b/id/9259-M.jpg",
-      pageCount: 412,
-    };
-
-    it("creates a new Book on first import and returns its internal id", async () => {
-      const caller = await createAuthenticatedCaller(db, alice);
-
-      const before = await db.book.count({
-        where: { openLibraryId: sampleCatalogBook.openLibraryKey },
-      });
-      expect(before).toBe(0);
-
-      const result = await caller.books.importFromCatalog(sampleCatalogBook);
-
-      expect(result.created).toBe(true);
-      expect(result.bookId).toMatch(/^[0-9a-f-]{36}$/);
-
-      const stored = await db.book.findUnique({ where: { id: result.bookId } });
-      expect(stored?.title).toBe("Dune");
-      expect(stored?.author).toBe("Frank Herbert");
-      expect(stored?.openLibraryId).toBe("/works/OL45804W");
-      expect(stored?.coverUrl).toBe(sampleCatalogBook.coverUrl);
-      expect(stored?.pageCount).toBe(412);
-    });
-
-    it("upserts on second import with the same openLibraryKey (no duplicate row)", async () => {
-      const caller = await createAuthenticatedCaller(db, alice);
-
-      const first = await caller.books.importFromCatalog(sampleCatalogBook);
-      const second = await caller.books.importFromCatalog(sampleCatalogBook);
-
-      expect(second.bookId).toBe(first.bookId);
-      expect(second.created).toBe(false);
-
-      const count = await db.book.count({
-        where: { openLibraryId: sampleCatalogBook.openLibraryKey },
-      });
-      expect(count).toBe(1);
-    });
-
-    it("joins multiple authorNames into a single author string", async () => {
-      const caller = await createAuthenticatedCaller(db, alice);
-
-      const result = await caller.books.importFromCatalog({
-        ...sampleCatalogBook,
-        openLibraryKey: "/works/OL99999W",
-        authorNames: ["Niven, Larry", "Pournelle, Jerry"],
-      });
-
-      const stored = await db.book.findUnique({ where: { id: result.bookId } });
-      expect(stored?.author).toBe("Niven, Larry, Pournelle, Jerry");
-    });
-
-    it("preserves existing non-null fields when re-importing with sparser metadata", async () => {
-      const caller = await createAuthenticatedCaller(db, alice);
-
-      const first = await caller.books.importFromCatalog(sampleCatalogBook);
-
-      // Re-import with cover/page count missing (Open Library response variance).
-      await caller.books.importFromCatalog({
-        ...sampleCatalogBook,
-        coverUrl: null,
-        pageCount: null,
-      });
-
-      const stored = await db.book.findUnique({ where: { id: first.bookId } });
-      expect(stored?.coverUrl).toBe(sampleCatalogBook.coverUrl);
-      expect(stored?.pageCount).toBe(412);
-    });
-
-    it("rejects malformed openLibraryKey with BAD_REQUEST", async () => {
-      const caller = await createAuthenticatedCaller(db, alice);
-
-      await expect(
-        caller.books.importFromCatalog({
-          ...sampleCatalogBook,
-          openLibraryKey: "not-a-key",
-        })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    });
-
-    it("rejects empty authorNames with BAD_REQUEST", async () => {
-      const caller = await createAuthenticatedCaller(db, alice);
-
-      await expect(
-        caller.books.importFromCatalog({
-          ...sampleCatalogBook,
-          authorNames: [],
-        })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
   });
 
