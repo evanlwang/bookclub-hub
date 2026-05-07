@@ -18,7 +18,7 @@ export const meetingsRouter = router({
       const where: Record<string, unknown> = { clubId: input.clubId };
       if (input.status) where.status = input.status;
 
-      return ctx.db.meeting.findMany({
+      const meetings = await ctx.db.meeting.findMany({
         where,
         include: {
           slots: { include: { responses: true } },
@@ -26,6 +26,17 @@ export const meetingsRouter = router({
         },
         orderBy: { createdAt: "desc" },
       });
+
+      // Derived per-viewer flag: have they responded to any slot of this meeting?
+      // Lets the dashboard render the "respond" badge without re-walking the
+      // slot/response tree on the client.
+      const viewerId = ctx.user.id;
+      return meetings.map((m) => ({
+        ...m,
+        viewerHasResponded: m.slots.some((s) =>
+          s.responses.some((r) => r.userId === viewerId)
+        ),
+      }));
     }),
 
   create: adminProcedure

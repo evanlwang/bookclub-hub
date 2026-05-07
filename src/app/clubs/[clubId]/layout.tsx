@@ -20,27 +20,21 @@ export default async function ClubLayout({
 
   try {
     const caller = await getServerCaller();
-    const result = await caller.clubs.get({ clubId });
-    club = result.club;
-    const me = await caller.auth.me();
-    userName = me.user.displayName || me.user.email;
-    clubs = me.clubs;
-
-    const [rounds, meetings] = await Promise.all([
+    const [clubResult, me, rounds, meetings] = await Promise.all([
+      caller.clubs.get({ clubId }),
+      caller.auth.me(),
       caller.rounds.list({ clubId }),
       caller.meetings.list({ clubId }),
     ]);
+    club = clubResult.club;
+    userName = me.user.displayName || me.user.email;
+    clubs = me.clubs;
     hasActiveVote = rounds.some(
       (r: any) => r.status === "nominating" || r.status === "voting"
     );
-    // Light up Meetings if there's a proposed meeting the viewer hasn't touched.
-    hasUnrespondedMeeting = meetings.some((m: any) => {
-      if (m.status !== "proposed") return false;
-      const respondedToAnySlot = (m.slots ?? []).some((s: any) =>
-        (s.responses ?? []).some((r: any) => r.userId === me.user.id)
-      );
-      return !respondedToAnySlot;
-    });
+    hasUnrespondedMeeting = meetings.some(
+      (m: any) => m.status === "proposed" && !m.viewerHasResponded
+    );
   } catch {
     // Will fall through to child which handles errors
   }

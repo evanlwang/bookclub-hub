@@ -26,59 +26,54 @@ export default async function ClubDashboard({
 
   try {
     const caller = await getServerCaller();
-    const result = await caller.clubs.get({ clubId });
-    club = result.club;
-    currentBook = result.currentBook;
 
-    const rounds = await caller.rounds.list({ clubId });
+    // Phase 1: independent fetches kicked off in parallel.
+    const [clubResult, rounds, meetingsResult, me] = await Promise.all([
+      caller.clubs.get({ clubId }),
+      caller.rounds.list({ clubId }),
+      caller.meetings.list({ clubId }),
+      caller.auth.me(),
+    ]);
+    club = clubResult.club;
+    currentBook = clubResult.currentBook;
+    meetings = meetingsResult;
     activeRound = rounds.find(
       (r: any) => r.status === "nominating" || r.status === "voting"
     );
-
-    meetings = await caller.meetings.list({ clubId });
-
-    // Attention banner checks
-    const me = await caller.auth.me();
     const userId = me.user.id;
 
-    // Check if user has NOT voted in active voting round
-    if (activeRound && activeRound.status === "voting") {
-      const userVotes = await prisma.vote.count({
-        where: { roundId: activeRound.id, userId },
-      });
-      hasNotVoted = userVotes === 0;
-    }
+    // Pending-meeting flag is derived server-side now (viewerHasResponded).
+    hasPendingMeeting = meetings.some(
+      (m: any) => m.status === "proposed" && !m.viewerHasResponded
+    );
 
-    // Check if user has a proposed meeting they haven't responded to
-    const proposedMeetings = meetings.filter((m: any) => m.status === "proposed");
-    for (const meeting of proposedMeetings) {
-      const slots = meeting.slots ?? [];
-      const hasResponded = slots.some((slot: any) =>
-        slot.responses?.some((r: any) => r.userId === userId)
-      );
-      if (!hasResponded) {
-        hasPendingMeeting = true;
-        break;
-      }
-    }
-
-    if (currentBook?.book?.id) {
+    // Phase 2: things that depend on Phase 1 results — parallelize what we can.
+    const bookId = currentBook?.book?.id;
+    const [voteCount, myProgress] = await Promise.all([
+      activeRound?.status === "voting"
+        ? prisma.vote.count({
+            where: { roundId: activeRound.id, userId },
+          })
+        : Promise.resolve(null),
       // @spec DISC-UI-DASH-FEED-AUTOFILTER-001 — fetch viewer progress so the
       // recent-discussions feed never leaks spoilers above the viewer's chapter.
-      const myProgress = await caller.progress.me({
-        clubId,
-        bookId: currentBook.book.id,
-      });
+      bookId ? caller.progress.me({ clubId, bookId }) : Promise.resolve(null),
+    ]);
+    if (voteCount !== null) hasNotVoted = voteCount === 0;
+
+    // Phase 3: spoiler-cut threads + progress, both depend on cutoff/bookId.
+    if (bookId) {
       const cutoff = deriveSpoilerCutoff(myProgress);
-
-      const threadResult = await caller.threads.list({
-        clubId,
-        bookId: currentBook.book.id,
-        ...(cutoff != null ? { maxChapter: cutoff } : {}),
-      });
+      const [threadResult, progressList] = await Promise.all([
+        caller.threads.list({
+          clubId,
+          bookId,
+          ...(cutoff != null ? { maxChapter: cutoff } : {}),
+        }),
+        caller.progress.list({ clubId, bookId }),
+      ]);
       threads = threadResult.threads?.slice(0, 3) ?? [];
-
-      progress = await caller.progress.list({ clubId, bookId: currentBook.book.id });
+      progress = progressList;
     }
   } catch (e: unknown) {
     error = e instanceof Error ? e.message : "Error loading club";
