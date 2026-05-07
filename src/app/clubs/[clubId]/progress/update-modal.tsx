@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button, ProgressBar } from "@/components/ui";
+
+type ProgressStatus = "not_started" | "reading" | "finished";
 
 type ProgressSnapshot = {
   currentPage?: number;
@@ -237,14 +239,22 @@ function UpdateModal({
           </p>
         </div>
 
-        <div className="mb-4 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line">
-          <span className="text-sm text-ink-2">Progress: </span>
-          <span
-            className="text-lg font-semibold text-ink font-[var(--font-mono)]"
-            data-testid="percentage-display"
-          >
-            {percentage}%
-          </span>
+        <div
+          data-testid="progress-preview-bar"
+          data-percentage={percentage}
+          data-status={status}
+          className="mb-4 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-ink-2">Progress</span>
+            <span
+              className="text-lg font-semibold text-ink font-[var(--font-mono)]"
+              data-testid="percentage-display"
+            >
+              {percentage}%
+            </span>
+          </div>
+          <ProgressBar percentage={percentage} status={status as ProgressStatus} />
         </div>
 
         <div className="mb-6">
