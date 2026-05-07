@@ -20,7 +20,7 @@ test.describe("Progress Update Modal", () => {
     await page.getByTestId("update-progress-btn").click();
     await expect(page.getByTestId("progress-modal")).toBeVisible();
     await expect(page.getByTestId("page-input")).toBeVisible();
-    await expect(page.getByTestId("percentage-display")).toBeVisible();
+    await expect(page.getByTestId("percentage-input")).toBeVisible();
   });
 
   // @spec PROG-BE-001, PROG-UI-MODAL-PAGE-001

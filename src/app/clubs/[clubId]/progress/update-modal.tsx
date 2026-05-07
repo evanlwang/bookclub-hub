@@ -2,10 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, ProgressBar } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
-
-type ProgressStatus = "not_started" | "reading" | "finished";
 
 type ProgressSnapshot = {
   currentPage?: number;
@@ -24,7 +22,7 @@ interface UpdateModalProps {
 
 const TOAST_DISMISS_MS = 4000;
 
-// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001, PROG-UI-MODAL-SLIDER-001, PROG-UI-MODAL-PCT-EDIT-001, PROG-UI-MODAL-TIMESTAMP-001
+// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001, PROG-UI-MODAL-PCT-EDIT-001, PROG-UI-MODAL-TIMESTAMP-001
 export function UpdateProgressButton(props: UpdateModalProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -263,45 +261,28 @@ function UpdateModal({
           ))}
         </div>
 
-        <div className="mb-4">
-          <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
-            Current Page
-          </label>
-          <input
-            type="number"
-            min={0}
-            max={totalPages}
-            value={page}
-            onChange={(e) => handlePageChange(Number(e.target.value))}
-            disabled={status === "finished"}
-            data-testid="page-input"
-            className="w-full text-lg font-[var(--font-mono)] bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
-          />
-          <input
-            type="range"
-            min={0}
-            max={totalPages}
-            value={page}
-            onChange={(e) => handlePageChange(Number(e.target.value))}
-            disabled={status === "finished"}
-            data-testid="page-slider"
-            aria-label="Current page"
-            className="w-full mt-2.5 accent-primary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-          />
-          <p className="text-xs text-ink-3 mt-1.5">
-            of {totalPages} pages
-          </p>
-        </div>
-
-        <div
-          data-testid="progress-preview-bar"
-          data-percentage={percentage}
-          data-status={status}
-          className="mb-4 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-ink-2">Progress</span>
-            <div data-testid="percentage-display" className="flex items-center">
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
+              Page
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={totalPages}
+              value={page}
+              onChange={(e) => handlePageChange(Number(e.target.value))}
+              disabled={status === "finished"}
+              data-testid="page-input"
+              className="w-full text-lg font-[var(--font-mono)] bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
+            />
+            <p className="text-xs text-ink-3 mt-1.5">of {totalPages} pages</p>
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
+              Progress
+            </label>
+            <div className="flex items-center">
               <input
                 type="number"
                 min={0}
@@ -311,12 +292,12 @@ function UpdateModal({
                 disabled={status === "finished"}
                 data-testid="percentage-input"
                 aria-label="Progress percentage"
-                className="w-14 text-right text-lg font-semibold text-ink font-[var(--font-mono)] bg-transparent border border-transparent rounded px-1 focus:outline-none focus:border-primary focus:bg-bg disabled:opacity-60"
+                className="w-full text-lg font-[var(--font-mono)] bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
               />
-              <span className="text-lg font-semibold text-ink-2 font-[var(--font-mono)]">%</span>
+              <span className="text-lg font-semibold text-ink-2 font-[var(--font-mono)] ml-1">%</span>
             </div>
+            <p className="text-xs text-ink-3 mt-1.5">synced with page</p>
           </div>
-          <ProgressBar percentage={percentage} status={status as ProgressStatus} />
         </div>
 
         <div className="mb-4">

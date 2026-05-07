@@ -38,7 +38,7 @@ test.describe("Progress modal editable percentage input", () => {
     await expect(page.getByTestId("percentage-input")).toHaveValue("75");
   });
 
-  test("editing the percentage updates the page input, slider, and preview bar", async ({ page }) => {
+  test("editing the percentage updates the page input", async ({ page }) => {
     await loginAs(page, "eve@example.com");
     const club = await getClubByCode("WEDREADS");
     const dune = await getBookByTitle("Dune");
@@ -49,9 +49,6 @@ test.describe("Progress modal editable percentage input", () => {
     await page.getByTestId("percentage-input").fill("50");
 
     await expect(page.getByTestId("page-input")).toHaveValue("206");
-    await expect(page.getByTestId("page-slider")).toHaveValue("206");
-    const bar = page.getByTestId("progress-preview-bar");
-    await expect(bar).toHaveAttribute("data-percentage", "50");
   });
 
   test("percentage input is disabled when status is finished and locked at 100", async ({ page }) => {
@@ -80,9 +77,9 @@ test.describe("Progress modal editable percentage input", () => {
 
     await page.getByTestId("percentage-input").fill("25");
 
-    const bar = page.getByTestId("progress-preview-bar");
-    await expect(bar).toHaveAttribute("data-status", "reading");
-    await expect(bar).toHaveAttribute("data-percentage", "25");
+    // Status auto-bumps from not_started → reading; the Reading button picks
+    // up its selected styling (primary border).
+    await expect(page.getByTestId("status-reading")).toHaveClass(/border-primary/);
     // 25% of 412 ≈ 103
     await expect(page.getByTestId("page-input")).toHaveValue("103");
   });
