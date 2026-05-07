@@ -93,8 +93,8 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 
 ## Spoiler Integration
 
-- `[ ]` **PROG-BE-SPOOF-001**: When filtering discussion threads by `maxChapter`, the system SHALL use the user's `currentChapter` value from their progress record as the default filter.
-- `[ ]` **PROG-UI-SPOOF-001**: On the discussion thread list, an indicator SHALL show the current chapter filter ("Showing discussions up to chapter [N]").
+- `[D]` **PROG-BE-SPOOF-001**: Superseded by `DISC-UI-PROGRESS-AUTOFILTER-001`/`002` and `DISC-UI-DASH-FEED-AUTOFILTER-001` in `docs/specs/disc-specs.md`. The cutoff helper lives at `src/lib/discussions/spoiler-cutoff.ts` (`DISC-LIB-CUTOFF-001`).
+- `[D]` **PROG-UI-SPOOF-001**: Superseded — the discussions page prefills the existing `max-chapter-input` from the viewer's progress and surfaces the existing `hidden-count` chip. See `DISC-UI-PROGRESS-AUTOFILTER-001`.
 
 ## Error Handling
 
