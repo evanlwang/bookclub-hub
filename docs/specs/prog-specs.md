@@ -27,6 +27,7 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-UI-BOOK-005**: The progress dashboard SHALL render an inline history picker listing the club's `BookSelection` rows, with the current selection (`isCurrent: true`) first, followed by past selections ordered by `selectedAt` DESC.
 - `[x]` **PROG-UI-BOOK-006**: Each entry in the history picker SHALL be a Link navigating to `/clubs/[clubId]/progress?bookId={bookId}`. Past entries display live `ReadingProgress` for that book (no snapshotting).
 - `[x]` **PROG-UI-BOOK-007**: The current selection in the history picker SHALL be marked with a "Current" badge; past selections SHALL NOT show the badge.
+- `[x]` **PROG-UI-BOOK-008**: Each past entry in the history picker SHALL display the finished date as "Finished {MMM YYYY}", computed from `BookSelection.finishedAt`. If `finishedAt` is null, the entry SHALL fall back to `selectedAt` and label it "Selected {MMM YYYY}".
 
 ## Progress Data Model & API
 

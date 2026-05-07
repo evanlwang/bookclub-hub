@@ -283,6 +283,10 @@ export default async function ProgressPage({
   );
 }
 
+function formatMonthYear(value: Date | string): string {
+  return new Date(value).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 function HistoryPicker({
   clubId,
   selections,
@@ -315,9 +319,11 @@ function HistoryPicker({
                     <Badge tone="primary">Current</Badge>
                   </span>
                 )}
-                {!s.isCurrent && s.finishedAt && (
-                  <span className="text-xs text-ink-3">
-                    {new Date(s.finishedAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                {!s.isCurrent && (
+                  <span data-testid={`history-finished-date-${s.bookId}`} className="text-xs text-ink-3">
+                    {s.finishedAt
+                      ? `Finished ${formatMonthYear(s.finishedAt)}`
+                      : `Selected ${formatMonthYear(s.selectedAt)}`}
                   </span>
                 )}
               </Link>

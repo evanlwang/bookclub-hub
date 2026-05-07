@@ -70,6 +70,52 @@ test.describe("Progress History Picker", () => {
     await expect(items.nth(1)).toHaveAttribute("data-testid", `history-item-${leftHand.id}`);
   });
 
+  // @spec PROG-UI-BOOK-008
+  test("past entries display a Finished {MMM YYYY} date and current entry does not", async ({ page }) => {
+    await loginAs(page, "alice@example.com");
+    const club = await getClubByCode("WEDREADS");
+    const dune = await getBookByTitle("Dune");
+    const leftHand = await getBookByTitle("The Left Hand of Darkness");
+
+    await page.goto(`/clubs/${club.id}/progress`);
+
+    const pastDate = page.getByTestId(`history-finished-date-${leftHand.id}`);
+    await expect(pastDate).toBeVisible();
+    // Seeded finishedAt is 2026-02-15.
+    await expect(pastDate).toHaveText("Finished Feb 2026");
+
+    // Current selection does not show a finished date.
+    await expect(page.getByTestId(`history-finished-date-${dune.id}`)).toHaveCount(0);
+  });
+
+  // @spec PROG-UI-BOOK-008
+  test("past entry without finishedAt falls back to Selected {MMM YYYY}", async ({ page }) => {
+    const db = getDb();
+    const club = await getClubByCode("WEDREADS");
+    const kindred = await db.book.findFirstOrThrow({ where: { title: "Kindred" } });
+
+    const sel = await db.bookSelection.create({
+      data: {
+        clubId: club.id,
+        bookId: kindred.id,
+        isCurrent: false,
+        selectedAt: new Date("2025-08-10"),
+        finishedAt: null,
+      },
+    });
+
+    try {
+      await loginAs(page, "alice@example.com");
+      await page.goto(`/clubs/${club.id}/progress`);
+
+      const fallback = page.getByTestId(`history-finished-date-${kindred.id}`);
+      await expect(fallback).toBeVisible();
+      await expect(fallback).toHaveText("Selected Aug 2025");
+    } finally {
+      await db.bookSelection.delete({ where: { id: sel.id } }).catch(() => {});
+    }
+  });
+
   // @spec PROG-UI-BOOK-006
   test("clicking a past entry navigates to that book's dashboard", async ({ page }) => {
     await loginAs(page, "alice@example.com");
