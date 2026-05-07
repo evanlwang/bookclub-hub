@@ -164,6 +164,7 @@ function JoinPageInner() {
   // Identity (Step 1)
   const [email, setEmail] = useState(prefilledEmail);
   const [displayName, setDisplayName] = useState("");
+  const [passcode, setPasscode] = useState("");
   const [identityError, setIdentityError] = useState("");
   const [signingIn, setSigningIn] = useState(false);
 
@@ -185,7 +186,8 @@ function JoinPageInner() {
   const [successClubName, setSuccessClubName] = useState("");
   const [successClubCode, setSuccessClubCode] = useState("");
 
-  const identityValid = email.includes("@") && displayName.trim().length > 0;
+  const identityValid =
+    email.includes("@") && displayName.trim().length > 0 && passcode.length > 0;
   const joinReady = !!clubInfo && typeof clubInfo !== "string";
   const createReady = clubName.trim().length >= 3;
 
@@ -206,7 +208,7 @@ function JoinPageInner() {
       const res = await fetch("/api/trpc/auth.enter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, displayName }),
+        body: JSON.stringify({ email, displayName, passcode }),
       });
       const data = await res.json();
 
@@ -441,7 +443,13 @@ function JoinPageInner() {
         </div>
         {step < 4 && (
           <div className="text-xs text-ink-3">
-            Already a member? Just enter your email above.
+            Already a member?{" "}
+            <a
+              href="/login"
+              className="text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
+            >
+              Log in
+            </a>
           </div>
         )}
       </header>
@@ -504,6 +512,20 @@ function JoinPageInner() {
                   className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
                 />
                 <p className="text-xs text-ink-3 mt-1.5">Visible to other members in the club</p>
+              </div>
+
+              <div>
+                <label htmlFor="passcode" className="block text-[13px] font-medium text-ink-2 mb-1.5">
+                  Pilot passcode
+                </label>
+                <input
+                  id="passcode"
+                  type="password"
+                  value={passcode}
+                  onChange={(e) => setPasscode(e.target.value)}
+                  placeholder="Shared with the pilot group"
+                  className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
+                />
               </div>
 
               {identityError && (
