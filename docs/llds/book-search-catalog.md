@@ -49,6 +49,7 @@ The catalog exposes a richer normalized shape than the legacy nominate-modal flo
 | `pageCount` | `number \| null` | `doc.number_of_pages_median` (search) or `isbn_record.number_of_pages` | ✓ | ✓ |
 | `description` | `string \| null` | `work.description` (string or `{value}`) | — | ✓ |
 | `subjects` | `string[]` | `work.subjects` (cap 8) | — | ✓ |
+| `isbns` | `string[]` | `/works/{key}/editions.json` (gated, deduped, cap 10) | — | ✓ |
 
 Two normalizations worth flagging:
 1. **Description shape coercion.** Open Library returns `description` as either a plain string or `{value: string}`. `normalizeDescription()` collapses both.
@@ -246,9 +247,45 @@ A small "ISBN" pill in the input's right gutter signals ISBN-mode visually (`CAT
 
 ISBN-mode reuses every other piece of the UI: skeleton-during-load, error banner, detail panel on click, Nominate handoff, success banner. The branch is purely at the network call.
 
-## Gaps and Deferred
+## Editions and ISBN Backfill
 
-- `[ ]` Detail panel does not expose ISBN(s) yet — `CatalogBookDetail.isbns` is wired but always empty (Open Library's ISBN list is on the editions endpoint, not the work endpoint, and we haven't paginated through them).
+`CatalogBookDetail.isbns` is populated lazily from Open Library's editions endpoint, but only for **curated** works to avoid wasting an HTTP round-trip on long-tail one-edition shells.
+
+```
+getWorkDetail(key)
+   │
+   ├─ olJson(/works/{key}.json) → work record
+   │
+   ▼  Promise.all (parallel — independent calls)
+   ├─ resolveAuthorNames(work)        → string[]
+   └─ isWorkPopular(work)
+         │ true  → getEditions(work.key)  → string[]
+         │ false → []                     ← short-circuit, no HTTP
+   ▼
+   CatalogBookDetail
+```
+
+### Popularity gate
+
+```
+isWorkPopular(work) =
+   work.covers?.length > 0
+   AND (work.description != null OR work.subjects?.length >= 3)
+```
+
+The gate intentionally accepts both classics (Dune: 1965, well-curated) and modern bestsellers. It rejects the bare-skeleton records that dominate Open Library's long tail — works with no cover, no description, and a single sparse subject. Those records would yield a single-edition response (or 404) at best, so the gate keeps the typical request count low for noisy queries.
+
+### Editions fetch
+
+- Endpoint: `/works/{key}/editions.json?limit=50` — Open Library's max page size.
+- Dedup: insert into a `Set<string>` across `isbn_13` then `isbn_10` for each entry.
+- Cap: 10 ISBNs returned to the caller (most editions tend to be reissues; 10 is enough to identify a buyer's preferred format).
+- Cache: separate LRU keyed by `editions:{workKey}`, same TTL/capacity as the search cache.
+- Failure mode: `try/catch` around `olJson` returns `[]` rather than propagating. The detail view is never blocked by a failing editions request — title, description, subjects all still render.
+
+The two parallel calls in `getWorkDetail` (`resolveAuthorNames` and `getEditions`) cut the wall-clock cost of detail loading: the bottleneck is now `max(authors_fanout, editions)`, not their sum.
+
+## Gaps and Deferred
 - `[D]` `CAT-API-BROWSE-001` — browse-by-subject. Defer until we see the user-facing want.
 - `[D]` `CAT-UI-RECENT-001` — "recently viewed by your club" sidebar. Needs a per-club view-history table; defer until measured.
 - `[D]` `CAT-API-MULTISRC-001` — Google Books fallback when Open Library is sparse. Adds an API key dependency; defer until metadata-gap reports come in.

@@ -1,4 +1,4 @@
-// @spec CAT-UI-DETAIL-001, CAT-UI-SPOIL-001, CAT-UI-NOM-002
+// @spec CAT-UI-DETAIL-001, CAT-UI-DETAIL-ISBN-001, CAT-UI-SPOIL-001, CAT-UI-NOM-002
 "use client";
 
 import { useEffect, useState } from "react";
@@ -194,6 +194,20 @@ export function CatalogDetailPanel({
                       {s}
                     </Badge>
                   ))}
+                </div>
+              )}
+
+              {/* @spec CAT-UI-DETAIL-ISBN-001 */}
+              {detail.isbns.length > 0 && (
+                <div className="mt-4" data-testid="catalog-detail-isbns">
+                  <p className="text-[10px] uppercase tracking-wider text-ink-3 mb-1.5">
+                    ISBNs
+                  </p>
+                  <ul className="text-xs text-ink-2 font-mono space-y-0.5">
+                    {detail.isbns.slice(0, 5).map((isbn) => (
+                      <li key={isbn}>{isbn}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
 

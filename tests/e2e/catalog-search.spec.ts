@@ -1,7 +1,7 @@
 // @spec CAT-UI-PAGE-001, CAT-UI-SEARCH-001, CAT-UI-RESULTS-001,
-//        CAT-UI-DETAIL-001, CAT-UI-NOM-001, CAT-UI-NOM-002,
-//        CAT-UI-EMPTY-001, CAT-UI-ERROR-001, CAT-UI-PAGER-001,
-//        CAT-UI-ISBN-001, CAT-UI-ISBN-002, CAT-UI-ISBN-003
+//        CAT-UI-DETAIL-001, CAT-UI-DETAIL-ISBN-001, CAT-UI-NOM-001,
+//        CAT-UI-NOM-002, CAT-UI-EMPTY-001, CAT-UI-ERROR-001,
+//        CAT-UI-PAGER-001, CAT-UI-ISBN-001, CAT-UI-ISBN-002, CAT-UI-ISBN-003
 import { test, expect, type Page } from "@playwright/test";
 import { loginAs, getClubByCode, getDb } from "./helpers";
 
@@ -32,7 +32,8 @@ const duneDetail = {
   coverUrl: "https://covers.openlibrary.org/b/id/9259-L.jpg",
   description: "Set on the desert planet Arrakis, Dune is the story of the boy Paul Atreides.",
   subjects: ["Science fiction", "Politics", "Ecology"],
-  isbns: [],
+  // Editions backfill — exposes deduped ISBNs from /editions.json (CAT-BE-EDITIONS-001).
+  isbns: ["9780441172719", "0441172717", "9780441013593"],
 };
 
 // ---------- tRPC mock helpers ----------
@@ -200,6 +201,12 @@ test.describe("Book search catalog", () => {
     await expect(panel).toContainText("Dune");
     await expect(panel).toContainText("Set on the desert planet Arrakis");
     await expect(panel).toContainText("Science fiction");
+
+    // CAT-UI-DETAIL-ISBN-001 — backfilled ISBN list renders as a monospace list.
+    const isbnList = page.getByTestId("catalog-detail-isbns");
+    await expect(isbnList).toBeVisible();
+    await expect(isbnList).toContainText("9780441172719");
+    await expect(isbnList).toContainText("0441172717");
   });
 
   // @spec CAT-UI-NOM-002

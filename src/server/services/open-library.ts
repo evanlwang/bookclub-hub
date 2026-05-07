@@ -103,10 +103,12 @@ class LruCache<T> {
 }
 
 const searchCache = new LruCache<CatalogSearchResult>(CACHE_MAX, CACHE_TTL_MS);
+const editionsCache = new LruCache<string[]>(CACHE_MAX, CACHE_TTL_MS);
 
-// Test-only: flush the cache between tests so module-level state doesn't leak.
+// Test-only: flush all caches between tests so module-level state doesn't leak.
 export function _resetCatalogCacheForTests(): void {
   searchCache.clear();
+  editionsCache.clear();
 }
 
 // ---------- Internal HTTP ----------
@@ -204,6 +206,19 @@ interface OpenLibraryAuthorRecord {
   name: string;
 }
 
+interface OpenLibraryEdition {
+  isbn_10?: string[];
+  isbn_13?: string[];
+}
+
+interface OpenLibraryEditionsResponse {
+  size?: number;
+  entries: OpenLibraryEdition[];
+}
+
+const EDITIONS_PAGE_SIZE = 50;
+const EDITIONS_RESULT_CAP = 10;
+
 // ---------- Public API: legacy ----------
 
 export async function searchBooks(query: string): Promise<OpenLibraryBook[]> {
@@ -295,7 +310,7 @@ export async function getByIsbn(isbn: string): Promise<CatalogBook | null> {
   };
 }
 
-// @spec CAT-API-003
+// @spec CAT-API-003, CAT-BE-EDITIONS-001
 export async function getWorkDetail(
   openLibraryKey: string
 ): Promise<CatalogBookDetail> {
@@ -306,7 +321,11 @@ export async function getWorkDetail(
       message: `Work ${openLibraryKey} not found`,
     });
   }
-  const authorNames = await resolveAuthorNames(work);
+  // Resolve authors and editions in parallel — independent network calls.
+  const [authorNames, isbns] = await Promise.all([
+    resolveAuthorNames(work),
+    isWorkPopular(work) ? getEditions(work.key) : Promise.resolve<string[]>([]),
+  ]);
   const coverId = work.covers?.[0] ?? null;
   return {
     openLibraryKey: work.key,
@@ -318,8 +337,48 @@ export async function getWorkDetail(
     pageCount: null,
     description: normalizeDescription(work.description),
     subjects: (work.subjects ?? []).slice(0, 8),
-    isbns: [],
+    isbns,
   };
+}
+
+// @spec CAT-BE-EDITIONS-002
+// Curation signal — has a cover AND (description OR ≥3 subjects). Catches
+// modern bestsellers, classics, and well-indexed niche works alike. The
+// long-tail one-edition shells of Open Library fail this and short-circuit
+// the editions request.
+function isWorkPopular(work: OpenLibraryWorkRecord): boolean {
+  const hasCover = (work.covers?.length ?? 0) > 0;
+  const hasDescription = work.description != null;
+  const hasSubjects = (work.subjects?.length ?? 0) >= 3;
+  return hasCover && (hasDescription || hasSubjects);
+}
+
+// @spec CAT-BE-EDITIONS-001, CAT-BE-EDITIONS-003
+async function getEditions(workKey: string): Promise<string[]> {
+  const cacheKey = `editions:${workKey}`;
+  const hit = editionsCache.get(cacheKey);
+  if (hit) return hit;
+
+  let data: OpenLibraryEditionsResponse | null;
+  try {
+    data = await olJson<OpenLibraryEditionsResponse>(
+      `${workKey}/editions.json?limit=${EDITIONS_PAGE_SIZE}`
+    );
+  } catch {
+    // Editions failure is non-fatal — detail view still renders without ISBNs.
+    return [];
+  }
+  if (!data) return [];
+
+  const isbns = new Set<string>();
+  for (const edition of data.entries ?? []) {
+    for (const isbn of edition.isbn_13 ?? []) isbns.add(isbn);
+    for (const isbn of edition.isbn_10 ?? []) isbns.add(isbn);
+    if (isbns.size >= EDITIONS_RESULT_CAP) break;
+  }
+  const result = Array.from(isbns).slice(0, EDITIONS_RESULT_CAP);
+  editionsCache.set(cacheKey, result);
+  return result;
 }
 
 async function resolveAuthorNames(work: OpenLibraryWorkRecord): Promise<string[]> {

@@ -1,6 +1,7 @@
 // @spec CAT-API-001, CAT-API-002, CAT-API-003, CAT-API-004,
 //        CAT-BE-001, CAT-BE-CACHE-001, CAT-BE-CACHE-002,
-//        CAT-BE-RATE-001, CAT-BE-TIMEOUT-001, CAT-BE-FAIL-001, CAT-BE-FAIL-002
+//        CAT-BE-RATE-001, CAT-BE-TIMEOUT-001, CAT-BE-FAIL-001, CAT-BE-FAIL-002,
+//        CAT-BE-EDITIONS-001, CAT-BE-EDITIONS-002, CAT-BE-EDITIONS-003
 //
 // Integration tests for the book search catalog router (catalog.ts).
 // Tests are RED until the router stubs in src/server/routers/catalog.ts and
@@ -60,6 +61,16 @@ const duneWorkRecord = {
 const duneAuthorRecord = {
   key: "/authors/OL27349A",
   name: "Frank Herbert",
+};
+
+const duneEditionsResponse = {
+  size: 3,
+  entries: [
+    { isbn_10: ["0441172717"], isbn_13: ["9780441172719"] },
+    { isbn_13: ["9780441013593"] },
+    // Duplicate of edition #1 — should be deduped.
+    { isbn_10: ["0441172717"] },
+  ],
 };
 
 // ---------- fetch mock router ----------
@@ -402,9 +413,13 @@ describe("catalog router", () => {
   // catalog.getDetail
   // ============================================================
   describe("catalog.getDetail", () => {
-    // @spec CAT-API-003
-    it("returns the full CatalogBookDetail with description and subjects", async () => {
+    // @spec CAT-API-003, CAT-BE-EDITIONS-001
+    it("returns the full CatalogBookDetail with description, subjects, and isbns", async () => {
       installFetchMock([
+        {
+          match: (u) => u.includes("/works/OL45804W/editions.json"),
+          respond: () => mockResponse({ body: duneEditionsResponse }),
+        },
         {
           match: (u) => u.includes("/works/OL45804W.json"),
           respond: () => mockResponse({ body: duneWorkRecord }),
@@ -424,11 +439,21 @@ describe("catalog router", () => {
       expect(res.description).toMatch(/Arrakis/);
       expect(res.subjects).toContain("Science fiction");
       expect(res.coverUrl).toMatch(/9259-L\.jpg$/); // detail uses -L size
+
+      // Editions backfill: deduped ISBNs across the 3 mocked editions.
+      expect(res.isbns).toEqual(
+        expect.arrayContaining(["9780441172719", "0441172717", "9780441013593"])
+      );
+      expect(res.isbns).toHaveLength(3);
     });
 
     // @spec CAT-API-003 (handles description-as-string variant)
     it("normalizes description when Open Library returns a bare string", async () => {
       installFetchMock([
+        {
+          match: (u) => u.includes("/works/OL45804W/editions.json"),
+          respond: () => mockResponse({ body: duneEditionsResponse }),
+        },
         {
           match: (u) => u.includes("/works/OL45804W.json"),
           respond: () =>
@@ -446,6 +471,94 @@ describe("catalog router", () => {
       const res = await caller.catalog.getDetail({ openLibraryKey: "/works/OL45804W" });
 
       expect(res.description).toBe("Plain string description.");
+    });
+
+    // @spec CAT-BE-EDITIONS-002
+    it("skips the editions request for obscure works (popularity gate)", async () => {
+      const obscureWork = {
+        ...duneWorkRecord,
+        // No covers, no description, sparse subjects.
+        covers: undefined,
+        description: undefined,
+        subjects: ["Fiction"], // < 3 subjects
+      };
+
+      const fetchSpy = installFetchMock([
+        {
+          match: (u) => u.includes("/works/OL45804W.json"),
+          respond: () => mockResponse({ body: obscureWork }),
+        },
+        {
+          match: (u) => u.includes("/authors/OL27349A.json"),
+          respond: () => mockResponse({ body: duneAuthorRecord }),
+        },
+      ]);
+
+      const caller = await createAuthenticatedCaller(db, alice);
+      const res = await caller.catalog.getDetail({ openLibraryKey: "/works/OL45804W" });
+
+      expect(res.isbns).toEqual([]);
+      // No fetch for /editions.json should have been made.
+      const editionsCalls = fetchSpy.mock.calls.filter((c) =>
+        String(c[0]).includes("/editions.json")
+      );
+      expect(editionsCalls).toHaveLength(0);
+    });
+
+    // @spec CAT-BE-EDITIONS-001 (cap)
+    it("caps the isbns list at 10 across many editions", async () => {
+      // 15 editions, each with one unique ISBN-13 → expect 10 returned.
+      const manyEditions = {
+        size: 15,
+        entries: Array.from({ length: 15 }, (_, i) => ({
+          isbn_13: [`97800000000${String(i).padStart(2, "0")}`],
+        })),
+      };
+
+      installFetchMock([
+        {
+          match: (u) => u.includes("/works/OL45804W/editions.json"),
+          respond: () => mockResponse({ body: manyEditions }),
+        },
+        {
+          match: (u) => u.includes("/works/OL45804W.json"),
+          respond: () => mockResponse({ body: duneWorkRecord }),
+        },
+        {
+          match: (u) => u.includes("/authors/OL27349A.json"),
+          respond: () => mockResponse({ body: duneAuthorRecord }),
+        },
+      ]);
+
+      const caller = await createAuthenticatedCaller(db, alice);
+      const res = await caller.catalog.getDetail({ openLibraryKey: "/works/OL45804W" });
+
+      expect(res.isbns).toHaveLength(10);
+    });
+
+    // @spec CAT-BE-EDITIONS-003
+    it("returns empty isbns when the editions endpoint fails (non-fatal)", async () => {
+      installFetchMock([
+        {
+          match: (u) => u.includes("/works/OL45804W/editions.json"),
+          respond: () => mockResponse({ status: 503 }),
+        },
+        {
+          match: (u) => u.includes("/works/OL45804W.json"),
+          respond: () => mockResponse({ body: duneWorkRecord }),
+        },
+        {
+          match: (u) => u.includes("/authors/OL27349A.json"),
+          respond: () => mockResponse({ body: duneAuthorRecord }),
+        },
+      ]);
+
+      const caller = await createAuthenticatedCaller(db, alice);
+      const res = await caller.catalog.getDetail({ openLibraryKey: "/works/OL45804W" });
+
+      // Detail still loads; isbns just absent.
+      expect(res.title).toBe("Dune");
+      expect(res.isbns).toEqual([]);
     });
 
     // @spec CAT-BE-FAIL-002
