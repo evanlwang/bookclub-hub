@@ -1,6 +1,6 @@
 # Book Search Catalog Specs
 
-**LLD**: docs/llds/book-search-catalog.md _(to be written)_
+**LLD**: [docs/llds/book-search-catalog.md](../llds/book-search-catalog.md)
 **Implementing artifacts**:
 - API: `src/server/routers/catalog.ts`, `src/server/services/open-library.ts`, `src/server/routers/books.ts` (importFromCatalog)
 - UI: `src/app/clubs/[clubId]/catalog/page.tsx`, `catalog-client.tsx`, `catalog-result-card.tsx`, `catalog-detail-panel.tsx`, `skeleton-grid.tsx`, `sidebar.tsx` (Browse books link)
