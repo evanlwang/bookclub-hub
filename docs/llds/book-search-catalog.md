@@ -201,7 +201,7 @@ The success **banner** (not a toast) is a deliberate divergence from the spec te
 
 Exact rendered labels in the running app, with conditions and handlers.
 
-Button: search input (debounced) — `catalog-client.tsx:198-218` — visible: always — handler: `catalog.search` after 300ms debounce, resets page to 1
+Button: search input (debounced) — `catalog-client.tsx:253-287` — visible: always — handler: 300ms debounce, then `catalog.searchByIsbn` if input parses as ISBN-10 or ISBN-13 (hyphens/whitespace stripped) else `catalog.search`. New keyword query resets page to 1; ISBN mode bypasses the pager entirely.
 Button: "Details" (per result row) — `catalog-result-card.tsx:78-86` — visible: card visible — handler: opens `<CatalogDetailPanel openLibraryKey={...}>`
 Button: "Nominate" (per result row) — `catalog-result-card.tsx:87-99` — visible: `canNominate=true` — enabled: not in `nominatedKeys` — handler: `books.importFromCatalog` then `nominations.create`
 Button: "✓ Nominated" (disabled state) — visible: same row but `nominatedKeys` contains its key — terminal state for that card in this session
@@ -230,6 +230,22 @@ The catalog feature **adds no new tables**. It reuses `Book` for imports, with t
 
 Edge case worth knowing: `Book.author` is a single string. `CatalogBook.authorNames` is an array. `books.importFromCatalog` joins with `", "` as the lossy-but-truthful collapse. Multi-author works render as `"Niven, Larry, Pournelle, Jerry"` rather than dropping co-authors. Display sites (`vote-round.tsx`, dashboard) use `Book.author` directly and handle the longer string fine.
 
+## ISBN Mode
+
+The single search input doubles as an ISBN lookup. Logic is small enough to live inline in `catalog-client.tsx`:
+
+```
+detectIsbn(query) =
+  let s = query.replace(/[\s-]/g, "")
+  return /^(\d{10}|\d{13})$/.test(s) ? s : null
+```
+
+When `detectIsbn(debouncedQuery)` returns non-null, the search effect branches to `catalog.searchByIsbn` instead of `catalog.search`. The result is normalized into a single-element `results` array so the existing card grid renders it without a special case. The pager is suppressed (`{showResults && !isbn && ...}`); the empty-state copy adapts ("No book found for ISBN ...").
+
+A small "ISBN" pill in the input's right gutter signals ISBN-mode visually (`CAT-UI-ISBN-003`). The pill clears the moment the input no longer parses — for example, the user keeps typing past 13 digits, or backspaces a digit out, or pastes letters in. Reactive via `useMemo(() => detectIsbn(debouncedQuery))`.
+
+ISBN-mode reuses every other piece of the UI: skeleton-during-load, error banner, detail panel on click, Nominate handoff, success banner. The branch is purely at the network call.
+
 ## Gaps and Deferred
 
 - `[ ]` Detail panel does not expose ISBN(s) yet — `CatalogBookDetail.isbns` is wired but always empty (Open Library's ISBN list is on the editions endpoint, not the work endpoint, and we haven't paginated through them).
@@ -237,7 +253,6 @@ Edge case worth knowing: `Book.author` is a single string. `CatalogBook.authorNa
 - `[D]` `CAT-UI-RECENT-001` — "recently viewed by your club" sidebar. Needs a per-club view-history table; defer until measured.
 - `[D]` `CAT-API-MULTISRC-001` — Google Books fallback when Open Library is sparse. Adds an API key dependency; defer until metadata-gap reports come in.
 - `[D]` `CAT-BE-PERSIST-CACHE-001` — Postgres-backed cache. Defer until in-memory cache miss rate is observed and meaningful.
-- `[ ]` `searchByIsbn` is implemented and tested but not yet wired to the UI. A "paste an ISBN" affordance in the search bar would make it user-reachable.
 
 ## References
 

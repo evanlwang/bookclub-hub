@@ -32,6 +32,12 @@ interface SearchPayload {
 const DEBOUNCE_MS = 300;
 const PAGE_SIZE = 20;
 
+// @spec CAT-UI-ISBN-001
+function detectIsbn(query: string): string | null {
+  const stripped = query.replace(/[\s-]/g, "");
+  return /^(\d{10}|\d{13})$/.test(stripped) ? stripped : null;
+}
+
 export function CatalogClient({ clubId, nominatingRoundId }: CatalogClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -83,6 +89,9 @@ export function CatalogClient({ clubId, nominatingRoundId }: CatalogClientProps)
   }, []);
 
   // Run the search whenever debouncedQuery or page changes.
+  // Branches on ISBN-shape input (CAT-UI-ISBN-001).
+  const isbn = useMemo(() => detectIsbn(debouncedQuery), [debouncedQuery]);
+
   useEffect(() => {
     syncUrl(debouncedQuery, page);
 
@@ -97,6 +106,35 @@ export function CatalogClient({ clubId, nominatingRoundId }: CatalogClientProps)
     const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
+
+    // ISBN mode: single-card response, no pager.
+    if (isbn) {
+      fetch(
+        `/api/trpc/catalog.searchByIsbn?input=${encodeURIComponent(
+          JSON.stringify({ isbn })
+        )}`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (requestId !== requestIdRef.current) return;
+          if (data.error) {
+            setError("gateway");
+            return;
+          }
+          const hit = data.result?.data as CatalogBook | null;
+          setResults(hit ? [hit] : []);
+          setHasFullPage(false);
+        })
+        .catch(() => {
+          if (requestId !== requestIdRef.current) return;
+          setError("gateway");
+        })
+        .finally(() => {
+          if (requestId !== requestIdRef.current) return;
+          setLoading(false);
+        });
+      return;
+    }
 
     fetch(
       `/api/trpc/catalog.search?input=${encodeURIComponent(
@@ -130,7 +168,7 @@ export function CatalogClient({ clubId, nominatingRoundId }: CatalogClientProps)
         if (requestId !== requestIdRef.current) return;
         setLoading(false);
       });
-  }, [debouncedQuery, page, syncUrl, retryNonce]);
+  }, [debouncedQuery, isbn, page, syncUrl, retryNonce]);
 
   const handleRetry = useCallback(() => {
     setError(null);
@@ -216,11 +254,20 @@ export function CatalogClient({ clubId, nominatingRoundId }: CatalogClientProps)
           type="text"
           value={inputValue}
           onChange={(e) => handleInputChange(e.target.value)}
-          placeholder="Search by title, author, or topic…"
+          placeholder="Search by title, author, or paste an ISBN…"
           data-testid="catalog-search-input"
           aria-label="Search the book catalog"
-          className="w-full pl-10 pr-10 py-2.5 rounded-md border border-line bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20"
+          className="w-full pl-10 pr-24 py-2.5 rounded-md border border-line bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20"
         />
+        {/* CAT-UI-ISBN-003 */}
+        {isbn && (
+          <span
+            data-testid="catalog-isbn-pill"
+            className="absolute right-9 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-bg-sunken text-ink-2 font-medium"
+          >
+            ISBN
+          </span>
+        )}
         {loading && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2">
             <svg className="animate-spin h-4 w-4 text-ink-3" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -312,7 +359,9 @@ export function CatalogClient({ clubId, nominatingRoundId }: CatalogClientProps)
             data-testid="catalog-empty-state"
           >
             <p className="text-sm text-ink-2">
-              No books matched &ldquo;{debouncedQuery}&rdquo;.
+              {isbn
+                ? `No book found for ISBN ${isbn}.`
+                : `No books matched “${debouncedQuery}”.`}
             </p>
             {canNominate && (
               <p className="text-xs text-ink-3 mt-2">
@@ -329,8 +378,8 @@ export function CatalogClient({ clubId, nominatingRoundId }: CatalogClientProps)
           </div>
         )}
 
-        {/* Pager */}
-        {showResults && (
+        {/* Pager — hidden in ISBN mode (single result only) */}
+        {showResults && !isbn && (
           <div className="mt-6 flex items-center justify-between">
             <Button
               variant="ghost"

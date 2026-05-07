@@ -54,6 +54,12 @@ A free, low-friction way for any club member to search Open Library, browse resu
 - `[x]` **CAT-UI-ERROR-001**: A `BAD_GATEWAY` from `catalog.search` SHALL render an inline retry banner: "Catalog is unavailable right now. Try again." with a Retry button. Per CAT-BE-FAIL-001. (`catalog-client.tsx:212-228`)
 - `[x]` **CAT-UI-LOADING-001**: While a search is in flight, the results grid SHALL show 6 skeleton cards. Subsequent searches keep prior results visible until the new ones arrive (no flash to empty). (`skeleton-grid.tsx`; `catalog-client.tsx:117-119` keeps prior results)
 
+## UI — ISBN Search
+
+- `[x]` **CAT-UI-ISBN-001**: When the search input value (after stripping hyphens and whitespace) matches `/^(\d{10}|\d{13})$/`, the client SHALL call `catalog.searchByIsbn` instead of `catalog.search`. ISBN-mode kicks in on the same 300ms debounce as keyword mode. (`catalog-client.tsx:35-39` detection; `catalog-client.tsx:103-127` branch)
+- `[x]` **CAT-UI-ISBN-002**: An ISBN lookup SHALL render a single result card on hit, or the empty-state card on miss ("No book found for ISBN {isbn}."). The pager SHALL be hidden in ISBN mode (a single result has no next page). (`catalog-client.tsx:368-376` empty-state copy; `catalog-client.tsx:391-419` pager `!isbn` gate)
+- `[x]` **CAT-UI-ISBN-003**: When the input is in ISBN mode, the search bar SHALL show a subtle "ISBN" pill next to the input as visual confirmation. The pill clears as soon as the input no longer parses as an ISBN. (`catalog-client.tsx:268-276`)
+
 ## UI — Nominate-from-Catalog Handoff
 
 - `[!]` **CAT-UI-NOM-001**: Clicking "Nominate" on any catalog card or detail panel SHALL call `books.importFromCatalog` (CAT-BE-002), then `nominations.create` with the returned `bookId`. On success, a confirmation appears with a link to `/clubs/[clubId]/vote`. **Divergence:** confirmation is an inline banner under the search input rather than a toast — matches the inline-message style used by `vote-round.tsx` and avoids adding a toast library for one message. (`catalog-client.tsx:140-185,195-211`)

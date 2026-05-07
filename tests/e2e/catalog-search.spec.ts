@@ -1,6 +1,7 @@
 // @spec CAT-UI-PAGE-001, CAT-UI-SEARCH-001, CAT-UI-RESULTS-001,
 //        CAT-UI-DETAIL-001, CAT-UI-NOM-001, CAT-UI-NOM-002,
-//        CAT-UI-EMPTY-001, CAT-UI-ERROR-001, CAT-UI-PAGER-001
+//        CAT-UI-EMPTY-001, CAT-UI-ERROR-001, CAT-UI-PAGER-001,
+//        CAT-UI-ISBN-001, CAT-UI-ISBN-002, CAT-UI-ISBN-003
 import { test, expect, type Page } from "@playwright/test";
 import { loginAs, getClubByCode, getDb } from "./helpers";
 
@@ -37,7 +38,20 @@ const duneDetail = {
 // ---------- tRPC mock helpers ----------
 
 async function mockCatalog(page: Page) {
-  await page.route(/\/api\/trpc\/catalog\.search/, async (route) => {
+  await page.route(/\/api\/trpc\/catalog\.searchByIsbn/, async (route) => {
+    const url = new URL(route.request().url());
+    const input = JSON.parse(decodeURIComponent(url.searchParams.get("input") ?? "{}"));
+    const isbn = (input.isbn ?? "").replace(/-/g, "");
+    // Pretend Dune lives at this ISBN; everything else is a miss.
+    const hit = isbn === "0441172717" || isbn === "9780441172719" ? duneCard : null;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ result: { data: hit } }),
+    });
+  });
+
+  await page.route(/\/api\/trpc\/catalog\.search\?/, async (route) => {
     const url = new URL(route.request().url());
     const input = JSON.parse(decodeURIComponent(url.searchParams.get("input") ?? "{}"));
     const q = (input.query ?? "").toLowerCase();
@@ -206,6 +220,67 @@ test.describe("Book search catalog", () => {
 
     await expect(page.getByTestId("catalog-no-active-round")).toBeVisible();
     await expect(page.getByTestId("catalog-card-nominate")).toHaveCount(0);
+  });
+
+  // @spec CAT-UI-ISBN-001, CAT-UI-ISBN-002, CAT-UI-ISBN-003
+  test("pasting an ISBN routes through searchByIsbn and renders one card", async ({ page }) => {
+    await loginAs(page, "alice@example.com");
+    const club = await getClubByCode("WEDREADS");
+    await mockCatalog(page);
+
+    await page.goto(`/clubs/${club.id}/catalog`);
+
+    // Track which endpoint the client calls.
+    const endpoints: string[] = [];
+    page.on("request", (req) => {
+      const u = req.url();
+      if (u.includes("/api/trpc/catalog.")) endpoints.push(u);
+    });
+
+    await page.getByTestId("catalog-search-input").fill("978-0-441-17271-9");
+
+    // ISBN pill is visible.
+    await expect(page.getByTestId("catalog-isbn-pill")).toBeVisible();
+
+    // Single result card, no pager.
+    const cards = page.getByTestId("catalog-result-card");
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText("Dune");
+    await expect(page.getByTestId("catalog-pager-page")).toHaveCount(0);
+
+    // Verify the network call routed through searchByIsbn, not search.
+    expect(endpoints.some((u) => u.includes("catalog.searchByIsbn"))).toBe(true);
+    expect(endpoints.some((u) => u.includes("catalog.search?"))).toBe(false);
+  });
+
+  // @spec CAT-UI-ISBN-002
+  test("ISBN with no record shows the not-found message", async ({ page }) => {
+    await loginAs(page, "alice@example.com");
+    const club = await getClubByCode("WEDREADS");
+    await mockCatalog(page);
+
+    await page.goto(`/clubs/${club.id}/catalog`);
+    await page.getByTestId("catalog-search-input").fill("9999999999999");
+
+    await expect(page.getByTestId("catalog-empty-state")).toBeVisible();
+    await expect(page.getByTestId("catalog-empty-state")).toContainText(
+      "No book found for ISBN"
+    );
+  });
+
+  // @spec CAT-UI-ISBN-003 — pill clears when ISBN is edited back to non-ISBN
+  test("ISBN pill clears when input no longer parses as ISBN", async ({ page }) => {
+    await loginAs(page, "alice@example.com");
+    const club = await getClubByCode("WEDREADS");
+    await mockCatalog(page);
+
+    await page.goto(`/clubs/${club.id}/catalog`);
+    await page.getByTestId("catalog-search-input").fill("0441172717");
+    await expect(page.getByTestId("catalog-isbn-pill")).toBeVisible();
+
+    // Add a non-digit; should fall back to keyword search.
+    await page.getByTestId("catalog-search-input").fill("dune");
+    await expect(page.getByTestId("catalog-isbn-pill")).toHaveCount(0);
   });
 
   // @spec CAT-UI-NOM-001 — golden path: search → detail → nominate → confirm
