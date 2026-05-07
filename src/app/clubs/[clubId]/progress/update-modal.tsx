@@ -22,7 +22,7 @@ interface UpdateModalProps {
 
 const TOAST_DISMISS_MS = 4000;
 
-// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001
+// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001, PROG-UI-MODAL-SLIDER-001
 export function UpdateProgressButton(props: UpdateModalProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -137,6 +137,13 @@ function UpdateModal({
     }
   }
 
+  function handlePageChange(value: number) {
+    setPage(value);
+    if (value > 0 && status === "not_started") {
+      setStatus("reading");
+    }
+  }
+
   async function handleSave() {
     setLoading(true);
     setError("");
@@ -224,15 +231,21 @@ function UpdateModal({
             min={0}
             max={totalPages}
             value={page}
-            onChange={(e) => {
-              setPage(Number(e.target.value));
-              if (Number(e.target.value) > 0 && status === "not_started") {
-                setStatus("reading");
-              }
-            }}
+            onChange={(e) => handlePageChange(Number(e.target.value))}
             disabled={status === "finished"}
             data-testid="page-input"
             className="w-full text-lg font-[var(--font-mono)] bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
+          />
+          <input
+            type="range"
+            min={0}
+            max={totalPages}
+            value={page}
+            onChange={(e) => handlePageChange(Number(e.target.value))}
+            disabled={status === "finished"}
+            data-testid="page-slider"
+            aria-label="Current page"
+            className="w-full mt-2.5 accent-primary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           />
           <p className="text-xs text-ink-3 mt-1.5">
             of {totalPages} pages

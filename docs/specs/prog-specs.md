@@ -53,8 +53,8 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-UI-MODAL-OPEN-001**: Button: "Update My Progress" (`update-modal.tsx:24-30`) is rendered on the progress dashboard. Click opens the modal.
 - `[x]` **PROG-UI-001**: The modal SHALL display three large radio-card buttons for status: "Not Started", "Reading", "Finished" (`update-modal.tsx:118-139`). Selected state uses primary border + soft background.
 - `[x]` **PROG-UI-MODAL-PAGE-001**: Number input for "Current Page", min 0, max totalPages. Disabled when status="finished" (`update-modal.tsx:142-164`). When user enters a positive value while status="not_started", status auto-changes to "reading".
-- `[!]` **PROG-UI-002**: Older spec required a range slider synchronized with the page number input. **Slider not implemented**; only the number input exists. Treat as gap:
-  - `[ ]` **PROG-UI-MODAL-SLIDER-001**: Range slider input (HTML `<input type="range">`) bidirectionally synced with the page number input.
+- `[x]` **PROG-UI-002**: Implemented via PROG-UI-MODAL-SLIDER-001 below.
+  - `[x]` **PROG-UI-MODAL-SLIDER-001**: The modal SHALL render a range slider (`<input type="range">`, `data-testid="page-slider"`, min 0, max totalPages) bidirectionally synced with the page number input. Changing the slider SHALL update the page input and the live preview bar; changing the page input SHALL update the slider. The slider SHALL be disabled when status="finished". Moving the slider from 0 → positive while status="not_started" SHALL auto-bump status to "reading" (same behavior as the page input).
 - `[x]` **PROG-UI-003**: When status="finished", the page input auto-locks to totalPages and is disabled. (`update-modal.tsx:62-63, 157`)
 - `[x]` **PROG-UI-004**: When status="not_started", the page input resets to 0. Chapter input is not auto-cleared. (`update-modal.tsx:64-66`)
 - `[!]` **PROG-UI-MODAL-PCT-001**: The modal shows a read-only "Progress: {N}%" display computed live (`update-modal.tsx:167-175`). Older spec described an editable percentage input — **not implemented**:
