@@ -7,6 +7,8 @@ import { CreateMeetingForm, ProposeMeetingTrigger } from "./create-meeting";
 import { RespondMeeting } from "./respond-meeting";
 import { AdminConfirmSection } from "./admin-confirm";
 import { CancelMeetingButton } from "./cancel-meeting-button";
+import { EditMeetingButton } from "./edit-meeting-button";
+import { type MeetingEditableFields } from "./edit-meeting-dialog";
 
 type ViewerRole = "owner" | "admin" | "member";
 
@@ -96,6 +98,22 @@ export function MeetingsClient({
       ),
     );
     setExpandedId(null);
+    router.refresh();
+  }
+
+  function applyMeetingUpdate(meetingId: string, next: MeetingEditableFields) {
+    setMeetings((prev) =>
+      prev.map((m) =>
+        m.id === meetingId
+          ? {
+              ...m,
+              title: next.title || m.title,
+              description: next.description || null,
+              location: next.location || null,
+            }
+          : m,
+      ),
+    );
     router.refresh();
   }
 
@@ -242,6 +260,7 @@ export function MeetingsClient({
                     clubId={clubId}
                     isAdmin={isAdmin}
                     onCancelled={() => applyCancelledMeeting(meeting.id)}
+                    onUpdated={(next) => applyMeetingUpdate(meeting.id, next)}
                   />
                 )}
                 {meeting.status === "proposed" && (
@@ -255,6 +274,7 @@ export function MeetingsClient({
                     onResponsesUpdated={(next) => applyViewerResponses(meeting.id, next)}
                     onConfirmed={(slotId) => applyConfirmedSlot(meeting.id, slotId)}
                     onCancelled={() => applyCancelledMeeting(meeting.id)}
+                    onUpdated={(next) => applyMeetingUpdate(meeting.id, next)}
                     onDone={() => setExpandedId(null)}
                   />
                 )}
@@ -270,17 +290,19 @@ export function MeetingsClient({
   );
 }
 
-// @spec MEET-UI-008, MEET-UI-CANCEL-BTN-001
+// @spec MEET-UI-008, MEET-UI-CANCEL-BTN-001, MEET-UI-EDIT-BTN-001
 function ConfirmedMeetingRow({
   meeting,
   clubId,
   isAdmin,
   onCancelled,
+  onUpdated,
 }: {
   meeting: any;
   clubId: string;
   isAdmin: boolean;
   onCancelled: () => void;
+  onUpdated: (next: MeetingEditableFields) => void;
 }) {
   const attendeeNames = getAttendeeNames(meeting);
   const { going, maybe } = getResponseCounts(meeting);
@@ -321,7 +343,17 @@ function ConfirmedMeetingRow({
         </div>
       </div>
       {isAdmin && (
-        <div className="mt-3 pt-3 border-t border-line flex justify-end">
+        <div className="mt-3 pt-3 border-t border-line flex justify-end gap-3">
+          <EditMeetingButton
+            clubId={clubId}
+            meetingId={meeting.id}
+            initial={{
+              title: meeting.title ?? "",
+              description: meeting.description ?? "",
+              location: meeting.location ?? "",
+            }}
+            onUpdated={onUpdated}
+          />
           <CancelMeetingButton
             clubId={clubId}
             meetingId={meeting.id}
@@ -344,6 +376,7 @@ function ProposedMeetingRow({
   onResponsesUpdated,
   onConfirmed,
   onCancelled,
+  onUpdated,
   onDone,
 }: {
   meeting: any;
@@ -355,6 +388,7 @@ function ProposedMeetingRow({
   onResponsesUpdated: (next: { slotId: string; status: ResponseStatus }[]) => void;
   onConfirmed: (slotId: string) => void;
   onCancelled: () => void;
+  onUpdated: (next: MeetingEditableFields) => void;
   onDone: () => void;
 }) {
   const { responded } = getResponseCounts(meeting);
@@ -423,9 +457,12 @@ function ProposedMeetingRow({
               clubId={clubId}
               meetingId={meeting.id}
               meetingTitle={meeting.title}
+              meetingDescription={meeting.description ?? ""}
+              meetingLocation={meeting.location ?? ""}
               slots={meeting.slots}
               onConfirmed={onConfirmed}
               onCancelled={onCancelled}
+              onUpdated={onUpdated}
             />
           )}
         </div>

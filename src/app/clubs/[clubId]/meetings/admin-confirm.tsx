@@ -9,6 +9,8 @@ import {
   type ResponseStatus,
 } from "@/lib/meetings/availability";
 import { CancelMeetingButton } from "./cancel-meeting-button";
+import { EditMeetingButton } from "./edit-meeting-button";
+import { type MeetingEditableFields } from "./edit-meeting-dialog";
 
 type Slot = {
   id: string;
@@ -25,19 +27,25 @@ interface AdminConfirmSectionProps {
   clubId: string;
   meetingId: string;
   meetingTitle: string;
+  meetingDescription?: string;
+  meetingLocation?: string;
   slots: Slot[];
   onConfirmed?: (slotId: string) => void;
   onCancelled?: () => void;
+  onUpdated?: (next: MeetingEditableFields) => void;
 }
 
-// @spec MEET-UI-CONFIRM-BTN-001, MEET-UI-CONFIRM-HEATMAP-001, MEET-UI-CONFIRM-BADGE-001, MEET-UI-CANCEL-BTN-001
+// @spec MEET-UI-CONFIRM-BTN-001, MEET-UI-CONFIRM-HEATMAP-001, MEET-UI-CONFIRM-BADGE-001, MEET-UI-CANCEL-BTN-001, MEET-UI-EDIT-BTN-001
 export function AdminConfirmSection({
   clubId,
   meetingId,
   meetingTitle,
+  meetingDescription,
+  meetingLocation,
   slots,
   onConfirmed,
   onCancelled,
+  onUpdated,
 }: AdminConfirmSectionProps) {
   const router = useRouter();
   const [confirmingSlotId, setConfirmingSlotId] = useState<string | null>(null);
@@ -237,7 +245,17 @@ export function AdminConfirmSection({
         </p>
       )}
 
-      <div className="mt-4 pt-3 border-t border-line flex justify-end">
+      <div className="mt-4 pt-3 border-t border-line flex justify-end gap-3">
+        <EditMeetingButton
+          clubId={clubId}
+          meetingId={meetingId}
+          initial={{
+            title: meetingTitle,
+            description: meetingDescription ?? "",
+            location: meetingLocation ?? "",
+          }}
+          onUpdated={onUpdated}
+        />
         <CancelMeetingButton
           clubId={clubId}
           meetingId={meetingId}
