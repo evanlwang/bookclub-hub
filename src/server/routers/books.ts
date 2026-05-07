@@ -1,4 +1,4 @@
-// @spec VOTE-API-009, VOTE-BE-004, VOTE-API-009-MANUAL, PROG-UI-BOOK-001
+// @spec VOTE-API-009, VOTE-BE-004, VOTE-API-009-MANUAL, PROG-UI-BOOK-001, CAT-BE-002
 import { z } from "zod";
 import { router, protectedProcedure, memberProcedure } from "../trpc";
 import { searchBooks as searchOpenLibrary } from "../services/open-library";
@@ -93,6 +93,52 @@ export const booksRouter = router({
       });
 
       return { book };
+    }),
+
+  // @spec CAT-BE-002
+  // Bridge from catalog discovery (which never writes to Book) into the
+  // nomination flow (which needs an internal bookId). Upsert by openLibraryKey.
+  importFromCatalog: protectedProcedure
+    .input(
+      z.object({
+        openLibraryKey: z.string().regex(/^\/works\/OL\d+W$/),
+        title: z.string().min(1).max(500),
+        authorNames: z.array(z.string().min(1)).min(1),
+        isbn: z.string().nullable().optional(),
+        coverUrl: z.string().url().nullable().optional(),
+        pageCount: z.number().int().positive().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const author = input.authorNames.join(", ");
+      const existing = await ctx.db.book.findFirst({
+        where: { openLibraryId: input.openLibraryKey },
+      });
+      if (existing) {
+        const updated = await ctx.db.book.update({
+          where: { id: existing.id },
+          data: {
+            title: input.title,
+            author,
+            // Prefer fresh non-null values; preserve existing data we already have.
+            isbn: input.isbn ?? existing.isbn,
+            coverUrl: input.coverUrl ?? existing.coverUrl,
+            pageCount: input.pageCount ?? existing.pageCount,
+          },
+        });
+        return { bookId: updated.id, created: false };
+      }
+      const created = await ctx.db.book.create({
+        data: {
+          title: input.title,
+          author,
+          isbn: input.isbn ?? null,
+          coverUrl: input.coverUrl ?? null,
+          pageCount: input.pageCount ?? null,
+          openLibraryId: input.openLibraryKey,
+        },
+      });
+      return { bookId: created.id, created: true };
     }),
 
   // @spec PROG-UI-BOOK-001
