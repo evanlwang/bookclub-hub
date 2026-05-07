@@ -48,6 +48,15 @@ export const meetingsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // @spec MEET-BE-TIME-001 — proposed slots must be in the future.
+      const now = Date.now();
+      if (input.slots.some((s) => s.time.getTime() <= now)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Meeting times must be in the future",
+        });
+      }
+
       // Determine title
       let title = input.title;
       if (!title && input.bookId) {
@@ -124,6 +133,15 @@ export const meetingsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // @spec MEET-BE-CROSS-002 — confirm meeting belongs to the supplied club.
+      const existing = await ctx.db.meeting.findUnique({
+        where: { id: input.meetingId },
+        select: { clubId: true },
+      });
+      if (!existing || existing.clubId !== input.clubId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
       const meeting = await ctx.db.meeting.update({
         where: { id: input.meetingId },
         data: {
@@ -147,9 +165,30 @@ export const meetingsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const slot = await ctx.db.meetingTimeSlot.findUniqueOrThrow({
-        where: { id: input.slotId },
+      // @spec MEET-BE-CROSS-001, MEET-BE-STATE-001 — meeting must belong to the
+      // club, slot must belong to that meeting, and the meeting must still be in
+      // the "proposed" state.
+      const existing = await ctx.db.meeting.findUnique({
+        where: { id: input.meetingId },
+        select: { clubId: true, status: true },
       });
+      if (!existing || existing.clubId !== input.clubId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      if (existing.status !== "proposed") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only proposed meetings can be confirmed",
+        });
+      }
+
+      const slot = await ctx.db.meetingTimeSlot.findUnique({
+        where: { id: input.slotId },
+        select: { meetingId: true, proposedTime: true },
+      });
+      if (!slot || slot.meetingId !== input.meetingId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
 
       const meeting = await ctx.db.meeting.update({
         where: { id: input.meetingId },
@@ -184,6 +223,22 @@ export const meetingsRouter = router({
       z.object({ clubId: z.string().uuid(), meetingId: z.string().uuid() })
     )
     .mutation(async ({ ctx, input }) => {
+      // @spec MEET-BE-CROSS-003, MEET-BE-STATE-002 — meeting must belong to the
+      // club and must not already be cancelled.
+      const existing = await ctx.db.meeting.findUnique({
+        where: { id: input.meetingId },
+        select: { clubId: true, status: true },
+      });
+      if (!existing || existing.clubId !== input.clubId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      if (existing.status === "cancelled") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Meeting is already cancelled",
+        });
+      }
+
       const meeting = await ctx.db.meeting.update({
         where: { id: input.meetingId },
         data: { status: "cancelled" },
@@ -220,12 +275,32 @@ export const meetingsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Delete previous responses for this user in this meeting
+      // @spec MEET-BE-CROSS-004 — meeting must belong to this club, and every
+      // submitted slotId must belong to this meeting (no cross-meeting smuggling).
+      const meeting = await ctx.db.meeting.findUnique({
+        where: { id: input.meetingId },
+        select: { clubId: true },
+      });
+      if (!meeting || meeting.clubId !== input.clubId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
       const slots = await ctx.db.meetingTimeSlot.findMany({
         where: { meetingId: input.meetingId },
+        select: { id: true },
       });
       const slotIds = slots.map((s) => s.id);
+      const slotIdSet = new Set(slotIds);
 
+      const foreign = input.responses.find((r) => !slotIdSet.has(r.slotId));
+      if (foreign) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Slot does not belong to this meeting",
+        });
+      }
+
+      // Delete previous responses for this user in this meeting
       await ctx.db.availabilityResponse.deleteMany({
         where: {
           slotId: { in: slotIds },

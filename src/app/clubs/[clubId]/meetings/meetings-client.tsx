@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, Badge, Button, AvatarStack } from "@/components/ui";
 import { CreateMeetingButton } from "./create-meeting";
 import { RespondMeeting } from "./respond-meeting";
@@ -51,12 +52,15 @@ function getAttendeeNames(meeting: any): string[] {
 
 // @spec MEET-UI-006, MEET-UI-008, MEET-UI-009
 export function MeetingsClient({ clubId, initialMeetings, viewerId }: MeetingsClientProps) {
+  const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [meetings, setMeetings] = useState<any[]>(initialMeetings);
 
   // Apply the viewer's freshly saved availability to local state so the responded
-  // count refreshes without a round trip to the server.
+  // count refreshes without a round trip to the server. We also kick the layout
+  // to re-fetch so the sidebar "Respond" notification clears once the viewer
+  // has answered every outstanding meeting.
   function applyViewerResponses(
     meetingId: string,
     next: { slotId: string; status: ResponseStatus }[]
@@ -82,6 +86,7 @@ export function MeetingsClient({ clubId, initialMeetings, viewerId }: MeetingsCl
         };
       })
     );
+    router.refresh();
   }
 
   const filteredMeetings = filter === "all"
@@ -236,11 +241,18 @@ function ProposedMeetingRow({
     const mine = (slot.responses ?? []).find((r: any) => r.userId === viewerId);
     if (mine) initialResponses[slot.id] = mine.status as ResponseStatus;
   }
+  const viewerHasResponded = Object.keys(initialResponses).length > 0;
 
   return (
     <div>
       <div className="grid grid-cols-[auto_1fr_auto] gap-5 items-center cursor-pointer" onClick={onToggle} data-testid={`meeting-toggle-${meeting.id}`}>
-        <div className="w-16 h-16 rounded-[10px] bg-warning-soft flex items-center justify-center text-[oklch(0.5_0.10_70)]">
+        <div
+          className={`w-16 h-16 rounded-[10px] flex items-center justify-center ${
+            viewerHasResponded
+              ? "bg-success-soft text-success"
+              : "bg-warning-soft text-[oklch(0.5_0.10_70)]"
+          }`}
+        >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4.5" width="18" height="17" rx="2" />
             <path d="M16 2.5v4M8 2.5v4M3 10h18" />
@@ -248,7 +260,11 @@ function ProposedMeetingRow({
         </div>
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Badge tone="warning" dot>Awaiting responses</Badge>
+            {viewerHasResponded ? (
+              <Badge tone="success" dot>You responded</Badge>
+            ) : (
+              <Badge tone="warning" dot>Awaiting your response</Badge>
+            )}
             {meeting.book && <span className="text-xs text-ink-3">· {meeting.book.title}</span>}
           </div>
           <p className="text-sm font-medium text-ink mb-1">{meeting.title}</p>
@@ -258,8 +274,8 @@ function ProposedMeetingRow({
             <span>{responded} responded</span>
           </div>
         </div>
-        <Button variant="primary" size="sm">
-          Respond
+        <Button variant={viewerHasResponded ? "ghost" : "primary"} size="sm">
+          {viewerHasResponded ? "Update" : "Respond"}
         </Button>
       </div>
 

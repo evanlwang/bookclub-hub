@@ -34,12 +34,14 @@ export function ClubSidebar({
   userName,
   clubs = [],
   hasActiveVote = false,
+  hasUnrespondedMeeting = false,
 }: {
   clubId: string;
   clubName: string;
   userName: string;
   clubs?: ClubInfo[];
   hasActiveVote?: boolean;
+  hasUnrespondedMeeting?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -195,6 +197,8 @@ export function ClubSidebar({
               : pathname.startsWith(href);
           const Icon = item.icon;
           const showLiveBadge = item.label === "Voting" && hasActiveVote;
+          const showRespondBadge =
+            item.label === "Meetings" && hasUnrespondedMeeting;
           return (
             <Link
               key={item.label}
@@ -210,6 +214,11 @@ export function ClubSidebar({
               {item.label}
               {showLiveBadge && (
                 <Badge tone="accent" dot>Live</Badge>
+              )}
+              {showRespondBadge && (
+                <span data-testid="sidebar-meetings-badge">
+                  <Badge tone="warning" dot>Respond</Badge>
+                </span>
               )}
             </Link>
           );
