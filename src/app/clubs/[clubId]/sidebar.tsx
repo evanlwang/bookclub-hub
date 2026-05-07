@@ -67,7 +67,7 @@ export function ClubSidebar({
     }
   }
 
-  function CodeRow() {
+  function CodeChip() {
     if (!currentClub?.code) return null;
     return (
       <button
@@ -76,9 +76,9 @@ export function ClubSidebar({
         data-testid="sidebar-copy-code"
         aria-label={codeCopied ? "Invite code copied" : "Copy invite code"}
         title={codeCopied ? "Copied" : "Copy invite code"}
-        className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-[var(--font-mono)] text-ink-3 hover:text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-bg-sunken hover:bg-line text-[11px] font-[var(--font-mono)] text-ink-2 hover:text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
-        <span className="tracking-[0.05em]">{currentClub.code}</span>
+        <span className="tracking-[0.04em]">{currentClub.code}</span>
         {codeCopied ? (
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success" aria-hidden="true">
             <path d="M5 12.5l4.5 4.5L19 7" />
@@ -90,6 +90,27 @@ export function ClubSidebar({
           </svg>
         )}
       </button>
+    );
+  }
+
+  function RoleBadge() {
+    if (!currentClub?.role) return null;
+    const tone =
+      currentClub.role === "owner"
+        ? "primary"
+        : currentClub.role === "admin"
+          ? "accent"
+          : "neutral";
+    return <Badge tone={tone}>{currentClub.role}</Badge>;
+  }
+
+  function MetaRow() {
+    if (!currentClub) return null;
+    return (
+      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+        <RoleBadge />
+        <CodeChip />
+      </div>
     );
   }
 
@@ -128,13 +149,11 @@ export function ClubSidebar({
           >
             <LogoIcon size={24} />
             <div className="flex-1 min-w-0">
-              <span className="font-medium text-sm text-ink truncate block">
+              <span className="font-[var(--font-display)] font-semibold text-[15px] text-ink truncate block leading-tight">
                 {clubName}
               </span>
-              <span className="text-[10px] text-ink-3 uppercase tracking-wider">
-                {currentClub?.role}
-                {currentClub?.role && " · "}
-                {clubs.length} clubs
+              <span className="text-[11px] text-ink-3">
+                {clubs.length} {clubs.length === 1 ? "club" : "clubs"}
               </span>
             </div>
             <span className="flex items-center justify-center w-5 h-5 rounded-[var(--radius-sm)] bg-bg-sunken text-ink-2 shrink-0">
@@ -145,23 +164,16 @@ export function ClubSidebar({
           </button>
         ) : null}
 
-        {hasMultipleClubs && (
-          <div className="mt-2"><CodeRow /></div>
-        )}
+        {hasMultipleClubs && <MetaRow />}
 
         {!hasMultipleClubs && (
           <div className="flex items-center gap-2.5">
             <LogoIcon size={24} />
             <div className="flex-1 min-w-0">
-              <span className="font-medium text-sm text-ink truncate block">
+              <span className="font-[var(--font-display)] font-semibold text-[15px] text-ink truncate block leading-tight">
                 {clubName}
               </span>
-              {currentClub && (
-                <span className="text-[10px] text-ink-3 uppercase tracking-wider">
-                  {currentClub.role}
-                </span>
-              )}
-              <CodeRow />
+              <MetaRow />
             </div>
             <button
               type="button"

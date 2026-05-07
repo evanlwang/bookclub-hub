@@ -87,21 +87,18 @@ test.describe("Voting Phase Enhancements", () => {
     // Open NominateModal via "Search & nominate"
     await page.getByTestId("search-and-nominate-btn").click();
 
-    // Search a string that returns no results, then fall back to manual entry
+    // Manual entry is always visible below search — type a no-results query
+    // just to confirm the empty-state hint renders, then fill the form.
     const ghostQuery = `__nope_${Date.now()}__`;
     await page.locator('input[placeholder*="Search by title" i]').fill(ghostQuery);
+    await expect(page.getByText(/no matches for/i)).toBeVisible({ timeout: 10000 });
 
-    // Wait for "Enter manually" affordance to appear
-    const manualBtn = page.getByRole("button", { name: /enter manually/i });
-    await expect(manualBtn).toBeVisible({ timeout: 10000 });
-    await manualBtn.click();
-
-    // Manual form is now visible — fill required fields and submit
     const uniqueTitle = `E2E Manual Book ${Date.now()}`;
     await page.locator('input[placeholder*="Midnight Library"]').fill(uniqueTitle);
     await page.locator('input[placeholder*="Matt Haig"]').fill("Test Author");
+    await page.locator('input[placeholder="304"]').fill("250");
 
-    await page.getByRole("button", { name: /create & nominate/i }).click();
+    await page.getByRole("button", { name: /add & nominate/i }).click();
 
     // Modal closes; new nomination appears in the list
     await expect(page.getByText(uniqueTitle).first()).toBeVisible({ timeout: 10000 });

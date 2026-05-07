@@ -8,7 +8,7 @@ This project should evolve using linked-intent driven development and test drive
 - docs/specs/ for EARS requirement IDs and feature scope
 - docs/llds/ for component-level contracts (data models, API shapes, visual layouts)
 - docs/lid/ for linked-intent driven development docs
-When implementing a feature, always audit the spec notation agaisnt the source code and tests. If a spec is implemented, it should an exact matching comment that is searchable. After code has been tested and docs audited, commit with a message. 
+When implementing a feature, always audit the spec notation agaisnt the source code and tests. If a spec is implemented, it should an exact matching comment that is searchable and prevent documentation rot. After code has been tested and docs audited, commit with a message. 
 
 ## Project Overview
 

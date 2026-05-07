@@ -19,6 +19,12 @@ interface NominateModalProps {
   onNominationSuccess?: () => void;
 }
 
+interface FormErrors {
+  title?: string;
+  author?: string;
+  pageCount?: string;
+}
+
 // @spec VOTE-API-009-MANUAL, VOTE-API-005-MANUAL
 export function NominateModal({
   isOpen,
@@ -28,21 +34,28 @@ export function NominateModal({
   onNominationSuccess,
 }: NominateModalProps) {
   const [query, setQuery] = useState("");
-  const [showManualForm, setShowManualForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
   const [results, setResults] = useState<Book[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
 
   // Manual form state
   const [manualTitle, setManualTitle] = useState("");
   const [manualAuthor, setManualAuthor] = useState("");
   const [manualIsbn, setManualIsbn] = useState("");
   const [manualPageCount, setManualPageCount] = useState("");
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  // Debounce search with 300ms delay
+  // Submission state shared by both flows (per-row Nominate + manual Add).
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  // Debounced search
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // True once the user has touched the manual Title input. We stop auto-filling
+  // from the search query after that so we never clobber what they typed.
+  const manualTitleDirty = useRef(false);
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   useFocusTrap(dialogRef, isOpen);
@@ -60,17 +73,8 @@ export function NominateModal({
   const handleQueryChange = useCallback(
     (value: string) => {
       setQuery(value);
-
-      // Clear existing timer
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-
-      // Set new timer
-      const timer = setTimeout(() => {
-        setDebouncedQuery(value);
-      }, 300);
-
+      if (debounceTimer) clearTimeout(debounceTimer);
+      const timer = setTimeout(() => setDebouncedQuery(value), 300);
       setDebounceTimer(timer);
     },
     [debounceTimer]
@@ -80,25 +84,23 @@ export function NominateModal({
   useEffect(() => {
     if (debouncedQuery.length === 0) {
       setResults([]);
+      setSearchError("");
       return;
     }
 
     setIsSearching(true);
-    setApiError("");
+    setSearchError("");
 
     // books.search is a tRPC `.query()` — fetched via GET with input as a
-    // URL-encoded JSON param. POSTing here returns an empty result and the
-    // user sees "no books found".
+    // URL-encoded JSON param.
     const input = encodeURIComponent(JSON.stringify({ query: debouncedQuery }));
     const controller = new AbortController();
-    fetch(`/api/trpc/books.search?input=${input}`, {
-      signal: controller.signal,
-    })
+    fetch(`/api/trpc/books.search?input=${input}`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
           setResults([]);
-          setApiError("Search failed. Try entering manually.");
+          setSearchError("Search is unavailable — add the book manually below.");
         } else {
           setResults(data.result?.data || []);
         }
@@ -106,59 +108,90 @@ export function NominateModal({
       .catch((err) => {
         if (err?.name === "AbortError") return;
         setResults([]);
-        setApiError("Search failed. Try entering manually.");
+        setSearchError("Search is unavailable — add the book manually below.");
       })
-      .finally(() => {
-        setIsSearching(false);
-      });
+      .finally(() => setIsSearching(false));
 
     return () => controller.abort();
   }, [debouncedQuery]);
 
-  const handleNominate = async (bookId: string) => {
-    setLoading(true);
-    setApiError("");
+  // Pre-fill manual Title from a no-results search query — only when the user
+  // hasn't typed in the Title field themselves.
+  useEffect(() => {
+    if (
+      !manualTitleDirty.current &&
+      debouncedQuery.length > 0 &&
+      results.length === 0 &&
+      !isSearching
+    ) {
+      setManualTitle(debouncedQuery);
+    }
+  }, [debouncedQuery, results.length, isSearching]);
+
+  // Reset everything when the modal closes so re-opening starts fresh.
+  useEffect(() => {
+    if (isOpen) return;
+    setQuery("");
+    setDebouncedQuery("");
+    setResults([]);
+    setSearchError("");
+    setManualTitle("");
+    setManualAuthor("");
+    setManualIsbn("");
+    setManualPageCount("");
+    setFormErrors({});
+    setSubmitError("");
+    manualTitleDirty.current = false;
+  }, [isOpen]);
+
+  function validateManual(): FormErrors {
+    const errs: FormErrors = {};
+    if (!manualTitle.trim()) errs.title = "Required";
+    if (!manualAuthor.trim()) errs.author = "Required";
+    const pc = parseInt(manualPageCount, 10);
+    if (!Number.isInteger(pc) || pc <= 0 || String(pc) !== manualPageCount.trim()) {
+      errs.pageCount = "Enter a positive whole number";
+    }
+    return errs;
+  }
+
+  async function handleNominate(bookId: string) {
+    setSubmitting(true);
+    setSubmitError("");
     try {
       const res = await fetch("/api/trpc/nominations.create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          roundId,
-          bookId,
-        }),
+        body: JSON.stringify({ clubId, roundId, bookId }),
       });
       const data = await res.json();
       if (data.error) {
-        setApiError(
+        setSubmitError(
           data.error.message ||
             "Failed to nominate book. It may have already been nominated."
         );
-        setLoading(false);
       } else {
-        setLoading(false);
         onClose();
-        if (onNominationSuccess) {
-          onNominationSuccess();
-        }
+        onNominationSuccess?.();
       }
-    } catch (error) {
-      setLoading(false);
-      setApiError("Something went wrong");
+    } catch {
+      setSubmitError("Something went wrong");
+    } finally {
+      setSubmitting(false);
     }
-  };
+  }
 
-  const handleCreateAndNominate = async () => {
-    if (!manualTitle.trim() || !manualAuthor.trim()) {
-      setApiError("Title and author are required");
+  async function handleCreateAndNominate() {
+    const errs = validateManual();
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs);
       return;
     }
-
-    setLoading(true);
-    setApiError("");
+    setFormErrors({});
+    setSubmitting(true);
+    setSubmitError("");
 
     try {
-      // Create book
       const createRes = await fetch("/api/trpc/books.createManual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -166,58 +199,49 @@ export function NominateModal({
           title: manualTitle.trim(),
           author: manualAuthor.trim(),
           isbn: manualIsbn.trim() || undefined,
-          pageCount: manualPageCount ? parseInt(manualPageCount, 10) : undefined,
+          pageCount: parseInt(manualPageCount, 10),
         }),
       });
-
       const createData = await createRes.json();
       if (createData.error) {
-        setApiError(createData.error.message || "Failed to create book");
-        setLoading(false);
+        setSubmitError(createData.error.message || "Failed to create book");
+        setSubmitting(false);
         return;
       }
-
       const book = createData.result?.data?.book;
       if (!book) {
-        setApiError("Failed to create book");
-        setLoading(false);
+        setSubmitError("Failed to create book");
+        setSubmitting(false);
         return;
       }
 
-      // Nominate it
       const nomRes = await fetch("/api/trpc/nominations.create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          roundId,
-          bookId: book.id,
-        }),
+        body: JSON.stringify({ clubId, roundId, bookId: book.id }),
       });
-
       const nomData = await nomRes.json();
       if (nomData.error) {
-        setApiError(nomData.error.message || "Failed to nominate book");
-        setLoading(false);
+        setSubmitError(nomData.error.message || "Failed to nominate book");
       } else {
-        setLoading(false);
         onClose();
-        if (onNominationSuccess) {
-          onNominationSuccess();
-        }
+        onNominationSuccess?.();
       }
-    } catch (error) {
-      setLoading(false);
-      setApiError("Something went wrong");
+    } catch {
+      setSubmitError("Something went wrong");
+    } finally {
+      setSubmitting(false);
     }
-  };
-
-  const showEmptyState = debouncedQuery.length > 0 && results.length === 0;
-  const hasSearchError = debouncedQuery.length > 0 && results.length === 0;
-
-  if (!isOpen) {
-    return null;
   }
+
+  if (!isOpen) return null;
+
+  const noMatches =
+    debouncedQuery.length > 0 && results.length === 0 && !isSearching && !searchError;
+
+  const inputClass =
+    "w-full px-4 py-2.5 rounded-md border bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20";
+  const fieldErrorClass = "text-xs text-danger mt-1";
 
   return (
     <div
@@ -230,7 +254,7 @@ export function NominateModal({
       onClick={onClose}
     >
       <Card
-        className="w-full max-w-md bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg"
+        className="w-full max-w-md bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
@@ -238,7 +262,7 @@ export function NominateModal({
             id="nominate-modal-title"
             className="font-[var(--font-display)] text-lg font-semibold text-ink"
           >
-            Nominate a Book
+            Nominate a book
           </h2>
           <button
             onClick={onClose}
@@ -251,182 +275,167 @@ export function NominateModal({
           </button>
         </div>
 
-        {!showManualForm ? (
-          <>
-            {/* Search input */}
-            <div className="relative mb-4">
-              <input
-                type="text"
-                placeholder="Search by title or author..."
-                value={query}
-                onChange={(e) => handleQueryChange(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-md border border-line bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20"
-                autoFocus
-              />
-              {isSearching && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <svg className="animate-spin h-4 w-4 text-ink-3" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                </div>
-              )}
+        {/* Search */}
+        <div className="relative mb-3">
+          <input
+            type="text"
+            placeholder="Search by title or author..."
+            value={query}
+            onChange={(e) => handleQueryChange(e.target.value)}
+            className={`${inputClass} border-line`}
+            autoFocus
+          />
+          {isSearching && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <svg className="animate-spin h-4 w-4 text-ink-3" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
             </div>
+          )}
+        </div>
 
-            {/* Results list */}
-            {results.length > 0 && (
-              <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
-                {results.map((book) => (
-                  <div
-                    key={book.id}
-                    className="p-3 rounded-md border border-line hover:border-line-strong hover:bg-bg-soft transition-colors cursor-pointer flex gap-3 items-center"
-                    onClick={() => handleNominate(book.id)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink truncate">{book.title}</p>
-                      <p className="text-xs text-ink-3 italic truncate">
-                        by {book.author}
-                        {book.pageCount ? ` · ${book.pageCount}pp` : ""}
-                      </p>
-                    </div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleNominate(book.id);
-                      }}
-                      loading={loading}
-                    >
-                      Nominate
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+        {searchError && (
+          <p className="text-xs text-ink-3 mb-3">{searchError}</p>
+        )}
 
-            {/* Empty state with manual fallback */}
-            {showEmptyState && (
-              <div className="text-center py-6 mb-4">
-                <p className="text-sm text-ink-3 mb-3">No books found</p>
+        {/* Results */}
+        {results.length > 0 && (
+          <div className="space-y-2 mb-4 max-h-56 overflow-y-auto">
+            {results.map((book) => (
+              <div
+                key={book.id}
+                className="p-3 rounded-md border border-line hover:border-line-strong hover:bg-bg-soft transition-colors cursor-pointer flex gap-3 items-center"
+                onClick={() => handleNominate(book.id)}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-ink truncate">{book.title}</p>
+                  <p className="text-xs text-ink-3 italic truncate">
+                    by {book.author}
+                    {book.pageCount ? ` · ${book.pageCount}pp` : ""}
+                  </p>
+                </div>
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
-                  onClick={() => {
-                    setShowManualForm(true);
-                    setQuery("");
-                    setDebouncedQuery("");
+                  className="shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNominate(book.id);
                   }}
+                  loading={submitting}
                 >
-                  Enter manually
+                  Nominate
                 </Button>
               </div>
-            )}
-
-            {/* Error message */}
-            {apiError && <p className="text-sm text-danger mb-3">{apiError}</p>}
-
-            {/* Close button */}
-            <Button
-              variant="ghost"
-              size="md"
-              className="w-full"
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-          </>
-        ) : (
-          <>
-            {/* Manual form */}
-            <div className="space-y-4 mb-5">
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1.5">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={manualTitle}
-                  onChange={(e) => setManualTitle(e.target.value)}
-                  placeholder="The Midnight Library"
-                  className="w-full px-4 py-2.5 rounded-md border border-line bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1.5">
-                  Author
-                </label>
-                <input
-                  type="text"
-                  value={manualAuthor}
-                  onChange={(e) => setManualAuthor(e.target.value)}
-                  placeholder="Matt Haig"
-                  className="w-full px-4 py-2.5 rounded-md border border-line bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1.5">
-                  ISBN (optional)
-                </label>
-                <input
-                  type="text"
-                  value={manualIsbn}
-                  onChange={(e) => setManualIsbn(e.target.value)}
-                  placeholder="978-0-857-52277-7"
-                  className="w-full px-4 py-2.5 rounded-md border border-line bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1.5">
-                  Page Count (optional)
-                </label>
-                <input
-                  type="number"
-                  value={manualPageCount}
-                  onChange={(e) => setManualPageCount(e.target.value)}
-                  placeholder="304"
-                  className="w-full px-4 py-2.5 rounded-md border border-line bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20"
-                />
-              </div>
-            </div>
-
-            {/* Error message */}
-            {apiError && <p className="text-sm text-danger mb-3">{apiError}</p>}
-
-            {/* Buttons */}
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                size="md"
-                className="flex-1"
-                onClick={() => {
-                  setShowManualForm(false);
-                  setManualTitle("");
-                  setManualAuthor("");
-                  setManualIsbn("");
-                  setManualPageCount("");
-                  setApiError("");
-                }}
-              >
-                Back
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                className="flex-1"
-                loading={loading}
-                onClick={handleCreateAndNominate}
-              >
-                Create & Nominate
-              </Button>
-            </div>
-          </>
+            ))}
+          </div>
         )}
+
+        {noMatches && (
+          <p className="text-xs text-ink-3 mb-4">
+            No matches for &ldquo;{debouncedQuery}&rdquo;. Add it manually below ↓
+          </p>
+        )}
+
+        {/* Manual entry — always visible */}
+        <div className="border-t border-line pt-4 mt-2">
+          <p className="text-xs uppercase tracking-wider text-ink-3 mb-3">
+            Don&rsquo;t see it? Add it manually
+          </p>
+
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-ink-2 mb-1.5">
+                Title
+              </label>
+              <input
+                type="text"
+                value={manualTitle}
+                onChange={(e) => {
+                  manualTitleDirty.current = true;
+                  setManualTitle(e.target.value);
+                  if (formErrors.title) setFormErrors((p) => ({ ...p, title: undefined }));
+                }}
+                placeholder="The Midnight Library"
+                aria-invalid={!!formErrors.title}
+                className={`${inputClass} ${formErrors.title ? "border-danger" : "border-line"}`}
+              />
+              {formErrors.title && <p className={fieldErrorClass}>{formErrors.title}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-ink-2 mb-1.5">
+                Author
+              </label>
+              <input
+                type="text"
+                value={manualAuthor}
+                onChange={(e) => {
+                  setManualAuthor(e.target.value);
+                  if (formErrors.author) setFormErrors((p) => ({ ...p, author: undefined }));
+                }}
+                placeholder="Matt Haig"
+                aria-invalid={!!formErrors.author}
+                className={`${inputClass} ${formErrors.author ? "border-danger" : "border-line"}`}
+              />
+              {formErrors.author && <p className={fieldErrorClass}>{formErrors.author}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-ink-2 mb-1.5">
+                Page count
+              </label>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                step={1}
+                value={manualPageCount}
+                onChange={(e) => {
+                  setManualPageCount(e.target.value);
+                  if (formErrors.pageCount) setFormErrors((p) => ({ ...p, pageCount: undefined }));
+                }}
+                placeholder="304"
+                aria-invalid={!!formErrors.pageCount}
+                className={`${inputClass} ${formErrors.pageCount ? "border-danger" : "border-line"}`}
+              />
+              <p className="text-[11px] text-ink-3 mt-1">
+                Used to track reading progress.
+              </p>
+              {formErrors.pageCount && <p className={fieldErrorClass}>{formErrors.pageCount}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-ink-2 mb-1.5">
+                ISBN <span className="text-ink-3 font-normal">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={manualIsbn}
+                onChange={(e) => setManualIsbn(e.target.value)}
+                placeholder="978-0-857-52277-7"
+                className={`${inputClass} border-line`}
+              />
+            </div>
+          </div>
+
+          {submitError && (
+            <p className="text-sm text-danger mb-3" role="alert">
+              {submitError}
+            </p>
+          )}
+
+          <Button
+            variant="primary"
+            size="md"
+            className="w-full"
+            loading={submitting}
+            onClick={handleCreateAndNominate}
+          >
+            Add &amp; Nominate
+          </Button>
+        </div>
       </Card>
     </div>
   );

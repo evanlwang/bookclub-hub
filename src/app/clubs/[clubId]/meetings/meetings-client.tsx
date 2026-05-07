@@ -11,6 +11,7 @@ import { EditMeetingButton } from "./edit-meeting-button";
 import { type MeetingEditableFields } from "./edit-meeting-dialog";
 
 type ViewerRole = "owner" | "admin" | "member";
+type Member = { id: string; displayName: string };
 
 interface MeetingsClientProps {
   clubId: string;
@@ -18,6 +19,7 @@ interface MeetingsClientProps {
   viewerId: string;
   viewerName: string;
   viewerRole: ViewerRole;
+  members: Member[];
 }
 
 type ResponseStatus = "available" | "maybe" | "unavailable";
@@ -65,6 +67,7 @@ export function MeetingsClient({
   viewerId,
   viewerName,
   viewerRole,
+  members,
 }: MeetingsClientProps) {
   const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -271,6 +274,7 @@ export function MeetingsClient({
                     clubId={clubId}
                     viewerId={viewerId}
                     isAdmin={isAdmin}
+                    members={members}
                     onResponsesUpdated={(next) => applyViewerResponses(meeting.id, next)}
                     onConfirmed={(slotId) => applyConfirmedSlot(meeting.id, slotId)}
                     onCancelled={() => applyCancelledMeeting(meeting.id)}
@@ -373,6 +377,7 @@ function ProposedMeetingRow({
   clubId,
   viewerId,
   isAdmin,
+  members,
   onResponsesUpdated,
   onConfirmed,
   onCancelled,
@@ -385,6 +390,7 @@ function ProposedMeetingRow({
   clubId: string;
   viewerId: string;
   isAdmin: boolean;
+  members: Member[];
   onResponsesUpdated: (next: { slotId: string; status: ResponseStatus }[]) => void;
   onConfirmed: (slotId: string) => void;
   onCancelled: () => void;

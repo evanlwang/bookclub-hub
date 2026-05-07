@@ -19,17 +19,23 @@ export default async function MeetingsPage({
   let viewerId = "";
   let viewerName = "";
   let viewerRole: ViewerRole = "member";
+  let members: { id: string; displayName: string }[] = [];
   let error = "";
 
   try {
     const caller = await getServerCaller();
-    const [meetingsResult, me] = await Promise.all([
+    const [meetingsResult, me, membersList] = await Promise.all([
       caller.meetings.list({ clubId }),
       caller.auth.me(),
+      caller.clubs.members.list({ clubId }),
     ]);
     meetings = meetingsResult;
     viewerId = me.user.id;
     viewerName = me.user.displayName || me.user.email;
+    members = membersList.map((m) => ({
+      id: m.user.id,
+      displayName: m.user.displayName,
+    }));
 
     const membership = await prisma.membership.findUnique({
       where: { clubId_userId: { clubId, userId: viewerId } },
@@ -61,6 +67,7 @@ export default async function MeetingsPage({
         viewerId={viewerId}
         viewerName={viewerName}
         viewerRole={viewerRole}
+        members={members}
       />
     </div>
   );
