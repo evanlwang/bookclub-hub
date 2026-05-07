@@ -9,6 +9,15 @@ interface CreateMeetingProps {
 
 type Slot = { time: string; durationMinutes: number };
 
+function nowLocalIsoMinutes(): string {
+  const d = new Date();
+  d.setSeconds(0, 0);
+  // Build a "YYYY-MM-DDTHH:MM" string in local time so it's a valid `min` for
+  // <input type="datetime-local"> (which is naive-local, not UTC).
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function ProposeMeetingTrigger({
   onClick,
 }: {
@@ -40,6 +49,7 @@ export function CreateMeetingForm({
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const minDateTime = nowLocalIsoMinutes();
 
   function addSlot() {
     if (slots.length >= 5) return;
@@ -114,6 +124,7 @@ export function CreateMeetingForm({
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Meeting title (optional)"
           data-testid="meeting-title-input"
+          autoFocus
           className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
         />
       </div>
@@ -153,6 +164,7 @@ export function CreateMeetingForm({
             <input
               type="datetime-local"
               value={slot.time}
+              min={minDateTime}
               onChange={(e) => updateSlot(i, "time", e.target.value)}
               data-testid={`slot-time-${i}`}
               className="min-w-0 flex-1 text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"

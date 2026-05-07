@@ -202,7 +202,9 @@ function DiscussionsContent() {
       {/* Thread list */}
       {threads.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-ink-3 text-sm">No discussions yet.</p>
+          <p className="text-ink-3 text-sm">
+            No discussions yet — start one with the button above.
+          </p>
         </Card>
       ) : (
         <ul data-testid="threads-list" className="space-y-2">

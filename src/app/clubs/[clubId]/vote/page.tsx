@@ -176,7 +176,9 @@ export default async function VotePage({
             </svg>
           </div>
           <p data-testid="no-rounds" className="text-ink-2 text-sm">
-            No voting rounds yet.
+            {isAdmin
+              ? "No voting rounds yet — start one below."
+              : "No voting rounds yet. An admin will start the next one."}
           </p>
           {isAdmin && (
             <VoteRound

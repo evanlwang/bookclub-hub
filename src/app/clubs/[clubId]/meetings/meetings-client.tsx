@@ -154,7 +154,9 @@ export function MeetingsClient({ clubId, initialMeetings, viewerId }: MeetingsCl
             </svg>
           </div>
           <p data-testid="no-meetings" className="text-ink-2 text-sm">
-            No meetings scheduled.
+            {filter === "all"
+              ? "No meetings yet — propose one to get started."
+              : `No ${filter} meetings.`}
           </p>
         </Card>
       ) : (

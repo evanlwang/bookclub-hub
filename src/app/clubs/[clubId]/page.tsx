@@ -3,7 +3,9 @@ import { getServerCaller } from "@/trpc/server";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { Card, Badge, BookCover, ProgressBar, AvatarStack, ChapterChip, Avatar } from "@/components/ui";
+import { VoteIcon, CalendarIcon } from "@/components/ui/icons";
 import { deriveSpoilerCutoff } from "@/lib/discussions/spoiler-cutoff";
+import { CopyClubCode } from "./copy-club-code";
 
 export default async function ClubDashboard({
   params,
@@ -112,9 +114,7 @@ export default async function ClubDashboard({
         >
           {club.name}
         </h1>
-        <p className="text-ink-3 text-sm mt-1" data-testid="club-code">
-          Code: <span className="font-[var(--font-mono)]">{club.code}</span>
-        </p>
+        <CopyClubCode code={club.code} />
       </div>
 
       {/* Attention Banner */}
@@ -143,13 +143,13 @@ export default async function ClubDashboard({
               <ul className="space-y-0.5">
                 {hasNotVoted && (
                   <li className="text-xs text-ink-2 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                    <VoteIcon size={12} className="text-primary shrink-0" />
                     Voting is open — you haven&apos;t voted yet
                   </li>
                 )}
                 {hasPendingMeeting && (
                   <li className="text-xs text-ink-2 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                    <CalendarIcon size={12} className="text-accent-ink shrink-0" />
                     Meeting awaits your availability
                   </li>
                 )}
