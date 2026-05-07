@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button, ProgressBar } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+
+type ProgressStatus = "not_started" | "reading" | "finished";
 
 type ProgressSnapshot = {
   currentPage?: number;
@@ -22,7 +24,7 @@ interface UpdateModalProps {
 
 const TOAST_DISMISS_MS = 4000;
 
-// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001, PROG-UI-MODAL-PCT-EDIT-001, PROG-UI-MODAL-TIMESTAMP-001
+// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001, PROG-UI-MODAL-SLIDER-001, PROG-UI-MODAL-PCT-001, PROG-UI-MODAL-TIMESTAMP-001
 export function UpdateProgressButton(props: UpdateModalProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -118,7 +120,6 @@ function UpdateModal({
   const [status, setStatus] = useState<string>(
     currentProgress?.status ?? "not_started"
   );
-  const [pctOverride, setPctOverride] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -136,15 +137,12 @@ function UpdateModal({
   const percentage =
     status === "finished"
       ? 100
-      : pctOverride !== null
-        ? pctOverride
-        : totalPages > 0
-          ? Math.min(100, Math.round((page / totalPages) * 100))
-          : 0;
+      : totalPages > 0
+        ? Math.min(100, Math.round((page / totalPages) * 100))
+        : 0;
 
   function handleStatusChange(newStatus: string) {
     setStatus(newStatus);
-    setPctOverride(null);
     if (newStatus === "finished") {
       setPage(totalPages);
     } else if (newStatus === "not_started") {
@@ -153,22 +151,8 @@ function UpdateModal({
   }
 
   function handlePageChange(value: number) {
-    setPctOverride(null);
     setPage(value);
     if (value > 0 && status === "not_started") {
-      setStatus("reading");
-    }
-  }
-
-  function handlePercentageChange(rawValue: number) {
-    const pct = Math.max(0, Math.min(100, isNaN(rawValue) ? 0 : rawValue));
-    if (totalPages > 0) {
-      setPctOverride(null);
-      setPage(Math.round((pct / 100) * totalPages));
-    } else {
-      setPctOverride(pct);
-    }
-    if (pct > 0 && status === "not_started") {
       setStatus("reading");
     }
   }
@@ -261,43 +245,50 @@ function UpdateModal({
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
-              Page
-            </label>
-            <input
-              type="number"
-              min={0}
-              max={totalPages}
-              value={page}
-              onChange={(e) => handlePageChange(Number(e.target.value))}
-              disabled={status === "finished"}
-              data-testid="page-input"
-              className="w-full text-lg font-[var(--font-mono)] bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
-            />
-            <p className="text-xs text-ink-3 mt-1.5">of {totalPages} pages</p>
+        <div className="mb-4">
+          <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
+            Current Page
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={totalPages}
+            value={page}
+            onChange={(e) => handlePageChange(Number(e.target.value))}
+            disabled={status === "finished"}
+            data-testid="page-input"
+            className="w-full text-lg font-[var(--font-mono)] bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
+          />
+          <input
+            type="range"
+            min={0}
+            max={totalPages}
+            value={page}
+            onChange={(e) => handlePageChange(Number(e.target.value))}
+            disabled={status === "finished"}
+            data-testid="page-slider"
+            aria-label="Current page"
+            className="w-full mt-2.5 accent-primary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          />
+          <p className="text-xs text-ink-3 mt-1.5">of {totalPages} pages</p>
+        </div>
+
+        <div
+          data-testid="progress-preview-bar"
+          data-percentage={percentage}
+          data-status={status}
+          className="mb-4 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-ink-2">Progress</span>
+            <span
+              data-testid="percentage-display"
+              className="text-lg font-semibold text-ink font-[var(--font-mono)]"
+            >
+              {percentage}%
+            </span>
           </div>
-          <div>
-            <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
-              Progress
-            </label>
-            <div className="flex items-center">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={percentage}
-                onChange={(e) => handlePercentageChange(Number(e.target.value))}
-                disabled={status === "finished"}
-                data-testid="percentage-input"
-                aria-label="Progress percentage"
-                className="w-full text-lg font-[var(--font-mono)] bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
-              />
-              <span className="text-lg font-semibold text-ink-2 font-[var(--font-mono)] ml-1">%</span>
-            </div>
-            <p className="text-xs text-ink-3 mt-1.5">synced with page</p>
-          </div>
+          <ProgressBar percentage={percentage} status={status as ProgressStatus} />
         </div>
 
         <div className="mb-4">

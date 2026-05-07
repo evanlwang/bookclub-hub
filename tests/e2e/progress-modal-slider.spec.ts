@@ -2,10 +2,12 @@ import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode, getBookByTitle, getDb } from "./helpers";
 
 // Eve's seeded WEDREADS dune progress: page 309/412 (75%), reading.
-// Tests are read-only on the server (no save), so a single afterAll restore is plenty.
+// Slider tests don't save anything (purely client-side state), so no DB cleanup needed.
+// afterAll restores eve's progress as a safety net in case parallel runs in other files
+// cross-pollute via the same eve account.
 
-// @spec PROG-UI-MODAL-PCT-EDIT-001
-test.describe("Progress modal editable percentage input", () => {
+// @spec PROG-UI-MODAL-SLIDER-001
+test.describe("Progress modal page slider", () => {
   test.describe.configure({ mode: "serial" });
 
   async function restoreEveProgress() {
@@ -27,7 +29,7 @@ test.describe("Progress modal editable percentage input", () => {
     await restoreEveProgress();
   });
 
-  test("percentage input initializes to the current computed value", async ({ page }) => {
+  test("slider initializes to the current page", async ({ page }) => {
     await loginAs(page, "eve@example.com");
     const club = await getClubByCode("WEDREADS");
     const dune = await getBookByTitle("Dune");
@@ -35,23 +37,41 @@ test.describe("Progress modal editable percentage input", () => {
     await page.goto(`/clubs/${club.id}/progress?bookId=${dune.id}`);
     await page.getByTestId("update-progress-btn").click();
 
-    await expect(page.getByTestId("percentage-input")).toHaveValue("75");
+    const slider = page.getByTestId("page-slider");
+    await expect(slider).toBeVisible();
+    await expect(slider).toHaveValue("309");
+    await expect(slider).toHaveAttribute("max", "412");
   });
 
-  test("editing the percentage updates the page input", async ({ page }) => {
+  test("changing the page input updates the slider", async ({ page }) => {
     await loginAs(page, "eve@example.com");
     const club = await getClubByCode("WEDREADS");
     const dune = await getBookByTitle("Dune");
 
     await page.goto(`/clubs/${club.id}/progress?bookId=${dune.id}`);
     await page.getByTestId("update-progress-btn").click();
-    // 50% of 412 = 206
-    await page.getByTestId("percentage-input").fill("50");
+    await page.getByTestId("page-input").fill("100");
+
+    await expect(page.getByTestId("page-slider")).toHaveValue("100");
+  });
+
+  test("changing the slider updates the page input and the preview bar", async ({ page }) => {
+    await loginAs(page, "eve@example.com");
+    const club = await getClubByCode("WEDREADS");
+    const dune = await getBookByTitle("Dune");
+
+    await page.goto(`/clubs/${club.id}/progress?bookId=${dune.id}`);
+    await page.getByTestId("update-progress-btn").click();
+
+    // Playwright supports `fill` on input[type=range] (sets value + fires input event).
+    await page.getByTestId("page-slider").fill("206"); // 206/412 = 50%
 
     await expect(page.getByTestId("page-input")).toHaveValue("206");
+    const bar = page.getByTestId("progress-preview-bar");
+    await expect(bar).toHaveAttribute("data-percentage", "50");
   });
 
-  test("percentage input is disabled when status is finished and locked at 100", async ({ page }) => {
+  test("slider is disabled when status is finished and locked to totalPages", async ({ page }) => {
     await loginAs(page, "eve@example.com");
     const club = await getClubByCode("WEDREADS");
     const dune = await getBookByTitle("Dune");
@@ -60,12 +80,12 @@ test.describe("Progress modal editable percentage input", () => {
     await page.getByTestId("update-progress-btn").click();
     await page.getByTestId("status-finished").click();
 
-    const pct = page.getByTestId("percentage-input");
-    await expect(pct).toBeDisabled();
-    await expect(pct).toHaveValue("100");
+    const slider = page.getByTestId("page-slider");
+    await expect(slider).toBeDisabled();
+    await expect(slider).toHaveValue("412");
   });
 
-  test("editing percentage from 0 while not_started auto-bumps status to reading", async ({ page }) => {
+  test("dragging the slider from 0 auto-bumps status to reading", async ({ page }) => {
     await loginAs(page, "eve@example.com");
     const club = await getClubByCode("WEDREADS");
     const dune = await getBookByTitle("Dune");
@@ -73,14 +93,12 @@ test.describe("Progress modal editable percentage input", () => {
     await page.goto(`/clubs/${club.id}/progress?bookId=${dune.id}`);
     await page.getByTestId("update-progress-btn").click();
     await page.getByTestId("status-not_started").click();
-    await expect(page.getByTestId("percentage-input")).toHaveValue("0");
+    await expect(page.getByTestId("page-slider")).toHaveValue("0");
 
-    await page.getByTestId("percentage-input").fill("25");
+    await page.getByTestId("page-slider").fill("42");
 
-    // Status auto-bumps from not_started → reading; the Reading button picks
-    // up its selected styling (primary border).
-    await expect(page.getByTestId("status-reading")).toHaveClass(/border-primary/);
-    // 25% of 412 ≈ 103
-    await expect(page.getByTestId("page-input")).toHaveValue("103");
+    // Status auto-bumped to reading; preview bar reflects it.
+    const bar = page.getByTestId("progress-preview-bar");
+    await expect(bar).toHaveAttribute("data-status", "reading");
   });
 });
