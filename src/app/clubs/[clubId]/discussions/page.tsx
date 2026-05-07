@@ -45,6 +45,7 @@ function DiscussionsContent() {
   const [error, setError] = useState("");
   const [currentBookId, setCurrentBookId] = useState<string | null>(bookIdParam);
   const [progressLoaded, setProgressLoaded] = useState(false);
+  const [threadsLoaded, setThreadsLoaded] = useState(false);
 
   useEffect(() => {
     if (currentBookId) return;
@@ -115,6 +116,8 @@ function DiscussionsContent() {
       }
     } catch {
       setError("Failed to load threads");
+    } finally {
+      setThreadsLoaded(true);
     }
   }, [clubId, currentBookId, maxChapter, showAll, sort, progressLoaded]);
 
@@ -123,7 +126,7 @@ function DiscussionsContent() {
   }, [loadThreads]);
 
   if (!currentBookId && !error) {
-    return <p data-testid="loading" className="text-ink-3 text-sm">Loading...</p>;
+    return <ThreadListSkeleton />;
   }
 
   return (
@@ -200,7 +203,9 @@ function DiscussionsContent() {
       </div>
 
       {/* Thread list */}
-      {threads.length === 0 ? (
+      {!threadsLoaded ? (
+        <ThreadListSkeleton compact />
+      ) : threads.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-ink-3 text-sm">
             No discussions yet — start one with the button above.
@@ -244,6 +249,29 @@ function DiscussionsContent() {
         </ul>
       )}
     </>
+  );
+}
+
+function ThreadListSkeleton({ compact = false }: { compact?: boolean }) {
+  const rows = compact ? 3 : 4;
+  return (
+    <div data-testid="loading" aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading discussions…</span>
+      <ul className="space-y-2">
+        {Array.from({ length: rows }).map((_, i) => (
+          <li key={i}>
+            <Card className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-4 w-16 rounded-full bg-bg-sunken animate-pulse" />
+                <div className="h-3 w-12 rounded-full bg-bg-sunken animate-pulse ml-auto" />
+              </div>
+              <div className="h-3 w-full rounded bg-bg-sunken animate-pulse mb-1.5" />
+              <div className="h-3 w-3/5 rounded bg-bg-sunken animate-pulse" />
+            </Card>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
