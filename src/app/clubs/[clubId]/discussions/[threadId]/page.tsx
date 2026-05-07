@@ -3,17 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Card, Badge, Avatar, Button } from "@/components/ui";
+import { Badge, Avatar } from "@/components/ui";
 import { ChevronLeftIcon } from "@/components/ui/icons";
 import { CommentComposer } from "../comment-composer";
+import { CommentItem, type CommentLike } from "./comment-item";
 
-type Comment = {
-  id: string;
-  body: string;
-  authorName?: string;
-  author?: { displayName: string };
-  parentCommentId: string | null;
-  createdAt: string;
+type Comment = CommentLike & {
+  authorId: string;
 };
 
 type ThreadDetail = {
@@ -34,7 +30,35 @@ export default function ThreadDetailPage() {
 
   const [thread, setThread] = useState<ThreadDetail | null>(null);
   const [error, setError] = useState("");
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [viewerId, setViewerId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // One-shot: load viewer identity + role for this club. Drives edit/delete
+  // permission gating in CommentItem.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/trpc/auth.me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        const me = data.result?.data;
+        if (me) {
+          setViewerId(me.user?.id ?? null);
+          const myMembership = me.clubs?.find(
+            (c: { id: string; role: string }) => c.id === clubId
+          );
+          setIsAdmin(
+            myMembership?.role === "admin" || myMembership?.role === "owner"
+          );
+        }
+      })
+      .catch(() => {
+        // Falls back to viewerId=null/isAdmin=false → no edit/delete affordances.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [clubId]);
 
   const loadThread = useCallback(async () => {
     try {
@@ -124,81 +148,34 @@ export default function ThreadDetailPage() {
         {topLevelComments.length === 0 && (
           <p className="text-ink-3 text-sm">No comments yet. Be the first!</p>
         )}
-        {topLevelComments.map((comment) => {
-          const cAuthor =
-            comment.author?.displayName || comment.authorName || "Unknown";
-          return (
-            <div
-              key={comment.id}
-              data-testid={`comment-${comment.id}`}
-              className="space-y-3"
-            >
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Avatar name={cAuthor} size="sm" />
-                  <span className="text-xs font-medium text-ink-2">
-                    {cAuthor}
-                  </span>
-                  <span className="text-xs text-ink-3">
-                    {new Date(comment.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="text-sm text-ink leading-relaxed">
-                  {comment.body}
-                </p>
-                <div className="mt-2">
-                  <button
-                    onClick={() =>
-                      setReplyingTo(
-                        replyingTo === comment.id ? null : comment.id
-                      )
-                    }
-                    data-testid={`reply-btn-${comment.id}`}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Reply
-                  </button>
-                </div>
-                {replyingTo === comment.id && (
-                  <div className="mt-3 pl-4 border-l-2 border-line">
-                    <CommentComposer
-                      clubId={clubId}
-                      threadId={threadId}
-                      parentCommentId={comment.id}
-                      onPosted={() => {
-                        setReplyingTo(null);
-                        loadThread();
-                      }}
-                      onCancel={() => setReplyingTo(null)}
-                      placeholder="Write a reply…"
-                    />
-                  </div>
-                )}
-              </Card>
-
-              {/* Nested replies */}
-              {replies(comment.id).map((reply) => {
-                const rAuthor =
-                  reply.author?.displayName || reply.authorName || "Unknown";
-                return (
-                  <div
-                    key={reply.id}
-                    data-testid={`reply-${reply.id}`}
-                    className="ml-6 pl-4 border-l-2 border-line"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Avatar name={rAuthor} size="sm" />
-                      <span className="text-xs font-medium text-ink-2">
-                        {rAuthor}
-                      </span>
-                    </div>
-                    <p className="text-sm text-ink">{reply.body}</p>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+        {topLevelComments.map((comment) => (
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            clubId={clubId}
+            threadId={threadId}
+            viewerId={viewerId}
+            isAdmin={isAdmin}
+            canReply
+            layout="card"
+            onMutated={loadThread}
+          >
+            {/* Nested replies render as siblings inside the comment block. */}
+            {replies(comment.id).map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                clubId={clubId}
+                threadId={threadId}
+                viewerId={viewerId}
+                isAdmin={isAdmin}
+                canReply={false}
+                layout="reply"
+                onMutated={loadThread}
+              />
+            ))}
+          </CommentItem>
+        ))}
       </div>
 
       {/* Sticky composer */}

@@ -78,6 +78,14 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[x]` **DISC-UI-009**: The bottom comment composer SHALL be sticky with `sticky bottom-0 bg-bg pt-4 pb-2 border-t border-line`. (`[threadId]/page.tsx:204-211`)
 - `[x]` **DISC-UI-DETAIL-COMPOSER-001**: Button: top-level "Post" (`comment-composer.tsx:79-87`) — disabled when body is empty/whitespace — calls `comments.create`.
 
+## Comment Edit and Delete
+
+- `[x]` **DISC-UI-COMMENT-CONTROLS-001**: Each non-deleted comment row (top-level or reply) SHALL render a small affordance row at the bottom containing "Reply" (top-level only), "Edit" (viewer is author), and "Delete" (viewer is author OR admin/owner). Buttons are text links, not icons. When the viewer has none of these privileges, only the existing Reply (if applicable) renders. (`comment-item.tsx:170-217`; viewer/role from `auth.me` in `[threadId]/page.tsx:36-58`)
+- `[x]` **DISC-UI-COMMENT-EDIT-001**: Clicking "Edit" SHALL replace the comment body with an inline `<textarea>` (3 rows, body prefilled, autofocused) plus "Save" / "Cancel" buttons. Save calls `comments.update`; on success the row re-renders the new body and the (edited) indicator. Cancel restores the original view without writing. Save is disabled when the textarea is empty or whitespace-only, or unchanged. Esc cancels. (`comment-item.tsx:74-110,140-167`)
+- `[x]` **DISC-UI-COMMENT-DELETE-001**: Clicking "Delete" SHALL replace the affordance row in place with "Delete this comment? · Yes, delete · Cancel". "Yes, delete" calls `comments.delete`; on success the parent refetches the thread, which removes the row (or shows the `[deleted]` placeholder if the comment had replies). No native `confirm()` dialog. Cancel returns to the affordance row. (`comment-item.tsx:112-133,176-197`)
+- `[x]` **DISC-UI-COMMENT-DELETED-001**: When `comment.body === "[deleted]"` (placeholder for a deleted comment that retains replies), the body SHALL render italic-gray as "[deleted]" and the affordance row SHALL be omitted entirely. Author name and timestamp remain visible so the conversation still has context. (`comment-item.tsx:64-67,135-139,170`)
+- `[x]` **DISC-UI-COMMENT-EDITED-001**: When `comment.updatedAt - comment.createdAt > 1000ms`, the timestamp area SHALL include a "(edited)" suffix in the same muted style. The 1s threshold avoids spurious labels from Prisma's same-transaction updatedAt drift. (`comment-item.tsx:38-44,232-237`)
+
 ## Gaps (older spec described but not implemented)
 
 - `[!]` **DISC-UI-007**: Edit/delete icon buttons on thread header for author/admin — **not implemented in UI**.
