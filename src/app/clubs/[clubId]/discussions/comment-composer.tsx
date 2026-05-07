@@ -24,9 +24,8 @@ export function CommentComposer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!body.trim()) return;
+  async function submit() {
+    if (!body.trim() || loading) return;
     setLoading(true);
     setError("");
 
@@ -57,13 +56,24 @@ export function CommentComposer({
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void submit();
+      }}
       data-testid={parentCommentId ? "reply-form" : "comment-form"}
       className="flex flex-col gap-2"
     >
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
+        onKeyDown={(e) => {
+          // Cmd+Enter (mac) or Ctrl+Enter (win/linux) submits — leaves plain
+          // Enter free for line breaks, the standard textarea behavior.
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            void submit();
+          }
+        }}
         placeholder={placeholder}
         rows={parentCommentId ? 2 : 3}
         data-testid={parentCommentId ? "reply-input" : "comment-input"}
