@@ -14,6 +14,7 @@ interface MeetingsClientProps {
   clubId: string;
   initialMeetings: any[];
   viewerId: string;
+  viewerName: string;
   viewerRole: ViewerRole;
 }
 
@@ -49,7 +50,7 @@ function getAttendeeNames(meeting: any): string[] {
   return available.reduce((names: string[], r: any) => {
     if (!seen.has(r.userId)) {
       seen.add(r.userId);
-      names.push(r.user?.displayName ?? r.userId.slice(0, 6));
+      names.push(r.user?.displayName ?? "Member");
     }
     return names;
   }, []);
@@ -60,6 +61,7 @@ export function MeetingsClient({
   clubId,
   initialMeetings,
   viewerId,
+  viewerName,
   viewerRole,
 }: MeetingsClientProps) {
   const router = useRouter();
@@ -119,7 +121,18 @@ export function MeetingsClient({
             return {
               ...s,
               responses: mine
-                ? [...others, { slotId: s.id, userId: viewerId, status: mine }]
+                ? [
+                    ...others,
+                    {
+                      slotId: s.id,
+                      userId: viewerId,
+                      status: mine,
+                      // Mirror the server-rendered shape (includes a populated
+                      // user object) so AvatarStack/getAttendeeNames don't fall
+                      // back to a UUID prefix while we wait for router.refresh.
+                      user: { displayName: viewerName },
+                    },
+                  ]
                 : others,
             };
           }),

@@ -17,6 +17,7 @@ export default async function MeetingsPage({
 
   let meetings: any[] = [];
   let viewerId = "";
+  let viewerName = "";
   let viewerRole: ViewerRole = "member";
   let error = "";
 
@@ -28,6 +29,7 @@ export default async function MeetingsPage({
     ]);
     meetings = meetingsResult;
     viewerId = me.user.id;
+    viewerName = me.user.displayName || me.user.email;
 
     const membership = await prisma.membership.findUnique({
       where: { clubId_userId: { clubId, userId: viewerId } },
@@ -57,6 +59,7 @@ export default async function MeetingsPage({
         clubId={clubId}
         initialMeetings={meetings}
         viewerId={viewerId}
+        viewerName={viewerName}
         viewerRole={viewerRole}
       />
     </div>
