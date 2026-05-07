@@ -60,4 +60,4 @@ export type {
 } from "./entities";
 
 // Scenarios
-export { seedMinimal, seedStandard, seedFull } from "./scenarios";
+export { seedMinimal, seedStandard, seedFull, seedDev } from "./scenarios";

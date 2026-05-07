@@ -31,19 +31,24 @@ db-push: ## Push Prisma schema to dev DB
 seed: ## Wipe and re-seed dev DB with fresh test data
 	@echo "Loading fresh test data..."
 	@npx tsx -e "\
-		import globalSetup from './tests/e2e/global-setup.ts'; \
-		globalSetup().then(() => { \
-			console.log('Seeded successfully.'); \
+		import devSetup from './tests/dev-setup.ts'; \
+		devSetup().then(() => { \
+			console.log('Seeded dev dataset successfully.'); \
 			console.log(''); \
-			console.log('Test accounts:'); \
-			console.log('  alice@example.com  (Alice Chen)   — owner of WEDREADS'); \
-			console.log('  bob@example.com    (Bob Martinez) — owner of SCIFI42, admin of WEDREADS'); \
-			console.log('  carol@example.com  (Carol Park)   — admin of WEDREADS'); \
-			console.log('  dave@example.com   (Dave Singh)   — member of WEDREADS, SCIFI42'); \
-			console.log('  eve@example.com    (Eve Thompson) — member of WEDREADS'); \
-			console.log('  frank@example.com  (Frank Wilson) — member of WEDREADS'); \
+			console.log('Test accounts (any email logs in — no password):'); \
+			console.log('  alice@example.com  (Alice Chen)     — owner WEDREADS · member SCIFI42 · member SLEEPYRD'); \
+			console.log('  bob@example.com    (Bob Martinez)   — owner SCIFI42 · admin WEDREADS'); \
+			console.log('  carol@example.com  (Carol Park)     — owner HSTBUF  · admin WEDREADS'); \
+			console.log('  dave@example.com   (Dave Singh)     — owner SLEEPYRD (archived) · member WEDREADS, SCIFI42, HSTBUF'); \
+			console.log('  eve@example.com    (Eve Thompson)   — member WEDREADS'); \
+			console.log('  frank@example.com  (Frank Wilson)   — member WEDREADS (not started)'); \
+			console.log('  grace@example.com  (Grace Lee)      — member SCIFI42'); \
+			console.log('  henry@example.com  (Henry Kim)      — member HSTBUF'); \
 			console.log(''); \
-			console.log('Club codes: WEDREADS, SCIFI42'); \
+			console.log('Club codes: WEDREADS · SCIFI42 · HSTBUF · SLEEPYRD (archived)'); \
+			console.log(''); \
+			console.log('Try logging in as alice — her dashboard has BOTH attention banners'); \
+			console.log('(unvoted active round + unanswered meeting availability).'); \
 		}).catch(e => { console.error(e); process.exit(1); });"
 
 db-reset: ## Drop and recreate dev DB from scratch
