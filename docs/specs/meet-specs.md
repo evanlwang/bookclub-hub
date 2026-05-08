@@ -80,7 +80,7 @@ These specs document invariants enforced inside the `meetings` router and exerci
 - `[x]` **MEET-UI-PROP-001**: Each proposed meeting SHALL render an "Awaiting responses" warning badge, the title, the linked book title (if any), the slot count, and the responder count. (`meetings-client.tsx:179-219`)
 - `[x]` **MEET-UI-PROP-002**: The row is clickable and SHALL toggle expansion to reveal the respond UI. The right-aligned Button: "Respond" provides an explicit affordance for the same toggle. (`meetings-client.tsx:197-219`)
 - `[x]` **MEET-UI-007**: The row counts members responded (deduped by userId across all slots' responses). Older spec's amber-→-green progress bar is not implemented; only the count is shown.
-- `[ ]` **MEET-UI-PROP-PROGRESS-001**: Visual response progress bar (0%→100%, amber→green) on proposed meeting rows.
+- `[x]` **MEET-UI-PROP-PROGRESS-001**: Each proposed meeting row SHALL render a thin horizontal progress bar reflecting `responded / memberCount` as a percentage. The fill SHALL be a CSS gradient running from `--color-warning` (amber, left edge / 0%) to `--color-success` (green, right edge / 100%), revealed by `clip-path` so partial fills show partial gradient. The bar carries `data-testid="response-progress-{meetingId}"`, `data-percentage` (0–100 integer), and `data-tone` (`"green"` when 100%, otherwise `"amber"`); also exposed as a `role="progressbar"` with `aria-valuenow/min/max`. (`meetings-client.tsx` `ResponseProgress`)
 
 ## Respond Meeting UI
 

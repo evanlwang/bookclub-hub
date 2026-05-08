@@ -1,4 +1,4 @@
-// @spec MEET-UI-CREATE-001, MEET-UI-CREATE-002, MEET-UI-CREATE-VAL-001, MEET-UI-PROP-002, MEET-UI-RESP-001, MEET-UI-RESP-SAVE-001, MEET-UI-RESP-CONFIRM-001, MEET-API-001, MEET-API-003
+// @spec MEET-UI-CREATE-001, MEET-UI-CREATE-002, MEET-UI-CREATE-VAL-001, MEET-UI-PROP-002, MEET-UI-PROP-PROGRESS-001, MEET-UI-RESP-001, MEET-UI-RESP-SAVE-001, MEET-UI-RESP-CONFIRM-001, MEET-API-001, MEET-API-003
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 import { getDb } from "./helpers";
@@ -94,6 +94,32 @@ test.describe("Meeting Create and Respond", () => {
     await availableBtn.click();
 
     await expect(page.getByTestId("availability-saved")).toBeVisible({ timeout: 10000 });
+  });
+
+  // @spec MEET-UI-PROP-PROGRESS-001
+  test("proposed meeting row renders a response-progress bar with valid percentage", async ({ page }) => {
+    await loginAs(page, "alice@example.com");
+    const club = await getClubByCode("WEDREADS");
+
+    await page.goto(`/clubs/${club.id}/meetings`);
+
+    const meetingToggle = page.locator("[data-testid^='meeting-toggle-']").first();
+    const meetingId = (await meetingToggle.getAttribute("data-testid"))?.replace("meeting-toggle-", "");
+    expect(meetingId).toBeTruthy();
+
+    const progressBar = page.getByTestId(`response-progress-${meetingId}`);
+    await expect(progressBar).toBeVisible();
+
+    const pctRaw = await progressBar.getAttribute("data-percentage");
+    const pct = Number(pctRaw);
+    expect(Number.isFinite(pct)).toBe(true);
+    expect(pct).toBeGreaterThanOrEqual(0);
+    expect(pct).toBeLessThanOrEqual(100);
+
+    // Tone reflects fill — partial responses get amber, complete gets green.
+    const tone = await progressBar.getAttribute("data-tone");
+    expect(tone === "amber" || tone === "green").toBe(true);
+    if (pct === 100) expect(tone).toBe("green");
   });
 
   // @spec MEET-UI-RESP-CONFIRM-001

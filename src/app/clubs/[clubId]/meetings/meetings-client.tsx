@@ -437,6 +437,8 @@ function ProposedMeetingRow({
             <span className="text-ink-3">·</span>
             <span>{responded} responded</span>
           </div>
+          {/* @spec MEET-UI-PROP-PROGRESS-001 */}
+          <ResponseProgress meetingId={meeting.id} responded={responded} total={members.length} />
         </div>
         <Button variant={viewerHasResponded ? "ghost" : "primary"} size="sm">
           {viewerHasResponded ? "Update" : "Respond"}
@@ -501,6 +503,43 @@ function PastMeetingRow({ meeting }: { meeting: any }) {
           {meeting.location && `${meeting.location} · `}{going > 0 ? `${going} attended` : ""}
         </p>
       </div>
+    </div>
+  );
+}
+
+// @spec MEET-UI-PROP-PROGRESS-001
+function ResponseProgress({
+  meetingId,
+  responded,
+  total,
+}: {
+  meetingId: string;
+  responded: number;
+  total: number;
+}) {
+  if (total <= 0) return null;
+  const pct = Math.max(0, Math.min(100, Math.round((responded / total) * 100)));
+  const tone = pct >= 100 ? "green" : "amber";
+  return (
+    <div
+      data-testid={`response-progress-${meetingId}`}
+      data-percentage={pct}
+      data-tone={tone}
+      className="mt-1.5 h-1.5 bg-bg-sunken rounded-full overflow-hidden"
+      aria-label={`${responded} of ${total} members responded`}
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <div
+        className="h-full"
+        style={{
+          background: "linear-gradient(to right, var(--color-warning), var(--color-success))",
+          clipPath: `inset(0 ${100 - pct}% 0 0)`,
+          transition: "clip-path 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+      />
     </div>
   );
 }
