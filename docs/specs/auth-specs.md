@@ -58,7 +58,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 
 - `[x]` **AUTH-UI-STEP3B-NAME-001**: Club name input (required, min 3 chars). (`join/page.tsx:616-624`)
 - `[x]` **AUTH-UI-STEP3B-CODE-001**: Club code input, defaulted from auto-derived `derivedCode` (alphanumeric, uppercase, max 10). User can override; uppercased on input. (`join/page.tsx:631-638`)
-- `[!]` **AUTH-UI-STEP3B-CADENCE-001**: Voting cadence radio buttons — IMPLEMENTED but undocumented in older spec. Three options labeled "Monthly" / "Six Weeks" / "Flexible" (values: `monthly`, `six_weeks`, `flexible`). (`join/page.tsx:646-666`) The chosen cadence is appended to the club description on create as "Voting cadence: {cadence}". The cadence is **not** stored as a structured field on Club today.
+- `[x]` **AUTH-UI-STEP3B-CADENCE-001**: Voting cadence radio buttons — implemented; the divergence note below documents what older spec text omitted. Three options labeled "Monthly" / "Six Weeks" / "Flexible" (values: `monthly`, `six_weeks`, `flexible`). (`join/page.tsx:646-666`) The chosen cadence is appended to the club description on create as "Voting cadence: {cadence}". The cadence is **not** stored as a structured field on Club today.
   - `[ ]` **AUTH-UI-STEP3B-CADENCE-DATA-001**: Persist voting cadence as a typed field on Club rather than embedding it in `description`.
 - `[x]` **AUTH-UI-STEP3B-BACK-001**: Button: "Back" — handler: returns to step 2.
 - `[x]` **AUTH-UI-STEP3B-CREATE-001**: Button: "Create club" (`join/page.tsx:685-694`) — disabled when `!createReady || creatingClub` — handler: `handleCreateSubmit` validates code via `clubs.lookup` then calls `clubs.create`.
@@ -81,7 +81,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 - `[x]` **AUTH-BE-SESSION-001**: The system SHALL create a server-side session and set a `session_id` cookie with 30-day max-age. (`join/page.tsx:224`, `auth.ts`)
 - `[ ]` **AUTH-BE-001**: Cookie SHALL be HttpOnly, Secure, SameSite=Lax. (Verify cookie attributes in production code.)
 - `[ ]` **AUTH-BE-002**: Sliding expiration refreshed on each authenticated request. (Cookie max-age set on creation; verify if refreshed.)
-- `[!]` **AUTH-API-003**: `auth.logout` SHALL destroy the server-side session and clear the cookie. (Server-side row deletion is implemented; cookie clearing is tracked by AUTH-API-LOGOUT-001 below.)
+- `[x]` **AUTH-API-003**: `auth.logout` SHALL destroy the server-side session and clear the cookie. Both halves are implemented in the same `auth.logout` mutation: server-side row delete + clearing `Set-Cookie` (`src/server/routers/auth.ts:113-124`). AUTH-API-LOGOUT-001/002 below cover the response-header form.
 - `[x]` **AUTH-API-004**: When a request includes a valid session cookie, `auth.me` SHALL return the user's data and club list without re-authentication.
 - `[x]` **AUTH-API-005**: When a request includes an invalid or expired session cookie, `auth.me` SHALL throw an unauthorized error.
 

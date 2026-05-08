@@ -28,7 +28,7 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 ## Club Creation UI (Step 3b in /join)
 
 - `[x]` **CLUB-UI-001**: The create branch SHALL auto-derive an invite code from the club name (alphanumeric, uppercase, max 10 chars; defaults to "CLUB" if name is empty/non-alphanumeric). The derived code is shown as the default value of an editable input. (`join/page.tsx:191-195`)
-- `[!]` **CLUB-UI-002**: When the user modifies the auto-derived code, the system SHALL validate the new code against existing clubs and show an error if the code is already in use. **Today, validation runs only on submit** via a `clubs.lookup` call inside `handleCreateSubmit` (`join/page.tsx:333-348, 351-392`); the older "real-time as the user types" UX is a gap:
+- `[x]` **CLUB-UI-002**: When the user modifies the auto-derived code, the system SHALL validate the new code against existing clubs and show an error if the code is already in use. Validation runs on submit via a `clubs.lookup` call inside `handleCreateSubmit` (`join/page.tsx:333-348, 351-392`); the SHALL is satisfied. The older "real-time as the user types" UX is tracked separately as the sub-ID gap below:
   - `[ ]` **CLUB-UI-CODE-LIVE-001**: Real-time `clubs.lookup` debounce on code-input change to surface "✓ Available" / "✗ Taken" feedback before submit.
 - `[x]` **CLUB-UI-003**: On successful club creation, the system SHALL display the invite code prominently on Step 4 with a Button: "Copy" that calls `navigator.clipboard.writeText`. (`join/page.tsx:723-730`)
 
@@ -38,7 +38,7 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 - `[ ]` **CLUB-API-004**: When an unauthenticated user calls `clubs.join` with `code, email, displayName`, the system SHALL create or find the user, create a session, and create the membership in a single operation. (Today the UI requires Step 1 identity first — verify if the API still supports the combined flow.)
 - `[x]` **CLUB-API-005**: When a user attempts to join a club they're already in, the system SHALL return the existing club data without creating a duplicate membership.
 - `[x]` **CLUB-API-006**: When a user submits an invalid or non-existent club code, the system SHALL throw a NOT_FOUND error.
-- `[ ]` **CLUB-BE-001**: The system SHALL NOT allow joining clubs with status "archived" or "deleted".
+- `[x]` **CLUB-BE-001**: The system SHALL NOT allow joining clubs with status "archived" or "deleted". Enforced in `clubs.join` (`src/server/routers/clubs.ts:375-388`): finds only `status: "active"` clubs; if the code resolves to an inactive club, throws `FORBIDDEN` "This club is no longer active".
 
 ## Club Lookup API
 

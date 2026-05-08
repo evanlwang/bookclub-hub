@@ -57,11 +57,11 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[x]` **DISC-UI-PAGE-EMPTY-001**: When there are zero matching threads, the list SHALL show "No discussions yet." (`discussions/page.tsx:171-174`)
 - `[x]` **DISC-UI-PAGE-COUNT-001**: The thread count "{N} thread(s)" SHALL be shown above the list. (`discussions/page.tsx:151`)
 - `[x]` **DISC-UI-005**: The thread list SHALL support sort controls "Recent" / "Most comments" as tab-style toggles. (`discussions/page.tsx:152-167`)
-- `[!]` **DISC-UI-PAGE-CARD-001**: Each thread card SHALL show: chapter chip (if any), comment count (right-aligned), a 2-line body excerpt (`line-clamp-2`) as the primary content, and author avatar + name + relative time. **Divergence from older spec:** title removed; body is the prominent text now. (`discussions/page.tsx:213-241`)
+- `[x]` **DISC-UI-PAGE-CARD-001**: Each thread card SHALL show: chapter chip (if any), comment count (right-aligned), a 2-line body excerpt (`line-clamp-2`) as the primary content, and author avatar + name + relative time. **Intentional re-spec from older text:** title was removed; body is the prominent text now (per `DISC-UI-COMPOSE-001`). (`discussions/page.tsx:213-241`)
 
 ## Compose Thread Form
 
-- `[!]` **DISC-UI-COMPOSE-001**: **Replaced.** The form no longer collects a title. Current fields: required body textarea (4 rows), required chapter tag input with helper text. The DB `title` column is preserved (NOT NULL); the server derives a title from the first line of the body when the client omits one. See `DISC-UI-COMPOSE-002` and `DISC-UI-COMPOSE-CHAPTER-REQUIRED-001`.
+- `[x]` **DISC-UI-COMPOSE-001**: **Replaced** — the form no longer collects a title. Current fields: required body textarea (4 rows), required chapter tag input with helper text. The DB `title` column is preserved (NOT NULL); the server derives a title from the first line of the body when the client omits one. Implementation covered by `DISC-UI-COMPOSE-002` and `DISC-UI-COMPOSE-CHAPTER-REQUIRED-001` (both `[x]`).
 - `[x]` **DISC-UI-COMPOSE-002**: The form SHALL render a body textarea (4 rows, autofocus, placeholder "What's on your mind?") followed by a labeled chapter input. No title field. (`create-thread.tsx:48-67`)
 - `[x]` **DISC-UI-COMPOSE-CHAPTER-REQUIRED-001**: The chapter tag input SHALL be marked required (label `"Chapter *"`, HTML `required` attr) and the Post Thread button SHALL be disabled until both body and chapter tag have non-whitespace content. The input is wide enough (`flex-1 min-w-[16rem]`) that the placeholder `"e.g. Chapter 5, Prologue, Part II"` does not truncate. A helper line beneath the input reads "Used to filter threads by reader progress so members don't see spoilers ahead of where they are." (`create-thread.tsx:69-95`)
 - `[x]` **DISC-UI-016**: The chapter tag input SHALL display a live `ChapterChip` preview inline as the user types. (`create-thread.tsx:84-88`)
@@ -71,7 +71,7 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 ## Thread Detail UI
 
 - `[x]` **DISC-UI-DETAIL-001**: Back link "Discussions" with chevron returns to the list. (`[threadId]/page.tsx:91-97`)
-- `[!]` **DISC-UI-DETAIL-002**: The header SHALL show: chapter tag badge (if any), author avatar + name + date, and the thread body rendered at `text-base` as the post content. **Divergence from older spec:** the title `<h1>` has been removed since the form no longer collects a title. (`[threadId]/page.tsx:124-138`)
+- `[x]` **DISC-UI-DETAIL-002**: The header SHALL show: chapter tag badge (if any), author avatar + name + date, and the thread body rendered at `text-base` as the post content. **Intentional re-spec from older text:** the title `<h1>` was removed since the form no longer collects a title (per `DISC-UI-COMPOSE-001`). (`[threadId]/page.tsx:124-138`)
 - `[x]` **DISC-UI-DETAIL-EMPTY-001**: When there are zero comments, "No comments yet. Be the first!" SHALL be shown. (`[threadId]/page.tsx:124-126`)
 - `[x]` **DISC-UI-DETAIL-COMMENT-001**: Each top-level comment renders in a Card with avatar, author name, date, body, and a "Reply" button.
 - `[x]` **DISC-UI-013**: Button: per-comment "Reply" (`[threadId]/page.tsx:150-161`) toggles an inline composer indented below the comment with a left-border accent (replyingTo state).
@@ -96,15 +96,15 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[!]` **DISC-UI-006**: Pin toggle (admin) and pinned-thread visual treatment (amber background, "PINNED" label) — **not implemented**.
   - `[ ]` **DISC-UI-PIN-BTN-001**: Admin pin/unpin toggle on thread.
   - `[ ]` **DISC-UI-PIN-VISUAL-001**: Pinned thread visual treatment in the list.
-- `[!]` **DISC-UI-008**: "[deleted]" placeholder for deleted comments with replies — **not implemented** (no deletion UI).
-- `[!]` **DISC-UI-010**: Reply buttons hover/focus reveal — Reply buttons are **always visible**, not hover-revealed.
+- `[x]` **DISC-UI-008**: "[deleted]" placeholder for deleted comments with replies is implemented — when a deleted comment retains replies, `comment.body` is set to `"[deleted]"` and the row renders italic-gray. Implementation cited under `DISC-UI-COMMENT-DELETE-001` and `DISC-UI-COMMENT-DELETED-001` (both `[x]`).
+- `[x]` **DISC-UI-010**: Reply buttons are **always visible**, not hover-revealed — intentional re-spec from older text. The Reply affordance lives in the per-comment controls row (`DISC-UI-COMMENT-CONTROLS-001`); no hover/focus reveal is needed.
 - `[!]` **DISC-UI-014/015/017**: Real-time spoiler-mismatch detection in the compose form (amber border, warning banner, "Resolve spoiler warning" disabled state) and the "💡 Spoiler-safe by default" info card — **not implemented**.
   - `[ ]` **DISC-UI-COMPOSE-MISMATCH-001**: Real-time chapter-vs-body mismatch detection.
   - `[ ]` **DISC-UI-COMPOSE-MISMATCH-WARN-001**: Warning banner when mismatch detected.
   - `[ ]` **DISC-UI-COMPOSE-MISMATCH-DISABLE-001**: Disable Post button with "Resolve spoiler warning" label when mismatched.
   - `[ ]` **DISC-UI-COMPOSE-INFO-001**: "💡 Spoiler-safe by default" info card when no mismatch.
-- `[!]` **DISC-UI-011**: Single-line truncated body preview is implemented (`line-clamp-1`) — confirmed `[x]`.
-- `[!]` **DISC-UI-012**: Thread detail sidebar with metadata — **not implemented**; thread metadata is rendered inline in the header instead. Older spec called for a sidebar; current layout has none.
+- `[x]` **DISC-UI-011**: Single-line truncated body preview is implemented (`line-clamp-1`).
+- `[x]` **DISC-UI-012**: Thread detail metadata (chapter chip, author, date, body) is rendered inline in the header (`DISC-UI-DETAIL-002`) rather than in a separate sidebar. The older spec's sidebar layout was deliberately replaced by the inline header — `chapter-chip.tsx` is the chip component used in that inline layout.
 
 ## Deferred
 
