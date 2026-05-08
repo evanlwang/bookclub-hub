@@ -4,7 +4,7 @@
 **Implementing artifacts**:
 - API: `src/server/routers/rounds.ts`, `votes.ts`, `nominations.ts`, `books.ts`, `selections.ts`
 - UI: `src/app/clubs/[clubId]/vote/page.tsx`, `vote-round.tsx`, `nominate-modal.tsx`
-- Tests: `tests/integration/votes.test.ts`, `tests/e2e/vote-*.spec.ts`
+- Tests: `tests/integration/voting-lifecycle.test.ts`, `tests/integration/vote-persistence.test.ts`, `tests/integration/books.test.ts`, `tests/integration/books-manual.test.ts`, `tests/integration/cron-deadline-reminder.test.ts`, `tests/e2e/vote-persistence.spec.ts`, `tests/e2e/vote-submission.spec.ts`, `tests/e2e/voting-close.spec.ts`, `tests/e2e/voting-phases.spec.ts`, `tests/e2e/voting-round.spec.ts`, `tests/e2e/voting-sidebar.spec.ts`, `tests/unit/voting/tally.test.ts`, `tests/unit/voting-persistence.test.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap (not yet built) · `[D]` deferred · `[!]` divergence (built but differs from prior spec text)
 

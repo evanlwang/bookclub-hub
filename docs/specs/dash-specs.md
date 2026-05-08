@@ -3,7 +3,7 @@
 **LLD**: docs/llds/club-management.md
 **Implementing artifacts**:
 - UI: `src/app/clubs/[clubId]/page.tsx`, `src/app/clubs/[clubId]/sidebar.tsx`, `src/app/clubs/[clubId]/layout.tsx`
-- Tests: `tests/e2e/dashboard-*.spec.ts`
+- Tests: `tests/e2e/attention-banner.spec.ts`, `tests/e2e/ui-interactions.spec.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 

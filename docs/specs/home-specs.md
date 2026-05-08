@@ -3,7 +3,7 @@
 **LLD**: docs/llds/auth-and-accounts.md
 **Implementing artifacts**:
 - UI: `src/app/page.tsx` (landing), `src/app/join/page.tsx` (join flow), `src/app/layout.tsx` (skip nav)
-- Tests: `tests/e2e/home-*.spec.ts`, `tests/e2e/join-*.spec.ts`, `tests/e2e/login-smart-detection.spec.ts`
+- Tests: `tests/e2e/landing-page.spec.ts`, `tests/e2e/attention-banner.spec.ts`, `tests/e2e/join-club.spec.ts`, `tests/e2e/login.spec.ts`, `tests/integration/join-flow.test.ts`, `tests/unit/join-flow.test.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 

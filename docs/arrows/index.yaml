@@ -1,0 +1,97 @@
+schema_version: 1
+last_updated: 2026-05-07
+
+# Taxonomy groups segments by domain cluster. Purely organizational.
+taxonomy:
+  identity-and-spaces:
+    - auth
+    - clubs
+  book-club-activity:
+    - voting
+    - meetings
+    - discussions
+    - reading-progress
+
+# The graph of segments. Each entry is one arrow segment.
+arrows:
+  auth:
+    status: PARTIAL
+    sampled: 2026-05-07
+    audited: 2026-05-07
+    audited_sha: a4049976963764703714b3729019fb2cb688a126
+    blocks:
+      - clubs
+    blockedBy: []
+    detail: auth.md
+    next: "Resolve 5 [!] divergences across auth-specs.md and home-specs.md; cascade home-specs.md artifact header to drop phantom login-smart-detection.spec.ts."
+    drift: "5 divergence markers + 4 active gaps; spec-file artifact header in home-specs.md cites a non-existent test path."
+
+  clubs:
+    status: PARTIAL
+    sampled: 2026-05-07
+    audited: 2026-05-07
+    audited_sha: a4049976963764703714b3729019fb2cb688a126
+    blocks:
+      - voting
+      - meetings
+      - discussions
+      - reading-progress
+    blockedBy:
+      - auth
+    detail: clubs.md
+    next: "Triage 19 active gaps; reconcile 4 [!] divergences; update club-specs.md and dash-specs.md artifact headers (clubs-*.spec.ts and dashboard-*.spec.ts globs match no real files); decide on tests/unit/auth/permissions.test.ts location (content is club-permissions)."
+    drift: "Largest gap count in the project (19); spec-file artifact headers cite glob patterns that match no real files."
+
+  voting:
+    status: PARTIAL
+    sampled: 2026-05-07
+    audited: 2026-05-07
+    audited_sha: a4049976963764703714b3729019fb2cb688a126
+    blocks: []
+    blockedBy:
+      - clubs
+    detail: voting.md
+    next: "Resolve 4 reverse orphans (VOTE-UI-004/007/008/010); reconcile 4 [!] divergences; address 7 active gaps; consider /differential-audit on src/lib/voting/ tie-break."
+    drift: "4 reverse orphans (@spec annotations citing IDs absent from vote-specs.md); 4 [!] divergences (re-spec owed per vote-specs.md note)."
+
+  meetings:
+    status: PARTIAL
+    sampled: 2026-05-07
+    audited: 2026-05-07
+    audited_sha: a4049976963764703714b3729019fb2cb688a126
+    blocks: []
+    blockedBy:
+      - clubs
+    detail: meetings.md
+    next: "Resolve 8 reverse orphans (MEET-BE-CROSS-001..004, MEET-BE-STATE-001..002, MEET-BE-TIME-001, MEET-UI-002..003) — largest single drift cluster in the project; address 9 active gaps."
+    drift: "8 reverse orphans — largest cluster in the project. Either spec-file rows were lost or @spec annotations are aspirational."
+
+  discussions:
+    status: PARTIAL
+    sampled: 2026-05-07
+    audited: 2026-05-07
+    audited_sha: a4049976963764703714b3729019fb2cb688a126
+    blocks: []
+    blockedBy:
+      - clubs
+    detail: discussions.md
+    next: "Reconcile 9 [!] divergences (most divergent segment); update disc-specs.md artifact header (cites tests/integration/threads.test.ts which does not exist; real is discussions.test.ts); triage 14 active gaps."
+    drift: "9 divergences (highest in project); 14 active gaps; spec-file cites a non-existent integration test path."
+
+  reading-progress:
+    status: AUDITED
+    sampled: 2026-05-07
+    audited: 2026-05-07
+    audited_sha: a4049976963764703714b3729019fb2cb688a126
+    blocks: []
+    blockedBy:
+      - clubs
+    detail: reading-progress.md
+    next: "Resolve the single [!] divergence to promote AUDITED → OK. Most coverage-complete segment in the project."
+    drift: "1 divergence; otherwise coherent. 8 specs deferred (audio + history polish)."
+
+# Items found during mapping that don't yet belong to a segment.
+unmapped:
+  docs:
+    llds: []
+    specs: []

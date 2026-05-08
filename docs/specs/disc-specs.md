@@ -4,7 +4,7 @@
 **Implementing artifacts**:
 - API: `src/server/routers/threads.ts`, `src/server/routers/comments.ts`
 - UI: `src/app/clubs/[clubId]/discussions/page.tsx`, `create-thread.tsx`, `comment-composer.tsx`, `[threadId]/page.tsx`
-- Tests: `tests/integration/threads.test.ts`, `tests/e2e/discussions-*.spec.ts`
+- Tests: `tests/integration/discussions.test.ts`, `tests/e2e/comment-edit-delete.spec.ts`, `tests/e2e/comment-reply.spec.ts`, `tests/e2e/create-thread.spec.ts`, `tests/e2e/discussion-enhancements.spec.ts`, `tests/e2e/spoiler-safe-discussion.spec.ts`, `tests/unit/discussions-spoiler-cutoff.test.ts`, `tests/unit/validation/chapter-tag.test.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 

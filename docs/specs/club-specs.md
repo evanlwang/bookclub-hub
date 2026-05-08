@@ -4,7 +4,7 @@
 **Implementing artifacts**:
 - API: `src/server/routers/clubs.ts` (membership procedures live under `clubs.members.*` in the same file)
 - UI: `src/app/clubs/[clubId]/sidebar.tsx`, create/join via `src/app/join/page.tsx`, in-place modal `src/components/club/club-switcher-modal.tsx`
-- Tests: `tests/integration/clubs.test.ts`, `tests/e2e/clubs-*.spec.ts`, `tests/e2e/multi-club-switching.spec.ts`
+- Tests: `tests/integration/clubs.test.ts`, `tests/e2e/multi-club-switching.spec.ts`, `tests/e2e/switcher-create-join.spec.ts`, `tests/e2e/members-management.spec.ts`, `tests/unit/auth/permissions.test.ts` (club-permissions, currently mislocated under `auth/`), `tests/unit/validation/club-code.test.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 

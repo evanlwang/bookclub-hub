@@ -2,13 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-This project should evolve using linked-intent driven development and test driven developemnt. Use EARS notation and grep to quickly search specs, tests, and code efficiently. Always plan and consult these files first with a plan, then write tests, then implement source code:
+This project should evolve using linked-intent driven development and test driven development. Use EARS notation and grep to quickly search specs, tests, and code efficiently. Always plan and consult these files first with a plan, then write tests, then implement source code:
 - CLAUDE.md for architecture, commands, and development patterns
 - docs/high-level-design.md for system vision and key design decisions
 - docs/specs/ for EARS requirement IDs and feature scope
 - docs/llds/ for component-level contracts (data models, API shapes, visual layouts)
-- docs/lid/ for linked-intent driven development docs
-When implementing a feature, always audit the spec notation agaisnt the source code and tests. If a spec is implemented, it should an exact matching comment that is searchable and prevent documentation rot. After code has been tested and docs audited, commit with a message. 
+When implementing a feature, always audit the spec notation against the source code and tests. If a spec is implemented, it should have an exact matching `// @spec` comment that is searchable and prevents documentation rot. After code has been tested and docs audited, commit with a message. 
 
 ## Project Overview
 
@@ -25,13 +24,15 @@ When implementing a feature, always audit the spec notation agaisnt the source c
 
 ### High-Level Layers
 
-1. **API Layer** (`src/server/routers/`): tRPC procedure definitions for 10+ domains (auth, clubs, voting, meetings, discussions, progress, etc.). Each router file is responsible for validating input, calling services, and returning results.
+1. **API Layer** (`src/server/routers/`): tRPC procedure definitions, one file per domain (auth, clubs, books, nominations, votes, rounds, selections, meetings, threads, comments, progress). Each router validates input with Zod, calls into the lib layer, and returns plain TypeScript values.
 
-2. **Service Layer** (`src/server/services/`): Business logic that doesn't belong in Prisma models. Handles voting logic, progress calculations, notification triggering, and cross-entity operations.
+2. **Business-logic libraries** (`src/lib/`): Pure-ish domain logic — voting and tie-breaking (`src/lib/voting/`), progress math (`src/lib/progress/`), discussion threading (`src/lib/discussions/`), meeting scheduling helpers (`src/lib/meetings/`), Zod input schemas (`src/lib/validation/`), session/identity (`src/lib/auth/`), shared React hooks (`src/lib/hooks/`), Prisma client singleton (`src/lib/db.ts`). This is where domain rules live — not under `src/server/services/`.
 
-3. **Data Layer** (`prisma/schema.prisma`): Postgres schema. Relationships between Users, Clubs, Memberships, Voting Rounds, Discussions, Meetings, and Reading Progress. Use `prisma generate` after schema changes.
+3. **External integrations** (`src/server/services/`): Outbound API adapters only — `email.ts` (Resend), `open-library.ts` (book metadata). Add a service here only when wrapping a third party.
 
-4. **Frontend** (`src/app/`): Next.js App Router with server components for data loading, client components for interactivity. Pages organized by feature area (clubs/[clubId]/meetings, clubs/[clubId]/vote, etc.). Shared UI components in `src/components/ui/`.
+4. **Data Layer** (`prisma/schema.prisma`): Postgres schema. Relationships between Users, Clubs, Memberships, Voting Rounds, Discussions, Meetings, and Reading Progress. Use `prisma generate` after schema changes.
+
+5. **Frontend** (`src/app/`): Next.js App Router with server components for data loading, client components for interactivity. Pages organized by feature area (clubs/[clubId]/meetings, clubs/[clubId]/vote, etc.). Shared UI components in `src/components/ui/`.
 
 ### Key Data Models
 
@@ -103,32 +104,51 @@ src/
 │   │   ├── vote/                 # Voting UI
 │   │   ├── meetings/             # Meeting scheduling
 │   │   ├── progress/             # Reading progress dashboard
-│   │   └── discussions/          # Thread list & detail
-│   ├── join/                     # Join club flow
-│   └── api/                      # Raw Next.js API routes (minimal; most is tRPC)
+│   │   ├── discussions/          # Thread list & detail (incl. [threadId])
+│   │   └── members/              # Member roster & roles
+│   ├── login/                    # Login page
+│   ├── join/                     # Join-club flow
+│   ├── page.tsx                  # Landing
+│   ├── layout.tsx                # Root layout
+│   └── api/
+│       ├── trpc/[trpc]/route.ts  # tRPC HTTP entrypoint
+│       └── cron/                 # Vercel scheduled jobs
 ├── server/
 │   ├── routers/                  # tRPC procedure definitions (one file per domain)
-│   │   ├── auth.ts, clubs.ts, votes.ts, rounds.ts, etc.
+│   │   ├── auth.ts, clubs.ts, books.ts, nominations.ts, votes.ts, rounds.ts,
+│   │   ├── selections.ts, meetings.ts, threads.ts, comments.ts, progress.ts
 │   │   └── _app.ts               # Router composition
-│   └── services/                 # Business logic layer
+│   └── services/                 # External integrations only
+│       ├── email.ts              # Resend adapter
+│       └── open-library.ts       # Open Library book-metadata adapter
 ├── trpc/
 │   ├── client.ts                 # tRPC client for browser
 │   ├── react.tsx                 # TanStack Query integration
 │   └── server.ts                 # tRPC server factory
 ├── components/
 │   └── ui/                       # Shared UI components (buttons, cards, badges, etc.)
-├── lib/
-│   ├── auth/                     # Session/identity utilities
-│   ├── voting/                   # Voting logic (tie-breaking, etc.)
-│   ├── progress/                 # Progress calculations (page → percentage, etc.)
-│   └── validation/               # Zod schemas for tRPC input validation
-└── types.ts                      # Shared TypeScript interfaces (if any)
+└── lib/                          # Business-logic libraries (domain rules live here)
+    ├── auth/                     # Session/identity utilities
+    ├── voting/                   # Voting logic, tie-breaking
+    ├── progress/                 # Page → percentage math
+    ├── discussions/              # Thread / spoiler-safety helpers
+    ├── meetings/                 # Scheduling helpers
+    ├── validation/               # Zod schemas for tRPC input
+    ├── hooks/                    # Shared React hooks
+    ├── db.ts                     # Prisma client singleton
+    └── db.test-utils.ts          # DB helpers used only in tests
 
 tests/
 ├── unit/                         # Unit tests (co-located with source preferred)
 ├── integration/                  # Integration tests
-└── e2e/                          # Playwright E2E tests
-    └── global-setup.ts           # Seed data generator (also used by make seed)
+├── e2e/                          # Playwright E2E tests
+│   └── global-setup.ts           # Seed data generator (also used by `make seed`)
+├── factories/                    # Domain object factories for tests
+├── fixtures/                     # Static test fixtures
+├── helpers/                      # Test helpers
+├── setup.ts                      # Vitest unit setup
+├── setup.integration.ts          # Vitest integration setup
+└── dev-setup.ts                  # Dev-only seed bootstrap
 
 docs/
 ├── high-level-design.md          # System vision, problems solved, v1 scope
@@ -171,7 +191,7 @@ export const voting = router({
 });
 ```
 
-The tRPC server is composed in `src/server/routers/_app.ts` and exposed via `src/app/api/trpc/[trpc].ts`.
+The tRPC server is composed in `src/server/routers/_app.ts` and exposed via `src/app/api/trpc/[trpc]/route.ts` (App Router convention).
 
 ### React Server Components & Client Components
 
@@ -186,16 +206,10 @@ Sessions are stored in the `sessions` table. The `auth` router handles login (em
 
 ## EARS Annotations & Intent Tracking
 
-This repository uses EARS (Easy Approach to Requirements Syntax) to maintain a traceable link from requirements → tests → code. Each spec has a unique ID like `VOTE-UI-001` or `PROG-API-003`.
+Each spec has a globally unique ID like `VOTE-UI-001` or `PROG-API-003`. Placement rules are in the LID `### Code annotations` section below. The grep recipe:
 
-**When adding code**, annotate the main entry point:
-```typescript
-// @spec FEATURE-CONTEXT-NNN, FEATURE-CONTEXT-OOO
-export function MyComponent() { ... }
-```
-
-To find all implementations of a spec: `grep -r "VOTE-UI-001" src/` finds code + tests.
-To find the requirement: look in `docs/specs/vote-specs.md` for the matching ID.
+- Find every implementation and test of a spec: `grep -rn "VOTE-UI-001" src/ tests/`
+- Find the requirement itself: look in `docs/specs/{domain}-specs.md` for the matching ID.
 
 This creates a queryable chain: Spec → Tests → Code, all navigable via `grep`.
 
@@ -224,3 +238,47 @@ The integration and E2E test suites use a separate test DB. Ensure `DATABASE_URL
 - **Prisma docs**: https://www.prisma.io/docs
 - **tRPC docs**: https://trpc.io/docs
 - **Next.js App Router**: https://nextjs.org/docs/app
+
+## LID Mode: Full
+
+## Linked-Intent Development (MANDATORY)
+
+**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:
+
+```
+HLD → LLDs → EARS → Tests → Code
+```
+
+- **New features and refactors**: full six-phase workflow (HLD check → LLD check/draft → EARS → intent-narrowing edge audit → tests-first → code).
+- **Bug fixes**: walk the arrow like any other change — find where behavior diverged from intent and cascade from there. No short-circuit.
+- **If unsure**: use the full workflow.
+
+Stop after each phase for user review. Mutation, not accumulation — docs reflect current intent, not history.
+
+### Navigation
+
+| What you need | Where to look |
+|---|---|
+| High-level design | `docs/high-level-design.md` |
+| Low-level designs | `docs/llds/` |
+| EARS specs | `docs/specs/` |
+| Arrow of intent overlay | `docs/arrows/index.yaml` and per-segment docs in `docs/arrows/` |
+
+### Terminology
+
+- **HLD**: High-Level Design — single project-level doc at `docs/high-level-design.md`.
+- **LLD**: Low-Level Design — detailed component design doc in `docs/llds/`. One per intent component.
+- **EARS**: Easy Approach to Requirements Syntax — structured one-line requirements with globally unique IDs in `docs/specs/`. Markers: `[x]` implemented, `[ ]` active gap, `[D]` deferred.
+- **Arrow**: the unidirectional chain from vision to code (HLD → LLDs → EARS → Tests → Code). Strictly a DAG of intent.
+- **Arrow segment**: the territory owned by one LLD — the LLD itself plus the specs, tests, and code that cite its EARS IDs. Within-segment cascade is free; across-segment cascade pauses.
+- **Cascade**: propagating a change downstream through the arrow so adjacent levels stay coherent.
+
+### Code annotations
+
+Annotate code and tests with `@spec` comments citing EARS IDs:
+
+```
+// @spec AUTH-UI-001, AUTH-UI-002
+```
+
+Place the annotation at the *entry point of the behavior's implementation graph* — the topmost function or module owning the specified behavior, not every helper. When a behavior spans multiple subsystems (UI + API + database, for example), annotate at the entry point in each subsystem. Tests follow the same rule: annotate the test that directly exercises the spec, not every inner assertion.
