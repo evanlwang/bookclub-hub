@@ -88,7 +88,6 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 ## Sign Out
 
 - `[x]` **AUTH-UI-LOGOUT-001**: The club sidebar (`src/app/clubs/[clubId]/sidebar.tsx`) SHALL render a "Sign out" button in the user footer. Clicking it calls `auth.logout`, clears the `session_id` cookie client-side, and `router.push("/")`.
-- `[!]` **AUTH-UI-LOGOUT-002**: Originally required the `/clubs` page header to render its own "Sign out" control. The `/clubs` landing page was removed in the post-login-redirect work, so the sidebar (AUTH-UI-LOGOUT-001) is now the only sign-out surface. Row kept for ID stability; the test annotation in `tests/e2e/logout.spec.ts` was updated accordingly.
 - `[x]` **AUTH-UI-LOGOUT-003**: After sign-out, navigating back to a protected route (e.g. `/clubs/{clubId}`) SHALL render the unauthenticated state — `auth.me` throws UNAUTHORIZED and the per-club page shows its error view (`data-testid="club-error"`).
 - `[x]` **AUTH-API-LOGOUT-001**: `auth.logout` SHALL emit a `Set-Cookie: session_id=; Path=/; Max-Age=0` response header so the browser drops the cookie even if the client-side clear is skipped (defense in depth: both server and client clear).
 - `[x]` **AUTH-API-LOGOUT-002**: `auth.logout` called without a valid session SHALL return `{ success: true }` (idempotent) rather than throwing — the procedure becomes a `publicProcedure` so a stale or missing cookie still completes sign-out.

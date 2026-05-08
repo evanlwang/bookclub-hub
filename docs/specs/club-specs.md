@@ -62,10 +62,8 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 - `[x]` **CLUB-NAV-MODAL-006**: The Create tab SHALL accept name, auto-derived editable code, and voting cadence — mirroring `/join` Step 3b — and SHALL validate code uniqueness on submit via `clubs.lookup`.
 - `[x]` **CLUB-NAV-MODAL-007**: On a successful create, the modal SHALL surface the invite code with a copy action, and on user dismissal SHALL navigate to the new club and refresh the layout.
 - `[x]` **CLUB-NAV-MODAL-008**: The modal SHALL be dismissible via Escape, backdrop click, and an explicit close button; dismissal SHALL be blocked while a mutation is in flight.
-- `[!]` **CLUB-NAV-MODAL-009**: Originally required the "Create or join a club" entry on the `/clubs` no-club landing page to keep working alongside the new modal. The `/clubs` landing page was removed in the post-login-redirect work (login/join now drop the user straight into a club), so this row is obsolete; the in-sidebar modal (CLUB-NAV-MODAL-001) is the only surface that needs to keep working.
 - `[x]` **CLUB-NAV-MODAL-010**: When the modal opens, the switcher dropdown SHALL close so it is not stacked behind the Dialog.
-- `[!]` **CLUB-NAV-SWITCH-001** (older "switcher loads target club state under 30s"): Switching is a Link navigation that triggers a full route load. Whether under 30 seconds depends on data fetch performance, not a frontend optimization. Mark as targeted gap rather than implemented:
-  - `[ ]` **CLUB-NAV-CLIENT-001**: Client-side switcher (no full route load) prefetching the target club's state.
+- `[ ]` **CLUB-NAV-CLIENT-001**: Client-side switcher (no full route load) prefetching the target club's state. Subsumes the older "switcher loads target club state under 30s" requirement — Link-navigation latency depends on data fetch, not frontend optimization, so the meaningful target is "no full route load."
 - `[ ]` **CLUB-NAV-UNREAD-001**: Unread activity indicator (Badge tone="accent" dot) on club switcher rows for clubs with new activity since last visit. Not implemented.
 
 ## Sidebar Nav (per-club)
