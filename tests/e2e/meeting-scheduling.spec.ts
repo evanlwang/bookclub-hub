@@ -1,4 +1,4 @@
-// @spec MEET-UI-001, MEET-UI-002, MEET-UI-003
+// @spec MEET-UI-001
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 

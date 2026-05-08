@@ -1,4 +1,4 @@
-// @spec MEET-API-001 through MEET-API-005, MEET-DATA-001, MEET-BE-002
+// @spec MEET-BE-CROSS-001 through MEET-BE-CROSS-004, MEET-BE-STATE-001, MEET-BE-STATE-002, MEET-BE-TIME-001
 // Cross-club / state-machine / temporal-integrity hardening for the meetings router.
 import { describe, it, expect, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";

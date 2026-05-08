@@ -45,7 +45,7 @@ function relativeTime(dateStr?: string): string {
   return `${days}d ago`;
 }
 
-// @spec VOTE-UI-001, VOTE-UI-002, VOTE-UI-004, VOTE-UI-006, VOTE-UI-007, VOTE-UI-008, VOTE-UI-010, VOTE-API-008, VOTE-BE-003, VOTE-API-002, VOTE-API-003
+// @spec VOTE-UI-001, VOTE-UI-002, VOTE-UI-005, VOTE-UI-006, VOTE-UI-009, VOTE-API-002, VOTE-API-003, VOTE-API-008, VOTE-BE-003
 export function VoteRound({
   clubId,
   roundId,

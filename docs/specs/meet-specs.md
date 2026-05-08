@@ -36,6 +36,18 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 - `[x]` **MEET-API-005**: When an admin calls `meetings.cancel`, the system SHALL set status to "cancelled". (`meetings.ts:182-207`)
 - `[x]` **MEET-API-UPDATE-001**: When an admin calls `meetings.update`, the system SHALL update title, description, and/or location fields. (`meetings.ts:116-139`)
 
+## Server-side Guards
+
+These specs document invariants enforced inside the `meetings` router and exercised by `tests/integration/meetings-security.test.ts`. They prevent cross-club ID smuggling, malformed time inputs, and out-of-order state transitions.
+
+- `[x]` **MEET-BE-TIME-001**: `meetings.create` SHALL reject any proposed slot whose `time` is not strictly in the future (relative to `Date.now()` at request time), returning `BAD_REQUEST` "Meeting times must be in the future". (`meetings.ts:62-69`)
+- `[x]` **MEET-BE-CROSS-001**: `meetings.submitAvailability` SHALL verify the supplied `meetingId` belongs to the supplied `clubId`; mismatched pairs return `NOT_FOUND` (no information leak about the other club's meeting). (`meetings.ts:179-187`)
+- `[x]` **MEET-BE-CROSS-002**: `meetings.confirm` SHALL verify the supplied `meetingId` belongs to the supplied `clubId`; mismatched pairs return `NOT_FOUND`. (`meetings.ts:147-154`)
+- `[x]` **MEET-BE-CROSS-003**: `meetings.cancel` SHALL verify the supplied `meetingId` belongs to the supplied `clubId`; mismatched pairs return `NOT_FOUND`. (`meetings.ts:237-244`)
+- `[x]` **MEET-BE-CROSS-004**: `meetings.update` SHALL verify the supplied `meetingId` belongs to the supplied `clubId`, AND every supplied `slotId` belongs to that meeting (rejecting cross-meeting slot smuggling). (`meetings.ts:289-296`)
+- `[x]` **MEET-BE-STATE-001**: `meetings.submitAvailability` SHALL reject the call when the meeting's status is not "proposed" — availability cannot be edited on confirmed/cancelled/completed meetings. (`meetings.ts:179-195`)
+- `[x]` **MEET-BE-STATE-002**: `meetings.cancel` SHALL reject the call when the meeting is already in status "cancelled" (no double-cancel). (`meetings.ts:237-252`)
+
 ## Confirmation UI Gaps (mutations exist, UI does not call them)
 
 - `[x]` **MEET-UI-CONFIRM-001**: Implemented via the three sub-IDs below. `meetings.confirm` is now wired to an admin-only section inside the proposed-meeting expanded panel.

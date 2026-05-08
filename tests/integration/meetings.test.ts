@@ -1,4 +1,4 @@
-// @spec MEET-API-001 through MEET-API-005, MEET-DATA-001, MEET-DATA-002, MEET-BE-001, MEET-BE-002
+// @spec MEET-API-001 through MEET-API-005, MEET-DATA-001, MEET-DATA-002
 import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller } from "@tests/helpers/trpc";
