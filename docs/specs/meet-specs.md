@@ -4,7 +4,7 @@
 **Implementing artifacts**:
 - API: `src/server/routers/meetings.ts`
 - UI: `src/app/clubs/[clubId]/meetings/page.tsx`, `meetings-client.tsx`, `create-meeting.tsx`, `respond-meeting.tsx`
-- Tests: `tests/integration/meetings.test.ts`, `tests/e2e/meetings-*.spec.ts`
+- Tests: `tests/integration/meetings.test.ts`, `tests/integration/meetings-security.test.ts`, `tests/e2e/meeting-confirm.spec.ts`, `tests/e2e/meeting-create-respond.spec.ts`, `tests/e2e/meeting-filters.spec.ts`, `tests/e2e/meeting-scheduling.spec.ts`, `tests/unit/meetings-availability.test.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
@@ -23,7 +23,6 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 - `[x]` **MEET-API-CREATE-VAL-001**: `meetings.create` SHALL validate 2–5 slots and 15–120 min duration each. (`meetings.ts:31-94`)
 - `[x]` **MEET-DATA-001**: Each meeting SHALL have 2–5 proposed time slots.
 - `[x]` **MEET-API-TITLE-001**: When `title` is omitted but `bookId` is provided, the title defaults to "Meeting: {book.title}". When both are omitted, default to "Club Meeting". (`meetings.ts:31-94`)
-- `[ ]` **MEET-API-002**: Meetings may optionally link to a book (via `bookId`). API supports it (`meetings.ts:31-94`); UI form does not expose a book picker.
 
 ## Availability API
 
@@ -36,7 +35,6 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 - `[x]` **MEET-API-004**: When an admin calls `meetings.confirm` with a `slotId`, the system SHALL set the meeting status to "confirmed" and store the `confirmedTime` from the selected slot. (`meetings.ts:141-180`)
 - `[x]` **MEET-API-005**: When an admin calls `meetings.cancel`, the system SHALL set status to "cancelled". (`meetings.ts:182-207`)
 - `[x]` **MEET-API-UPDATE-001**: When an admin calls `meetings.update`, the system SHALL update title, description, and/or location fields. (`meetings.ts:116-139`)
-- `[ ]` **MEET-BE-001**: When a confirmed meeting's time has passed, the system SHALL automatically transition its status to "completed". The UI filter treats `status="completed"` as Past, but no scheduled job auto-transitions records.
 
 ## Confirmation UI Gaps (mutations exist, UI does not call them)
 
@@ -51,7 +49,6 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 
 ## Time Handling
 
-- `[ ]` **MEET-BE-002**: All meeting timestamps SHALL be stored in UTC. (Likely true via Prisma defaults; not asserted in tests.)
 - `[x]` **MEET-UI-004**: The frontend SHALL display meeting times in the user's local timezone (browser-detected). Slot times use `Date.toLocaleString()` (`respond-meeting.tsx:88-95`); confirmed times use `Date.toLocaleTimeString()` (`meetings-client.tsx:141`).
 
 ## Notifications
@@ -60,8 +57,6 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 - `[x]` **MEET-NOTIFY-003**: When a meeting is confirmed, the system SHALL email all members with the confirmed time and location. (`meetings.ts:141-180`)
 - `[x]` **MEET-NOTIFY-005**: When a meeting is cancelled, the system SHALL email all members. (`meetings.ts:182-207`)
 - `[x]` **MEET-NOTIFY-REMIND-001**: Voting deadline reminders, mid-book check-ins, and 48h-since-proposed availability nudges are wired into a separate reminder pipeline (`docs/specs/dash-specs.md`, `tests/integration/cron-deadline-reminder.test.ts`).
-- `[ ]` **MEET-NOTIFY-002**: 48h-after-proposal availability reminder for non-responders. (Reminder infra exists; this specific trigger may or may not be live — verify before claiming.)
-- `[ ]` **MEET-NOTIFY-004**: 24-hour-before-meeting reminder email.
 
 ## Meeting List UI
 
@@ -89,7 +84,6 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 ## Past Meeting Row
 
 - `[x]` **MEET-UI-009**: Past meetings (`status="completed"` or `status="cancelled"`) SHALL render with `opacity-70`, a calendar icon block, "Past" neutral badge, the date, title, location, and attended count. (`meetings-client.tsx:241-267`)
-- `[ ]` **MEET-UI-NOTES-IMPL-001**: Wire a "Notes" button on past meetings to a meeting notes/summary view. **Hidden from UI today** — the previous non-functional ghost button was removed (`meetings-client.tsx:241-267`); restore once a destination view exists.
 
 ## Meeting Creation UI
 
@@ -103,11 +97,3 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
   - Button: "Cancel" (`create-meeting.tsx:210-211`) closes the form
   - Button: "Send to Members" (`create-meeting.tsx:213-221`) submits via `meetings.create`; reloads page on success
 - `[x]` **MEET-UI-CREATE-VAL-001**: Submit validation requires at least 2 slots with a non-empty `time`; otherwise inline error "At least 2 time slots are required". (`create-meeting.tsx:83-87`)
-- `[ ]` **MEET-UI-014**: "Linked book" dropdown selector. The `bookId` field is in the API but the create form does not expose it.
-- `[ ]` **MEET-UI-015**: Location text input. The `location` field is in the API and is rendered on confirmed meetings, but the create form does not collect it.
-
-## Deferred
-
-- `[D]` **MEET-BE-003**: .ics calendar export for confirmed meetings.
-- `[D]` **MEET-UI-RECURRING-001**: Recurring meeting templates that pre-fill time slots.
-- `[D]` **MEET-BE-004**: Two-way calendar integration (Google Calendar, Outlook).

@@ -21,8 +21,6 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 
 - `[x]` **PROG-UI-BOOK-001**: When a member navigates to `/clubs/[clubId]/progress` with no `bookId`, the system SHALL render the dashboard for the club's current `BookSelection` (`isCurrent: true`); if no selection exists at all, SHALL render an empty state "No books have been selected yet." (supersedes the prior "book grid" behavior).
 - `[x]` **PROG-UI-BOOK-002**: The progress page SHALL accept a `?bookId=` query parameter and show the dashboard for that book when provided.
-- `[D]` **PROG-UI-BOOK-003**: Deferred — replaced by the inline history picker (PROG-UI-BOOK-005..007). No standalone book grid page.
-- `[D]` **PROG-UI-BOOK-004**: Deferred — no separate selector page to return to; the picker is always inline.
 - `[x]` **PROG-API-006**: The `books.listForClub` procedure SHALL return all books that have been selected for a given club, ordered by most recently selected first. Visible to all members.
 - `[x]` **PROG-UI-BOOK-005**: The progress dashboard SHALL render an inline history picker listing the club's `BookSelection` rows, with the current selection (`isCurrent: true`) first, followed by past selections ordered by `selectedAt` DESC.
 - `[x]` **PROG-UI-BOOK-006**: Each entry in the history picker SHALL be a Link navigating to `/clubs/[clubId]/progress?bookId={bookId}`. Past entries display live `ReadingProgress` for that book (no snapshotting).
@@ -58,7 +56,6 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-UI-003**: When status="finished", the page input auto-locks to totalPages and is disabled. (`update-modal.tsx:62-63, 157`)
 - `[x]` **PROG-UI-004**: When status="not_started", the page input resets to 0. Chapter input is not auto-cleared. (`update-modal.tsx:64-66`)
 - `[x]` **PROG-UI-MODAL-PCT-001**: The modal SHALL render the percentage as a read-only visual: a "Progress: {N}%" header and a `<ProgressBar>` filled to that percentage, inside a `data-testid="progress-preview-bar"` container that exposes `data-percentage` and `data-status` attributes for tests. The percentage is derived live from `page / totalPages` (or 100 when status="finished") and is not directly editable — users adjust the page input or the slider, and the bar follows.
-  - `[!]` **PROG-UI-MODAL-PCT-EDIT-001**: **Removed.** The editable percentage input was tried and rolled back — the page input + slider are sufficient and the editable percentage cluttered the dialog with a third bidirectional control. See PROG-UI-MODAL-PCT-001 for the read-only visual that replaced it.
 - `[x]` **PROG-UI-006**: The modal SHALL include an optional numeric "Chapter (optional)" input (`update-modal.tsx:178-191`), placeholder "—".
 - `[x]` **PROG-UI-007**: Buttons: "Cancel" (`update-modal.tsx:201-203`) and "Save Progress" (`update-modal.tsx:204-212`) at the bottom. Save calls `progress.update` and refreshes the route on success.
 
@@ -91,20 +88,8 @@ Auto-transitions: page input change from 0→positive while status="not_started"
   - "Page [currentPage][optional · ch. [currentChapter]]" (status="reading")
 - `[x]` **PROG-UI-DASH-014**: A compact dashboard card variant (360px width, small ring, mini distribution bar) is used as a read-only preview on the main club dashboard.
 
-## Spoiler Integration
-
-- `[D]` **PROG-BE-SPOOF-001**: Superseded by `DISC-UI-PROGRESS-AUTOFILTER-001`/`002` and `DISC-UI-DASH-FEED-AUTOFILTER-001` in `docs/specs/disc-specs.md`. The cutoff helper lives at `src/lib/discussions/spoiler-cutoff.ts` (`DISC-LIB-CUTOFF-001`).
-- `[D]` **PROG-UI-SPOOF-001**: Superseded — the discussions page prefills the existing `max-chapter-input` from the viewer's progress and surfaces the existing `hidden-count` chip. See `DISC-UI-PROGRESS-AUTOFILTER-001`.
-
 ## Error Handling
 
 - `[x]` **PROG-ERR-001**: If `progress.update` fails, the modal SHALL display the error message inline (`update-modal.tsx:193-197`).
 - `[x]` **PROG-ERR-002**: If loading the progress data fails (`selections.list`, `progress.list`, `progress.me`, or book lookup), the page SHALL render the error's `.message` via `data-testid="selections-error"` or `data-testid="progress-error"` (`progress/page.tsx:27-33, 75-77`). Verified end-to-end by the non-member test below.
 - `[x]` **PROG-ERR-003**: Non-members SHALL receive `FORBIDDEN` ("Not a club member") from `progress.list`/`progress.me`/`progress.update`/`selections.list`. Enforced by `memberProcedure` middleware (`src/server/trpc.ts:26-41`); covered by `tests/e2e/progress-membership-403.spec.ts`.
-
-## Deferred
-
-- `[D]` **PROG-BE-AUDIO-001**: Audiobook progress in hours:minutes.
-- `[D]` **PROG-NOTIFY-001**: Reminder email after 2+ weeks without a progress update.
-- `[D]` **PROG-BE-HISTORY-001**: Historical progress updates with timestamps for reading-velocity analytics.
-- `[D]` **PROG-UI-GOAL-001**: Per-member reading goals with goal-progress visualization.
