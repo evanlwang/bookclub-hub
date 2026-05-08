@@ -1,4 +1,4 @@
-// @spec VOTE-UI-NOM-001, VOTE-UI-NOM-003, VOTE-UI-NOM-COUNT-001, VOTE-API-002
+// @spec VOTE-UI-NOM-001, VOTE-UI-NOM-003, VOTE-UI-NOM-COUNT-001, VOTE-UI-NOMMODAL-PITCH-001, VOTE-API-002
 import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers";
 import { getDb } from "./helpers";
@@ -109,6 +109,52 @@ test.describe("Voting Phase Enhancements", () => {
       await db.nomination.deleteMany({ where: { bookId: book.id } });
       await db.book.delete({ where: { id: book.id } }).catch(() => {});
     }
+  });
+
+  // @spec VOTE-UI-NOMMODAL-PITCH-001
+  test("nominate modal renders an optional pitch textarea (max 500 chars) and persists it on submit", async ({ page }) => {
+    const db = getDb();
+    await db.votingRound.update({
+      where: { id: roundId },
+      data: { status: "nominating" },
+    });
+
+    await loginAs(page, "bob@example.com");
+    await page.goto(`/clubs/${clubId}/vote`);
+
+    await expect(page.getByTestId("nominating-phase")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("search-and-nominate-btn").click();
+
+    // Pitch textarea exists, is optional, and enforces a 500-char ceiling.
+    const pitchInput = page.getByTestId("nominate-pitch");
+    await expect(pitchInput).toBeVisible();
+    await expect(pitchInput).toHaveAttribute("maxlength", "500");
+
+    const ghostQuery = `__nope_${Date.now()}__`;
+    await page.locator('input[placeholder*="Search by title" i]').fill(ghostQuery);
+    await expect(page.getByText(/no matches for/i)).toBeVisible({ timeout: 10000 });
+
+    const uniqueTitle = `E2E Pitch Book ${Date.now()}`;
+    const pitchText = "Reading because everyone keeps recommending it and we're overdue for a short one.";
+    await page.locator('input[placeholder*="Midnight Library"]').fill(uniqueTitle);
+    await page.locator('input[placeholder*="Matt Haig"]').fill("Test Author");
+    await page.locator('input[placeholder="304"]').fill("180");
+    await pitchInput.fill(pitchText);
+
+    await page.getByRole("button", { name: /add & nominate/i }).click();
+
+    await expect(page.getByText(uniqueTitle).first()).toBeVisible({ timeout: 10000 });
+
+    // Verify the pitch persisted on the nomination row.
+    const book = await db.book.findFirst({ where: { title: uniqueTitle } });
+    expect(book).toBeTruthy();
+    if (!book) return;
+    const nomination = await db.nomination.findFirst({ where: { bookId: book.id } });
+    expect(nomination?.pitch).toBe(pitchText);
+
+    // Cleanup
+    await db.nomination.deleteMany({ where: { bookId: book.id } });
+    await db.book.delete({ where: { id: book.id } }).catch(() => {});
   });
 
   // @spec VOTE-UI-NOM-003

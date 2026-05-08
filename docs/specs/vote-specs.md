@@ -66,7 +66,7 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 - `[x]` **VOTE-UI-NOMMODAL-005**: Button: "Create & Nominate" (`nominate-modal.tsx:398-406`) creates a manual Book via `books.createManual`, then nominates it via `nominations.create`.
 - `[x]` **VOTE-UI-NOMMODAL-006**: Button: "Back" (`nominate-modal.tsx:383-394`) returns from manual tab to search tab and resets manual form fields.
 - `[x]` **VOTE-UI-NOMMODAL-007**: Button: "Cancel" (`nominate-modal.tsx:311-318`) and the close X icon and the backdrop click (`nominate-modal.tsx:204-224`) all call `onClose`.
-- `[ ]` **VOTE-UI-NOMMODAL-PITCH-001**: Pitch textarea (max 500 chars) — described in LLD but not present in the modal; nominations are created without a pitch.
+- `[x]` **VOTE-UI-NOMMODAL-PITCH-001**: The NominateModal SHALL render an optional "Why this book?" textarea (max 500 chars, `data-testid="nominate-pitch"`, native `maxlength="500"`, live `{N} / 500` character counter) between the search-results section and the manual-entry section. The pitch SHALL apply to whichever submit path the user takes — both the per-row "Nominate" buttons on Open Library results AND the manual "Add & Nominate" submit include the trimmed pitch in the `nominations.create` body when non-empty. Persists to `Nomination.pitch` (already declared `String? @db.VarChar(500)` in `prisma/schema.prisma`). (`nominate-modal.tsx`)
 
 ## Voting UI — Voting Phase
 

@@ -25,7 +25,7 @@ interface FormErrors {
   pageCount?: string;
 }
 
-// @spec VOTE-API-009-MANUAL, VOTE-API-005-MANUAL
+// @spec VOTE-API-009-MANUAL, VOTE-API-005-MANUAL, VOTE-UI-NOMMODAL-PITCH-001
 export function NominateModal({
   isOpen,
   onClose,
@@ -43,6 +43,7 @@ export function NominateModal({
   const [manualAuthor, setManualAuthor] = useState("");
   const [manualIsbn, setManualIsbn] = useState("");
   const [manualPageCount, setManualPageCount] = useState("");
+  const [pitch, setPitch] = useState("");
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   // Submission state shared by both flows (per-row Nominate + manual Add).
@@ -139,6 +140,7 @@ export function NominateModal({
     setManualAuthor("");
     setManualIsbn("");
     setManualPageCount("");
+    setPitch("");
     setFormErrors({});
     setSubmitError("");
     manualTitleDirty.current = false;
@@ -159,10 +161,16 @@ export function NominateModal({
     setSubmitting(true);
     setSubmitError("");
     try {
+      const trimmedPitch = pitch.trim();
       const res = await fetch("/api/trpc/nominations.create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, roundId, bookId }),
+        body: JSON.stringify({
+          clubId,
+          roundId,
+          bookId,
+          ...(trimmedPitch ? { pitch: trimmedPitch } : {}),
+        }),
       });
       const data = await res.json();
       if (data.error) {
@@ -215,10 +223,16 @@ export function NominateModal({
         return;
       }
 
+      const trimmedPitch = pitch.trim();
       const nomRes = await fetch("/api/trpc/nominations.create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, roundId, bookId: book.id }),
+        body: JSON.stringify({
+          clubId,
+          roundId,
+          bookId: book.id,
+          ...(trimmedPitch ? { pitch: trimmedPitch } : {}),
+        }),
       });
       const nomData = await nomRes.json();
       if (nomData.error) {
@@ -337,6 +351,30 @@ export function NominateModal({
             No matches for &ldquo;{debouncedQuery}&rdquo;. Add it manually below ↓
           </p>
         )}
+
+        {/* Optional pitch — applies to whichever flow the user submits below.
+            @spec VOTE-UI-NOMMODAL-PITCH-001 */}
+        <div className="border-t border-line pt-4 mt-2">
+          <label
+            htmlFor="nominate-pitch"
+            className="block text-xs font-medium text-ink-2 mb-1.5"
+          >
+            Why this book? <span className="text-ink-3 font-normal">(optional)</span>
+          </label>
+          <textarea
+            id="nominate-pitch"
+            data-testid="nominate-pitch"
+            value={pitch}
+            onChange={(e) => setPitch(e.target.value)}
+            maxLength={500}
+            rows={3}
+            placeholder="A short pitch your club will see next to the nomination."
+            className={`${inputClass} border-line resize-y`}
+          />
+          <p className="text-[11px] text-ink-3 mt-1">
+            {pitch.length} / 500 characters
+          </p>
+        </div>
 
         {/* Manual entry — always visible */}
         <div className="border-t border-line pt-4 mt-2">
