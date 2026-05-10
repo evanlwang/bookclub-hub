@@ -1,4 +1,4 @@
-// @spec HOME-UI-001 through HOME-UI-011, HOME-A11Y-002, HOME-A11Y-004
+// @spec HOME-UI-001 through HOME-UI-011, HOME-UI-PRIVACY-CALLOUT-001, HOME-A11Y-002, HOME-A11Y-004
 import Link from "next/link";
 import {
   LogoIcon,
@@ -170,6 +170,39 @@ export default function Home() {
           <div className="absolute bottom-[110px] left-[110px]">
             <BookCover title="Sea of Tranquility" author="Mandel" variant="teal" size="xl" />
           </div>
+        </div>
+      </section>
+
+      {/* Privacy callout */}
+      {/* @spec HOME-UI-PRIVACY-CALLOUT-001 */}
+      <section
+        data-testid="privacy-banner"
+        aria-label="Privacy guarantees"
+        className="bg-primary-soft/55 border-y border-primary/15 px-4 md:px-8 lg:px-14 py-4 mb-10 lg:mb-14"
+      >
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[13px] text-primary-ink">
+          <span className="inline-flex items-center gap-2 font-medium">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 2L4 6v6c0 5 3.5 9.4 8 10 4.5-.6 8-5 8-10V6l-8-4z" />
+            </svg>
+            Built privately
+          </span>
+          <span aria-hidden="true" className="opacity-50">·</span>
+          <span>No personal data stored or shared</span>
+          <span aria-hidden="true" className="opacity-50">·</span>
+          <span>We only ask for email and display name</span>
+          <span aria-hidden="true" className="opacity-50">·</span>
+          <span>No ads, ever</span>
         </div>
       </section>
 

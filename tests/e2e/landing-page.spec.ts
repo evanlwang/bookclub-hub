@@ -85,6 +85,21 @@ test.describe("Landing Page — Features", () => {
   });
 });
 
+// @spec HOME-UI-PRIVACY-CALLOUT-001
+test.describe("Landing Page — Privacy callout", () => {
+  test("privacy banner is visible with all three claims and an aria-label", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const banner = page.getByTestId("privacy-banner");
+    await expect(banner).toBeVisible();
+    await expect(banner).toHaveAttribute("aria-label", "Privacy guarantees");
+    await expect(banner).toContainText(/no personal data/i);
+    await expect(banner).toContainText(/email and display name/i);
+    await expect(banner).toContainText(/no ads/i);
+  });
+});
+
 test.describe("Landing Page — Footer", () => {
   test("renders footer with tagline", async ({ page }) => {
     await page.goto("/");

@@ -37,6 +37,10 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 - `[x]` **HOME-UI-CTA-PRIMARY-001**: Hero CTA: "Sign up" with right chevron icon, primary variant, links to `/join`. Identified by `data-testid="hero-signup"`. (`page.tsx:71-79`)
 - `[x]` **HOME-UI-CTA-SECONDARY-001**: Hero CTA: "Log in", secondary border variant, links to `/login`. Identified by `data-testid="hero-login"`. (`page.tsx:80-86`)
 
+## Landing Page — Privacy Callout
+
+- `[x]` **HOME-UI-PRIVACY-CALLOUT-001**: A full-width privacy banner (`data-testid="privacy-banner"`) SHALL render between the hero and the feature row. It SHALL communicate three claims, in plain language, separated by middot dividers: (a) no personal data is stored or shared, (b) only email and display name are required, (c) no ads, ever. The banner SHALL carry `aria-label="Privacy guarantees"` for screen-reader users and use primary-soft tones consistent with the design system. (`page.tsx`)
+
 ## Landing Page — Features & Footer
 
 - `[x]` **HOME-UI-007**: Three-column feature row with cards "Approval voting" / "Meeting scheduling" / "Spoiler-safe threads", each with a 40×40 icon container and a 19px display-font title. (`page.tsx:184-199, 214-234`)
