@@ -72,6 +72,7 @@ Club {
   name: string (max 100 chars)
   description: string (max 500 chars, nullable)
   code: string (unique, uppercase, 4-16 chars, alphanumeric)
+  theme_color: string (7-char hex `#rrggbb`, nullable; null = inherit global)
   created_by: UUID (FK -> User)
   status: enum("active", "archived", "deleted")
   deleted_at: timestamp (nullable)
@@ -153,6 +154,21 @@ The sidebar's clubs list is loaded server-side via `auth.me` in `clubs/[clubId]/
 | `clubs.leave` | member+ | `{ clubId }` | `{ ok: true }` (owner blocked) |
 | `clubs.join` | optional | `{ code, email?, displayName? }` | `{ club }` |
 | `clubs.lookup` | none | `{ code }` | `{ clubName, memberCount }` or 404 |
+
+## Theming (Per-Club Primary Color)
+
+A club may customize its primary CTA color. The chosen value lives on the Club row as `themeColor` (nullable 7-char hex). When set, the per-club layout (`src/app/clubs/[clubId]/layout.tsx`) server-renders an inline `<style>` block scoped to that subtree, overriding four CSS variables:
+
+- `--color-primary`: the picked hex.
+- `--color-primary-hover`: `color-mix(in oklch, ${hex} 85%, black)`.
+- `--color-primary-soft`: `color-mix(in oklch, ${hex} 18%, white)`.
+- `--color-primary-ink`: `color-mix(in oklch, ${hex} 80%, black)`.
+
+`color-mix(in oklch, …)` re-enters perceptual color space for the derivations so hover/soft/ink track the picked hue rather than the original teal. Cream paper backgrounds and ink text are untouched; the per-club theme is a primary-CTA accent, not a full retheme.
+
+Null `themeColor` ⇒ no `<style>` injection ⇒ inherits the global default (currently `oklch(0.42 0.06 195)`, "Forest Teal").
+
+The Settings UI offers five curated swatches (Forest Teal default + Library Burgundy + Indigo Manuscript + Slate & Persimmon + Plum Velvet), a "Custom" tile opening the native `<input type="color">` picker, and a "Reset to default" link clearing the value to null. v1 ships without a contrast guard for custom picks (see `CLUB-UI-THEME-CONTRAST-001 [D]`); the curated swatches are pre-tuned for the cream paper background.
 
 ## Authorization Model
 

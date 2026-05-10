@@ -112,6 +112,14 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 
   **Scope cuts (deferred):** invite-code edit (separate uniqueness UX needed), archive/unarchive toggle (no `archive` mutation yet — see `CLUB-BE-006`). The "30-day notice" copy is rendered inline so the user understands the soft-delete window. (`src/app/clubs/[clubId]/settings/page.tsx`, `settings-form.tsx`; sidebar link in `src/app/clubs/[clubId]/sidebar.tsx`)
 
+## Theming (Per-Club Primary Color)
+
+- `[x]` **CLUB-DATA-THEME-001**: The `clubs` table SHALL carry a nullable `theme_color VARCHAR(7)` column storing a 7-char hex (`#rrggbb`). Null means "inherit the global default `--color-primary`." (`prisma/schema.prisma` Club model)
+- `[x]` **CLUB-API-THEME-001**: `clubs.update` SHALL accept an optional `themeColor` field that is either a 7-char hex matching `^#[0-9a-f]{6}$` or `null` (to clear). Invalid hex SHALL fail Zod validation before persistence. Setting requires `adminProcedure` gating; member callers SHALL receive `FORBIDDEN`. (`src/server/routers/clubs.ts` `update`)
+- `[x]` **CLUB-UI-SETTINGS-THEME-001**: The admin Settings page SHALL render a "Theme color" section with five curated swatches (Forest Teal default, Library Burgundy, Indigo Manuscript, Slate & Persimmon, Plum Velvet), a "Custom" tile opening the native `<input type="color">` picker, and a "Reset to default" link clearing the value to null. The currently-saved swatch SHALL be visually selected. (`src/app/clubs/[clubId]/settings/settings-form.tsx`)
+- `[x]` **CLUB-UI-THEME-APPLY-001**: When `club.themeColor` is non-null, `clubs/[clubId]/layout.tsx` SHALL server-render an inline `<style>` block that overrides `--color-primary`, `--color-primary-hover`, `--color-primary-soft`, and `--color-primary-ink` for that subtree. Hover/soft/ink SHALL be derived via `color-mix(in oklch, ${hex} {pct}%, {black|white})`. Cream paper backgrounds, ink text, and the accent palette SHALL remain unchanged. (`src/app/clubs/[clubId]/layout.tsx`)
+- `[D]` **CLUB-UI-THEME-CONTRAST-001**: Contrast guard for custom hex picks (warn or auto-clamp lightness when text on the picked color would fail WCAG AA). Deferred for v1; curated swatches are pre-tuned.
+
 ## Topbar Gaps
 
 (Canonical IDs live in dash-specs.md; cross-referenced here because they fall in the club-management UI surface.)

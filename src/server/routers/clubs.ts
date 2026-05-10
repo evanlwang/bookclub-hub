@@ -111,6 +111,7 @@ export const clubsRouter = router({
     return { club, members, currentBook };
   }),
 
+  // @spec CLUB-API-THEME-001
   update: adminProcedure
     .input(
       z.object({
@@ -119,6 +120,12 @@ export const clubsRouter = router({
         description: z.string().max(500).optional(),
         code: z.string().optional(),
         cadence: z.enum(["monthly", "six_weeks", "flexible"]).optional(),
+        // null clears the override; undefined leaves it untouched.
+        themeColor: z
+          .string()
+          .regex(/^#[0-9a-f]{6}$/i, "themeColor must be a 7-char hex like #3f6168")
+          .nullable()
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -137,6 +144,9 @@ export const clubsRouter = router({
       if (input.name) data.name = input.name;
       if (input.description !== undefined) data.description = input.description;
       if (input.cadence) data.votingCadence = input.cadence;
+      if (input.themeColor !== undefined) {
+        data.themeColor = input.themeColor === null ? null : input.themeColor.toLowerCase();
+      }
       if (input.code) {
         const codeValidation = validateCode(input.code);
         if (!codeValidation.valid) {
