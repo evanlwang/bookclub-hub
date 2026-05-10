@@ -154,7 +154,10 @@ export function ClubSidebar({
           >
             <LogoIcon size={24} />
             <div className="flex-1 min-w-0">
-              <span className="font-[var(--font-display)] font-semibold text-[clamp(15px,0.4vw+9px,18px)] text-ink truncate block leading-tight">
+              <span
+                title={clubName}
+                className="font-[var(--font-display)] font-semibold text-[clamp(15px,0.4vw+9px,18px)] text-ink line-clamp-2 leading-tight break-words"
+              >
                 {clubName}
               </span>
               <span className="text-[clamp(11px,0.15vw+9px,13px)] text-ink-3">
@@ -175,7 +178,10 @@ export function ClubSidebar({
           <div className="flex items-center gap-2.5">
             <LogoIcon size={24} />
             <div className="flex-1 min-w-0">
-              <span className="font-[var(--font-display)] font-semibold text-[clamp(15px,0.4vw+9px,18px)] text-ink truncate block leading-tight">
+              <span
+                title={clubName}
+                className="font-[var(--font-display)] font-semibold text-[clamp(15px,0.4vw+9px,18px)] text-ink line-clamp-2 leading-tight break-words"
+              >
                 {clubName}
               </span>
               <MetaRow />
