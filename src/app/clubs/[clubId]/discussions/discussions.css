@@ -1,0 +1,147 @@
+/*
+ * Discussions prose styles — applied to Markdown-rendered thread/comment bodies.
+ * Mirrors the design system's "literary typographic hierarchy" + warm paper
+ * tone. Stays inside the existing design language (no display-font overrides,
+ * no drop caps, no editorial flourishes); just the typography needed to make
+ * rendered HTML feel like the rest of the app.
+ *
+ * @spec DISC-BE-002, DISC-BE-003
+ */
+
+.prose-thread {
+  /* Inherit base font (Geist/UI) — Tailwind's font-[var(--font-display)] on
+     the wrapper picks the serif when desired. */
+  font-size: inherit;
+  line-height: 1.65;
+  color: var(--color-ink);
+}
+.prose-thread > :first-child {
+  margin-top: 0;
+}
+.prose-thread > :last-child {
+  margin-bottom: 0;
+}
+.prose-thread p {
+  margin: 0 0 0.85em 0;
+}
+.prose-thread em {
+  font-style: italic;
+}
+.prose-thread strong {
+  font-weight: 600;
+}
+.prose-thread a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+.prose-thread a:hover {
+  color: var(--color-primary-hover);
+  text-decoration-thickness: 2px;
+}
+.prose-thread blockquote {
+  margin: 1em 0;
+  padding: 0.25em 0 0.25em 1.25em;
+  border-left: 2px solid var(--color-line-strong);
+  font-style: italic;
+  color: var(--color-ink-2);
+}
+.prose-thread ul,
+.prose-thread ol {
+  margin: 0 0 0.85em 0;
+  padding-left: 1.5em;
+}
+.prose-thread ul {
+  list-style: disc;
+}
+.prose-thread ol {
+  list-style: decimal;
+}
+.prose-thread li {
+  margin: 0.2em 0;
+  line-height: 1.6;
+}
+.prose-thread code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--color-bg-soft);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+}
+.prose-thread pre {
+  margin: 0.85em 0;
+  padding: 0.9em 1em;
+  background: var(--color-bg-sunken);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  line-height: 1.55;
+}
+.prose-thread pre code {
+  background: transparent;
+  padding: 0;
+}
+.prose-thread hr {
+  margin: 1.5em 0;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+.prose-thread h1,
+.prose-thread h2,
+.prose-thread h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 1.25em 0 0.5em;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.prose-thread h1 {
+  font-size: 1.5em;
+}
+.prose-thread h2 {
+  font-size: 1.25em;
+}
+.prose-thread h3 {
+  font-size: 1.1em;
+}
+
+/* Comment-body variant — same rules at a tighter cadence. */
+.prose-comment {
+  line-height: 1.6;
+}
+.prose-comment > :first-child {
+  margin-top: 0;
+}
+.prose-comment > :last-child {
+  margin-bottom: 0;
+}
+.prose-comment p {
+  margin: 0 0 0.55em 0;
+}
+.prose-comment em {
+  font-style: italic;
+}
+.prose-comment strong {
+  font-weight: 600;
+}
+.prose-comment a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.prose-comment code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--color-bg-soft);
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.prose-comment blockquote {
+  margin: 0.6em 0;
+  padding-left: 0.85em;
+  border-left: 2px solid var(--color-line);
+  font-style: italic;
+  color: var(--color-ink-2);
+}
