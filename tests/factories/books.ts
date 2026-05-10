@@ -26,7 +26,10 @@ export function createBook(overrides?: Partial<TestBook>): TestBook {
   };
 }
 
-// Classic sci-fi and fantasy novels with real metadata
+// Classic sci-fi and fantasy novels with real metadata.
+// openLibraryId values verified against openlibrary.org search.json on 2026-05-10
+// — the "View on Open Library" CTA in vote-round.tsx links to /works/<id>, so
+// these must be the canonical work keys (not edition keys or look-alike IDs).
 export const dune = createBook({
   title: "Dune",
   author: "Frank Herbert",
@@ -41,7 +44,7 @@ export const leftHand = createBook({
   author: "Ursula K. Le Guin",
   isbn: "978-0441478125",
   pageCount: 304,
-  openLibraryId: "/works/OL59864W",
+  openLibraryId: "/works/OL59800W",
   description: "A groundbreaking exploration of gender and society.",
 });
 
@@ -50,7 +53,7 @@ export const kindred = createBook({
   author: "Octavia Butler",
   isbn: "978-0807083697",
   pageCount: 264,
-  openLibraryId: "/works/OL15195011W",
+  openLibraryId: "/works/OL35616W",
   description: "A powerful tale of time travel and slavery.",
 });
 
@@ -59,7 +62,7 @@ export const hailMary = createBook({
   author: "Andy Weir",
   isbn: "978-0593135204",
   pageCount: 476,
-  openLibraryId: "/works/OL24208257W",
+  openLibraryId: "/works/OL21745884W",
   description: "A gripping near-future science fiction adventure.",
 });
 
@@ -68,7 +71,7 @@ export const piranesi = createBook({
   author: "Susanna Clarke",
   isbn: "978-1635575996",
   pageCount: 272,
-  openLibraryId: "/works/OL20897041W",
+  openLibraryId: "/works/OL20893680W",
   description: "A mysterious tale set in a house of infinite staircases.",
 });
 
@@ -77,7 +80,7 @@ export const exhalation = createBook({
   author: "Ted Chiang",
   isbn: "978-0525513230",
   pageCount: 512,
-  openLibraryId: "/works/OL22091357W",
+  openLibraryId: "/works/OL20149336W",
   description: "A collection of thought-provoking science fiction stories.",
 });
 
@@ -86,7 +89,7 @@ export const theMartian = createBook({
   author: "Andy Weir",
   isbn: "978-0553418026",
   pageCount: 369,
-  openLibraryId: "/works/OL17751157W",
+  openLibraryId: "/works/OL17091839W",
   description: "A survival story set on Mars.",
 });
 
@@ -95,7 +98,7 @@ export const foundationSeries = createBook({
   author: "Isaac Asimov",
   isbn: "978-0553293357",
   pageCount: 255,
-  openLibraryId: "/works/OL45883W",
+  openLibraryId: "/works/OL46125W",
   description: "The beginning of an epic science fiction saga.",
 });
 
