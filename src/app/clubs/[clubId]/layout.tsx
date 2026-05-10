@@ -53,7 +53,7 @@ export default async function ClubLayout({
         hasUnrespondedMeeting={hasUnrespondedMeeting}
         unreadDiscussionCounts={unreadDiscussionCounts}
       />
-      <main className="flex-1 min-w-0 p-6 md:p-10">{children}</main>
+      <main className="flex-1 min-w-0 p-[clamp(1rem,2.5vw,3.5rem)]">{children}</main>
     </div>
   );
 }

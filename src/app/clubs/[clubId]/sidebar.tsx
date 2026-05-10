@@ -136,7 +136,7 @@ export function ClubSidebar({
   }
 
   return (
-    <aside className="w-60 shrink-0 border-r border-line bg-bg-soft flex flex-col h-screen sticky top-0 hidden md:flex">
+    <aside className="w-[clamp(240px,18vw,360px)] shrink-0 border-r border-line bg-bg-soft flex flex-col h-screen sticky top-0 hidden md:flex">
       {/* Club header / switcher */}
       <div className="p-4 border-b border-line relative">
         {hasMultipleClubs ? (
