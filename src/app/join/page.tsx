@@ -271,7 +271,8 @@ function JoinPageInner() {
         return;
       }
 
-      document.cookie = `session_id=${result.sessionId}; path=/; max-age=${30 * 24 * 60 * 60}`;
+      // @spec AUTH-BE-001 — server emits the HttpOnly+Secure+SameSite cookie
+      // via Set-Cookie on the auth.enter response; no client-side write needed.
 
       // Honor explicit ?path= override — bypass smart detection.
       if (pathOverride === "join" || pathOverride === "create") {

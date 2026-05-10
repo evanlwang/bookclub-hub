@@ -63,7 +63,8 @@ export default function LoginPage() {
         return;
       }
 
-      document.cookie = `session_id=${result.sessionId}; path=/; max-age=${30 * 24 * 60 * 60}`;
+      // @spec AUTH-BE-001 — server emits the HttpOnly+Secure+SameSite cookie
+      // via Set-Cookie on the auth.signIn response; no client-side write needed.
 
       // User exists — drop them straight into their first club.
       try {

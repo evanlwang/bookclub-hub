@@ -3,7 +3,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { normalizeEmail, validateEmail } from "@/lib/validation/email";
-import { generateSessionId, computeNewExpiry } from "@/lib/auth/session";
+import { generateSessionId, computeNewExpiry, sessionSetCookieHeader } from "@/lib/auth/session";
 import { passcodeOk } from "@/lib/auth/passcode";
 
 export const authRouter = router({
@@ -45,6 +45,9 @@ export const authRouter = router({
         },
       });
 
+      // @spec AUTH-BE-001 — emit HttpOnly+Secure+SameSite=Lax server-side
+      ctx.resHeaders?.append("Set-Cookie", sessionSetCookieHeader(sessionId));
+
       return { user, sessionId };
     }),
 
@@ -85,6 +88,9 @@ export const authRouter = router({
         },
       });
 
+      // @spec AUTH-BE-001
+      ctx.resHeaders?.append("Set-Cookie", sessionSetCookieHeader(sessionId));
+
       return { user, sessionId: session.id };
     }),
 
@@ -116,9 +122,12 @@ export const authRouter = router({
         .delete({ where: { id: ctx.sessionId } })
         .catch(() => {});
     }
+    // @spec AUTH-BE-001 — clearing cookie also gets HttpOnly+SameSite for parity
     ctx.resHeaders?.append(
       "Set-Cookie",
-      "session_id=; Path=/; Max-Age=0; SameSite=Lax"
+      `session_id=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${
+        process.env.NODE_ENV === "production" ? "; Secure" : ""
+      }`,
     );
     return { success: true };
   }),

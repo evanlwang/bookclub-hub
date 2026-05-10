@@ -10,7 +10,7 @@ import {
 } from "../trpc";
 import { normalizeCode, validateCode } from "@/lib/validation/club-code";
 import { normalizeEmail, validateEmail } from "@/lib/validation/email";
-import { generateSessionId, computeNewExpiry } from "@/lib/auth/session";
+import { generateSessionId, computeNewExpiry, sessionSetCookieHeader } from "@/lib/auth/session";
 import { passcodeOk } from "@/lib/auth/passcode";
 
 export const clubsRouter = router({
@@ -471,6 +471,8 @@ export const clubsRouter = router({
             expiresAt: computeNewExpiry(),
           },
         });
+        // @spec AUTH-BE-001
+        ctx.resHeaders?.append("Set-Cookie", sessionSetCookieHeader(sessionId));
       }
 
       // Check existing membership
