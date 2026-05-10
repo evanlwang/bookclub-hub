@@ -109,3 +109,4 @@ These specs document invariants enforced inside the `meetings` router and exerci
   - Button: "Cancel" (`create-meeting.tsx:210-211`) closes the form
   - Button: "Send to Members" (`create-meeting.tsx:213-221`) submits via `meetings.create`; reloads page on success
 - `[x]` **MEET-UI-CREATE-VAL-001**: Submit validation requires at least 2 slots with a non-empty `time`; otherwise inline error "At least 2 time slots are required". (`create-meeting.tsx:83-87`)
+- `[x]` **MEET-UI-CREATE-003**: When `meetings.create` succeeds, the meetings list SHALL reflect the newly created meeting immediately on the proposer's screen without requiring a manual page reload. Implemented by optimistic append to local state in `MeetingsClient` plus `router.refresh()` for server-authoritative backfill, mirroring the pattern used by confirm/cancel/edit/respond. (`create-meeting.tsx` `onCreated`, `meetings-client.tsx` `applyCreatedMeeting`)

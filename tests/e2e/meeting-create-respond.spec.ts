@@ -1,4 +1,4 @@
-// @spec MEET-UI-CREATE-001, MEET-UI-CREATE-002, MEET-UI-CREATE-VAL-001, MEET-UI-PROP-002, MEET-UI-PROP-PROGRESS-001, MEET-UI-RESP-001, MEET-UI-RESP-SAVE-001, MEET-UI-RESP-CONFIRM-001, MEET-API-001, MEET-API-003
+// @spec MEET-UI-CREATE-001, MEET-UI-CREATE-002, MEET-UI-CREATE-003, MEET-UI-CREATE-VAL-001, MEET-UI-PROP-002, MEET-UI-PROP-PROGRESS-001, MEET-UI-RESP-001, MEET-UI-RESP-SAVE-001, MEET-UI-RESP-CONFIRM-001, MEET-API-001, MEET-API-003
 import { test, expect } from "@playwright/test";
 import { loginAs, getClubByCode } from "./helpers";
 import { getDb } from "./helpers";
@@ -43,6 +43,35 @@ test.describe("Meeting Create and Respond", () => {
     // Remove the third slot
     await page.getByTestId("remove-slot-2").click();
     await expect(page.getByTestId("slot-row-2")).not.toBeVisible();
+  });
+
+  // @spec MEET-UI-CREATE-003
+  test("newly proposed meeting appears in the list without manual reload", async ({ page }) => {
+    await loginAs(page, "alice@example.com");
+    const club = await getClubByCode("WEDREADS");
+
+    await page.goto(`/clubs/${club.id}/meetings`);
+
+    const uniqueTitle = `Refresh Probe ${Date.now()}`;
+
+    await page.getByTestId("propose-meeting-btn").click();
+    await page.getByTestId("meeting-title-input").fill(uniqueTitle);
+
+    // Pick two near-future slots — `datetime-local` is naive-local; pad past the
+    // input's `min` (current minute) so validation won't reject them.
+    const slot = (offsetMs: number) => {
+      const d = new Date(Date.now() + offsetMs);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+    await page.getByTestId("slot-time-0").fill(slot(2 * 24 * 60 * 60 * 1000));
+    await page.getByTestId("slot-time-1").fill(slot(3 * 24 * 60 * 60 * 1000));
+
+    await page.getByTestId("submit-meeting-btn").click();
+
+    // The proposer (Alice, admin) must see the new meeting in the list
+    // without reloading the page.
+    await expect(page.getByText(uniqueTitle)).toBeVisible({ timeout: 10000 });
   });
 
   // @spec MEET-UI-CREATE-VAL-001

@@ -39,7 +39,7 @@ export function CreateMeetingForm({
   clubId,
   onCreated,
   onCancel,
-}: CreateMeetingProps & { onCreated: () => void; onCancel: () => void }) {
+}: CreateMeetingProps & { onCreated: (meeting: any) => void; onCancel: () => void }) {
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
@@ -102,7 +102,8 @@ export function CreateMeetingForm({
       if (data.error) {
         setError(data.error.message || "Failed to create meeting");
       } else {
-        onCreated();
+        // tRPC v11 HTTP response shape: { result: { data: { meeting } } }
+        onCreated(data.result?.data?.meeting);
       }
     } catch {
       setError("Something went wrong");

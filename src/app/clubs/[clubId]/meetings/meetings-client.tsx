@@ -60,7 +60,7 @@ function getAttendeeNames(meeting: any): string[] {
   }, []);
 }
 
-// @spec MEET-UI-006, MEET-UI-008, MEET-UI-009
+// @spec MEET-UI-006, MEET-UI-008, MEET-UI-009, MEET-UI-CREATE-003
 export function MeetingsClient({
   clubId,
   initialMeetings,
@@ -101,6 +101,22 @@ export function MeetingsClient({
       ),
     );
     setExpandedId(null);
+    router.refresh();
+  }
+
+  // Append the freshly created meeting to local state so it surfaces on the
+  // proposer's screen immediately. router.refresh() backfills any fields the
+  // mutation doesn't return (e.g. book join, member responses) — but without
+  // the local push the new meeting never reaches this list, because useState
+  // seeded `meetings` from props on first mount and won't re-read them.
+  function applyCreatedMeeting(meeting: any) {
+    if (!meeting) {
+      router.refresh();
+      return;
+    }
+    setMeetings((prev) =>
+      prev.some((m) => m.id === meeting.id) ? prev : [meeting, ...prev],
+    );
     router.refresh();
   }
 
@@ -208,9 +224,9 @@ export function MeetingsClient({
       {proposing && (
         <CreateMeetingForm
           clubId={clubId}
-          onCreated={() => {
+          onCreated={(meeting) => {
             setProposing(false);
-            router.refresh();
+            applyCreatedMeeting(meeting);
           }}
           onCancel={() => setProposing(false)}
         />

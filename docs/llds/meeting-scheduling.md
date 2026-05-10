@@ -45,7 +45,7 @@ Button: per-slot duration select (30/60/90/120 min) — `create-meeting.tsx:167-
 Button: "×" remove slot — `create-meeting.tsx:179-188` — visible: slots.length > 2 — handler: removeSlot
 Button: "+ Add another time" — `create-meeting.tsx:191-200` — visible: slots.length < 5 — handler: addSlot
 Button: "Cancel" (create form) — `create-meeting.tsx:210-211` — visible: form open — handler: closes form
-Button: "Send to Members" — `create-meeting.tsx:213-221` — visible: form open — enabled: ≥2 slots have a time — handler: `meetings.create`; reloads page on success
+Button: "Send to Members" — `create-meeting.tsx:213-221` — visible: form open — enabled: ≥2 slots have a time — handler: `meetings.create`; on success the new meeting is optimistically appended to the client list and `router.refresh()` backfills server-authoritative state (see MEET-UI-CREATE-003)
 
 ## Gaps (mutations exist, UI does not call them)
 
