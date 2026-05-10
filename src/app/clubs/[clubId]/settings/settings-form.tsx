@@ -321,6 +321,7 @@ export function SettingsForm({
               variant="danger"
               size="md"
               type="button"
+              icon={<TrashIcon size={14} />}
               data-testid="settings-delete-toggle"
               onClick={() => setConfirmingDelete(true)}
             >
@@ -344,6 +345,7 @@ export function SettingsForm({
                   variant="danger"
                   size="md"
                   type="button"
+                  icon={<TrashIcon size={14} />}
                   data-testid="settings-delete-confirm"
                   disabled={deleteName !== initialName || deleting}
                   loading={deleting}

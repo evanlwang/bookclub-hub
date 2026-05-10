@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, Badge, Button, Card } from "@/components/ui";
+import { TrashIcon } from "@/components/ui/icons";
 
 type Role = "owner" | "admin" | "member";
 
@@ -255,7 +256,8 @@ function MemberTableRow({
           {canRemove && (
             <Button
               size="sm"
-              variant="ghost"
+              variant="danger"
+              icon={<TrashIcon size={14} />}
               onClick={() => onAction({ kind: "remove", target: row })}
               data-testid={`remove-${row.userId}`}
             >

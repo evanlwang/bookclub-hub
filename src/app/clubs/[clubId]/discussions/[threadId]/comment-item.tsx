@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Card, Avatar, Button } from "@/components/ui";
+import { TrashIcon } from "@/components/ui/icons";
 import { CommentComposer } from "../comment-composer";
 import { renderBodyHtml } from "@/lib/discussions/markdown";
 
@@ -234,8 +235,9 @@ export function CommentItem({
           type="button"
           onClick={() => setMode("confirm-delete")}
           data-testid={`comment-delete-btn-${comment.id}`}
-          className="text-ink-3 hover:text-danger"
+          className="inline-flex items-center gap-1 font-medium text-danger hover:text-danger/80 transition-colors"
         >
+          <TrashIcon size={12} />
           Delete
         </button>
       )}
