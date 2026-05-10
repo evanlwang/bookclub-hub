@@ -7,6 +7,7 @@ import { Badge, Avatar } from "@/components/ui";
 import { ChevronLeftIcon } from "@/components/ui/icons";
 import { CommentComposer } from "../comment-composer";
 import { CommentItem, type CommentLike } from "./comment-item";
+import { renderBodyHtml } from "@/lib/discussions/markdown";
 
 type Comment = CommentLike & {
   authorId: string;
@@ -131,9 +132,11 @@ export default function ThreadDetailPage() {
             {authorName} · {new Date(thread.createdAt).toLocaleDateString()}
           </span>
         </div>
-        <div className="text-base text-ink leading-relaxed whitespace-pre-wrap">
-          {thread.body}
-        </div>
+        {/* @spec DISC-BE-002, DISC-BE-003 — rendered Markdown, sanitized */}
+        <div
+          className="text-base text-ink leading-relaxed prose-thread"
+          dangerouslySetInnerHTML={{ __html: renderBodyHtml(thread.body) }}
+        />
       </div>
 
       <hr className="border-line mb-6" />

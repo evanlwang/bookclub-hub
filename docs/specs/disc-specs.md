@@ -46,8 +46,8 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 
 ## Content
 
-- `[ ]` **DISC-BE-002**: Thread bodies and comment bodies SHALL support CommonMark Markdown. Today bodies are rendered as plain text via `whitespace-pre-wrap` (`[threadId]/page.tsx:115-117`).
-- `[ ]` **DISC-BE-003**: The system SHALL sanitize all HTML in rendered Markdown to prevent XSS. (Not applicable while plain-text rendering only.)
+- `[x]` **DISC-BE-002**: Thread bodies and comment bodies SHALL render as CommonMark Markdown via `marked` (GFM-flavored, breaks preserved). The rendering helper is `src/lib/discussions/markdown.ts` `renderBodyHtml`. Both the thread detail (`[threadId]/page.tsx`) and the comment item (`comment-item.tsx`) emit the rendered HTML via `dangerouslySetInnerHTML`.
+- `[x]` **DISC-BE-003**: The Markdown renderer SHALL sanitize all output via `isomorphic-dompurify` against a strict allowlist (block + inline tags only; `href`/`title`/`rel`/`target` attributes only; URI schemes restricted to `http(s):` / `mailto:`). Raw HTML in source Markdown is stripped by both `marked`'s default (no inline HTML in our render path) and DOMPurify as defense-in-depth. (`src/lib/discussions/markdown.ts`)
 
 ## Discussions Page UI
 

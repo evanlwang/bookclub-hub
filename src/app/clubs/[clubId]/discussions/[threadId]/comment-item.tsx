@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, Avatar, Button } from "@/components/ui";
 import { CommentComposer } from "../comment-composer";
+import { renderBodyHtml } from "@/lib/discussions/markdown";
 
 export interface CommentLike {
   id: string;
@@ -167,12 +168,12 @@ export function CommentItem({
       </div>
     </div>
   ) : (
-    <p
-      className="text-sm text-ink leading-relaxed whitespace-pre-wrap"
+    /* @spec DISC-BE-002, DISC-BE-003 — Markdown + sanitized HTML */
+    <div
+      className="text-sm text-ink leading-relaxed prose-comment"
       data-testid={`comment-body-${comment.id}`}
-    >
-      {comment.body}
-    </p>
+      dangerouslySetInnerHTML={{ __html: renderBodyHtml(comment.body) }}
+    />
   );
 
   // ---- Affordance row ----
