@@ -61,7 +61,7 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 
 - `[x]` **VOTE-UI-NOMMODAL-001**: The modal opens with a search tab. Button: search input with 300ms debounce calling `books.search`. (`nominate-modal.tsx:230-247`)
 - `[x]` **VOTE-UI-NOMMODAL-002**: Button: "Nominate" (per result row, `nominate-modal.tsx:272-283`) calls `nominations.create` with `{clubId, roundId, bookId}`; on success closes modal and refreshes via `onNominationSuccess`.
-- `[x]` **VOTE-UI-NOMMODAL-003**: When a search returns zero results, the modal SHALL show "No books found" and a Button: "Enter manually" that switches to the manual-entry tab. (`nominate-modal.tsx:290-305`)
+- `[x]` **VOTE-UI-NOMMODAL-003**: When a *settled* search returns zero results, the modal SHALL show a "no matches" notice directing the user to the manual-entry form below. The notice SHALL be suppressed whenever a search is in-flight OR the user has typed since the last completed search (i.e., the debounced query no longer matches the live input) so stale empty-state copy never flashes while the user is still typing. (`nominate-modal.tsx`)
 - `[x]` **VOTE-UI-NOMMODAL-004**: Manual-entry tab SHALL include inputs for Title (required), Author (required), ISBN (optional), Page Count (optional). Validation: title and author non-empty. (`nominate-modal.tsx:321-409`)
 - `[x]` **VOTE-UI-NOMMODAL-005**: Button: "Create & Nominate" (`nominate-modal.tsx:398-406`) creates a manual Book via `books.createManual`, then nominates it via `nominations.create`.
 - `[x]` **VOTE-UI-NOMMODAL-006**: Button: "Back" (`nominate-modal.tsx:383-394`) returns from manual tab to search tab and resets manual form fields.

@@ -261,8 +261,15 @@ export function NominateModal({
 
   if (!isOpen) return null;
 
+  // Suppress while a search is queued (user typed since last completed search)
+  // or in-flight — otherwise the prior empty result flashes against new input.
+  // @spec VOTE-UI-NOMMODAL-003
   const noMatches =
-    debouncedQuery.length > 0 && results.length === 0 && !isSearching && !searchError;
+    debouncedQuery.length > 0 &&
+    query === debouncedQuery &&
+    results.length === 0 &&
+    !isSearching &&
+    !searchError;
 
   const inputClass =
     "w-full px-4 py-2.5 rounded-md border bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20";
