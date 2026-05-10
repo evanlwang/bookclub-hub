@@ -112,7 +112,7 @@ export function ClubSidebar({
   function MetaRow() {
     if (!currentClub) return null;
     return (
-      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+      <div className="mt-3 flex items-center gap-1.5 flex-wrap">
         <RoleBadge />
         <CodeChip />
       </div>
