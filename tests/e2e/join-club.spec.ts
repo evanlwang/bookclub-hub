@@ -1,4 +1,4 @@
-// @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003, AUTH-UI-004, AUTH-UI-PATH-OVERRIDE-001, AUTH-UI-STEP3B-CADENCE-001, CLUB-UI-001, CLUB-UI-002, CLUB-UI-003
+// @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003, AUTH-UI-004, AUTH-UI-PATH-OVERRIDE-001, AUTH-UI-STEP3B-CADENCE-001, CLUB-UI-001, CLUB-UI-002, CLUB-UI-003, CLUB-UI-CODE-LIVE-001
 import { test, expect, type Page } from "@playwright/test";
 
 /**
@@ -182,6 +182,29 @@ test.describe("New Entry Flow — Step 3b: Create branch", () => {
     await expect(page.getByRole("button", { name: /Monthly/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /6 weeks/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Flexible/i })).toBeVisible();
+  });
+
+  // @spec CLUB-UI-CODE-LIVE-001
+  test("Live code lookup shows '✓ Available' for unique code", async ({ page }) => {
+    const uniqueName = `LiveCheck ${Date.now()}`;
+    await page.locator("#club-name").fill(uniqueName);
+    const status = page.getByTestId("code-status");
+    await expect(status).toHaveAttribute("data-state", "available", { timeout: 5000 });
+    await expect(status).toContainText(/Available/i);
+  });
+
+  // @spec CLUB-UI-CODE-LIVE-001
+  test("Live code lookup shows '✗ Taken' and disables Create when colliding with an existing club", async ({ page }) => {
+    // WEDREADS is seeded as an active club — typing it as the desired code MUST fail uniqueness.
+    await page.locator("#club-name").fill("Whatever");
+    await page.locator("#club-code").fill("WEDREADS");
+
+    const status = page.getByTestId("code-status");
+    await expect(status).toHaveAttribute("data-state", "taken", { timeout: 5000 });
+    await expect(status).toContainText(/Taken/i);
+
+    const createBtn = page.getByRole("button", { name: /Create club/i });
+    await expect(createBtn).toBeDisabled();
   });
 
   // @spec CLUB-UI-002

@@ -1,7 +1,7 @@
 // @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003, AUTH-UI-004, CLUB-UI-001, CLUB-UI-002, CLUB-UI-003
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Card, LogoIcon, CheckIcon, ChevronRightIcon, PlusIcon, UsersIcon } from "@/components/ui";
 
@@ -181,6 +181,12 @@ function JoinPageInner() {
   const [cadence, setCadence] = useState("monthly");
   const [codeError, setCodeError] = useState("");
   const [creatingClub, setCreatingClub] = useState(false);
+  // @spec CLUB-UI-CODE-LIVE-001 — debounced uniqueness check
+  const [codeStatus, setCodeStatus] = useState<
+    "idle" | "loading" | "available" | "taken"
+  >("idle");
+  const codeLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const codeLookupController = useRef<AbortController | null>(null);
 
   // Success state
   const [successClubName, setSuccessClubName] = useState("");
@@ -197,6 +203,46 @@ function JoinPageInner() {
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "")
     .slice(0, 10) || "CLUB";
+
+  // @spec CLUB-UI-CODE-LIVE-001 — debounced live uniqueness check on the
+  // create-branch invite-code input. Codes resolve to either "available"
+  // (lookup throws NOT_FOUND) or "taken" (lookup returns a club). Codes
+  // shorter than 4 chars are skipped — clubs.lookup itself rejects them.
+  const effectiveCode = (clubCode || derivedCode).trim().toUpperCase();
+  const shouldLookupCode =
+    step === 3 && path === "create" && effectiveCode.length >= 4 && effectiveCode !== "CLUB";
+  useEffect(() => {
+    if (!shouldLookupCode) {
+      setCodeStatus("idle");
+      return;
+    }
+    if (codeLookupTimer.current) clearTimeout(codeLookupTimer.current);
+    if (codeLookupController.current) codeLookupController.current.abort();
+    setCodeStatus("loading");
+
+    const controller = new AbortController();
+    codeLookupController.current = controller;
+    codeLookupTimer.current = setTimeout(() => {
+      const url = `/api/trpc/clubs.lookup?input=${encodeURIComponent(JSON.stringify({ code: effectiveCode }))}`;
+      fetch(url, { signal: controller.signal })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.result?.data?.clubName) setCodeStatus("taken");
+          else setCodeStatus("available");
+        })
+        .catch((err) => {
+          if (err?.name === "AbortError") return;
+          // Treat network blips as "available" so we never block the user on
+          // an intermittent failure; the on-submit check covers final truth.
+          setCodeStatus("available");
+        });
+    }, 300);
+
+    return () => {
+      if (codeLookupTimer.current) clearTimeout(codeLookupTimer.current);
+      controller.abort();
+    };
+  }, [effectiveCode, shouldLookupCode]);
 
   // Step 1: Continue with identity
   async function handleIdentityContinue() {
@@ -657,9 +703,33 @@ function JoinPageInner() {
                   value={clubCode || derivedCode}
                   onChange={(e) => setClubCode(e.target.value.toUpperCase())}
                   placeholder="Auto-generated"
-                  className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150 font-[var(--font-mono)] tracking-[0.08em] uppercase"
+                  aria-invalid={codeStatus === "taken"}
+                  className={`w-full text-sm bg-bg border rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:ring-3 transition-all duration-150 font-[var(--font-mono)] tracking-[0.08em] uppercase ${
+                    codeStatus === "taken"
+                      ? "border-danger focus:border-danger focus:ring-danger/15"
+                      : "border-line-strong focus:border-primary focus:ring-primary/15"
+                  }`}
                 />
-                <p className="text-xs text-ink-3 mt-1.5">Your members will use this to join.</p>
+                {/* @spec CLUB-UI-CODE-LIVE-001 */}
+                <div
+                  data-testid="code-status"
+                  data-state={codeStatus}
+                  className="text-xs mt-1.5 min-h-[1em]"
+                  aria-live="polite"
+                >
+                  {codeStatus === "available" && (
+                    <span className="text-success">✓ Available</span>
+                  )}
+                  {codeStatus === "taken" && (
+                    <span className="text-danger">✗ Taken — pick another code</span>
+                  )}
+                  {codeStatus === "loading" && (
+                    <span className="text-ink-3">Checking…</span>
+                  )}
+                  {codeStatus === "idle" && (
+                    <span className="text-ink-3">Your members will use this to join.</span>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -710,7 +780,7 @@ function JoinPageInner() {
                   variant="primary"
                   size="lg"
                   className="flex-1"
-                  disabled={!createReady || creatingClub}
+                  disabled={!createReady || creatingClub || codeStatus === "taken"}
                   onClick={handleCreateSubmit}
                 >
                   {creatingClub ? "Creating…" : "Create club"}
