@@ -162,6 +162,11 @@ export default async function VotePage({
               memberCount={memberCount}
               voterCount={voterCount}
               closePreview={closePreview}
+              activeVotingDeadline={
+                activeRoundDetail.votingDeadline
+                  ? new Date(activeRoundDetail.votingDeadline).toISOString()
+                  : null
+              }
             />
           </Card>
         </div>

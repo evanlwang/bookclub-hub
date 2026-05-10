@@ -33,6 +33,8 @@ interface VoteRoundProps {
   memberCount?: number;
   voterCount?: number;
   closePreview?: ClosePreview | null;
+  /** @spec VOTE-UI-VOTE-DEADLINE-001 */
+  activeVotingDeadline?: string | null;
 }
 
 function relativeTime(dateStr?: string): string {
@@ -58,6 +60,7 @@ export function VoteRound({
   memberCount = 0,
   voterCount = 0,
   closePreview = null,
+  activeVotingDeadline = null,
 }: VoteRoundProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>(initialVotes);
@@ -195,20 +198,33 @@ export function VoteRound({
     }
   }
 
-  // @spec VOTE-API-001
+  // @spec VOTE-UI-DEADLINE-NOM-001, VOTE-UI-DEADLINE-VOTE-001
+  const [showDeadlines, setShowDeadlines] = useState(false);
+  const [nominationDeadline, setNominationDeadline] = useState("");
+  const [votingDeadline, setVotingDeadline] = useState("");
+
+  // @spec VOTE-API-001, VOTE-UI-VOTE-DEADLINE-001
   async function handleStartNewRound() {
     setCreateLoading(true);
     setError("");
     try {
+      const body: Record<string, unknown> = { clubId };
+      if (nominationDeadline)
+        body.nominationDeadline = new Date(nominationDeadline).toISOString();
+      if (votingDeadline)
+        body.votingDeadline = new Date(votingDeadline).toISOString();
       const res = await fetch("/api/trpc/rounds.create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.error) {
         setError(data.error.message || "Failed to create round");
       } else {
+        setShowDeadlines(false);
+        setNominationDeadline("");
+        setVotingDeadline("");
         router.refresh();
       }
     } catch {
@@ -437,6 +453,16 @@ export function VoteRound({
         <aside data-testid="vote-sidebar" className="hidden lg:flex flex-col gap-4 sticky top-6 self-start">
           <Card className="p-5">
             <Badge tone="accent" dot>Voting open</Badge>
+            {/* @spec VOTE-UI-VOTE-DEADLINE-001 — surface the active voting
+                deadline so members know how long they have to vote. */}
+            {activeVotingDeadline && (
+              <p
+                data-testid="active-voting-deadline"
+                className="text-xs text-ink-2 mt-2"
+              >
+                Closes {new Date(activeVotingDeadline).toLocaleString()}
+              </p>
+            )}
             <p className="font-[var(--font-display)] text-lg font-semibold mt-2.5 mb-1">
               You&rsquo;ve approved
             </p>
@@ -564,17 +590,58 @@ export function VoteRound({
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 className="font-[var(--font-display)] text-lg font-semibold">Final tallies</h3>
           {isAdmin && (
-            <Button
-              variant="secondary"
-              size="sm"
-              loading={createLoading}
-              onClick={handleStartNewRound}
-              data-testid="start-new-round-btn"
-            >
-              Start new round
-            </Button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                data-testid="toggle-deadline-config"
+                onClick={() => setShowDeadlines((v) => !v)}
+                className="text-xs text-ink-2 hover:text-ink hover:underline"
+              >
+                {showDeadlines ? "Hide deadlines" : "Configure deadlines"}
+              </button>
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={createLoading}
+                onClick={handleStartNewRound}
+                data-testid="start-new-round-btn"
+              >
+                Start new round
+              </Button>
+            </div>
           )}
         </div>
+        {/* @spec VOTE-UI-DEADLINE-NOM-001, VOTE-UI-DEADLINE-VOTE-001 */}
+        {isAdmin && showDeadlines && (
+          <div
+            data-testid="deadline-config"
+            className="mb-3 p-3 rounded-[var(--radius-md)] border border-line bg-bg-soft grid grid-cols-1 sm:grid-cols-2 gap-3"
+          >
+            <label className="text-xs text-ink-2">
+              Nomination deadline (optional)
+              <input
+                type="datetime-local"
+                data-testid="nomination-deadline-input"
+                value={nominationDeadline}
+                onChange={(e) => setNominationDeadline(e.target.value)}
+                className="mt-1 w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-2 py-1.5 text-ink"
+              />
+            </label>
+            <label className="text-xs text-ink-2">
+              Voting deadline (optional)
+              <input
+                type="datetime-local"
+                data-testid="voting-deadline-input"
+                value={votingDeadline}
+                onChange={(e) => setVotingDeadline(e.target.value)}
+                className="mt-1 w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-2 py-1.5 text-ink"
+              />
+            </label>
+            <p className="text-[11px] text-ink-3 sm:col-span-2">
+              When set, the system emails non-voters 24h before the voting deadline (`VOTE-NOTIFY-003`).
+            </p>
+          </div>
+        )}
 
         <Card className="divide-y divide-line">
           {nominations.map((nom, i) => (

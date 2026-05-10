@@ -80,7 +80,7 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
   Disabled when `selected.length === 0`. The component sets `data-state` to `first-submit | save-changes | saved` on the button for E2E assertions. Calls `votes.submit` on click. (Replaces the older "✓ Voted — Update {N}?" label, which conflated saved-state with action-required state.)
 - `[x]` **VOTE-UI-VOTE-004**: After a successful vote submission the UI SHALL show a small success message "✓ Your votes have been recorded" below the button (only when `hasVoted && !loading`). (`vote-round.tsx:218-222`)
 - `[x]` **VOTE-UI-009** (alias `VOTE-UI-VOTE-005`): The voting sidebar (desktop only, `lg:flex`) SHALL show: a "Voting open" badge, "You've approved {N} / {max}" counter, the dot indicator row, and a "Voter turnout" card "{voterCount} of {memberCount} have voted · Tallies hidden until close". (`vote-round.tsx:226-278`)
-- `[ ]` **VOTE-UI-VOTE-DEADLINE-001**: Voting deadline (date/time picker on round creation) is in the data model but not surfaced in the create UI or voting sidebar.
+- `[x]` **VOTE-UI-VOTE-DEADLINE-001**: Voting deadline is now surfaced both in round creation (admin "Configure deadlines" toggle on the decided-phase admin row) and in the voting-phase sidebar (`data-testid="active-voting-deadline"` rendering "Closes {localized datetime}" when `votingDeadline` is set on the active round). The deadline flows page → VoteRound prop → sidebar render. (`vote-round.tsx`, `vote/page.tsx`)
 
 ## Vote Persistence and Update Experience
 
@@ -126,8 +126,8 @@ These specs cover what happens when a member revisits the voting page after they
 
 ## Deadlines
 
-- `[ ]` **VOTE-UI-DEADLINE-NOM-001**: Optional nomination deadline picker on round creation. Field exists on `VotingRound` model; no UI exposes it.
-- `[ ]` **VOTE-UI-DEADLINE-VOTE-001**: Optional voting deadline picker on round creation or on advance-to-voting. Field exists on `VotingRound` model; no UI exposes it.
+- `[x]` **VOTE-UI-DEADLINE-NOM-001**: Admins SHALL see a "Configure deadlines" toggle that reveals a `<input type="datetime-local" data-testid="nomination-deadline-input">`. The chosen value is sent to `rounds.create` as `nominationDeadline` (ISO string). Optional — empty input means no deadline. (`vote-round.tsx`)
+- `[x]` **VOTE-UI-DEADLINE-VOTE-001**: Same toggle reveals a paired `data-testid="voting-deadline-input"` for the voting deadline (ISO string into `rounds.create.votingDeadline`). The picker is on round creation; advance-to-voting reuses the same value via the round record. (`vote-round.tsx`)
 
 ## Book Metadata API
 
@@ -145,7 +145,7 @@ These specs cover what happens when a member revisits the voting page after they
 - `[x]` **VOTE-NOTIFY-001**: When a round enters "nominating", the system SHALL email all club members. (`rounds.ts:17-66`)
 - `[x]` **VOTE-NOTIFY-002**: When a round enters "voting", the system SHALL email all club members. (`rounds.ts:118-126`)
 - `[x]` **VOTE-NOTIFY-004**: When a round is decided, the system SHALL email all club members with the winning book. (`rounds.ts:128-181`)
-- `[ ]` **VOTE-NOTIFY-003**: When a voting deadline is 24 hours away, the system SHALL notify members who have not yet voted. (Requires deadline UI first.)
+- `[x]` **VOTE-NOTIFY-003**: When `VotingRound.votingDeadline` is between now and now+24h, the cron handler at `src/app/api/cron/voting-deadline-reminder/route.ts` emails non-voters with reminder copy. The cron pipeline already existed (covered by `tests/integration/cron-deadline-reminder.test.ts`) — Phase E cluster 14 unlocks it by adding the deadline-picker UI. (`src/app/api/cron/voting-deadline-reminder/route.ts`)
 
 ## Deferred
 
