@@ -212,19 +212,53 @@ export default async function ClubDashboard({
                     <span>{reading} reading</span>
                   </div>
 
-                  {/* Progress bar with member tick-marks */}
+                  {/* Progress bar with member tick-marks + below-row avatars
+                      @spec DASH-UI-HERO-TICKS-001, DASH-UI-HERO-TOOLTIP-001 */}
                   <div className="relative">
-                    <ProgressBar percentage={median} status="reading" animate />
+                    <div className="relative">
+                      <ProgressBar percentage={median} status="reading" animate />
+                      <div className="absolute inset-0 pointer-events-none">
+                        {progress.map((p: any) => {
+                          const pct = Math.min(Math.max(p.percentage ?? 0, 0), 100);
+                          const name = p.user?.displayName ?? "Member";
+                          const chapter =
+                            p.currentChapter != null
+                              ? `Ch. ${p.currentChapter}`
+                              : `${pct}%`;
+                          return (
+                            <button
+                              key={`tick-${p.userId}`}
+                              type="button"
+                              data-testid={`hero-tick-${p.userId}`}
+                              data-percentage={pct}
+                              title={`${name} — ${chapter}`}
+                              aria-label={`${name} — ${chapter}`}
+                              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-3 rounded-full bg-ink/60 hover:bg-ink hover:w-1.5 hover:h-4 transition-all pointer-events-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                              style={{ left: `${pct}%` }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
                     <div className="relative h-6 mt-1">
-                      {progress.slice(0, 8).map((p: any) => (
-                        <div
-                          key={p.userId}
-                          className="absolute -translate-x-1/2"
-                          style={{ left: `${Math.min(p.percentage ?? 0, 100)}%` }}
-                        >
-                          <Avatar name={p.user?.displayName ?? ""} size="sm" />
-                        </div>
-                      ))}
+                      {progress.slice(0, 8).map((p: any) => {
+                        const pct = Math.min(Math.max(p.percentage ?? 0, 0), 100);
+                        const name = p.user?.displayName ?? "Member";
+                        const chapter =
+                          p.currentChapter != null
+                            ? `Ch. ${p.currentChapter}`
+                            : `${pct}%`;
+                        return (
+                          <div
+                            key={p.userId}
+                            className="absolute -translate-x-1/2"
+                            style={{ left: `${pct}%` }}
+                            title={`${name} — ${chapter}`}
+                          >
+                            <Avatar name={name} size="sm" />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

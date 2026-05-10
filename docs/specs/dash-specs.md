@@ -37,9 +37,9 @@ State: empty (no current book) — buttons shown: "Start a vote" link — transi
 - `[x]` **DASH-UI-007**: The hero card SHALL show book cover, title, author. (`page.tsx:161-218`)
 - `[x]` **DASH-UI-009**: The hero SHALL display three stats: median % (with "median" label), finished count, reading count. (`page.tsx:182-191`)
 - `[x]` **DASH-UI-HERO-PROGRESS-001**: A primary progress bar SHALL render at median % (`page.tsx:195`). Below it, an avatar overlay row positions up to 8 member avatars at their progress percentage along the same horizontal axis. (`page.tsx:196-206`)
-- `[!]` **DASH-UI-008**: Older spec required hoverable per-member tick-marks revealing tooltips with name + current chapter. **Today the avatars are positioned but neither connected to the progress bar fill (they sit on a separate `h-6` row below) nor wired to a tooltip on hover.** Treat as gap:
-  - `[ ]` **DASH-UI-HERO-TICKS-001**: Tick-mark style overlay on the progress bar itself (not just below).
-  - `[ ]` **DASH-UI-HERO-TOOLTIP-001**: Hover/focus tooltips on member tick-marks showing name and current chapter.
+- `[x]` **DASH-UI-008**: The dashboard hero progress bar SHALL render per-member tick-marks overlaid on the bar with hover/focus tooltips showing name and current chapter. Implementation covered by sub-IDs below.
+  - `[x]` **DASH-UI-HERO-TICKS-001**: Each member's reading position is rendered as a small vertical pill overlaid on the progress bar (`absolute inset-0` layer over `<ProgressBar>`), positioned by `left: {percentage}%`. `data-testid="hero-tick-{userId}"` carries `data-percentage`. Pill grows on hover/focus.
+  - `[x]` **DASH-UI-HERO-TOOLTIP-001**: Each tick + the below-row avatar SHALL carry a native `title="{name} — Ch. {currentChapter ?? '{pct}%'}"` and matching `aria-label` so screen readers + hovers announce the same content. Native `title` is used (no custom tooltip primitive) to match the rest of the codebase. (`src/app/clubs/[clubId]/page.tsx`)
 - `[x]` **DASH-UI-HERO-EMPTY-001**: When no book is selected, the hero card SHALL show "No book selected yet" with a "Start a vote" link. (`page.tsx:219-229`)
 
 ## Three-Column Grid Cards
