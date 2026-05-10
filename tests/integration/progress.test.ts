@@ -1,4 +1,4 @@
-// @spec PROG-API-001 through PROG-API-004, PROG-DATA-001, PROG-BE-001 through PROG-BE-006
+// @spec PROG-API-001 through PROG-API-004, PROG-DATA-001, PROG-BE-001 through PROG-BE-006, PROG-BE-006-AUTOFINISH
 import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller } from "@tests/helpers/trpc";
@@ -81,6 +81,21 @@ describe("progress", () => {
         status: "finished",
       });
 
+      expect(progress.percentage).toBe(100);
+      expect(progress.currentPage).toBe(412);
+    });
+
+    // @spec PROG-BE-006-AUTOFINISH
+    it("auto-promotes status to 'finished' when currentPage reaches totalPages", async () => {
+      const caller = await createAuthenticatedCaller(db, alice);
+      const { progress } = await caller.progress.update({
+        clubId: wedReads.id,
+        bookId: dune.id,
+        currentPage: 412, // == Dune's totalPages
+        status: "reading",
+      });
+
+      expect(progress.status).toBe("finished");
       expect(progress.percentage).toBe(100);
       expect(progress.currentPage).toBe(412);
     });

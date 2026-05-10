@@ -155,6 +155,14 @@ function UpdateModal({
     if (value > 0 && status === "not_started") {
       setStatus("reading");
     }
+    // Mirror the server-side PROG-BE-006-AUTOFINISH rule so the status pill
+    // flips instantly when the user reaches the last page. Without this, the
+    // modal would show "Reading · 100%" until save, which contradicts the
+    // dashboard's eventual "Finished" badge for the same numeric state.
+    // @spec PROG-BE-006-AUTOFINISH
+    if (totalPages > 0 && value >= totalPages && status !== "finished") {
+      setStatus("finished");
+    }
   }
 
   async function handleSave() {

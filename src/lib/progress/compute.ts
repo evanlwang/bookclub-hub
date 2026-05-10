@@ -1,4 +1,4 @@
-// @spec PROG-BE-001, PROG-BE-002, PROG-BE-003, PROG-BE-005, PROG-BE-006
+// @spec PROG-BE-001, PROG-BE-002, PROG-BE-003, PROG-BE-005, PROG-BE-006, PROG-BE-006-AUTOFINISH
 
 export interface ProgressInput {
   currentPage?: number | null;
@@ -55,6 +55,19 @@ export function computeProgress(input: ProgressInput): ProgressOutput {
   // If totalPages unknown, only percentage is meaningful
   if (totalPages == null) {
     currentPage = null;
+  }
+
+  // Auto-promote to "finished" when the user has effectively read everything.
+  // Requires a known totalPages — without a denominator, percentage=100 is a
+  // user-supplied claim we leave alone (they can flip status manually).
+  // @spec PROG-BE-006-AUTOFINISH
+  if (status === "reading" && totalPages != null && percentage === 100) {
+    return {
+      currentPage: totalPages,
+      totalPages,
+      percentage: 100,
+      status: "finished",
+    };
   }
 
   return {

@@ -1,4 +1,4 @@
-// @spec PROG-BE-001, PROG-BE-002, PROG-BE-003, PROG-BE-005, PROG-BE-006
+// @spec PROG-BE-001, PROG-BE-002, PROG-BE-003, PROG-BE-005, PROG-BE-006, PROG-BE-006-AUTOFINISH
 import { describe, it, expect } from "vitest";
 import { computeProgress } from "@/lib/progress/compute";
 
@@ -99,6 +99,61 @@ describe("computeProgress", () => {
       });
       expect(result.percentage).toBe(100);
       expect(result.currentPage).toBeNull();
+    });
+  });
+
+  // @spec PROG-BE-006-AUTOFINISH
+  describe("auto-promote to finished at 100%", () => {
+    it("flips status from reading to finished when currentPage equals totalPages", () => {
+      const result = computeProgress({
+        currentPage: 304,
+        totalPages: 304,
+        status: "reading",
+      });
+      expect(result.status).toBe("finished");
+      expect(result.percentage).toBe(100);
+      expect(result.currentPage).toBe(304);
+    });
+
+    it("flips status from reading to finished when percentage input is 100", () => {
+      const result = computeProgress({
+        percentage: 100,
+        totalPages: 304,
+        status: "reading",
+      });
+      expect(result.status).toBe("finished");
+      expect(result.percentage).toBe(100);
+      expect(result.currentPage).toBe(304);
+    });
+
+    it("does NOT auto-promote at 99%", () => {
+      const result = computeProgress({
+        currentPage: 301,
+        totalPages: 304,
+        status: "reading",
+      });
+      expect(result.status).toBe("reading");
+      expect(result.percentage).toBe(99);
+    });
+
+    it("does NOT auto-promote when totalPages is null even with percentage=100 (no denominator → user-controlled)", () => {
+      const result = computeProgress({
+        percentage: 100,
+        totalPages: null,
+        status: "reading",
+      });
+      expect(result.status).toBe("reading");
+      expect(result.percentage).toBe(100);
+    });
+
+    it("does not affect status=not_started (which forces percentage=0 anyway)", () => {
+      const result = computeProgress({
+        currentPage: 304,
+        totalPages: 304,
+        status: "not_started",
+      });
+      expect(result.status).toBe("not_started");
+      expect(result.percentage).toBe(0);
     });
   });
 

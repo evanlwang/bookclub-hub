@@ -44,6 +44,7 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-BE-004**: `totalPages` is determined by `Book.pageCount`. If unavailable, defaults to null.
 - `[x]` **PROG-BE-005**: Status enum: "not_started", "reading", "finished".
 - `[x]` **PROG-BE-006**: When status="finished", percentage forced to 100; currentPage forced to totalPages (if known).
+- `[x]` **PROG-BE-006-AUTOFINISH**: When `totalPages` is known and the computed `percentage` reaches 100 (via `currentPage===totalPages` or explicit `percentage=100`), `computeProgress` SHALL promote `status` from "reading" to "finished". Symmetric pair to PROG-BE-006 — the 100% state and the "finished" state are equivalent, so the dashboard and modal render a single, consistent visual. When `totalPages` is null, status is left untouched (no denominator means percentage=100 is a user-supplied claim). (`compute.ts`)
 - `[x]` **PROG-BE-007**: When status="not_started" via the modal, currentPage SHALL be reset to 0 (modal-side; API itself does not coerce). (`update-modal.tsx:62-66`)
 
 ## Progress Update UI — Modal
