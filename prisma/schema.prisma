@@ -95,6 +95,7 @@ model Club {
   description   String?       @db.VarChar(500)
   code          String        @unique @db.VarChar(16)
   votingCadence VotingCadence @default(monthly) @map("voting_cadence")
+  // @spec CLUB-DATA-THEME-001 — nullable; null = inherit global --color-primary
   themeColor    String?       @map("theme_color") @db.VarChar(7)
   createdBy     String        @map("created_by") @db.Uuid
   status        ClubStatus    @default(active)
