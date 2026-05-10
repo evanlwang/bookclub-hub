@@ -99,10 +99,10 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[x]` **DISC-UI-008**: "[deleted]" placeholder for deleted comments with replies is implemented — when a deleted comment retains replies, `comment.body` is set to `"[deleted]"` and the row renders italic-gray. Implementation cited under `DISC-UI-COMMENT-DELETE-001` and `DISC-UI-COMMENT-DELETED-001` (both `[x]`).
 - `[x]` **DISC-UI-010**: Reply buttons are **always visible**, not hover-revealed — intentional re-spec from older text. The Reply affordance lives in the per-comment controls row (`DISC-UI-COMMENT-CONTROLS-001`); no hover/focus reveal is needed.
 - `[!]` **DISC-UI-014/015/017**: Real-time spoiler-mismatch detection in the compose form (amber border, warning banner, "Resolve spoiler warning" disabled state) and the "💡 Spoiler-safe by default" info card — **not implemented**.
-  - `[ ]` **DISC-UI-COMPOSE-MISMATCH-001**: Real-time chapter-vs-body mismatch detection.
-  - `[ ]` **DISC-UI-COMPOSE-MISMATCH-WARN-001**: Warning banner when mismatch detected.
-  - `[ ]` **DISC-UI-COMPOSE-MISMATCH-DISABLE-001**: Disable Post button with "Resolve spoiler warning" label when mismatched.
-  - `[ ]` **DISC-UI-COMPOSE-INFO-001**: "💡 Spoiler-safe by default" info card when no mismatch.
+  - `[x]` **DISC-UI-COMPOSE-MISMATCH-001**: The compose form SHALL run a real-time mismatch detector (`detectChapterMismatch` in `src/lib/discussions/chapter-mismatch.ts`) on every body/tag change, parsing chapter mentions ("chapter N", "ch. N", "ch N") via `\b(chapter|ch\.?)\s*(\d+)\b` and flagging when the largest body-chapter exceeds the largest tag-chapter.
+  - `[x]` **DISC-UI-COMPOSE-MISMATCH-WARN-001**: When a mismatch is detected, the form SHALL render a danger-toned warning banner (`data-testid="compose-mismatch-warning"`, `role="alert"`) naming both the body's chapter and the tag's chapter and instructing the user to either bump the tag or trim the body.
+  - `[x]` **DISC-UI-COMPOSE-MISMATCH-DISABLE-001**: When a mismatch is detected, the Post button SHALL be disabled and SHALL relabel to "Resolve spoiler warning".
+  - `[x]` **DISC-UI-COMPOSE-INFO-001**: When body and tag are both filled and there is no mismatch, the form SHALL render a small "💡 Spoiler-safe by default — only members past Chapter N will see this thread." info card (`data-testid="compose-info-card"`).
 - `[x]` **DISC-UI-011**: Single-line truncated body preview is implemented (`line-clamp-1`).
 - `[x]` **DISC-UI-012**: Thread detail metadata (chapter chip, author, date, body) is rendered inline in the header (`DISC-UI-DETAIL-002`) rather than in a separate sidebar. The older spec's sidebar layout was deliberately replaced by the inline header — `chapter-chip.tsx` is the chip component used in that inline layout.
 

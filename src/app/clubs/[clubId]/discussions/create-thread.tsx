@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, ChapterChip } from "@/components/ui";
+import { detectChapterMismatch } from "@/lib/discussions/chapter-mismatch";
 
 interface CreateThreadProps {
   clubId: string;
@@ -53,7 +54,15 @@ function CreateThreadForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const canSubmit = body.trim().length > 0 && chapterTag.trim().length > 0;
+  // @spec DISC-UI-COMPOSE-MISMATCH-001
+  const mismatch = useMemo(
+    () => detectChapterMismatch(body, chapterTag),
+    [body, chapterTag],
+  );
+  const canSubmit =
+    body.trim().length > 0 &&
+    chapterTag.trim().length > 0 &&
+    !mismatch.mismatch;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -143,6 +152,31 @@ function CreateThreadForm({
         </p>
       </div>
 
+      {/* @spec DISC-UI-COMPOSE-MISMATCH-WARN-001, DISC-UI-COMPOSE-INFO-001 */}
+      {mismatch.mismatch ? (
+        <div
+          data-testid="compose-mismatch-warning"
+          role="alert"
+          className="p-3 rounded-[var(--radius-md)] bg-danger-soft border border-danger/40 text-sm text-ink mb-3"
+        >
+          <strong className="text-danger">Spoiler ahead:</strong> the body
+          mentions Chapter {mismatch.bodyChapter}, but you tagged this thread
+          for Chapter {mismatch.tagChapter}. Members reading along at the
+          tagged chapter will be spoiled. Either bump the chapter tag up to
+          match the body, or trim the body so it stays at or below the tag.
+        </div>
+      ) : (
+        body.trim().length > 0 && chapterTag.trim().length > 0 && (
+          <p
+            data-testid="compose-info-card"
+            className="text-xs text-ink-3 mb-3"
+          >
+            💡 Spoiler-safe by default — only members past Chapter{" "}
+            {mismatch.tagChapter ?? "—"} will see this thread.
+          </p>
+        )
+      )}
+
       {error && (
         <p className="text-sm text-danger mb-3">{error}</p>
       )}
@@ -159,7 +193,8 @@ function CreateThreadForm({
           type="submit"
           data-testid="submit-thread-btn"
         >
-          Post Thread
+          {/* @spec DISC-UI-COMPOSE-MISMATCH-DISABLE-001 */}
+          {mismatch.mismatch ? "Resolve spoiler warning" : "Post Thread"}
         </Button>
       </div>
     </form>
