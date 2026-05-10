@@ -103,7 +103,7 @@ These specs document invariants enforced inside the `meetings` router and exerci
 - `[x]` **MEET-UI-CREATE-002**: The create form SHALL include:
   - Optional Title input (`create-meeting.tsx:122-129`)
   - "+ Add description" toggle that reveals an optional Description textarea (`create-meeting.tsx:132-151`)
-  - 2–5 time slots, each with a `datetime-local` input (calendar-icon prefix) and a duration `<select>` offering 30 / 45 / 60 / 90 / 120 / 150 / 180 / 240 min, default 120. A row of quick-pick chips above the slots ("Tonight", "Tomorrow", "Sat 7pm", "Next Sat 7pm") prefills the next empty slot at 7:00 PM local; once a slot has a time selected, a small inline confirmation line under it shows the parsed weekday/date + "in N days". (`create-meeting.tsx`)
+  - 2–5 time slots, each rendered with a custom `<DateTimePicker>` (calendar icon, popover with month grid + AM/PM time chooser, Esc/click-outside dismissal, keeping the "YYYY-MM-DDTHH:MM" local-ISO contract of the native input via a hidden form input) and a duration `<select>` offering 30 / 45 / 60 / 90 / 120 / 150 / 180 / 240 min, default 120. A row of quick-pick chips above the slots ("Tonight", "Tomorrow", "Sat 7pm", "Next Sat 7pm") prefills the next empty slot at 7:00 PM local; a small inline "in N days" line under each filled slot supplements the picker trigger's absolute date readout. (`create-meeting.tsx`, `date-time-picker.tsx`)
   - Button: "+ Add another time" — visible when `slots.length < 5` (`create-meeting.tsx:191-200`)
   - Button: "×" remove per slot — visible when `slots.length > 2` (`create-meeting.tsx:179-188`)
   - Button: "Cancel" (`create-meeting.tsx:210-211`) closes the form

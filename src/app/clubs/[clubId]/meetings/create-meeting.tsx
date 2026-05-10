@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui";
+import { Button, DateTimePicker } from "@/components/ui";
 
 interface CreateMeetingProps {
   clubId: string;
@@ -89,15 +89,6 @@ function formatRelative(iso: string): string {
   if (!iso) return "";
   const dt = new Date(iso);
   if (Number.isNaN(dt.getTime())) return "";
-  const dayLabel = dt.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-  const timeLabel = dt.toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
   const startOfDay = (d: Date) => {
     const x = new Date(d);
     x.setHours(0, 0, 0, 0);
@@ -106,13 +97,11 @@ function formatRelative(iso: string): string {
   const diffDays = Math.round(
     (startOfDay(dt).getTime() - startOfDay(new Date()).getTime()) / 86_400_000
   );
-  let when: string;
-  if (diffDays === 0) when = "today";
-  else if (diffDays === 1) when = "tomorrow";
-  else if (diffDays === -1) when = "yesterday";
-  else if (diffDays > 1) when = `in ${diffDays} days`;
-  else when = `${Math.abs(diffDays)} days ago`;
-  return `${dayLabel} · ${timeLabel} · ${when}`;
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "tomorrow";
+  if (diffDays === -1) return "yesterday";
+  if (diffDays > 1) return `in ${diffDays} days`;
+  return `${Math.abs(diffDays)} days ago`;
 }
 
 export function ProposeMeetingTrigger({
@@ -322,21 +311,13 @@ export function CreateMeetingForm({
               className="space-y-1"
               data-testid={`slot-row-${i}`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <div className="relative min-w-0 flex-1">
-                  <span className="absolute inset-y-0 left-3 flex items-center text-ink-3 pointer-events-none">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <rect x="3" y="5" width="18" height="16" rx="2" />
-                      <path d="M16 3v4M8 3v4M3 10h18" />
-                    </svg>
-                  </span>
-                  <input
-                    type="datetime-local"
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <DateTimePicker
                     value={slot.time}
                     min={minDateTime}
-                    onChange={(e) => updateSlot(i, "time", e.target.value)}
+                    onChange={(v) => updateSlot(i, "time", v)}
                     data-testid={`slot-time-${i}`}
-                    className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] pl-9 pr-3 py-2 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                   />
                 </div>
                 <div className="flex items-center gap-2">
