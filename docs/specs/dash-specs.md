@@ -20,8 +20,8 @@ State: empty (no current book) — buttons shown: "Start a vote" link — transi
 - `[x]` **DASH-UI-001**: The sidebar SHALL include a club switcher dropdown showing all clubs the user is a member of, with role Badges and a "Create or join a club" link at the bottom. (`sidebar.tsx:50-95`)
 - `[x]` **DASH-UI-002**: The sidebar SHALL display a "Live" Badge (accent dot) on the Voting nav link when an active round exists. (`sidebar.tsx:107, 120-122`)
 - `[ ]` **DASH-UI-NAV-UNREAD-001**: Unread count Badge on Discussions nav link when new threads exist since last visit. Not implemented.
-- `[ ]` **DASH-UI-003**: Topbar breadcrumb (`Club > Page`) and copyable invite-code chip ("OAKWOOD-7Q · Copy"). The invite code is rendered only as static text in the dashboard header (`page.tsx:105-107`); there is no persistent topbar.
-- `[ ]` **DASH-UI-004**: Topbar "Invite" button to copy the join link. Not implemented.
+- `[D]` **DASH-UI-003**: Topbar breadcrumb (`Club > Page`) deferred — the v1 layout uses a sidebar-only chrome; introducing a topbar is a layout-language change out of scope. The copyable invite-code chip half of this spec is satisfied by `DASH-UI-HEAD-COPY-001` rendered in the per-page header (`CopyClubCode`).
+- `[D]` **DASH-UI-004**: Topbar "Invite" button deferred — same reason as `DASH-UI-003`. The invite-copy purpose is served by the inline Copy button on `CopyClubCode`.
 
 ## Attention Banner
 
@@ -56,8 +56,8 @@ State: empty (no current book) — buttons shown: "Start a vote" link — transi
 ## Club Header
 
 - `[x]` **DASH-UI-HEAD-001**: The header SHALL display the club name (h1, display serif, 3xl) and "Code: {CODE}" in monospace. (`page.tsx:97-108`)
-- `[ ]` **DASH-UI-011**: Older spec required the invite code to be a copyable chip. Today it is plain text. Treat as gap:
-  - `[ ]` **DASH-UI-HEAD-COPY-001**: Make the invite-code text a copyable chip with a Copy icon button.
+- `[x]` **DASH-UI-011**: Invite code is rendered as a copyable chip with a Copy button. Implementation covered by sub-ID below.
+  - `[x]` **DASH-UI-HEAD-COPY-001**: The dashboard header SHALL render the club code via the `CopyClubCode` component — `data-testid="club-code"` wraps "Code: {CODE}" with a "Copy" button that writes `code` to the clipboard, swaps to a "Copied" check for 1.5s, and emits `data-testid="copy-club-code-btn"` with `aria-label`. (`src/app/clubs/[clubId]/copy-club-code.tsx`, used in `src/app/clubs/[clubId]/page.tsx:112`)
 
 ## Deferred
 

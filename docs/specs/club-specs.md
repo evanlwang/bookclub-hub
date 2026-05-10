@@ -108,8 +108,8 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 
 (Canonical IDs live in dash-specs.md; cross-referenced here because they fall in the club-management UI surface.)
 
-- `[ ]` **CLUB-UI-TOPBAR-CHIP-001** (= `DASH-UI-003`): Topbar breadcrumb and copyable invite-code chip.
-- `[ ]` **CLUB-UI-TOPBAR-INVITE-001** (= `DASH-UI-004`): Topbar "Invite" button.
+- `[D]` **CLUB-UI-TOPBAR-CHIP-001** (= `DASH-UI-003`): Deferred. See dash-specs.md.
+- `[D]` **CLUB-UI-TOPBAR-INVITE-001** (= `DASH-UI-004`): Deferred. See dash-specs.md.
 
 ## Deferred
 
