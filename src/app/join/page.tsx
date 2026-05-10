@@ -668,6 +668,7 @@ function JoinPageInner() {
                   size="lg"
                   className="flex-1"
                   disabled={!joinReady || joiningClub}
+                  aria-busy={joiningClub}
                   onClick={handleJoinSubmit}
                 >
                   {joiningClub ? "Joining…" : `Join ${clubInfo?.name || "the club"}`}

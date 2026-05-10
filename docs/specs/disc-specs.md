@@ -21,8 +21,8 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[x]` **DISC-API-001**: When a member calls `threads.create` with title, body, and optional `chapterTag`, the system SHALL create the thread linked to the specified book and club.
 - `[x]` **DISC-API-002**: When a member calls `threads.list` with `maxChapter=N`, the system SHALL return only threads where `chapterNumber IS NULL` OR `chapterNumber <= N`. The response SHALL also include `hiddenCount` (threads above maxChapter).
 - `[x]` **DISC-API-LIST-SORT-001**: `threads.list` SHALL accept `sort: "recent" | "comments"` and return threads sorted accordingly.
-- `[ ]` **DISC-API-003**: When a thread author or admin calls `threads.update`, the system SHALL update the specified fields (`title`, `body`, `chapterTag`, `isPinned`). Mutation may exist server-side; no UI calls it.
-- `[ ]` **DISC-API-004**: When a thread author or admin calls `threads.delete`, the system SHALL delete the thread and all comments. No UI calls it.
+- `[x]` **DISC-API-003**: `threads.update` (`src/server/routers/threads.ts:126-167`) accepts `body | chapterTag | isPinned` from author or admin and updates the row. Now wired into UI: thread edit (`DISC-UI-EDIT-BTN-001`) and admin pin toggle (`DISC-UI-PIN-BTN-001`) both call it.
+- `[x]` **DISC-API-004**: `threads.delete` (`src/server/routers/threads.ts:168+`) deletes a thread + cascades comments (FK `onDelete: Cascade`). Now wired into UI by the thread-detail Delete affordance (`DISC-UI-DELETE-BTN-001`).
 - `[x]` **DISC-DATA-001**: The system SHALL parse `chapterTag` into `chapterNumber` when the tag follows a recognizable pattern (e.g., "Chapter 5" → 5). When unparseable, `chapterNumber` is null.
 
 ## Spoiler Filtering
@@ -41,8 +41,8 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 
 - `[x]` **DISC-API-005**: When a member calls `comments.create` with optional `parentCommentId`, the system SHALL create the comment nested under the parent (or top-level if no parent).
 - `[x]` **DISC-DATA-002**: Comment nesting SHALL be limited to one level. A reply (parentCommentId set) SHALL NOT be allowed to have its own children.
-- `[ ]` **DISC-API-006**: When a comment author calls `comments.update`, the system SHALL update the body. Mutation may exist; no UI calls it.
-- `[ ]` **DISC-API-007**: When a comment author or admin calls `comments.delete`, the system SHALL remove it. Child comments (if any replies exist) SHALL remain visible with a "[deleted]" placeholder for the parent. No UI surfaces this today.
+- `[x]` **DISC-API-006**: `comments.update` is wired through the comment-row Edit affordance (`DISC-UI-COMMENT-EDIT-001`).
+- `[x]` **DISC-API-007**: `comments.delete` is wired through the comment-row Delete affordance (`DISC-UI-COMMENT-DELETE-001`); the `[deleted]` placeholder for comments-with-replies is rendered per `DISC-UI-COMMENT-DELETED-001` and resolved as `DISC-UI-008`.
 
 ## Content
 

@@ -80,8 +80,8 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 
 - `[x]` **JOIN-UI-012**: When the user clicks "Continue" on Step 1 with a valid club found (legacy variant), the flow advanced to a profile step. **Today the flow is identity-first then code, so this transition is via Step 1 → Step 2 → Step 3a.** Mark as alignment note rather than gap.
 - `[x]` **JOIN-UI-013**: Step 3a SHALL display Buttons: "Back" (ghost) and "Join the club" (primary).
-- `[!]` **JOIN-UI-014**: Older spec required "Joining…" label and `aria-busy="true"` on the join button while submitting. Verify by reading current Button component; today loading state is conveyed via the shared Button component's `loading` prop. The exact label string and aria-busy attribute should be confirmed:
-  - `[ ]` **JOIN-UI-JOINING-LABEL-001**: **Partially verified (2026-05-07):** the "Joining…" label IS rendered at `src/app/join/page.tsx:625` (`{joiningClub ? "Joining…" : ...}`) — that half is satisfied. **`aria-busy="true"` is NOT set:** the join Button uses `disabled={!joinReady || joiningClub}` rather than the Button component's `loading` prop, and the Button component itself (`src/components/ui/button.tsx`) does not pass `loading` through as `aria-busy`. Fix: either pass `loading={joiningClub}` to the Button and have the Button render `aria-busy={loading}`, or set `aria-busy={joiningClub}` directly on the Button JSX.
+- `[x]` **JOIN-UI-014**: Both halves now satisfied via the sub-ID below.
+  - `[x]` **JOIN-UI-JOINING-LABEL-001**: The Step-3a join Button SHALL render the label "Joining…" while `joiningClub` is true AND SHALL set `aria-busy={joiningClub}` so assistive tech announces the busy state. (`src/app/join/page.tsx`)
 
 ## Join Page — Step 3b: Create Branch
 

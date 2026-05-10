@@ -190,6 +190,46 @@ export const clubsRouter = router({
       return { success: true };
     }),
 
+  // @spec CLUB-BE-006
+  archive: protectedProcedure
+    .input(z.object({ clubId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.membership.findUnique({
+        where: { clubId_userId: { clubId: input.clubId, userId: ctx.user.id } },
+      });
+      if (!membership || membership.role !== "owner") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the owner can archive the club",
+        });
+      }
+      await ctx.db.club.update({
+        where: { id: input.clubId },
+        data: { status: "archived" },
+      });
+      return { success: true };
+    }),
+
+  // @spec CLUB-BE-006
+  unarchive: protectedProcedure
+    .input(z.object({ clubId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.membership.findUnique({
+        where: { clubId_userId: { clubId: input.clubId, userId: ctx.user.id } },
+      });
+      if (!membership || membership.role !== "owner") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the owner can unarchive the club",
+        });
+      }
+      await ctx.db.club.update({
+        where: { id: input.clubId },
+        data: { status: "active" },
+      });
+      return { success: true };
+    }),
+
   // @spec CLUB-NAV-UNREAD-001, DASH-UI-NAV-UNREAD-001
   markDiscussionsVisited: memberProcedure
     .mutation(async ({ ctx, input }) => {
