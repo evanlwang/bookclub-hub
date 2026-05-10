@@ -4,7 +4,7 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 
 ## Status
 
-**PARTIAL** — last audited 2026-05-07 (git SHA `a4049976`). 5 `[!]` divergences and 4 `[ ]` active gaps; 0 reverse orphans. Coverage links largely intact after this audit; specific findings below.
+**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 `[ ]` active gaps, 0 `[!]` divergences, 0 reverse orphans. All non-deferred specs implemented; cookie-security and sliding-expiration hardened in cluster 17.
 
 ## References
 
@@ -52,29 +52,20 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| auth-specs.md | 46 | 37 | 3 | 3 | 3 |
-| home-specs.md | 51 | 45 | 1 | 3 | 2 |
-| **Total** | **97** | **82** | **4** | **6** | **5** |
+| auth-specs.md | 45 | 42 | 0 | 3 | 0 |
+| home-specs.md | 51 | 48 | 0 | 3 | 0 |
+| **Total** | **96** | **90** | **0** | **6** | **0** |
 
-**Summary:** 82 of 91 non-deferred specs marked implemented (90%). 5 divergence markers — re-spec or code-fix owed for each.
+**Summary:** 100% of non-deferred specs implemented (90/90). 6 deliberately-deferred items (smart-detection edge polish + landing copy variants).
 
 **Spec families:** AUTH-API, AUTH-API-SIGNIN, AUTH-API-LOGOUT, AUTH-BE, AUTH-BE-SESSION, AUTH-DATA, AUTH-UI, AUTH-UI-LOGIN, AUTH-UI-LOGOUT, AUTH-UI-PATH-OVERRIDE, AUTH-UI-STEP1-*, AUTH-UI-STEP2-*, AUTH-UI-STEP3A-*, AUTH-UI-STEP3B-*, AUTH-UI-STEP4-*, LANDING-UI, HOME-UI, HOME-UI-CTA-PRIMARY, HOME-UI-CTA-SECONDARY, HOME-A11Y, JOIN-UI, JOIN-UI-CREATE-*, JOIN-UI-COPY.
 
 ## Key Findings
 
-1. **5 divergence markers** — top-priority audit targets (built-but-differs-from-spec).
-2. **20+ AUTH-UI-STEP* sub-IDs are uncited via @spec** (button-/field-level granularity). Likely covered by `// @spec AUTH-UI-001..004` on `tests/unit/join-flow.test.ts:13`. Worth deciding: keep granular EARS as documentation but drop coverage expectation, or add per-element annotations.
-3. **Spec-file phantom test path** — `auth-specs.md` cites `tests/integration/auth.test.ts` ✓ and `tests/integration/join-flow.test.ts` ✓; `home-specs.md` cites `tests/e2e/login-smart-detection.spec.ts` which **does not exist**. Smart-detection coverage is likely subsumed by `tests/e2e/login.spec.ts` and `tests/e2e/join-club.spec.ts`.
+1. **All non-deferred specs implemented.** Cookie security hardened in cluster 17 (`AUTH-BE-001`, `AUTH-BE-002`): server-side `Set-Cookie` with HttpOnly+Secure+SameSite=Lax, sliding expiration on every authenticated request via `src/server/context.ts` semantics inlined into both lookup paths.
+2. **Cadence persistence** (cluster 4) — voting cadence is now a typed `VotingCadence` enum on `Club.votingCadence`, not embedded in description.
+3. **6 deferred specs** — smart-detection edge cases and landing copy variants; deliberate, not drift.
 
 ## Work Required
 
-### Must Fix
-1. Resolve 5 `[!]` divergence specs across `auth-specs.md` and `home-specs.md`.
-2. Update `home-specs.md` `**Implementing artifacts**` header to remove the phantom `tests/e2e/login-smart-detection.spec.ts` and cite the real coverage paths.
-
-### Should Fix
-3. Address 4 `[ ]` active gaps.
-4. Triage AUTH-UI-STEP* coverage: either annotate per-element or accept that parent annotations cover them.
-
-### Nice to Have
-5. Promote PARTIAL → OK once divergences and gaps are closed.
+Maintain coherence on future changes. No active fixes pending.

@@ -4,7 +4,7 @@ Self-reported reading progress — page/chapter/percentage/status. Drives the sp
 
 ## Status
 
-**AUDITED** — last audited 2026-05-07 (git SHA `a4049976`). 0 active gaps + 1 `[!]` divergence + 0 reverse orphans. The most coverage-complete segment in the project; one decision away from `OK`.
+**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 active gaps, 0 divergences, 0 reverse orphans. Was already the most coverage-complete segment at first audit; the single divergence was resolved during user gap-pass.
 
 ## References
 
@@ -51,26 +51,18 @@ Self-reported reading progress — page/chapter/percentage/status. Drives the sp
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| prog-specs.md | 62 | 53 | 0 | 8 | 1 |
+| prog-specs.md | 53 | 53 | 0 | 0 | 0 |
 
-**Summary:** 53 of 54 non-deferred specs marked implemented (98%) — **the most coverage-complete segment in the project.** Zero active gaps. Only 1 divergence to reconcile.
+**Summary:** 100% of specs implemented (53/53). User gap-pass cleaned up the deferred-but-superseded rows from prior audit (8 `[D]` removed when the inline history picker fully replaced the old book-grid surface).
 
 **Spec families:** PROG-API, PROG-BE, PROG-BE-AUDIO, PROG-BE-HISTORY, PROG-BE-SPOOF, PROG-DATA, PROG-ERR, PROG-NOTIFY, PROG-UI, PROG-UI-BOOK.
 
 ## Key Findings
 
-1. **Closest to OK status of any segment** — one divergence away from full coherence on the active surface.
-2. **Eight specs marked deferred** — audio-specific edge cases and history-display polish; deliberate deprioritization rather than drift.
-3. **Downstream consumer of voting** (current book) and **upstream provider to discussions** (spoiler cutoff) — coherence here is load-bearing for both.
-4. **Reference coherence intact** — every cited path resolves; no phantom test files in `prog-specs.md` artifact header.
+1. **First segment to fully clear and stay clean.** Reached OK without any Phase E work — the user's gap pass on `prog-specs.md` retired the legacy book-grid deferreds (replaced by the inline history picker) and the single `[!]` divergence.
+2. **Downstream consumer of voting** (current book) and **upstream provider to discussions** (spoiler cutoff) — coherence here is load-bearing for both.
+3. **Reference coherence intact** — every cited path resolves.
 
 ## Work Required
 
-### Must Fix
-1. Reconcile the single `[!]` divergence — promotes AUDITED → OK.
-
-### Should Fix
-*(none — zero active gaps)*
-
-### Nice to Have
-2. Re-evaluate the 8 `[D]` deferred specs — confirm still wanted-eventually vs can be retired.
+No active items. The segment is the simplest to reason about and least likely to drift on incidental changes.

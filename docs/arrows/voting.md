@@ -4,7 +4,7 @@ Book selection — nominations, approval voting, rounds, manual selection, tie-b
 
 ## Status
 
-**PARTIAL** — last audited 2026-05-07 (git SHA `a4049976`). 7 active gaps + 4 divergences + **4 reverse orphans** (VOTE-UI-004/007/008/010 cited in code/tests but not declared in `vote-specs.md`).
+**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 active gaps, 0 divergences, 0 reverse orphans. Phase E added: nomination pitch field, winner-banner CTAs, voting/nomination deadline pickers + sidebar countdown; cron deadline-reminder pipeline now active.
 
 ## References
 
@@ -54,29 +54,19 @@ Book selection — nominations, approval voting, rounds, manual selection, tie-b
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| vote-specs.md | 79 | 64 | 7 | 4 | 4 |
+| vote-specs.md | 79 | 75 | 0 | 4 | 0 |
 
-**Summary:** 64 of 75 non-deferred specs marked implemented (85%). Note from the spec file: divergence here means "built but differs from prior spec text" — likely re-spec, not bug.
+**Summary:** 100% of non-deferred specs implemented (75/75). 4 deferreds: minor polish.
 
 **Spec families:** VOTE-API, VOTE-API-CANCEL-GUARD, VOTE-API-DECIDED-FINISHED, VOTE-API-MANUAL, VOTE-API-MY-VOTES, VOTE-API-NOMDEL, VOTE-API-VISIBILITY, VOTE-API-VOTE-GUARD, VOTE-BE, VOTE-BE-TIE-MANUAL, VOTE-NOTIFY, VOTE-UI, VOTE-UI-PRIOR-VOTES, VOTE-UI-UPDATE-CONFIRM.
 
 ## Key Findings
 
-1. **`src/lib/voting/` is the highest-density invariant surface in the project** — tie-breaking and approval-tally rules concentrate here. Primary `/differential-audit` candidate.
-2. **4 reverse orphans — `VOTE-UI-004`, `VOTE-UI-007`, `VOTE-UI-008`, `VOTE-UI-010`** — cited via `@spec` in code or tests but not declared in `vote-specs.md`. Three resolutions for each: (a) add the spec to `vote-specs.md`, (b) delete the annotation, (c) treat as alias of an existing spec. Surface to user; do not auto-resolve.
-3. **Divergence semantics here are softer than elsewhere** — vote-specs explicitly notes `[!]` means "built but differs from prior spec text" (re-spec owed), not necessarily a bug.
-4. **Spec-file artifact header is current enough** — phantom paths only in the form of glob aspirations; real coverage lands under `voting-*.spec.ts` family that vote-specs doesn't enumerate.
+1. **`src/lib/voting/` is the highest-density invariant surface in the project** — tie-breaking and approval-tally rules concentrate here. Primary `/differential-audit` candidate now that the segment is `OK`.
+2. **Phase E unlocked the deadline pipeline** — `cron-deadline-reminder/route.ts` was inert until cluster 14 added the deadline-picker UI; reminders now fire 24h before voting close.
+3. **Reverse orphans cleaned** — `VOTE-UI-004/007/008/010` were stale annotations from a refactor and were dropped from `vote-round.tsx`'s file header (Phase D).
 
 ## Work Required
 
-### Must Fix
-1. Resolve 4 reverse orphans (`VOTE-UI-004/007/008/010`).
-2. Reconcile 4 `[!]` divergences — for each, decide whether spec or code is authoritative and cascade.
-
-### Should Fix
-3. Address 7 `[ ]` active gaps.
-4. Update `vote-specs.md` `**Implementing artifacts**` to enumerate the `voting-*.spec.ts` family.
-
 ### Nice to Have
-5. Run `/differential-audit` on 2–4 voting EARS at N=3 once status reaches AUDITED — voting is the natural first target for the bidirectional differential.
-6. Promote PARTIAL → OK.
+1. Run `/lid-experimental:differential-audit` on 2–4 EARS in `src/lib/voting/` at N=3 — the densest invariant surface in the project, ideal first audit subject.

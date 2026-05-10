@@ -96,9 +96,9 @@ This project does not currently declare a coherence-check script — audits run 
 
 | Segment | LLD | Spec file(s) | Status |
 |---|---|---|---|
-| `auth` | `auth-and-accounts.md` | `auth-specs.md`, `home-specs.md` | MAPPED |
-| `clubs` | `club-management.md` | `club-specs.md`, `dash-specs.md` | MAPPED |
-| `voting` | `book-selection-and-voting.md` | `vote-specs.md` | MAPPED |
-| `meetings` | `meeting-scheduling.md` | `meet-specs.md` | MAPPED |
-| `discussions` | `discussion-threads.md` | `disc-specs.md` | MAPPED |
-| `reading-progress` | `reading-progress.md` | `prog-specs.md` | MAPPED |
+| `auth` | `auth-and-accounts.md` | `auth-specs.md`, `home-specs.md` | OK |
+| `clubs` | `club-management.md` | `club-specs.md`, `dash-specs.md` | OK |
+| `voting` | `book-selection-and-voting.md` | `vote-specs.md` | OK |
+| `meetings` | `meeting-scheduling.md` | `meet-specs.md` | OK |
+| `discussions` | `discussion-threads.md` | `disc-specs.md` | OK |
+| `reading-progress` | `reading-progress.md` | `prog-specs.md` | OK |
