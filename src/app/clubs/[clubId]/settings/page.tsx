@@ -20,6 +20,7 @@ export default async function ClubSettingsPage({
     description: string | null;
     code: string;
     votingCadence: "monthly" | "six_weeks" | "flexible";
+    themeColor: string | null;
   } | null = null;
   let viewerRole: "owner" | "admin" | "member" | null = null;
   let error = "";
@@ -46,6 +47,7 @@ export default async function ClubSettingsPage({
         description: true,
         code: true,
         votingCadence: true,
+        themeColor: true,
       },
     });
     club = row;
@@ -85,6 +87,7 @@ export default async function ClubSettingsPage({
           initialName={club.name}
           initialDescription={club.description ?? ""}
           initialCadence={club.votingCadence}
+          initialThemeColor={club.themeColor}
           isOwner={viewerRole === "owner"}
         />
       </Card>

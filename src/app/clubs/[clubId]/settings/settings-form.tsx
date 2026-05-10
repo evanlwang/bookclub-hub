@@ -1,9 +1,10 @@
-// @spec CLUB-UI-SETTINGS-001
+// @spec CLUB-UI-SETTINGS-001, CLUB-UI-SETTINGS-THEME-001
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
+import { TrashIcon } from "@/components/ui/icons";
 
 type Cadence = "monthly" | "six_weeks" | "flexible";
 
@@ -13,23 +14,44 @@ const cadenceOptions: { value: Cadence; label: string }[] = [
   { value: "flexible", label: "Flexible" },
 ];
 
+// Curated theme palette. `value: null` means "inherit the global default"
+// — Forest Teal is what every uncustomized club already renders, so picking
+// it persists null rather than the literal hex.
+type ThemeSwatch = { id: string; label: string; value: string | null; chip: string };
+const themeSwatches: ThemeSwatch[] = [
+  { id: "forest",   label: "Forest Teal",        value: null,      chip: "#3f6168" },
+  { id: "burgundy", label: "Library Burgundy",   value: "#793330", chip: "#793330" },
+  { id: "indigo",   label: "Indigo Manuscript",  value: "#363f76", chip: "#363f76" },
+  { id: "slate",    label: "Slate & Persimmon",  value: "#4d5460", chip: "#4d5460" },
+  { id: "plum",     label: "Plum Velvet",        value: "#6a3f5b", chip: "#6a3f5b" },
+];
+
+function matchSwatch(hex: string | null): string {
+  const swatch = themeSwatches.find((s) => s.value === hex);
+  return swatch ? swatch.id : "custom";
+}
+
 export function SettingsForm({
   clubId,
   initialName,
   initialDescription,
   initialCadence,
+  initialThemeColor,
   isOwner,
 }: {
   clubId: string;
   initialName: string;
   initialDescription: string;
   initialCadence: Cadence;
+  initialThemeColor: string | null;
   isOwner: boolean;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
   const [cadence, setCadence] = useState<Cadence>(initialCadence);
+  const [themeColor, setThemeColor] = useState<string | null>(initialThemeColor);
+  const customInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -38,10 +60,13 @@ export function SettingsForm({
   const [deleteName, setDeleteName] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  const selectedSwatchId = matchSwatch(themeColor);
+
   const dirty =
     name !== initialName ||
     description !== initialDescription ||
-    cadence !== initialCadence;
+    cadence !== initialCadence ||
+    themeColor !== initialThemeColor;
 
   async function handleSave() {
     if (!dirty || saving) return;
@@ -57,6 +82,10 @@ export function SettingsForm({
           description:
             description !== initialDescription ? description.trim() : undefined,
           cadence: cadence !== initialCadence ? cadence : undefined,
+          // Send null explicitly to clear; omit when unchanged so we don't
+          // overwrite with the same value.
+          themeColor:
+            themeColor !== initialThemeColor ? themeColor : undefined,
         }),
       });
       const data = await res.json();
@@ -153,6 +182,98 @@ export function SettingsForm({
               {opt.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* @spec CLUB-UI-SETTINGS-THEME-001 */}
+      <div data-testid="settings-theme">
+        <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
+          Theme color
+        </label>
+        <p className="text-[11px] text-ink-3 mb-2.5">
+          Tints primary buttons and links across your club&rsquo;s pages.
+        </p>
+        <div className="flex flex-wrap gap-2.5 items-center">
+          {themeSwatches.map((swatch) => {
+            const isSelected = selectedSwatchId === swatch.id;
+            return (
+              <button
+                key={swatch.id}
+                type="button"
+                data-testid={`settings-theme-${swatch.id}`}
+                data-selected={isSelected || undefined}
+                onClick={() => setThemeColor(swatch.value)}
+                title={swatch.label}
+                aria-label={swatch.label}
+                aria-pressed={isSelected}
+                className={`group relative w-10 h-10 rounded-full transition-all duration-150 cursor-pointer ${
+                  isSelected
+                    ? "ring-2 ring-offset-2 ring-offset-bg ring-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)]"
+                    : "ring-1 ring-line hover:ring-line-strong hover:scale-105"
+                }`}
+                style={{ backgroundColor: swatch.chip }}
+              >
+                {isSelected && (
+                  <svg
+                    className="absolute inset-0 m-auto text-white drop-shadow"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12.5l4.5 4.5L19 7" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+          {/* Custom picker tile — rainbow conic for affordance */}
+          <button
+            type="button"
+            data-testid="settings-theme-custom"
+            data-selected={selectedSwatchId === "custom" || undefined}
+            onClick={() => customInputRef.current?.click()}
+            title="Custom color"
+            aria-label="Pick a custom color"
+            aria-pressed={selectedSwatchId === "custom"}
+            className={`relative w-10 h-10 rounded-full transition-all duration-150 cursor-pointer ${
+              selectedSwatchId === "custom"
+                ? "ring-2 ring-offset-2 ring-offset-bg ring-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)]"
+                : "ring-1 ring-line hover:ring-line-strong hover:scale-105"
+            }`}
+            style={{
+              background:
+                "conic-gradient(from 0deg, #e74c3c, #f39c12, #f1c40f, #2ecc71, #1abc9c, #3498db, #9b59b6, #e91e63, #e74c3c)",
+            }}
+          >
+            {selectedSwatchId === "custom" && themeColor && (
+              <span
+                className="absolute inset-1.5 rounded-full ring-2 ring-white"
+                style={{ backgroundColor: themeColor }}
+                aria-hidden="true"
+              />
+            )}
+          </button>
+          <input
+            ref={customInputRef}
+            type="color"
+            data-testid="settings-theme-custom-input"
+            value={themeColor && /^#[0-9a-f]{6}$/i.test(themeColor) ? themeColor : "#3f6168"}
+            onChange={(e) => setThemeColor(e.target.value.toLowerCase())}
+            className="sr-only"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+          {selectedSwatchId !== "forest" && (
+            <span className="text-[11px] text-ink-3 font-[var(--font-mono)] ml-1 tabular-nums">
+              {themeColor ?? "default"}
+            </span>
+          )}
         </div>
       </div>
 

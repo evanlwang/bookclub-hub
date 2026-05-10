@@ -205,6 +205,46 @@ describe("clubs", () => {
         caller.clubs.update({ clubId: wedReads.id, name: "Nope" })
       ).rejects.toThrow("Admin or owner role required");
     });
+
+    // @spec CLUB-API-THEME-001
+    it("admin can set a themeColor hex", async () => {
+      const caller = await createAuthenticatedCaller(db, bob);
+      const result = await caller.clubs.update({
+        clubId: wedReads.id,
+        themeColor: "#793330",
+      });
+      expect(result.club.themeColor).toBe("#793330");
+    });
+
+    // @spec CLUB-API-THEME-001
+    it("admin can clear themeColor with null", async () => {
+      await db.club.update({
+        where: { id: wedReads.id },
+        data: { themeColor: "#793330" },
+      });
+      const caller = await createAuthenticatedCaller(db, bob);
+      const result = await caller.clubs.update({
+        clubId: wedReads.id,
+        themeColor: null,
+      });
+      expect(result.club.themeColor).toBeNull();
+    });
+
+    // @spec CLUB-API-THEME-001
+    it("rejects invalid themeColor hex", async () => {
+      const caller = await createAuthenticatedCaller(db, bob);
+      await expect(
+        caller.clubs.update({ clubId: wedReads.id, themeColor: "not-a-hex" })
+      ).rejects.toThrow();
+    });
+
+    // @spec CLUB-API-THEME-001
+    it("member cannot set themeColor", async () => {
+      const caller = await createAuthenticatedCaller(db, carol);
+      await expect(
+        caller.clubs.update({ clubId: wedReads.id, themeColor: "#793330" })
+      ).rejects.toThrow("Admin or owner role required");
+    });
   });
 
   describe("clubs.delete", () => {

@@ -168,7 +168,7 @@ A club may customize its primary CTA color. The chosen value lives on the Club r
 
 Null `themeColor` ⇒ no `<style>` injection ⇒ inherits the global default (currently `oklch(0.42 0.06 195)`, "Forest Teal").
 
-The Settings UI offers five curated swatches (Forest Teal default + Library Burgundy + Indigo Manuscript + Slate & Persimmon + Plum Velvet), a "Custom" tile opening the native `<input type="color">` picker, and a "Reset to default" link clearing the value to null. v1 ships without a contrast guard for custom picks (see `CLUB-UI-THEME-CONTRAST-001 [D]`); the curated swatches are pre-tuned for the cream paper background.
+The Settings UI offers five curated swatches plus a "Custom" tile. The Forest Teal swatch is the global default — picking it persists `themeColor = null` (inherit, no override). The other four (Library Burgundy, Indigo Manuscript, Slate & Persimmon, Plum Velvet) persist their hex value. The Custom tile opens the native `<input type="color">` picker; the resulting hex is persisted directly. v1 ships without a contrast guard for custom picks (see `CLUB-UI-THEME-CONTRAST-001 [D]`); the curated swatches are pre-tuned for the cream paper background.
 
 ## Authorization Model
 
