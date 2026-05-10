@@ -39,7 +39,7 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 
 ## Landing Page — Privacy Callout
 
-- `[x]` **HOME-UI-PRIVACY-CALLOUT-001**: A full-width privacy banner (`data-testid="privacy-banner"`) SHALL render between the hero and the feature row. It SHALL communicate three claims, in plain language, separated by middot dividers: (a) no personal data is stored or shared, (b) only email and display name are required, (c) no ads, ever. The banner SHALL carry `aria-label="Privacy guarantees"` for screen-reader users and use primary-soft tones consistent with the design system. (`page.tsx`)
+- `[x]` **HOME-UI-PRIVACY-CALLOUT-001**: A full-width "promises" section (`data-testid="privacy-banner"`, `aria-label="Privacy guarantees"`) SHALL render between the hero and the feature row. It SHALL include a centered eyebrow ("Our promises") flanked by short horizontal rules, a display-font headline with an italicized primary-colored emphasis word, a muted subhead, and a three-up grid of promise cards. Each card SHALL render an icon well (primary-soft background, primary-ink icon) plus a display-font title and a one-line body. The three claims SHALL communicate, in this order: (a) no personal data ("No personal data"), (b) only email and display name are required ("Just email and display name"), (c) no ads, ever ("No ads, ever"). Cards SHALL use the same FeatureCard visual rhythm as the row below (radius, icon well, typography) but at smaller scale. (`page.tsx`)
 
 ## Landing Page — Features & Footer
 

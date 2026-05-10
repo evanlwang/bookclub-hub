@@ -178,31 +178,107 @@ export default function Home() {
       <section
         data-testid="privacy-banner"
         aria-label="Privacy guarantees"
-        className="bg-primary-soft/55 border-y border-primary/15 px-4 md:px-8 lg:px-14 py-4 mb-10 lg:mb-14"
+        className="relative px-4 md:px-8 lg:px-14 py-14 lg:py-20 mb-6"
       >
-        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[13px] text-primary-ink">
-          <span className="inline-flex items-center gap-2 font-medium">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12 2L4 6v6c0 5 3.5 9.4 8 10 4.5-.6 8-5 8-10V6l-8-4z" />
-            </svg>
-            Built privately
-          </span>
-          <span aria-hidden="true" className="opacity-50">·</span>
-          <span>No personal data stored or shared</span>
-          <span aria-hidden="true" className="opacity-50">·</span>
-          <span>We only ask for email and display name</span>
-          <span aria-hidden="true" className="opacity-50">·</span>
-          <span>No ads, ever</span>
+        {/* Soft cream-to-primary backdrop, tonally distinct from hero but not loud */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(180deg, oklch(0.97 0.012 195 / 0.45) 0%, oklch(0.96 0.022 75 / 0.35) 100%)",
+            borderTop: "1px solid oklch(0.91 0.008 70)",
+            borderBottom: "1px solid oklch(0.91 0.008 70)",
+          }}
+        />
+
+        <div className="max-w-[1100px] mx-auto">
+          {/* Eyebrow with hairline flanks */}
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
+            <span className="text-[11px] uppercase tracking-[0.22em] text-primary-ink font-medium">
+              Our promises
+            </span>
+            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
+          </div>
+
+          {/* Display headline echoing hero "finally" italic */}
+          <h2 className="font-[var(--font-display)] text-[34px] md:text-[42px] font-semibold text-ink text-center mb-3 tracking-[-0.02em] leading-[1.1]">
+            Built for readers,{" "}
+            <em className="italic" style={{ color: "var(--color-primary)" }}>
+              not advertisers
+            </em>
+            .
+          </h2>
+          <p className="text-[14px] text-ink-3 text-center mb-10 max-w-[520px] mx-auto leading-relaxed">
+            We&apos;re a small thing for small groups. Here&apos;s what that means
+            for you.
+          </p>
+
+          {/* Three-up promise cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <PromiseCard
+              icon={
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2L4 6v6c0 5 3.5 9.4 8 10 4.5-.6 8-5 8-10V6l-8-4z" />
+                  <path d="M9 12.5l2 2 4-4" />
+                </svg>
+              }
+              title="No personal data"
+              body="Nothing about you is stored or shared. We don't sell, analyze, or hand off anything."
+            />
+            <PromiseCard
+              icon={
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="5.5" width="18" height="13" rx="2" />
+                  <path d="M3.5 7l8.5 6 8.5-6" />
+                </svg>
+              }
+              title="Just email and display name"
+              body="That's the entire signup. No phone, no birthday, no contacts upload, no friend graph."
+            />
+            <PromiseCard
+              icon={
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3 11l11-6v14L3 13z" />
+                  <path d="M14 9.5v5" />
+                  <path d="M4 18l16-12" />
+                </svg>
+              }
+              title="No ads, ever"
+              body="No banners, no sponsored books, no tracking pixels. Just the books and the people."
+            />
+          </div>
         </div>
       </section>
 
@@ -256,6 +332,29 @@ function FeatureCard({
         {title}
       </h3>
       <p className="text-[14px] text-ink-2 leading-relaxed">{description}</p>
+    </div>
+  );
+}
+
+// @spec HOME-UI-PRIVACY-CALLOUT-001
+function PromiseCard({
+  icon,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="group relative bg-bg/85 backdrop-blur-[2px] border border-line rounded-[var(--radius-lg)] p-5 transition-all duration-200 hover:border-primary/35 hover:shadow-sm">
+      <div className="w-9 h-9 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink flex items-center justify-center mb-3 transition-transform duration-200 group-hover:-rotate-3">
+        {icon}
+      </div>
+      <h3 className="font-[var(--font-display)] text-[17px] font-semibold text-ink mb-1 tracking-[-0.01em]">
+        {title}
+      </h3>
+      <p className="text-[13px] text-ink-2 leading-relaxed">{body}</p>
     </div>
   );
 }
