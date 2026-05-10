@@ -218,45 +218,50 @@ function DiscussionsContent() {
         <ul data-testid="threads-list" className="space-y-2">
           {threads.map((thread) => (
             <li key={thread.id} data-testid={`thread-${thread.id}`} data-pinned={thread.isPinned ? "true" : "false"}>
-              <Card
-                className={`p-4 hover:border-line-strong transition-colors duration-150 cursor-pointer ${
-                  thread.isPinned ? "bg-warning-soft border-warning/40" : ""
-                }`}
+              <Link
+                href={`/clubs/${clubId}/discussions/${thread.id}`}
+                className="block"
               >
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1">
-                  {/* @spec DISC-UI-PIN-VISUAL-001 */}
-                  {thread.isPinned && (
-                    <Badge tone="warning" dot>
-                      PINNED
-                    </Badge>
-                  )}
-                  {thread.chapterTag && (
-                    <span data-testid="chapter-tag">
-                      <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
-                    </span>
-                  )}
-                  {thread.commentCount != null && (
-                    <span className="text-xs text-ink-3 ml-auto">{thread.commentCount} replies</span>
-                  )}
-                </div>
-                {thread.body && (
-                  <p
-                    data-testid="thread-body-preview"
-                    className="text-sm text-ink leading-snug line-clamp-2"
-                  >
-                    {thread.body}
-                  </p>
-                )}
-                {thread.author && (
-                  <div className="flex items-center gap-2 mt-2.5">
-                    <Avatar name={thread.author.displayName} size="sm" />
-                    <span className="text-xs text-ink-3">
-                      {thread.author.displayName.split(" ")[0]}
-                      {thread.createdAt && ` · ${relativeTime(thread.createdAt)}`}
-                    </span>
+                <Card
+                  className={`p-4 hover:border-line-strong transition-colors duration-150 cursor-pointer ${
+                    thread.isPinned ? "bg-warning-soft border-warning/40" : ""
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1">
+                    {/* @spec DISC-UI-PIN-VISUAL-001 */}
+                    {thread.isPinned && (
+                      <Badge tone="warning" dot>
+                        PINNED
+                      </Badge>
+                    )}
+                    {thread.chapterTag && (
+                      <span data-testid="chapter-tag">
+                        <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
+                      </span>
+                    )}
+                    {thread.commentCount != null && (
+                      <span className="text-xs text-ink-3 ml-auto">{thread.commentCount} replies</span>
+                    )}
                   </div>
-                )}
-              </Card>
+                  {thread.body && (
+                    <p
+                      data-testid="thread-body-preview"
+                      className="text-sm text-ink leading-snug line-clamp-2"
+                    >
+                      {thread.body}
+                    </p>
+                  )}
+                  {thread.author && (
+                    <div className="flex items-center gap-2 mt-2.5">
+                      <Avatar name={thread.author.displayName} size="sm" />
+                      <span className="text-xs text-ink-3">
+                        {thread.author.displayName.split(" ")[0]}
+                        {thread.createdAt && ` · ${relativeTime(thread.createdAt)}`}
+                      </span>
+                    </div>
+                  )}
+                </Card>
+              </Link>
             </li>
           ))}
         </ul>
