@@ -20,7 +20,7 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 ## Meeting Creation API
 
 - `[x]` **MEET-API-001**: When an admin calls `meetings.create` with 2–5 time slots, the system SHALL create the meeting in "proposed" status with the specified slots. (`meetings.ts:31-94`)
-- `[x]` **MEET-API-CREATE-VAL-001**: `meetings.create` SHALL validate 2–5 slots and 15–120 min duration each. (`meetings.ts:31-94`)
+- `[x]` **MEET-API-CREATE-VAL-001**: `meetings.create` SHALL validate 2–5 slots and 15–240 min duration each (default 120). (`meetings.ts:31-94`)
 - `[x]` **MEET-DATA-001**: Each meeting SHALL have 2–5 proposed time slots.
 - `[x]` **MEET-API-TITLE-001**: When `title` is omitted but `bookId` is provided, the title defaults to "Meeting: {book.title}". When both are omitted, default to "Club Meeting". (`meetings.ts:31-94`)
 
@@ -103,7 +103,7 @@ These specs document invariants enforced inside the `meetings` router and exerci
 - `[x]` **MEET-UI-CREATE-002**: The create form SHALL include:
   - Optional Title input (`create-meeting.tsx:122-129`)
   - "+ Add description" toggle that reveals an optional Description textarea (`create-meeting.tsx:132-151`)
-  - 2–5 time slots, each with a `datetime-local` input and a duration `<select>` (30 / 60 / 90 / 120 min) (`create-meeting.tsx:154-190`)
+  - 2–5 time slots, each with a `datetime-local` input (calendar-icon prefix) and a duration `<select>` offering 30 / 45 / 60 / 90 / 120 / 150 / 180 / 240 min, default 120. A row of quick-pick chips above the slots ("Tonight", "Tomorrow", "Sat 7pm", "Next Sat 7pm") prefills the next empty slot at 7:00 PM local; once a slot has a time selected, a small inline confirmation line under it shows the parsed weekday/date + "in N days". (`create-meeting.tsx`)
   - Button: "+ Add another time" — visible when `slots.length < 5` (`create-meeting.tsx:191-200`)
   - Button: "×" remove per slot — visible when `slots.length > 2` (`create-meeting.tsx:179-188`)
   - Button: "Cancel" (`create-meeting.tsx:210-211`) closes the form

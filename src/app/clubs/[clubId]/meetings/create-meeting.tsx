@@ -9,13 +9,110 @@ interface CreateMeetingProps {
 
 type Slot = { time: string; durationMinutes: number };
 
+// @spec MEET-API-CREATE-VAL-001, MEET-UI-CREATE-002
+const DEFAULT_DURATION_MINUTES = 120;
+const DURATION_OPTIONS: Array<{ value: number; label: string }> = [
+  { value: 30, label: "30 min" },
+  { value: 45, label: "45 min" },
+  { value: 60, label: "1 hr" },
+  { value: 90, label: "1.5 hr" },
+  { value: 120, label: "2 hr" },
+  { value: 150, label: "2.5 hr" },
+  { value: 180, label: "3 hr" },
+  { value: 240, label: "4 hr" },
+];
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+function toLocalIso(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function nowLocalIsoMinutes(): string {
   const d = new Date();
   d.setSeconds(0, 0);
-  // Build a "YYYY-MM-DDTHH:MM" string in local time so it's a valid `min` for
-  // <input type="datetime-local"> (which is naive-local, not UTC).
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return toLocalIso(d);
+}
+
+// Returns the upcoming date for a given weekday (0=Sun..6=Sat) at hour:min.
+// If today is the target weekday and the target time hasn't passed, returns today.
+function nextWeekdayAt(weekday: number, hour: number, minute = 0): Date {
+  const d = new Date();
+  d.setSeconds(0, 0);
+  d.setMilliseconds(0);
+  const today = d.getDay();
+  let daysAhead = (weekday - today + 7) % 7;
+  if (daysAhead === 0) {
+    const candidate = new Date(d);
+    candidate.setHours(hour, minute, 0, 0);
+    if (candidate.getTime() <= d.getTime()) daysAhead = 7;
+  }
+  d.setDate(d.getDate() + daysAhead);
+  d.setHours(hour, minute, 0, 0);
+  return d;
+}
+
+function todayAt(hour: number, minute = 0): Date {
+  const d = new Date();
+  d.setHours(hour, minute, 0, 0);
+  return d;
+}
+
+function tomorrowAt(hour: number, minute = 0): Date {
+  const d = todayAt(hour, minute);
+  d.setDate(d.getDate() + 1);
+  return d;
+}
+
+interface QuickPick {
+  label: string;
+  build: () => Date;
+}
+
+function buildQuickPicks(): QuickPick[] {
+  const now = new Date();
+  const picks: QuickPick[] = [];
+  // "Tonight" only if 7pm is still in the future today.
+  const tonight = todayAt(19);
+  if (tonight.getTime() > now.getTime()) {
+    picks.push({ label: "Tonight 7pm", build: () => todayAt(19) });
+  }
+  picks.push({ label: "Tomorrow 7pm", build: () => tomorrowAt(19) });
+  picks.push({ label: "Sat 7pm", build: () => nextWeekdayAt(6, 19) });
+  const nextSat = nextWeekdayAt(6, 19);
+  nextSat.setDate(nextSat.getDate() + 7);
+  picks.push({ label: "Next Sat 7pm", build: () => nextSat });
+  return picks;
+}
+
+function formatRelative(iso: string): string {
+  if (!iso) return "";
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return "";
+  const dayLabel = dt.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  const timeLabel = dt.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const startOfDay = (d: Date) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  };
+  const diffDays = Math.round(
+    (startOfDay(dt).getTime() - startOfDay(new Date()).getTime()) / 86_400_000
+  );
+  let when: string;
+  if (diffDays === 0) when = "today";
+  else if (diffDays === 1) when = "tomorrow";
+  else if (diffDays === -1) when = "yesterday";
+  else if (diffDays > 1) when = `in ${diffDays} days`;
+  else when = `${Math.abs(diffDays)} days ago`;
+  return `${dayLabel} · ${timeLabel} · ${when}`;
 }
 
 export function ProposeMeetingTrigger({
@@ -45,16 +142,17 @@ export function CreateMeetingForm({
   const [description, setDescription] = useState("");
   const [showDesc, setShowDesc] = useState(false);
   const [slots, setSlots] = useState<Slot[]>([
-    { time: "", durationMinutes: 60 },
-    { time: "", durationMinutes: 60 },
+    { time: "", durationMinutes: DEFAULT_DURATION_MINUTES },
+    { time: "", durationMinutes: DEFAULT_DURATION_MINUTES },
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const minDateTime = nowLocalIsoMinutes();
+  const quickPicks = buildQuickPicks();
 
   function addSlot() {
     if (slots.length >= 5) return;
-    setSlots([...slots, { time: "", durationMinutes: 60 }]);
+    setSlots([...slots, { time: "", durationMinutes: DEFAULT_DURATION_MINUTES }]);
   }
 
   function removeSlot(index: number) {
@@ -66,6 +164,22 @@ export function CreateMeetingForm({
     setSlots(
       slots.map((s, i) => (i === index ? { ...s, [field]: value } : s))
     );
+  }
+
+  // Quick-pick fills the next empty slot. If every slot has a time and there's
+  // room, we append a new slot; otherwise overwrite the last one.
+  function applyQuickPick(date: Date) {
+    const iso = toLocalIso(date);
+    const emptyIdx = slots.findIndex((s) => !s.time);
+    if (emptyIdx !== -1) {
+      updateSlot(emptyIdx, "time", iso);
+      return;
+    }
+    if (slots.length < 5) {
+      setSlots([...slots, { time: iso, durationMinutes: DEFAULT_DURATION_MINUTES }]);
+      return;
+    }
+    updateSlot(slots.length - 1, "time", iso);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -181,51 +295,89 @@ export function CreateMeetingForm({
       )}
 
       {/* Time slots */}
-      <div className="mb-4 space-y-2">
-        <label className="block text-[13px] font-medium text-ink-2 mb-1">
-          Time Options
-        </label>
-        {slots.map((slot, i) => (
-          <div
-            key={i}
-            className="flex flex-col sm:flex-row sm:items-center gap-2"
-            data-testid={`slot-row-${i}`}
-          >
-            <input
-              type="datetime-local"
-              value={slot.time}
-              min={minDateTime}
-              onChange={(e) => updateSlot(i, "time", e.target.value)}
-              data-testid={`slot-time-${i}`}
-              className="min-w-0 flex-1 text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-            />
-            <div className="flex items-center gap-2">
-              <select
-                value={slot.durationMinutes}
-                onChange={(e) =>
-                  updateSlot(i, "durationMinutes", Number(e.target.value))
-                }
-                className="flex-1 sm:flex-none text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-2 py-2 text-ink"
+      <div className="mb-4 space-y-3">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+          <label className="block text-[13px] font-medium text-ink-2">
+            Time Options
+          </label>
+          <div className="flex items-center gap-1.5 flex-wrap" data-testid="quick-picks">
+            {quickPicks.map((qp) => (
+              <button
+                key={qp.label}
+                type="button"
+                onClick={() => applyQuickPick(qp.build())}
+                className="text-[11px] font-medium text-ink-2 bg-bg-soft border border-line rounded-full px-2.5 py-1 hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
               >
-                <option value={30}>30 min</option>
-                <option value={60}>1 hr</option>
-                <option value={90}>1.5 hr</option>
-                <option value={120}>2 hr</option>
-              </select>
-              {slots.length > 2 && (
-                <button
-                  type="button"
-                  onClick={() => removeSlot(i)}
-                  data-testid={`remove-slot-${i}`}
-                  className="w-7 h-7 shrink-0 flex items-center justify-center rounded-full text-ink-3 hover:text-danger hover:bg-danger-soft transition-colors"
-                  aria-label="Remove time slot"
+                {qp.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {slots.map((slot, i) => {
+          const relative = formatRelative(slot.time);
+          return (
+            <div
+              key={i}
+              className="space-y-1"
+              data-testid={`slot-row-${i}`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <span className="absolute inset-y-0 left-3 flex items-center text-ink-3 pointer-events-none">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="5" width="18" height="16" rx="2" />
+                      <path d="M16 3v4M8 3v4M3 10h18" />
+                    </svg>
+                  </span>
+                  <input
+                    type="datetime-local"
+                    value={slot.time}
+                    min={minDateTime}
+                    onChange={(e) => updateSlot(i, "time", e.target.value)}
+                    data-testid={`slot-time-${i}`}
+                    className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] pl-9 pr-3 py-2 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={slot.durationMinutes}
+                    onChange={(e) =>
+                      updateSlot(i, "durationMinutes", Number(e.target.value))
+                    }
+                    aria-label="Duration"
+                    className="flex-1 sm:flex-none text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-2 py-2 text-ink"
+                  >
+                    {DURATION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  {slots.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => removeSlot(i)}
+                      data-testid={`remove-slot-${i}`}
+                      className="w-7 h-7 shrink-0 flex items-center justify-center rounded-full text-ink-3 hover:text-danger hover:bg-danger-soft transition-colors"
+                      aria-label="Remove time slot"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </div>
+              {relative && (
+                <p
+                  className="text-[11px] text-ink-3 pl-9"
+                  data-testid={`slot-relative-${i}`}
                 >
-                  ×
-                </button>
+                  {relative}
+                </p>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
         {slots.length < 5 && (
           <button
             type="button"

@@ -51,7 +51,7 @@ export const meetingsRouter = router({
           .array(
             z.object({
               time: z.coerce.date(),
-              durationMinutes: z.number().int().min(15).default(60),
+              durationMinutes: z.number().int().min(15).max(240).default(120),
             })
           )
           .min(2)

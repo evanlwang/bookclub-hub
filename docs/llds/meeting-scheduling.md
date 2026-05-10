@@ -81,7 +81,7 @@ MeetingTimeSlot {
   id: UUID (PK)
   meeting_id: UUID (FK -> Meeting)
   proposed_time: timestamp
-  duration_minutes: integer (default 60; allowed 15-120)
+  duration_minutes: integer (default 120; allowed 15-240)
 }
 
 AvailabilityResponse {
@@ -99,7 +99,7 @@ AvailabilityResponse {
 | Procedure | Auth | Input | Output | Notes |
 |-----------|------|-------|--------|-------|
 | `meetings.list` | member | `{ clubId, status? }` | `[{ meeting, slots, responses }]` | createdAt DESC |
-| `meetings.create` | admin+ | `{ clubId, title?, bookId?, description?, location?, slots[] }` | `{ meeting }` | 2–5 slots, 15–120 min each |
+| `meetings.create` | admin+ | `{ clubId, title?, bookId?, description?, location?, slots[] }` | `{ meeting }` | 2–5 slots, 15–240 min each, default 120 |
 | `meetings.get` | member | `{ clubId, meetingId }` | `{ meeting, slots, responses }` | full detail |
 | `meetings.update` | admin+ | `{ clubId, meetingId, title?, description?, location? }` | `{ meeting }` | only provided fields |
 | `meetings.confirm` | admin+ | `{ clubId, meetingId, slotId }` | `{ meeting }` | sets confirmedTime, status="confirmed" |
