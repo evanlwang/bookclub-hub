@@ -283,6 +283,25 @@ export function VoteRound({
           loading={createLoading}
           onClick={handleStartNewRound}
           data-testid="start-new-round-btn"
+          className="group shadow-[0_2px_10px_-2px_oklch(0.42_0.06_195/0.35)] hover:shadow-[0_6px_16px_-4px_oklch(0.42_0.06_195/0.5)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_2px_6px_-2px_oklch(0.42_0.06_195/0.4)]"
+          iconRight={
+            !createLoading && (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="transition-transform duration-200 ease-out group-hover:translate-x-0.5"
+              >
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            )
+          }
         >
           Start your first round
         </Button>
@@ -648,27 +667,46 @@ export function VoteRound({
         )}
 
         {/* Final tallies */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
           <h3 className="font-[var(--font-display)] text-lg font-semibold">Final tallies</h3>
           {isAdmin && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-end gap-1.5">
+              <Button
+                variant="primary"
+                size="md"
+                loading={createLoading}
+                onClick={handleStartNewRound}
+                data-testid="start-new-round-btn"
+                className="group shadow-[0_2px_10px_-2px_oklch(0.42_0.06_195/0.35)] hover:shadow-[0_6px_16px_-4px_oklch(0.42_0.06_195/0.5)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_2px_6px_-2px_oklch(0.42_0.06_195/0.4)]"
+                iconRight={
+                  !createLoading && (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                      className="transition-transform duration-200 ease-out group-hover:translate-x-0.5"
+                    >
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  )
+                }
+              >
+                Start new round
+              </Button>
               <button
                 type="button"
                 data-testid="toggle-deadline-config"
                 onClick={() => setShowDeadlines((v) => !v)}
-                className="text-xs text-ink-2 hover:text-ink hover:underline"
+                className="text-[11px] text-ink-3 hover:text-ink-2 hover:underline tracking-wide"
               >
                 {showDeadlines ? "Hide deadlines" : "Configure deadlines"}
               </button>
-              <Button
-                variant="secondary"
-                size="sm"
-                loading={createLoading}
-                onClick={handleStartNewRound}
-                data-testid="start-new-round-btn"
-              >
-                Start new round
-              </Button>
             </div>
           )}
         </div>
