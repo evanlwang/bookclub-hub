@@ -109,7 +109,6 @@ export function BookCover({
         style={envelope}
         aria-label={`${title} by ${author}`}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={coverUrl}
           alt=""
