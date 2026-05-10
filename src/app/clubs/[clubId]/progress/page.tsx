@@ -131,7 +131,7 @@ export default async function ProgressPage({
               title={book.title}
               author={book.author}
               coverUrl={book.coverUrl}
-              size="sm"
+              size="md"
             />
             <div className="min-w-0">
               <h2 className="font-[var(--font-display)] text-lg font-semibold text-ink truncate">
