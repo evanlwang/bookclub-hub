@@ -364,13 +364,14 @@ function JoinPageInner() {
     setCodeError("");
 
     try {
+      // @spec AUTH-UI-STEP3B-CADENCE-DATA-001, JOIN-UI-CREATE-CADENCE-001
       const res = await fetch("/api/trpc/clubs.create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: clubName,
           code: codeToUse,
-          description: `Voting cadence: ${cadence}`,
+          cadence,
         }),
       });
       const data = await res.json();

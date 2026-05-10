@@ -87,7 +87,7 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 
 - `[x]` **JOIN-UI-CREATE-NAME-001**: Club name input (required, min 3 chars).
 - `[x]` **JOIN-UI-CREATE-CODE-001**: Auto-derived invite code input (uppercase, alphanumeric, max 10 chars; user can override).
-- `[!]` **JOIN-UI-CREATE-CADENCE-001**: Voting cadence radio buttons (monthly / six_weeks / flexible) — IMPLEMENTED but undocumented in older home/auth specs. Today the cadence is appended to the club description as a string. (See auth-specs.md `AUTH-UI-STEP3B-CADENCE-001`.)
+- `[x]` **JOIN-UI-CREATE-CADENCE-001**: Voting cadence radio buttons (monthly / six_weeks / flexible) on the create branch SHALL pass the chosen value as a typed `cadence` argument to `clubs.create` (and the in-place switcher modal does the same). Persistence is via the typed `Club.votingCadence` enum column — see `auth-specs.md` `AUTH-UI-STEP3B-CADENCE-DATA-001` for the data-layer detail. (`src/app/join/page.tsx`, `src/components/club/club-switcher-modal.tsx`)
 - `[x]` **JOIN-UI-CREATE-BACK-001**: Button: "Back" returns to step 2.
 - `[x]` **JOIN-UI-CREATE-SUBMIT-001**: Button: "Create club" — disabled when `!createReady || creatingClub`.
 

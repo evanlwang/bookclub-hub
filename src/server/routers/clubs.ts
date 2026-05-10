@@ -45,6 +45,8 @@ export const clubsRouter = router({
         name: z.string().min(1).max(100),
         description: z.string().max(500).optional(),
         code: z.string(),
+        // @spec AUTH-UI-STEP3B-CADENCE-DATA-001, JOIN-UI-CREATE-CADENCE-001
+        cadence: z.enum(["monthly", "six_weeks", "flexible"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -75,6 +77,7 @@ export const clubsRouter = router({
           description: input.description,
           code,
           createdBy: ctx.user.id,
+          ...(input.cadence ? { votingCadence: input.cadence } : {}),
         },
       });
 
@@ -115,6 +118,7 @@ export const clubsRouter = router({
         name: z.string().min(1).max(100).optional(),
         description: z.string().max(500).optional(),
         code: z.string().optional(),
+        cadence: z.enum(["monthly", "six_weeks", "flexible"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -132,6 +136,7 @@ export const clubsRouter = router({
       const data: Record<string, unknown> = {};
       if (input.name) data.name = input.name;
       if (input.description !== undefined) data.description = input.description;
+      if (input.cadence) data.votingCadence = input.cadence;
       if (input.code) {
         const codeValidation = validateCode(input.code);
         if (!codeValidation.valid) {

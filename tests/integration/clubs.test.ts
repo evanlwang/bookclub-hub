@@ -48,6 +48,44 @@ describe("clubs", () => {
       });
       expect(result.club.code).toBe("MYCLUB");
     });
+
+    // @spec AUTH-UI-STEP3B-CADENCE-DATA-001, JOIN-UI-CREATE-CADENCE-001
+    it("defaults votingCadence to 'monthly' when not provided", async () => {
+      const caller = await createAuthenticatedCaller(db, alice);
+      const result = await caller.clubs.create({
+        name: "Default Cadence Club",
+        code: "DEFCAD",
+      });
+      const club = await db.club.findUniqueOrThrow({ where: { id: result.club.id } });
+      expect(club.votingCadence).toBe("monthly");
+    });
+
+    // @spec AUTH-UI-STEP3B-CADENCE-DATA-001, JOIN-UI-CREATE-CADENCE-001
+    it("persists provided cadence to typed votingCadence field (not description)", async () => {
+      const caller = await createAuthenticatedCaller(db, alice);
+      const result = await caller.clubs.create({
+        name: "Six Weeks Club",
+        code: "SIXWK",
+        cadence: "six_weeks",
+      });
+      const club = await db.club.findUniqueOrThrow({ where: { id: result.club.id } });
+      expect(club.votingCadence).toBe("six_weeks");
+      // Description must NOT be mis-used as a cadence carrier any more.
+      expect(club.description ?? "").not.toMatch(/voting cadence/i);
+    });
+
+    // @spec AUTH-UI-STEP3B-CADENCE-DATA-001
+    it("rejects an unknown cadence value", async () => {
+      const caller = await createAuthenticatedCaller(db, alice);
+      await expect(
+        caller.clubs.create({
+          name: "Bad Cadence",
+          code: "BADCAD",
+          // @ts-expect-error — testing runtime validation rejection
+          cadence: "weekly",
+        })
+      ).rejects.toThrow();
+    });
   });
 
   describe("clubs.join", () => {
