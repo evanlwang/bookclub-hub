@@ -102,7 +102,15 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 
 ## Settings Page Gaps
 
-- `[ ]` **CLUB-UI-SETTINGS-001**: Admin Settings page (name / description / code edit, archive/unarchive toggle, delete with 30-day notice). Mutations may exist on `clubs.update` / `clubs.delete`; no UI surfaces them.
+- `[x]` **CLUB-UI-SETTINGS-001**: Admin Settings page lives at `/clubs/{clubId}/settings`, gated to `owner | admin` (non-admins are server-side `redirect()`-bounced to the dashboard). Surfaces:
+  - **Name** edit (`data-testid="settings-name"`)
+  - **Description** edit (`data-testid="settings-description"`)
+  - **Voting cadence** radio group (`data-testid="settings-cadence-{monthly|six_weeks|flexible}"`) — calls `clubs.update({cadence})`
+  - **Save changes** button (disabled when nothing dirty); ✓ Saved indicator post-success
+  - **Danger zone** (owner-only) with type-the-name-to-confirm soft-delete (`settings-delete-toggle` → `settings-delete-confirm-input` → `settings-delete-confirm`); on success redirects to `/`
+  - Sidebar adds a "Settings" admin-only link.
+
+  **Scope cuts (deferred):** invite-code edit (separate uniqueness UX needed), archive/unarchive toggle (no `archive` mutation yet — see `CLUB-BE-006`). The "30-day notice" copy is rendered inline so the user understands the soft-delete window. (`src/app/clubs/[clubId]/settings/page.tsx`, `settings-form.tsx`; sidebar link in `src/app/clubs/[clubId]/sidebar.tsx`)
 
 ## Topbar Gaps
 

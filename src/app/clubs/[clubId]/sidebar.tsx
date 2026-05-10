@@ -24,6 +24,8 @@ const navItems = [
   { label: "Discussions", href: "/discussions", icon: ChatIcon, adminOnly: false },
   { label: "Progress", href: "/progress", icon: TrendIcon, adminOnly: false },
   { label: "Members", href: "/members", icon: UsersIcon, adminOnly: true },
+  // @spec CLUB-UI-SETTINGS-001
+  { label: "Settings", href: "/settings", icon: UsersIcon, adminOnly: true },
 ];
 
 type ClubInfo = { id: string; name: string; code: string; role: string };
