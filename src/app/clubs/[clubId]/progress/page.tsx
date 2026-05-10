@@ -130,7 +130,7 @@ export default async function ProgressPage({
             <BookCover
               title={book.title}
               author={book.author}
-              variant="teal"
+              coverUrl={book.coverUrl}
               size="sm"
             />
             <div className="min-w-0">

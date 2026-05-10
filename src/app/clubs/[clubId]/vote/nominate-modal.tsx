@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Button, Card } from "@/components/ui";
+import { Button, Card, BookCover } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 interface Book {
@@ -9,6 +9,7 @@ interface Book {
   title: string;
   author: string;
   pageCount?: number;
+  coverUrl?: string | null;
 }
 
 interface NominateModalProps {
@@ -340,6 +341,12 @@ export function NominateModal({
                 className="p-3 rounded-md border border-line hover:border-line-strong hover:bg-bg-soft transition-colors cursor-pointer flex gap-3 items-center"
                 onClick={() => handleNominate(book.id)}
               >
+                <BookCover
+                  title={book.title}
+                  author={book.author}
+                  coverUrl={book.coverUrl}
+                  size="sm"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ink truncate">{book.title}</p>
                   <p className="text-xs text-ink-3 italic truncate">

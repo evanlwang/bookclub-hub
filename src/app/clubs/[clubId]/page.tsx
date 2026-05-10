@@ -186,7 +186,7 @@ export default async function ClubDashboard({
             <BookCover
               title={currentBook.book.title}
               author={currentBook.book.author}
-              variant="teal"
+              coverUrl={currentBook.book.coverUrl}
               size="lg"
             />
             <div className="flex-1 min-w-0">

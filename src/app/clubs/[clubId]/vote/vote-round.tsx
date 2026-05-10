@@ -15,7 +15,7 @@ import {
 
 type Nomination = {
   id: string;
-  book: { id: string; title: string; author: string; openLibraryId?: string | null };
+  book: { id: string; title: string; author: string; openLibraryId?: string | null; coverUrl?: string | null };
   nominator: { displayName: string };
   pitch?: string;
   createdAt?: string;
@@ -374,7 +374,7 @@ export function VoteRound({
                       )}
                     </span>
                     {/* Book cover */}
-                    <BookCover title={nom.book.title} author={nom.book.author} size="sm" />
+                    <BookCover title={nom.book.title} author={nom.book.author} coverUrl={nom.book.coverUrl} size="sm" />
                     {/* Content */}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-ink">{nom.book.title}</p>
@@ -597,7 +597,7 @@ export function VoteRound({
               ✦
             </div>
             <div className="flex flex-col sm:grid sm:grid-cols-[auto_1fr] gap-5 sm:gap-7 sm:items-center relative">
-              <BookCover title={winner.book.title} author={winner.book.author} size="lg" />
+              <BookCover title={winner.book.title} author={winner.book.author} coverUrl={winner.book.coverUrl} size="lg" />
               <div>
                 <div className="flex items-center gap-2.5 mb-2">
                   <Badge tone="accent" dot>Winner</Badge>
@@ -713,7 +713,7 @@ export function VoteRound({
               <span className={`font-[var(--font-mono)] text-sm font-semibold ${i === 0 ? "text-accent-ink" : "text-ink-3"}`}>
                 {i === 0 ? "①" : `0${i + 1}`}
               </span>
-              <BookCover title={nom.book.title} author={nom.book.author} size="sm" />
+              <BookCover title={nom.book.title} author={nom.book.author} coverUrl={nom.book.coverUrl} size="sm" />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-ink truncate">{nom.book.title}</p>
                 <p className="text-xs text-ink-3 italic">by {nom.book.author}</p>
@@ -782,7 +782,7 @@ export function VoteRound({
         {nominations.map((nom) => (
           <Card key={nom.id} className="p-5">
             <div className="grid grid-cols-[auto_1fr] gap-5">
-              <BookCover title={nom.book.title} author={nom.book.author} size="md" />
+              <BookCover title={nom.book.title} author={nom.book.author} coverUrl={nom.book.coverUrl} size="md" />
               <div>
                 <p className="font-[var(--font-display)] text-[19px] font-semibold tracking-tight text-ink">{nom.book.title}</p>
                 <p className="text-sm text-ink-2 italic mb-2.5">by {nom.book.author}</p>
