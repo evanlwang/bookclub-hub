@@ -1,7 +1,8 @@
-// @spec VOTE-API-009, VOTE-BE-004, VOTE-API-009-MANUAL, PROG-UI-BOOK-001
+// @spec VOTE-API-009, VOTE-API-009-DEDUP, VOTE-BE-004, VOTE-API-009-MANUAL, PROG-UI-BOOK-001
 import { z } from "zod";
 import { router, protectedProcedure, memberProcedure } from "../trpc";
 import { searchBooks as searchOpenLibrary } from "../services/open-library";
+import { dedupeSearchResults } from "@/lib/voting/dedupe-search-results";
 
 export const booksRouter = router({
   search: protectedProcedure
@@ -61,16 +62,10 @@ export const booksRouter = router({
 
       const [local, remote] = await Promise.all([localPromise, remotePromise]);
 
-      // Dedupe by id, prefer local rows so existing nominations stay stable.
-      const seen = new Set<string>();
-      const merged: typeof local = [];
-      for (const b of [...local, ...remote]) {
-        if (seen.has(b.id)) continue;
-        seen.add(b.id);
-        merged.push(b);
-        if (merged.length >= 10) break;
-      }
-      return merged;
+      // Collapse duplicates by content key (id, ISBN, or title+author).
+      // First-seen wins, so local rows shadow their Open Library twins —
+      // existing nominations stay stable, manual entries are preferred.
+      return dedupeSearchResults([...local, ...remote]).slice(0, 10);
     }),
 
   // @spec VOTE-API-009-MANUAL

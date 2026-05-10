@@ -146,7 +146,7 @@ BookSelection {
 | `nominations.create` | member | `{ clubId, roundId, bookId, pitch? }` | `{ nomination }` | requires status="nominating"; CONFLICT on duplicate |
 | `nominations.delete` | nominator OR admin+ | `{ clubId, nominationId }` | `{ success: true }` | |
 | `votes.submit` | member | `{ clubId, roundId, nominationIds }` | `{ success, voteCount }` | requires status="voting"; replaces all prior votes |
-| `books.search` | required | `{ query }` | `[{ book }]` | local cache → Open Library; empty array on API failure |
+| `books.search` | required | `{ query }` | `[{ book }]` | local cache → Open Library; merged results collapsed by content key (ISBN, else title+author) so the same logical book never appears twice; empty array on API failure |
 | `books.createManual` | required | `{ title, author, isbn?, pageCount? }` | `{ book }` | openLibraryId=null |
 | `books.listForClub` | member | `{ clubId }` | `[{ book }]` | books selected for this club |
 | `selections.list` | member | `{ clubId }` | `[{ selection }]` | reading history, selectedAt DESC |

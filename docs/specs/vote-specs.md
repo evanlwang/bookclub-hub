@@ -132,6 +132,7 @@ These specs cover what happens when a member revisits the voting page after they
 ## Book Metadata API
 
 - `[x]` **VOTE-API-009**: The `books.search` procedure SHALL query the local DB by title/author/ISBN (case-insensitive), then fall through to Open Library API, caching results back into the local Book table. Returns empty array on API failure (graceful degradation). (`books.ts:7-72`)
+- `[x]` **VOTE-API-009-DEDUP**: The `books.search` procedure SHALL collapse duplicate result rows representing the same logical book — matching by normalized ISBN when both rows have one (non-alphanumerics stripped), else by case-insensitive normalized title+author. The earlier-appearing row wins, preserving VOTE-API-009's local-first ordering. (`books.ts`)
 - `[x]` **VOTE-BE-004**: The system SHALL cache book metadata locally after the first lookup to avoid repeated external API calls.
 - `[x]` **VOTE-API-MANUAL-001**: The `books.createManual` procedure SHALL create a Book with `openLibraryId=null`, marking it as manually entered. Requires non-empty title and author (max 500 chars each). (`books.ts:75-96`)
 
