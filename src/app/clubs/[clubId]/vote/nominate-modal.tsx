@@ -158,6 +158,13 @@ export function NominateModal({
   }
 
   async function handleNominate(bookId: string) {
+    if (!roundId) {
+      // Defense-in-depth — the modal should never be opened without a valid
+      // round, but if it is, refuse to submit rather than firing a doomed
+      // tRPC call that fails Zod uuid validation server-side.
+      setSubmitError("No active voting round — start one before nominating.");
+      return;
+    }
     setSubmitting(true);
     setSubmitError("");
     try {
@@ -193,6 +200,10 @@ export function NominateModal({
     const errs = validateManual();
     if (Object.keys(errs).length > 0) {
       setFormErrors(errs);
+      return;
+    }
+    if (!roundId) {
+      setSubmitError("No active voting round — start one before nominating.");
       return;
     }
     setFormErrors({});

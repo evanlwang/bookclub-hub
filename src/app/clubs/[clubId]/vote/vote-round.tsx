@@ -234,6 +234,67 @@ export function VoteRound({
     }
   }
 
+  // @spec VOTE-API-001 — admin-only "Start your first round" state.
+  // Renders ONLY the start-new-round button (with optional deadline pickers).
+  // Critically, the nominate-modal trigger is suppressed here because
+  // `roundId === ""` would fail the `nominations.create` Zod uuid check.
+  if (status === "none") {
+    if (!isAdmin) return null;
+    return (
+      <div data-testid="no-round-admin" className="mt-4 flex flex-col items-center gap-3">
+        <button
+          type="button"
+          data-testid="toggle-deadline-config"
+          onClick={() => setShowDeadlines((v) => !v)}
+          className="text-xs text-ink-2 hover:text-ink hover:underline"
+        >
+          {showDeadlines ? "Hide deadlines" : "Configure deadlines"}
+        </button>
+        {showDeadlines && (
+          <div
+            data-testid="deadline-config"
+            className="w-full max-w-md p-3 rounded-[var(--radius-md)] border border-line bg-bg-soft grid grid-cols-1 sm:grid-cols-2 gap-3"
+          >
+            <label className="text-xs text-ink-2">
+              Nomination deadline (optional)
+              <input
+                type="datetime-local"
+                data-testid="nomination-deadline-input"
+                value={nominationDeadline}
+                onChange={(e) => setNominationDeadline(e.target.value)}
+                className="mt-1 w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-2 py-1.5 text-ink"
+              />
+            </label>
+            <label className="text-xs text-ink-2">
+              Voting deadline (optional)
+              <input
+                type="datetime-local"
+                data-testid="voting-deadline-input"
+                value={votingDeadline}
+                onChange={(e) => setVotingDeadline(e.target.value)}
+                className="mt-1 w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-2 py-1.5 text-ink"
+              />
+            </label>
+          </div>
+        )}
+        <Button
+          variant="primary"
+          size="md"
+          loading={createLoading}
+          onClick={handleStartNewRound}
+          data-testid="start-new-round-btn"
+        >
+          Start your first round
+        </Button>
+        {error && (
+          <p className="text-sm text-danger" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   if (status === "voting") {
     return (
       <div data-testid="voting-phase" className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
