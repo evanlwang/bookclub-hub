@@ -79,8 +79,8 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 
 ## Club Lifecycle Gaps
 
-- `[ ]` **CLUB-BE-004**: When the owner deletes a club, the system SHALL soft-delete (status="deleted", deleted_at timestamp).
-- `[ ]` **CLUB-BE-005**: Soft-deleted clubs SHALL be hard-deleted after 30 days.
+- `[x]` **CLUB-BE-004**: `clubs.delete` (owner-only) SHALL set `status="deleted"` and `deletedAt = now` rather than hard-deleting the row, preserving the option to recover for a grace window. Enforced at `src/server/routers/clubs.ts:169-191` via owner-role check + `club.update` to `{ status: "deleted", deletedAt: new Date() }`.
+- `[x]` **CLUB-BE-005**: A scheduled cron at `src/app/api/cron/hard-delete-clubs/route.ts` selects clubs whose `status === "deleted"` AND `deletedAt <= now - 30d`, then issues `db.club.delete(...)` (CASCADE-cleans memberships, voting rounds, meetings, threads via the existing FK relations). The route requires the `CRON_SECRET` header, mirroring `voting-deadline-reminder/route.ts`. **Operational note:** the cron must be wired in the deployment platform's scheduler (e.g. Vercel Cron config) — not yet declared in `vercel.json`.
 - `[ ]` **CLUB-BE-006**: When the owner archives, the system SHALL set status="archived" and reject all writes except un-archive.
 - `[x]` **CLUB-DATA-003**: Exactly one owner per club at all times. Maintained by `transferOwnership` running inside `prisma.$transaction` (demote + promote in one statement) and by `clubs.leave` rejecting owner self-removal.
 
