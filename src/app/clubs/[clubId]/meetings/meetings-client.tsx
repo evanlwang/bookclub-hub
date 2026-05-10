@@ -310,7 +310,7 @@ export function MeetingsClient({
   );
 }
 
-// @spec MEET-UI-008, MEET-UI-CANCEL-BTN-001, MEET-UI-EDIT-BTN-001
+// @spec MEET-UI-008, MEET-UI-CANCEL-BTN-001, MEET-UI-EDIT-BTN-001, MEET-UI-DETAILS-DISCLOSURE-001
 function ConfirmedMeetingRow({
   meeting,
   clubId,
@@ -327,6 +327,7 @@ function ConfirmedMeetingRow({
   const attendeeNames = getAttendeeNames(meeting);
   const { going, maybe } = getResponseCounts(meeting);
   const time = meeting.confirmedTime ? new Date(meeting.confirmedTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
     <div>
@@ -362,24 +363,58 @@ function ConfirmedMeetingRow({
           <p className="text-[11px] text-ink-3">{going} going{maybe > 0 ? ` · ${maybe} maybe` : ""}</p>
         </div>
       </div>
+      {/* @spec MEET-UI-DETAILS-DISCLOSURE-001 */}
       {isAdmin && (
-        <div className="mt-3 pt-3 border-t border-line flex justify-end gap-3">
-          <EditMeetingButton
-            clubId={clubId}
-            meetingId={meeting.id}
-            initial={{
-              title: meeting.title ?? "",
-              description: meeting.description ?? "",
-              location: meeting.location ?? "",
-            }}
-            onUpdated={onUpdated}
-          />
-          <CancelMeetingButton
-            clubId={clubId}
-            meetingId={meeting.id}
-            meetingTitle={meeting.title}
-            onCancelled={onCancelled}
-          />
+        <div className="mt-3 pt-3 border-t border-line">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              data-testid={`meeting-details-toggle-${meeting.id}`}
+              aria-expanded={detailsOpen}
+              aria-controls={`meeting-details-${meeting.id}`}
+              onClick={() => setDetailsOpen((v) => !v)}
+              className="inline-flex items-center gap-1 text-xs text-ink-3 hover:text-ink-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
+            >
+              Details
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className={`transition-transform ${detailsOpen ? "rotate-180" : ""}`}
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+          </div>
+          {detailsOpen && (
+            <div
+              id={`meeting-details-${meeting.id}`}
+              className="mt-3 flex justify-end gap-3"
+            >
+              <EditMeetingButton
+                clubId={clubId}
+                meetingId={meeting.id}
+                initial={{
+                  title: meeting.title ?? "",
+                  description: meeting.description ?? "",
+                  location: meeting.location ?? "",
+                }}
+                onUpdated={onUpdated}
+              />
+              <CancelMeetingButton
+                clubId={clubId}
+                meetingId={meeting.id}
+                meetingTitle={meeting.title}
+                onCancelled={onCancelled}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

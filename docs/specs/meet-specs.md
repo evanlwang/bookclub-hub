@@ -58,6 +58,7 @@ These specs document invariants enforced inside the `meetings` router and exerci
 - `[x]` **MEET-UI-EDIT-001**: Both `meetings.update` and `meetings.cancel` are now wired into the meetings UI for admins (see sub-IDs below).
   - `[x]` **MEET-UI-EDIT-BTN-001**: An owner or admin viewing a proposed or confirmed meeting SHALL see an "Edit" link (`data-testid="edit-meeting-{meetingId}"`). Clicking opens a focus-trapped dialog (`data-testid="edit-meeting-dialog"`) with editable title, location, and description fields. Saving POSTs to `meetings.update` and the parent merges the new fields optimistically. The Save button is disabled until at least one field changes.
   - `[x]` **MEET-UI-CANCEL-BTN-001**: An owner or admin viewing a proposed or confirmed meeting SHALL see a "Cancel meeting" link (`data-testid="cancel-meeting-{meetingId}"`). Clicking opens a focus-trapped dialog (`data-testid="cancel-meeting-dialog"`); confirming POSTs to `meetings.cancel` and the parent flips the meeting to status `cancelled` optimistically.
+  - `[x]` **MEET-UI-DETAILS-DISCLOSURE-001**: On a confirmed-meeting card, the Edit and Cancel admin actions SHALL be hidden by default and revealed via a "Details" toggle button (`data-testid="meeting-details-toggle-{meetingId}"`) carrying `aria-expanded`. The toggle is rendered only when the viewer is an owner or admin. Clicking the toggle reveals/hides both the Edit and Cancel buttons (they remain registered to their existing test IDs and EARS — only their visibility is gated).
 
 ## Time Handling
 
