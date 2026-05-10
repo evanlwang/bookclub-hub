@@ -365,7 +365,7 @@ function ConfirmedMeetingRow({
       </div>
       {/* @spec MEET-UI-DETAILS-DISCLOSURE-001 */}
       {isAdmin && (
-        <div className="mt-3 pt-3 border-t border-line">
+        <div className="mt-2">
           <div className="flex justify-end">
             <button
               type="button"
