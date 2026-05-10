@@ -6,6 +6,8 @@ import {
   CalendarIcon,
   ChatIcon,
   ChevronRightIcon,
+  TrendIcon,
+  UsersIcon,
 } from "@/components/ui/icons";
 import { AvatarStack, Badge, Card, BookCover, ChapterChip } from "@/components/ui";
 
@@ -282,23 +284,118 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Feature row */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 md:px-8 lg:px-14 pb-16 lg:pb-[72px]">
-        <FeatureCard
-          icon={<VoteIcon size={20} />}
-          title="Approval voting"
-          description="Everyone picks the books they'd be happy reading. The group's top choice wins."
-        />
-        <FeatureCard
-          icon={<CalendarIcon size={20} />}
-          title="Meeting scheduling"
-          description="Propose times, collect availability, confirm — no more group chat negotiation."
-        />
-        <FeatureCard
-          icon={<ChatIcon size={20} />}
-          title="Spoiler-safe threads"
-          description="Chapter-tagged discussions appear only when you've read that far."
-        />
+      {/* All-features deep dive */}
+      {/* @spec HOME-UI-007 */}
+      <section
+        data-testid="features-overview"
+        aria-label="Features overview"
+        className="px-4 md:px-8 lg:px-14 pt-2 pb-16 lg:pb-[80px]"
+      >
+        <div className="max-w-[1300px] mx-auto">
+          {/* Eyebrow */}
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
+            <span className="text-[11px] uppercase tracking-[0.22em] text-primary-ink font-medium">
+              Everything inside
+            </span>
+            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
+          </div>
+
+          <h2 className="font-[var(--font-display)] text-[34px] md:text-[42px] font-semibold text-ink text-center mb-3 tracking-[-0.02em] leading-[1.1]">
+            Built for groups that{" "}
+            <em className="italic" style={{ color: "var(--color-primary)" }}>
+              finish the book
+            </em>
+            .
+          </h2>
+          <p className="text-[14px] text-ink-3 text-center mb-12 max-w-[560px] mx-auto leading-relaxed">
+            Every habit a working club needs — refined, and out of the way.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            <CategoryCard
+              icon={<VoteIcon size={20} />}
+              title="Approval voting"
+              tagline="Choose what's next, together."
+              points={[
+                "Three phases: nominate, vote, decide",
+                "Open Library search built in",
+                "Tie-break and close-voting controls",
+                "Live status badge in the sidebar",
+              ]}
+            />
+            <CategoryCard
+              icon={<CalendarIcon size={20} />}
+              title="Meeting scheduling"
+              tagline="Find a time without the back-and-forth."
+              points={[
+                "Propose multiple slots at once",
+                "Availability heatmap by responder",
+                "“Most available” recommendation",
+                "Edit or cancel; updates ripple out",
+              ]}
+            />
+            <CategoryCard
+              icon={<ChatIcon size={20} />}
+              title="Spoiler-safe threads"
+              tagline="Talk freely. Nobody spoils anything."
+              points={[
+                "Chapter-tagged threads",
+                "Auto-hide threads above your chapter",
+                "Threaded replies, two levels deep",
+                "Pin, edit, delete — admin or your own",
+              ]}
+            />
+            <CategoryCard
+              icon={<TrendIcon size={20} />}
+              title="Reading progress"
+              tagline="See where the group is — really."
+              points={[
+                "Per-member page, chapter, percentage",
+                "Group median + distribution chart",
+                "History across past selections",
+                "States: not started, reading, finished",
+              ]}
+            />
+            <CategoryCard
+              icon={<UsersIcon size={20} />}
+              title="Run your club"
+              tagline="One person to many; one club to many."
+              points={[
+                "Roles: owner, admin, member",
+                "Invite codes — custom or auto-derived",
+                "Switch clubs from the sidebar",
+                "Custom theme color per club",
+              ]}
+            />
+            <CategoryCard
+              icon={
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2L4 6v6c0 5 3.5 9.4 8 10 4.5-.6 8-5 8-10V6l-8-4z" />
+                  <path d="M9 12.5l2 2 4-4" />
+                </svg>
+              }
+              title="Quiet by default"
+              tagline="No tracking. No ads. No noise."
+              points={[
+                "Email + display name. Nothing else.",
+                "Zero ads, zero tracking pixels",
+                "Soft-delete with a restore window",
+                "Leave any club, anytime",
+              ]}
+            />
+          </div>
+        </div>
       </section>
 
       {/* Footer */}
@@ -314,24 +411,52 @@ export default function Home() {
   );
 }
 
-function FeatureCard({
+// @spec HOME-UI-007
+function CategoryCard({
   icon,
   title,
-  description,
+  tagline,
+  points,
 }: {
   icon: React.ReactNode;
   title: string;
-  description: string;
+  tagline: string;
+  points: string[];
 }) {
   return (
-    <div className="bg-bg border border-line rounded-[var(--radius-lg)] p-6 shadow-sm">
-      <div className="w-10 h-10 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink flex items-center justify-center mb-3.5">
+    <div className="group bg-bg border border-line rounded-[var(--radius-lg)] p-6 shadow-sm transition-all duration-200 hover:border-primary/35 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="w-10 h-10 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink flex items-center justify-center mb-4 transition-transform duration-200 group-hover:-rotate-3">
         {icon}
       </div>
-      <h3 className="font-[var(--font-display)] text-[19px] font-semibold text-ink mb-1.5">
+      <h3 className="font-[var(--font-display)] text-[19px] font-semibold text-ink mb-1 tracking-[-0.01em]">
         {title}
       </h3>
-      <p className="text-[14px] text-ink-2 leading-relaxed">{description}</p>
+      <p className="text-[13px] text-ink-3 leading-relaxed mb-4">{tagline}</p>
+      <div className="h-px bg-line mb-3.5" />
+      <ul className="space-y-2">
+        {points.map((point) => (
+          <li
+            key={point}
+            className="flex items-start gap-2 text-[13px] text-ink-2 leading-relaxed"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className="text-primary mt-[3px] shrink-0"
+            >
+              <path d="M5 12.5l4.5 4.5L19 7" />
+            </svg>
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

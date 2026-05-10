@@ -43,7 +43,7 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 
 ## Landing Page — Features & Footer
 
-- `[x]` **HOME-UI-007**: Three-column feature row with cards "Approval voting" / "Meeting scheduling" / "Spoiler-safe threads", each with a 40×40 icon container and a 19px display-font title. (`page.tsx:184-199, 214-234`)
+- `[x]` **HOME-UI-007**: Below the privacy callout, the page SHALL render a deep-dive features section (`data-testid="features-overview"`, `aria-label="Features overview"`) with a centered eyebrow ("Everything inside") flanked by horizontal rules, a display-font headline with an italicized primary-colored emphasis word, a muted subhead, and a responsive grid of category cards (1 col mobile / 2 cols md / 3 cols lg). Each card SHALL render a 40×40 primary-soft icon well, a 19px display-font title, a 13px ink-3 tagline, a hairline divider, and a bullet list of 4 feature points each prefixed with a primary checkmark. The category set SHALL cover: Approval voting, Meeting scheduling, Spoiler-safe threads, Reading progress, Run your club, Quiet by default. Hover state SHALL lift the card slightly (`-translate-y-0.5`) and tint the border toward primary. (`page.tsx`)
 - `[x]` **HOME-UI-008**: Footer SHALL contain logo, wordmark, and tagline "For people who finish the book." (Privacy/Terms/Changelog links removed — see `HOME-UI-013`.) (`page.tsx:201-208`)
 
 ## Join Page — Layout
