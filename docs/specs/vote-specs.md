@@ -97,9 +97,9 @@ These specs cover what happens when a member revisits the voting page after they
 ## Voting UI — Decided Phase
 
 - `[x]` **VOTE-UI-DEC-001**: The winner banner SHALL display in a gradient card containing book cover, "Winner" badge + "Round winner" caption, title, "by {author} · nominated by {nominator}" subtitle, and a vote-count display "{N} votes". (`vote-round.tsx:288-325`)
-- `[!]` **VOTE-UI-006**: Older spec listed two CTAs in the winner banner ("Set up first meeting" and "View on Open Library"). NEITHER is implemented; the winner banner is purely informational. Treat as gaps if these CTAs become required:
-  - `[ ]` **VOTE-UI-DEC-CTA-MEETING-001**: "Set up first meeting" CTA in winner banner.
-  - `[ ]` **VOTE-UI-DEC-CTA-OPENLIB-001**: "View on Open Library" CTA in winner banner.
+- `[x]` **VOTE-UI-006**: The decided-phase winner banner SHALL render two CTAs alongside the vote count: "Set up first meeting" and "View on Open Library". Implementation covered by the two sub-IDs below.
+  - `[x]` **VOTE-UI-DEC-CTA-MEETING-001**: A primary "Set up first meeting" CTA SHALL render in the winner banner as a `<Link>` to `/clubs/{clubId}/meetings`. `data-testid="winner-cta-meeting"`. (`vote-round.tsx`)
+  - `[x]` **VOTE-UI-DEC-CTA-OPENLIB-001**: A secondary "View on Open Library" CTA SHALL render when the winning `Book.openLibraryId` is non-null, opening `https://openlibrary.org{openLibraryId}` in a new tab (`target="_blank"`, `rel="noreferrer"`). When the winning book is a manual entry without an Open Library ID, the CTA SHALL NOT render. `data-testid="winner-cta-openlib"`. (`vote-round.tsx`)
 - `[x]` **VOTE-UI-DEC-002**: Below the winner, a "Final tallies" card SHALL list all nominations ranked by vote count, with position indicator (① for #1, then "0N" mono numerals), book cover, title/author, a per-row progress bar (`width = votes / maxVotes * 100%`), and a "{N} votes" right column. The first row has a tinted background. (`vote-round.tsx:343-366`)
 - `[x]` **VOTE-UI-DEC-003**: Button: "Start new round" (`vote-round.tsx:331-339`) is visible only to admins on decided phase and calls `rounds.create`.
 

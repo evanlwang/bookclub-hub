@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card, Badge, BookCover, Avatar } from "@/components/ui";
 import { SearchIcon } from "@/components/ui/icons";
@@ -14,7 +15,7 @@ import {
 
 type Nomination = {
   id: string;
-  book: { title: string; author: string };
+  book: { id: string; title: string; author: string; openLibraryId?: string | null };
   nominator: { displayName: string };
   pitch?: string;
   createdAt?: string;
@@ -521,13 +522,38 @@ export function VoteRound({
                 <p className="text-base italic mb-4" style={{ color: "oklch(0.40 0.04 60)" }}>
                   by {winner.book.author} · nominated by {winner.nominator.displayName}
                 </p>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 mb-4">
                   <div>
                     <span className="font-[var(--font-display)] text-[32px] font-semibold leading-none" style={{ color: "oklch(0.25 0.05 60)" }}>
                       {winner.voteCount ?? 0}
                     </span>
                     <span className="text-sm ml-1" style={{ color: "oklch(0.45 0.04 60)" }}>votes</span>
                   </div>
+                </div>
+                {/* @spec VOTE-UI-DEC-CTA-MEETING-001, VOTE-UI-DEC-CTA-OPENLIB-001 */}
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/clubs/${clubId}/meetings`}
+                    data-testid="winner-cta-meeting"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] bg-primary text-bg text-sm font-medium hover:bg-primary-hover transition-colors"
+                  >
+                    Set up first meeting
+                  </Link>
+                  {winner.book.openLibraryId && (
+                    <a
+                      href={`https://openlibrary.org${winner.book.openLibraryId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-testid="winner-cta-openlib"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] border border-line-strong text-sm font-medium text-ink hover:bg-bg-soft transition-colors"
+                      style={{ color: "oklch(0.30 0.05 60)" }}
+                    >
+                      View on Open Library
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M7 17L17 7M7 7h10v10" />
+                      </svg>
+                    </a>
+                  )}
                 </div>
               </div>
             </div>

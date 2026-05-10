@@ -1,4 +1,4 @@
-// @spec VOTE-UI-CLOSE-002, VOTE-UI-CLOSE-003, VOTE-UI-CLOSE-004, VOTE-UI-CLOSE-005, VOTE-UI-CLOSE-006, VOTE-UI-CLOSE-007, VOTE-UI-CANCEL-002, VOTE-API-003, VOTE-API-004
+// @spec VOTE-UI-CLOSE-002, VOTE-UI-CLOSE-003, VOTE-UI-CLOSE-004, VOTE-UI-CLOSE-005, VOTE-UI-CLOSE-006, VOTE-UI-CLOSE-007, VOTE-UI-CANCEL-002, VOTE-UI-DEC-CTA-MEETING-001, VOTE-UI-DEC-CTA-OPENLIB-001, VOTE-API-003, VOTE-API-004
 import { test, expect } from "@playwright/test";
 import { loginAs, getDb } from "./helpers";
 
@@ -169,6 +169,50 @@ test.describe("Voting Close & Cancel", () => {
       include: { book: true },
     });
     expect(sel?.book.title).toBe(seeded.books[0].title);
+  });
+
+  // @spec VOTE-UI-DEC-CTA-MEETING-001, VOTE-UI-DEC-CTA-OPENLIB-001
+  test("winner banner exposes 'Set up first meeting' and 'View on Open Library' CTAs", async ({ page }) => {
+    const db = getDb();
+    const seeded = await seedVotingRound({
+      clubId,
+      ownerId: bobId,
+      voterIds: [bobId],
+      approvalsPerVoter: 1,
+    });
+
+    // Transition the round to decided directly so we land on the winner banner
+    // without going through the close-voting dialog (already covered above).
+    await db.votingRound.update({
+      where: { id: seeded.round.id },
+      data: { status: "decided", winningBookId: seeded.books[0].id },
+    });
+    await db.bookSelection.create({
+      data: { clubId, bookId: seeded.books[0].id, isCurrent: true },
+    });
+
+    await loginAs(page, "bob@example.com");
+    await page.goto(`/clubs/${clubId}/vote`);
+    await expect(page.getByTestId("decided-phase")).toBeVisible({ timeout: 10000 });
+
+    const meetingCta = page.getByTestId("winner-cta-meeting");
+    await expect(meetingCta).toBeVisible();
+    await expect(meetingCta).toHaveAttribute("href", `/clubs/${clubId}/meetings`);
+
+    const winnerBook = seeded.books[0];
+    if (winnerBook.openLibraryId) {
+      const openLibCta = page.getByTestId("winner-cta-openlib");
+      await expect(openLibCta).toBeVisible();
+      await expect(openLibCta).toHaveAttribute(
+        "href",
+        `https://openlibrary.org${winnerBook.openLibraryId}`
+      );
+      await expect(openLibCta).toHaveAttribute("target", "_blank");
+      await expect(openLibCta).toHaveAttribute("rel", /noreferrer|noopener/);
+    } else {
+      // Manual entries without an Open Library ID SHALL hide the CTA.
+      await expect(page.getByTestId("winner-cta-openlib")).toHaveCount(0);
+    }
   });
 
   // @spec VOTE-UI-CLOSE-005
