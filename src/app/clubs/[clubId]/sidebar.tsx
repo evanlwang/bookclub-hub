@@ -81,7 +81,7 @@ export function ClubSidebar({
         data-testid="sidebar-copy-code"
         aria-label={codeCopied ? "Invite code copied" : "Copy invite code"}
         title={codeCopied ? "Copied" : "Copy invite code"}
-        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-bg-sunken hover:bg-line text-[11px] font-[var(--font-mono)] text-ink-2 hover:text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-bg-sunken hover:bg-line text-[clamp(11px,0.15vw+9px,13px)] font-[var(--font-mono)] text-ink-2 hover:text-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <span className="tracking-[0.04em]">{currentClub.code}</span>
         {codeCopied ? (
@@ -154,10 +154,10 @@ export function ClubSidebar({
           >
             <LogoIcon size={24} />
             <div className="flex-1 min-w-0">
-              <span className="font-[var(--font-display)] font-semibold text-[15px] text-ink truncate block leading-tight">
+              <span className="font-[var(--font-display)] font-semibold text-[clamp(15px,0.4vw+9px,18px)] text-ink truncate block leading-tight">
                 {clubName}
               </span>
-              <span className="text-[11px] text-ink-3">
+              <span className="text-[clamp(11px,0.15vw+9px,13px)] text-ink-3">
                 {clubs.length} {clubs.length === 1 ? "club" : "clubs"}
               </span>
             </div>
@@ -175,7 +175,7 @@ export function ClubSidebar({
           <div className="flex items-center gap-2.5">
             <LogoIcon size={24} />
             <div className="flex-1 min-w-0">
-              <span className="font-[var(--font-display)] font-semibold text-[15px] text-ink truncate block leading-tight">
+              <span className="font-[var(--font-display)] font-semibold text-[clamp(15px,0.4vw+9px,18px)] text-ink truncate block leading-tight">
                 {clubName}
               </span>
               <MetaRow />
@@ -282,7 +282,7 @@ export function ClubSidebar({
               key={item.label}
               href={href}
               data-testid={`sidebar-nav-${item.label.toLowerCase()}`}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-colors duration-150 ${
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)] text-[clamp(14px,0.3vw+10px,16px)] font-medium transition-colors duration-150 ${
                 isActive
                   ? "bg-primary-soft text-primary-ink"
                   : "text-ink-2 hover:bg-bg-sunken hover:text-ink"
@@ -314,7 +314,7 @@ export function ClubSidebar({
       <div className="p-4 border-t border-line">
         <div className="flex items-center gap-2.5">
           <Avatar name={userName} size="sm" />
-          <span className="flex-1 text-sm text-ink-2 truncate">{userName}</span>
+          <span className="flex-1 text-[clamp(14px,0.3vw+10px,16px)] text-ink-2 truncate">{userName}</span>
           <button
             type="button"
             onClick={handleSignOut}
