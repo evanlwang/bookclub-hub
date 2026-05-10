@@ -26,6 +26,12 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
   const [joining, setJoining] = useState(false);
   const [alreadyMemberClub, setAlreadyMemberClub] = useState<{ id: string; name: string } | null>(null);
 
+  // @spec CLUB-NAV-CLIENT-001 — prefetch the target club's RSC the moment we
+  // know the user will go there, so the click-to-render handoff is near-instant.
+  useEffect(() => {
+    if (alreadyMemberClub) router.prefetch(`/clubs/${alreadyMemberClub.id}`);
+  }, [alreadyMemberClub, router]);
+
   // Create state
   const [clubName, setClubName] = useState("");
   const [clubCode, setClubCode] = useState("");

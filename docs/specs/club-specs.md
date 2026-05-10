@@ -63,7 +63,7 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 - `[x]` **CLUB-NAV-MODAL-007**: On a successful create, the modal SHALL surface the invite code with a copy action, and on user dismissal SHALL navigate to the new club and refresh the layout.
 - `[x]` **CLUB-NAV-MODAL-008**: The modal SHALL be dismissible via Escape, backdrop click, and an explicit close button; dismissal SHALL be blocked while a mutation is in flight.
 - `[x]` **CLUB-NAV-MODAL-010**: When the modal opens, the switcher dropdown SHALL close so it is not stacked behind the Dialog.
-- `[ ]` **CLUB-NAV-CLIENT-001**: Client-side switcher (no full route load) prefetching the target club's state. Subsumes the older "switcher loads target club state under 30s" requirement — Link-navigation latency depends on data fetch, not frontend optimization, so the meaningful target is "no full route load."
+- `[x]` **CLUB-NAV-CLIENT-001**: Switcher navigation is fully client-side — the sidebar dropdown uses `next/link` `<Link>` rows (default-prefetched into the viewport on render), and the in-place create/join modal uses `router.push` (no browser reload). When a join lookup resolves to an "already a member" outcome, the modal calls `router.prefetch` on the target club's route so the subsequent "Go to club" click hands off to a pre-warmed RSC tree. (`src/app/clubs/[clubId]/sidebar.tsx:202-223`, `src/components/club/club-switcher-modal.tsx`)
 - `[ ]` **CLUB-NAV-UNREAD-001**: Unread activity indicator (Badge tone="accent" dot) on club switcher rows for clubs with new activity since last visit. Not implemented.
 
 ## Sidebar Nav (per-club)
