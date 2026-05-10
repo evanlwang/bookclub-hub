@@ -19,7 +19,7 @@ State: empty (no current book) — buttons shown: "Start a vote" link — transi
 
 - `[x]` **DASH-UI-001**: The sidebar SHALL include a club switcher dropdown showing all clubs the user is a member of, with role Badges and a "Create or join a club" link at the bottom. (`sidebar.tsx:50-95`)
 - `[x]` **DASH-UI-002**: The sidebar SHALL display a "Live" Badge (accent dot) on the Voting nav link when an active round exists. (`sidebar.tsx:107, 120-122`)
-- `[ ]` **DASH-UI-NAV-UNREAD-001**: Unread count Badge on Discussions nav link when new threads exist since last visit. Not implemented.
+- `[x]` **DASH-UI-NAV-UNREAD-001**: When the viewer's `Membership.lastVisitedDiscussions` for the current club is older than the most recent thread's `createdAt`, the Discussions sidebar nav link SHALL render an accent Badge with the unread count (`data-testid="sidebar-discussions-unread"`). Cleared on next visit via the same `clubs.markDiscussionsVisited` flow as `CLUB-NAV-UNREAD-001`. (`src/app/clubs/[clubId]/sidebar.tsx`)
 - `[D]` **DASH-UI-003**: Topbar breadcrumb (`Club > Page`) deferred — the v1 layout uses a sidebar-only chrome; introducing a topbar is a layout-language change out of scope. The copyable invite-code chip half of this spec is satisfied by `DASH-UI-HEAD-COPY-001` rendered in the per-page header (`CopyClubCode`).
 - `[D]` **DASH-UI-004**: Topbar "Invite" button deferred — same reason as `DASH-UI-003`. The invite-copy purpose is served by the inline Copy button on `CopyClubCode`.
 

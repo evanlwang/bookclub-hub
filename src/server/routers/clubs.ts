@@ -190,6 +190,32 @@ export const clubsRouter = router({
       return { success: true };
     }),
 
+  // @spec CLUB-NAV-UNREAD-001, DASH-UI-NAV-UNREAD-001
+  markDiscussionsVisited: memberProcedure
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.membership.updateMany({
+        where: { clubId: input.clubId, userId: ctx.user.id },
+        data: { lastVisitedDiscussions: new Date() },
+      });
+      return { success: true };
+    }),
+
+  // @spec CLUB-NAV-UNREAD-001, DASH-UI-NAV-UNREAD-001
+  unreadDiscussionCounts: protectedProcedure.query(async ({ ctx }) => {
+    const memberships = await ctx.db.membership.findMany({
+      where: { userId: ctx.user.id },
+      select: { clubId: true, lastVisitedDiscussions: true, joinedAt: true },
+    });
+    const counts: Record<string, number> = {};
+    for (const m of memberships) {
+      const since = m.lastVisitedDiscussions ?? m.joinedAt;
+      counts[m.clubId] = await ctx.db.discussionThread.count({
+        where: { clubId: m.clubId, createdAt: { gt: since } },
+      });
+    }
+    return counts;
+  }),
+
   members: router({
     list: memberProcedure.query(async ({ ctx, input }) => {
       const members = await ctx.db.membership.findMany({

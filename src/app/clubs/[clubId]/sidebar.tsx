@@ -35,6 +35,7 @@ export function ClubSidebar({
   clubs = [],
   hasActiveVote = false,
   hasUnrespondedMeeting = false,
+  unreadDiscussionCounts = {},
 }: {
   clubId: string;
   clubName: string;
@@ -42,6 +43,8 @@ export function ClubSidebar({
   clubs?: ClubInfo[];
   hasActiveVote?: boolean;
   hasUnrespondedMeeting?: boolean;
+  /** @spec CLUB-NAV-UNREAD-001, DASH-UI-NAV-UNREAD-001 */
+  unreadDiscussionCounts?: Record<string, number>;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -201,6 +204,8 @@ export function ClubSidebar({
             </div>
             {clubs.map((c) => {
               const isCurrent = c.id === clubId;
+              // @spec CLUB-NAV-UNREAD-001
+              const unread = unreadDiscussionCounts[c.id] ?? 0;
               return (
                 <Link
                   key={c.id}
@@ -216,6 +221,13 @@ export function ClubSidebar({
                       </svg>
                     )}
                     <span className={`truncate ${isCurrent ? "" : "ml-[20px]"}`}>{c.name}</span>
+                    {!isCurrent && unread > 0 && (
+                      <span
+                        data-testid={`switcher-unread-${c.id}`}
+                        className="w-1.5 h-1.5 rounded-full bg-accent shrink-0"
+                        aria-label={`${unread} new discussion${unread === 1 ? "" : "s"}`}
+                      />
+                    )}
                   </span>
                   <Badge tone="neutral">{c.role}</Badge>
                 </Link>
@@ -258,6 +270,11 @@ export function ClubSidebar({
           const showLiveBadge = item.label === "Voting" && hasActiveVote;
           const showRespondBadge =
             item.label === "Meetings" && hasUnrespondedMeeting;
+          // @spec DASH-UI-NAV-UNREAD-001
+          const unreadDiscussionsForCurrent =
+            (unreadDiscussionCounts[clubId] ?? 0) > 0;
+          const showDiscussionsUnread =
+            item.label === "Discussions" && unreadDiscussionsForCurrent;
           return (
             <Link
               key={item.label}
@@ -277,6 +294,13 @@ export function ClubSidebar({
               {showRespondBadge && (
                 <span data-testid="sidebar-meetings-badge">
                   <Badge tone="warning" dot>Respond</Badge>
+                </span>
+              )}
+              {showDiscussionsUnread && (
+                <span data-testid="sidebar-discussions-unread">
+                  <Badge tone="accent" dot>
+                    {unreadDiscussionCounts[clubId]}
+                  </Badge>
                 </span>
               )}
             </Link>

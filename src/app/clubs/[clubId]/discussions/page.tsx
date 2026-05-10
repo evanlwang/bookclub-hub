@@ -8,6 +8,7 @@ import { Card, ChapterChip, Avatar } from "@/components/ui";
 import { ChevronLeftIcon } from "@/components/ui/icons";
 import { deriveSpoilerCutoff } from "@/lib/discussions/spoiler-cutoff";
 import { CreateThreadButton } from "./create-thread";
+import { MarkDiscussionsVisited } from "./mark-visited";
 
 type Thread = {
   id: string;
@@ -131,6 +132,7 @@ function DiscussionsContent() {
 
   return (
     <>
+      <MarkDiscussionsVisited clubId={clubId} />
       {/* Create thread */}
       {currentBookId && (
         <div className="mb-6">

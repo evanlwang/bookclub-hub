@@ -17,14 +17,16 @@ export default async function ClubLayout({
   let clubs: { id: string; name: string; code: string; role: string }[] = [];
   let hasActiveVote = false;
   let hasUnrespondedMeeting = false;
+  let unreadDiscussionCounts: Record<string, number> = {};
 
   try {
     const caller = await getServerCaller();
-    const [clubResult, me, rounds, meetings] = await Promise.all([
+    const [clubResult, me, rounds, meetings, unreadCounts] = await Promise.all([
       caller.clubs.get({ clubId }),
       caller.auth.me(),
       caller.rounds.list({ clubId }),
       caller.meetings.list({ clubId }),
+      caller.clubs.unreadDiscussionCounts(),
     ]);
     club = clubResult.club;
     userName = me.user.displayName || me.user.email;
@@ -35,6 +37,7 @@ export default async function ClubLayout({
     hasUnrespondedMeeting = meetings.some(
       (m: any) => m.status === "proposed" && !m.viewerHasResponded
     );
+    unreadDiscussionCounts = unreadCounts;
   } catch {
     // Will fall through to child which handles errors
   }
@@ -48,6 +51,7 @@ export default async function ClubLayout({
         clubs={clubs}
         hasActiveVote={hasActiveVote}
         hasUnrespondedMeeting={hasUnrespondedMeeting}
+        unreadDiscussionCounts={unreadDiscussionCounts}
       />
       <main className="flex-1 min-w-0 p-6 md:p-10">{children}</main>
     </div>
