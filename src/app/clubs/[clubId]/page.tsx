@@ -2,8 +2,8 @@
 import { getServerCaller } from "@/trpc/server";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
-import { Card, Badge, BookCover, ProgressBar, AvatarStack, ChapterChip, Avatar } from "@/components/ui";
-import { VoteIcon, CalendarIcon } from "@/components/ui/icons";
+import { Card, Badge, BookCover, ProgressBar, ChapterChip, Avatar } from "@/components/ui";
+import { VoteIcon, CalendarIcon, ChatIcon, TrendIcon } from "@/components/ui/icons";
 import { deriveSpoilerCutoff } from "@/lib/discussions/spoiler-cutoff";
 import { CopyClubCode } from "./copy-club-code";
 
@@ -93,6 +93,19 @@ export default async function ClubDashboard({
     (m: any) => m.status === "proposed" || m.status === "confirmed"
   );
 
+  // Tally of distinct members who've responded to a proposed meeting — drives
+  // the "X of Y responded" line on the meeting card.
+  const meetingResponseCount = (() => {
+    if (!nextMeeting || nextMeeting.status !== "proposed") return null;
+    const responders = new Set<string>();
+    for (const slot of nextMeeting.slots ?? []) {
+      for (const r of slot.responses ?? []) {
+        if (r.userId) responders.add(r.userId);
+      }
+    }
+    return responders.size;
+  })();
+
   // Progress stats
   const percentages = progress.map((p: any) => p.percentage ?? 0).sort((a: number, b: number) => a - b);
   const median = percentages.length > 0 ? percentages[Math.floor(percentages.length / 2)] : 0;
@@ -103,13 +116,27 @@ export default async function ClubDashboard({
     <div className="w-full max-w-[1600px]">
       {/* Header */}
       <div className="mb-8">
-        <h1
-          className="font-[var(--font-display)] text-3xl font-semibold text-ink tracking-tight"
-          data-testid="club-name"
-        >
-          {club.name}
-        </h1>
-        <CopyClubCode code={club.code} />
+        <p className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.18em] mb-2">
+          Club Dashboard
+        </p>
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <h1
+            className="font-[var(--font-display)] text-[clamp(28px,2.6vw,40px)] font-semibold text-ink tracking-tight leading-none"
+            data-testid="club-name"
+          >
+            {club.name}
+          </h1>
+        </div>
+        <div className="mt-2 flex items-center gap-3">
+          <CopyClubCode code={club.code} />
+        </div>
+        <div
+          className="mt-5 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, oklch(0.84 0.01 70) 0%, oklch(0.84 0.01 70 / 0.5) 40%, oklch(0.84 0.01 70 / 0) 100%)",
+          }}
+        />
       </div>
 
       {/* Attention Banner */}
@@ -181,8 +208,17 @@ export default async function ClubDashboard({
 
       {/* Currently Reading hero */}
       {currentBook?.book ? (
-        <Card className="p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+        <Card className="p-6 sm:p-7 mb-6 relative overflow-hidden">
+          {/* Subtle paper-cream wash, top-right vignette */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(120% 80% at 100% 0%, oklch(0.97 0.02 75 / 0.45) 0%, transparent 55%)",
+            }}
+          />
+          <div className="relative flex flex-col sm:flex-row gap-5 sm:gap-7">
             <BookCover
               title={currentBook.book.title}
               author={currentBook.book.author}
@@ -190,35 +226,83 @@ export default async function ClubDashboard({
               size="lg"
             />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-1">
+              <p className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.18em] mb-2 flex items-center gap-2">
+                <span className="inline-block w-4 h-px bg-ink-3/60" aria-hidden="true" />
                 Currently Reading
               </p>
-              <h2 className="font-[var(--font-display)] text-xl font-semibold text-ink mb-1">
+              <h2 className="font-[var(--font-display)] text-[clamp(20px,2vw,28px)] font-semibold text-ink leading-tight tracking-tight mb-1">
                 {currentBook.book.title}
               </h2>
-              <p className="text-ink-2 text-sm mb-4">
-                {currentBook.book.author}
+              <p className="text-ink-2 text-sm italic mb-4">
+                by {currentBook.book.author}
+                {currentBook.book.pageCount && (
+                  <span className="text-ink-4 not-italic"> · {currentBook.book.pageCount} pages</span>
+                )}
               </p>
 
               {/* Progress stats */}
               {progress.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-2">
-                    <span className="font-[var(--font-display)] text-lg font-semibold text-ink">{median}%</span>
-                    <span>median</span>
-                    <span className="text-ink-4">·</span>
-                    <span>{finished} finished</span>
-                    <span className="text-ink-4">·</span>
-                    <span>{reading} reading</span>
-                  </div>
+                <>
+                  <div className="h-px bg-line my-4" aria-hidden="true" />
+                  <div className="space-y-4">
+                    {/* Labeled stat trio — display numerals, small caps labels */}
+                    <div className="flex flex-wrap gap-x-7 gap-y-2">
+                      <div>
+                        <div className="font-[var(--font-display)] text-2xl font-semibold text-ink leading-none tabular-nums">
+                          {median}<span className="text-ink-3 text-lg">%</span>
+                        </div>
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-ink-3 mt-1.5">
+                          Median
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-[var(--font-display)] text-2xl font-semibold text-ink leading-none tabular-nums">
+                          {finished}
+                        </div>
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-ink-3 mt-1.5">
+                          Finished
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-[var(--font-display)] text-2xl font-semibold text-ink leading-none tabular-nums">
+                          {reading}
+                        </div>
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-ink-3 mt-1.5">
+                          Reading
+                        </div>
+                      </div>
+                    </div>
 
-                  {/* Progress bar with member tick-marks + below-row avatars
-                      @spec DASH-UI-HERO-TICKS-001, DASH-UI-HERO-TOOLTIP-001 */}
-                  <div className="relative">
+                    {/* Progress bar with member tick-marks + below-row avatars
+                        @spec DASH-UI-HERO-TICKS-001, DASH-UI-HERO-TOOLTIP-001 */}
                     <div className="relative">
-                      <ProgressBar percentage={median} status="reading" animate />
-                      <div className="absolute inset-0 pointer-events-none">
-                        {progress.map((p: any) => {
+                      <div className="relative">
+                        <ProgressBar percentage={median} status="reading" animate />
+                        <div className="absolute inset-0 pointer-events-none">
+                          {progress.map((p: any) => {
+                            const pct = Math.min(Math.max(p.percentage ?? 0, 0), 100);
+                            const name = p.user?.displayName ?? "Member";
+                            const chapter =
+                              p.currentChapter != null
+                                ? `Ch. ${p.currentChapter}`
+                                : `${pct}%`;
+                            return (
+                              <button
+                                key={`tick-${p.userId}`}
+                                type="button"
+                                data-testid={`hero-tick-${p.userId}`}
+                                data-percentage={pct}
+                                title={`${name} — ${chapter}`}
+                                aria-label={`${name} — ${chapter}`}
+                                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-3 rounded-full bg-ink/60 hover:bg-ink hover:w-1.5 hover:h-4 transition-all pointer-events-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                style={{ left: `${pct}%` }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div className="relative h-6 mt-1">
+                        {progress.slice(0, 8).map((p: any) => {
                           const pct = Math.min(Math.max(p.percentage ?? 0, 0), 100);
                           const name = p.user?.displayName ?? "Member";
                           const chapter =
@@ -226,60 +310,41 @@ export default async function ClubDashboard({
                               ? `Ch. ${p.currentChapter}`
                               : `${pct}%`;
                           return (
-                            <button
-                              key={`tick-${p.userId}`}
-                              type="button"
-                              data-testid={`hero-tick-${p.userId}`}
-                              data-percentage={pct}
-                              title={`${name} — ${chapter}`}
-                              aria-label={`${name} — ${chapter}`}
-                              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-3 rounded-full bg-ink/60 hover:bg-ink hover:w-1.5 hover:h-4 transition-all pointer-events-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                            <div
+                              key={p.userId}
+                              className="absolute -translate-x-1/2"
                               style={{ left: `${pct}%` }}
-                            />
+                              title={`${name} — ${chapter}`}
+                            >
+                              <Avatar name={name} size="sm" />
+                            </div>
                           );
                         })}
                       </div>
                     </div>
-                    <div className="relative h-6 mt-1">
-                      {progress.slice(0, 8).map((p: any) => {
-                        const pct = Math.min(Math.max(p.percentage ?? 0, 0), 100);
-                        const name = p.user?.displayName ?? "Member";
-                        const chapter =
-                          p.currentChapter != null
-                            ? `Ch. ${p.currentChapter}`
-                            : `${pct}%`;
-                        return (
-                          <div
-                            key={p.userId}
-                            className="absolute -translate-x-1/2"
-                            style={{ left: `${pct}%` }}
-                            title={`${name} — ${chapter}`}
-                          >
-                            <Avatar name={name} size="sm" />
-                          </div>
-                        );
-                      })}
-                    </div>
                   </div>
-                </div>
-              )}
-
-              {!progress.length && currentBook.book.pageCount && (
-                <p className="text-ink-3 text-xs">
-                  {currentBook.book.pageCount} pages
-                </p>
+                </>
               )}
             </div>
           </div>
         </Card>
       ) : (
-        <Card className="p-6 mb-6 text-center">
-          <p className="text-ink-3 text-sm mb-3">No book selected yet</p>
+        <Card className="p-8 mb-6 text-center">
+          <p className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.18em] mb-3">
+            Currently Reading
+          </p>
+          <p className="font-[var(--font-display)] text-lg text-ink-2 mb-1 italic">
+            No book selected yet
+          </p>
+          <p className="text-ink-3 text-sm mb-4">Open a voting round to pick your next read.</p>
           <Link
             href={`/clubs/${clubId}/vote`}
-            className="text-primary text-sm font-medium hover:underline"
+            className="inline-flex items-center gap-1.5 text-primary text-sm font-medium hover:underline"
           >
             Start a vote
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
           </Link>
         </Card>
       )}
@@ -287,133 +352,255 @@ export default async function ClubDashboard({
       {/* Three-up grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Active Vote */}
-        <Card className="p-5">
-          <h3 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-3">
-            Active Vote
-          </h3>
+        <Card className="p-5 flex flex-col transition-all hover:border-line-strong hover:-translate-y-0.5 hover:shadow-md">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="flex items-center justify-center w-7 h-7 rounded-[var(--radius-sm)] bg-primary-soft text-primary-ink">
+              <VoteIcon size={14} />
+            </span>
+            <h3 className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.16em]">
+              Active Vote
+            </h3>
+          </div>
           {activeRound ? (
-            <div>
-              <Badge
-                tone={activeRound.status === "nominating" ? "accent" : "primary"}
-                dot
-              >
-                {activeRound.status}
-              </Badge>
+            <div className="flex flex-col gap-3 flex-1">
+              <div>
+                <p className="font-[var(--font-display)] text-lg font-semibold text-ink leading-tight capitalize">
+                  {activeRound.status === "nominating" ? "Nominations open" : "Voting live"}
+                </p>
+                <p className="text-xs text-ink-3 mt-1 italic">
+                  {activeRound.status === "nominating"
+                    ? "Suggest a book for the club"
+                    : "Cast up to your approval cap"}
+                </p>
+              </div>
+              <div>
+                <Badge
+                  tone={activeRound.status === "nominating" ? "accent" : "primary"}
+                  dot
+                >
+                  {activeRound.status}
+                </Badge>
+              </div>
               <Link
                 href={`/clubs/${clubId}/vote`}
-                className="block mt-3 text-sm text-primary font-medium hover:underline"
+                className="mt-auto pt-2 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
                 data-testid="nav-vote"
               >
-                Cast my vote
+                {activeRound.status === "nominating" ? "Nominate a book" : "Cast my vote"}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
               </Link>
             </div>
           ) : (
-            <div>
-              <p className="text-ink-3 text-sm">No active vote</p>
+            <div className="flex flex-col gap-2 flex-1">
+              <p className="font-[var(--font-display)] text-lg text-ink-2 italic">No active vote</p>
+              <p className="text-xs text-ink-3">Pick the club's next read.</p>
               <Link
                 href={`/clubs/${clubId}/vote`}
-                className="block mt-2 text-sm text-primary font-medium hover:underline"
+                className="mt-auto pt-2 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
                 data-testid="nav-vote"
               >
                 Start a vote
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
               </Link>
             </div>
           )}
         </Card>
 
         {/* Next Meeting */}
-        <Card className="p-5">
-          <h3 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-3">
-            Next Meeting
-          </h3>
+        <Card className="p-5 flex flex-col transition-all hover:border-line-strong hover:-translate-y-0.5 hover:shadow-md">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="flex items-center justify-center w-7 h-7 rounded-[var(--radius-sm)] bg-accent-soft text-accent-ink">
+              <CalendarIcon size={14} />
+            </span>
+            <h3 className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.16em]">
+              Next Meeting
+            </h3>
+          </div>
           {nextMeeting ? (
-            <div>
-              <p className="text-sm font-medium text-ink mb-1">{nextMeeting.title}</p>
-              <Badge
-                tone={
-                  nextMeeting.status === "confirmed" ? "success" : "warning"
-                }
-                dot
-              >
-                {nextMeeting.status === "confirmed"
-                  ? "Confirmed"
-                  : "Awaiting responses"}
-              </Badge>
-              {nextMeeting.confirmedTime && (
-                <p className="text-xs text-ink-2 mt-2">
-                  {new Date(nextMeeting.confirmedTime).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+            <div className="flex flex-col gap-3 flex-1">
+              <div>
+                <p className="font-[var(--font-display)] text-base font-semibold text-ink leading-tight truncate">
+                  {nextMeeting.title}
                 </p>
-              )}
+                {nextMeeting.confirmedTime ? (
+                  <p className="text-xs text-ink-2 mt-1.5 italic">
+                    {new Date(nextMeeting.confirmedTime).toLocaleDateString(undefined, {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                    {" · "}
+                    {new Date(nextMeeting.confirmedTime).toLocaleTimeString(undefined, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                ) : meetingResponseCount != null ? (
+                  <p className="text-xs text-ink-2 mt-1.5 italic">
+                    {meetingResponseCount} member{meetingResponseCount === 1 ? "" : "s"} responded
+                  </p>
+                ) : null}
+              </div>
+              <div>
+                <Badge
+                  tone={nextMeeting.status === "confirmed" ? "success" : "warning"}
+                  dot
+                >
+                  {nextMeeting.status === "confirmed" ? "Confirmed" : "Awaiting responses"}
+                </Badge>
+              </div>
               <Link
                 href={`/clubs/${clubId}/meetings`}
-                className="block mt-3 text-sm text-primary font-medium hover:underline"
+                className="mt-auto pt-2 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
                 data-testid="nav-meetings"
               >
                 View meetings
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
               </Link>
             </div>
           ) : (
-            <div>
-              <p className="text-ink-3 text-sm">No meetings scheduled</p>
+            <div className="flex flex-col gap-2 flex-1">
+              <p className="font-[var(--font-display)] text-lg text-ink-2 italic">Nothing scheduled</p>
+              <p className="text-xs text-ink-3">Propose a few times that work.</p>
               <Link
                 href={`/clubs/${clubId}/meetings`}
-                className="block mt-2 text-sm text-primary font-medium hover:underline"
+                className="mt-auto pt-2 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
                 data-testid="nav-meetings"
               >
                 Schedule a meeting
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
               </Link>
             </div>
           )}
         </Card>
 
         {/* Recent Discussions */}
-        <Card className="p-5">
-          <h3 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-3">
-            Recent Discussions
-          </h3>
+        <Card className="p-5 flex flex-col transition-all hover:border-line-strong hover:-translate-y-0.5 hover:shadow-md">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="flex items-center justify-center w-7 h-7 rounded-[var(--radius-sm)] bg-bg-sunken text-ink-2">
+              <ChatIcon size={14} />
+            </span>
+            <h3 className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.16em]">
+              Recent Discussions
+            </h3>
+          </div>
           {threads.length > 0 ? (
-            <ul className="space-y-2.5">
+            <ul className="space-y-2.5 flex-1">
               {threads.map((thread: any) => (
-                <li key={thread.id} className="flex items-center gap-2 text-sm min-w-0">
+                <li
+                  key={thread.id}
+                  className="flex items-start gap-2 text-sm min-w-0 py-1 border-b border-line/60 last:border-0"
+                >
                   {thread.chapterTag && (
-                    <span className="shrink-0">
+                    <span className="shrink-0 mt-0.5">
                       <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
                     </span>
                   )}
-                  <span className="text-ink truncate min-w-0 flex-1">
+                  <span className="text-ink truncate min-w-0 flex-1 leading-snug">
                     {thread.body}
                   </span>
                   {thread.commentCount != null && (
-                    <span className="text-[11px] text-ink-3 shrink-0">{thread.commentCount}</span>
+                    <span
+                      className="flex items-center gap-0.5 text-[11px] text-ink-3 shrink-0 tabular-nums"
+                      title={`${thread.commentCount} ${thread.commentCount === 1 ? "comment" : "comments"}`}
+                    >
+                      <ChatIcon size={10} />
+                      {thread.commentCount}
+                    </span>
                   )}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-ink-3 text-sm">No discussions yet</p>
+            <div className="flex flex-col gap-2 flex-1">
+              <p className="font-[var(--font-display)] text-lg text-ink-2 italic">No discussions yet</p>
+              <p className="text-xs text-ink-3">Start the first thread.</p>
+            </div>
           )}
           <Link
             href={`/clubs/${clubId}/discussions`}
-            className="block mt-3 text-sm text-primary font-medium hover:underline"
+            className="mt-auto pt-3 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
             data-testid="nav-discussions"
           >
             View all
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
           </Link>
         </Card>
       </div>
 
-      {/* Progress link */}
-      <Card className="p-5">
-        <h3 className="text-xs font-medium text-ink-3 uppercase tracking-wider mb-3">
-          Reading Progress
-        </h3>
-        <Link
-          href={`/clubs/${clubId}/progress`}
-          data-testid="nav-progress"
-          className="text-sm text-primary font-medium hover:underline"
-        >
-          View progress
-        </Link>
+      {/* Reading Progress — member roll-call */}
+      <Card className="p-5 transition-all hover:border-line-strong">
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center justify-center w-7 h-7 rounded-[var(--radius-sm)] bg-bg-sunken text-ink-2">
+              <TrendIcon size={14} />
+            </span>
+            <h3 className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.16em]">
+              Reading Progress
+            </h3>
+          </div>
+          <Link
+            href={`/clubs/${clubId}/progress`}
+            data-testid="nav-progress"
+            className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
+          >
+            View progress
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </Link>
+        </div>
+        {progress.length > 0 ? (
+          <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-3">
+            {[...progress]
+              .sort((a: any, b: any) => (b.percentage ?? 0) - (a.percentage ?? 0))
+              .map((p: any) => {
+                const pct = Math.min(Math.max(p.percentage ?? 0, 0), 100);
+                const name = p.user?.displayName ?? "Member";
+                const isFinished = p.status === "finished";
+                return (
+                  <li key={p.userId} className="flex items-center gap-2.5 min-w-0">
+                    <Avatar name={name} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-sm text-ink truncate">{name}</span>
+                        {isFinished && (
+                          <span className="text-accent-ink" title="Finished" aria-label="Finished">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M5 12.5l4.5 4.5L19 7" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 h-1 rounded-full bg-bg-sunken overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${isFinished ? "bg-accent" : "bg-primary"}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-[var(--font-mono)] text-ink-3 tabular-nums shrink-0">
+                      {pct}%
+                    </span>
+                  </li>
+                );
+              })}
+          </ul>
+        ) : (
+          <p className="text-ink-3 text-sm italic">
+            No one's logged progress yet.
+          </p>
+        )}
       </Card>
     </div>
   );
