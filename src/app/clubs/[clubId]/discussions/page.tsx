@@ -4,7 +4,7 @@
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Card, ChapterChip, Avatar } from "@/components/ui";
+import { Card, ChapterChip, Avatar, Badge } from "@/components/ui";
 import { ChevronLeftIcon } from "@/components/ui/icons";
 import { deriveSpoilerCutoff } from "@/lib/discussions/spoiler-cutoff";
 import { CreateThreadButton } from "./create-thread";
@@ -20,6 +20,7 @@ type Thread = {
   author?: { displayName: string };
   createdAt: string;
   commentCount?: number;
+  isPinned?: boolean;
 };
 
 function relativeTime(dateStr: string): string {
@@ -216,9 +217,19 @@ function DiscussionsContent() {
       ) : (
         <ul data-testid="threads-list" className="space-y-2">
           {threads.map((thread) => (
-            <li key={thread.id} data-testid={`thread-${thread.id}`}>
-              <Card className="p-4 hover:border-line-strong transition-colors duration-150 cursor-pointer">
+            <li key={thread.id} data-testid={`thread-${thread.id}`} data-pinned={thread.isPinned ? "true" : "false"}>
+              <Card
+                className={`p-4 hover:border-line-strong transition-colors duration-150 cursor-pointer ${
+                  thread.isPinned ? "bg-warning-soft border-warning/40" : ""
+                }`}
+              >
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1">
+                  {/* @spec DISC-UI-PIN-VISUAL-001 */}
+                  {thread.isPinned && (
+                    <Badge tone="warning" dot>
+                      PINNED
+                    </Badge>
+                  )}
                   {thread.chapterTag && (
                     <span data-testid="chapter-tag">
                       <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />

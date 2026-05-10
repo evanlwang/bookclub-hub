@@ -90,12 +90,12 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 
 ## Gaps (older spec described but not implemented)
 
-- `[!]` **DISC-UI-007**: Edit/delete icon buttons on thread header for author/admin — **not implemented in UI**.
-  - `[ ]` **DISC-UI-EDIT-BTN-001**: Author/admin "Edit" icon on thread header.
-  - `[ ]` **DISC-UI-DELETE-BTN-001**: Author/admin "Delete" icon on thread header.
-- `[!]` **DISC-UI-006**: Pin toggle (admin) and pinned-thread visual treatment (amber background, "PINNED" label) — **not implemented**.
-  - `[ ]` **DISC-UI-PIN-BTN-001**: Admin pin/unpin toggle on thread.
-  - `[ ]` **DISC-UI-PIN-VISUAL-001**: Pinned thread visual treatment in the list.
+- `[x]` **DISC-UI-007**: The thread detail header SHALL render Edit and Delete affordances for the author and admins. Implemented via the sub-IDs below as inline text-link buttons (not icons — the codebase prefers text affordances per `DISC-UI-COMMENT-CONTROLS-001`).
+  - `[x]` **DISC-UI-EDIT-BTN-001**: When `viewerId === thread.authorId`, the thread header SHALL render an "Edit" link (`data-testid="thread-edit-btn"`) that swaps the body in place for a textarea with Save/Cancel. Save calls `threads.update({body})`. (`[threadId]/page.tsx`)
+  - `[x]` **DISC-UI-DELETE-BTN-001**: When `viewerId === thread.authorId` OR viewer role is admin/owner, the thread header SHALL render a "Delete" link (`data-testid="thread-delete-btn"`). Clicking SHALL replace the affordance row with an inline "Delete this thread? · Yes, delete · Cancel" confirmation; "Yes, delete" calls `threads.delete` and navigates back to `/clubs/{clubId}/discussions`. (`[threadId]/page.tsx`)
+- `[x]` **DISC-UI-006**: Pin toggle (admin) and pinned-thread visual treatment. Implemented via the sub-IDs below.
+  - `[x]` **DISC-UI-PIN-BTN-001**: Admins SHALL see a "Pin" / "Unpin" toggle in the thread-detail header (`data-testid="thread-pin-btn"`, `aria-pressed={isPinned}`). Clicking calls `threads.update({isPinned: !current})`. (`[threadId]/page.tsx`)
+  - `[x]` **DISC-UI-PIN-VISUAL-001**: Pinned threads SHALL render with a `bg-warning-soft` card with a `border-warning/40` border and a "PINNED" warning Badge dot, in BOTH the discussions list (`discussions/page.tsx`) and the thread detail header. Each pinned row carries `data-pinned="true"` for tests.
 - `[x]` **DISC-UI-008**: "[deleted]" placeholder for deleted comments with replies is implemented — when a deleted comment retains replies, `comment.body` is set to `"[deleted]"` and the row renders italic-gray. Implementation cited under `DISC-UI-COMMENT-DELETE-001` and `DISC-UI-COMMENT-DELETED-001` (both `[x]`).
 - `[x]` **DISC-UI-010**: Reply buttons are **always visible**, not hover-revealed — intentional re-spec from older text. The Reply affordance lives in the per-comment controls row (`DISC-UI-COMMENT-CONTROLS-001`); no hover/focus reveal is needed.
 - `[!]` **DISC-UI-014/015/017**: Real-time spoiler-mismatch detection in the compose form (amber border, warning banner, "Resolve spoiler warning" disabled state) and the "💡 Spoiler-safe by default" info card — **not implemented**.
