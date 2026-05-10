@@ -1,9 +1,25 @@
+import type { Metadata } from "next";
 import { TRPCProvider } from "@/trpc/react";
 import "./globals.css";
 
-export const metadata = {
+// Next.js App Router auto-discovers `app/icon.{svg,png}` and `app/apple-icon.png`
+// and emits the canonical <link rel="icon"> / <link rel="apple-touch-icon">.
+// The explicit `icons` entries below add the larger PNGs from /public/icons
+// for Android home-screen, PWA manifests, and high-DPI displays.
+export const metadata: Metadata = {
   title: "BookClub Hub",
   description: "Organize your book clubs",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icon.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/icon.svg"],
+  },
 };
 
 export default function RootLayout({

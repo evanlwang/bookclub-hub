@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 28 28">
+  <!-- BookClub Hub mark — teal book silhouette + amber chevron.
+       Mirrors src/components/ui/icons.tsx LogoIcon, with rgb() approximations
+       of the oklch() design tokens so older browsers + image rasterizers
+       render correctly. -->
+  <path
+    d="M5 5.5A2.5 2.5 0 0 1 7.5 3H22v20H7.5A2.5 2.5 0 0 0 5 25.5V5.5z"
+    fill="#265c64"
+    stroke="#19464c"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M5 22A2.5 2.5 0 0 1 7.5 19.5H22"
+    fill="none"
+    stroke="#fcf8f0"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M11 8l3 4 3-4"
+    fill="none"
+    stroke="#e1a747"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
