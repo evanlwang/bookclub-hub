@@ -2,7 +2,7 @@ import { Card } from "@/components/ui";
 
 export default function DiscussionsLoading() {
   return (
-    <div className="max-w-3xl" data-testid="discussions-loading" aria-busy="true" aria-live="polite">
+    <div className="w-full max-w-[1600px]" data-testid="discussions-loading" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading discussions…</span>
       <div className="h-4 w-24 rounded bg-bg-sunken animate-pulse mb-4" />
       <div className="h-9 w-32 rounded-[var(--radius-md)] bg-bg-sunken animate-pulse mb-6" />

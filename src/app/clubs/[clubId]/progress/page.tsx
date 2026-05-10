@@ -37,7 +37,7 @@ export default async function ProgressPage({
 
   if (!bookId) {
     return (
-      <div className="max-w-3xl">
+      <div className="w-full max-w-[1600px]">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight mb-8">
           Reading Progress
         </h1>
@@ -91,7 +91,7 @@ export default async function ProgressPage({
   const isViewingPast = !!requestedBookId && requestedBookId !== currentSelection?.bookId;
 
   return (
-    <div className="max-w-3xl">
+    <div className="w-full max-w-[1600px]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Reading Progress

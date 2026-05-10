@@ -100,7 +100,7 @@ export default async function ClubDashboard({
   const reading = progress.filter((p: any) => p.status === "reading").length;
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full max-w-[1600px]">
       {/* Header */}
       <div className="mb-8">
         <h1

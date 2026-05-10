@@ -2,7 +2,7 @@ import { Card } from "@/components/ui";
 
 export default function DashboardLoading() {
   return (
-    <div className="max-w-4xl" data-testid="dashboard-loading" aria-busy="true" aria-live="polite">
+    <div className="w-full max-w-[1600px]" data-testid="dashboard-loading" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading dashboard…</span>
       <div className="mb-8">
         <div className="h-8 w-2/5 rounded bg-bg-sunken animate-pulse mb-2" />

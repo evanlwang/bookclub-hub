@@ -93,7 +93,7 @@ export default function ThreadDetailPage() {
 
   if (error) {
     return (
-      <div className="max-w-3xl">
+      <div className="w-full max-w-[900px]">
         <p data-testid="thread-error" className="text-danger text-sm">
           {error}
         </p>
@@ -103,7 +103,7 @@ export default function ThreadDetailPage() {
 
   if (!thread) {
     return (
-      <div className="max-w-3xl">
+      <div className="w-full max-w-[900px]">
         <p className="text-ink-3 text-sm">Loading...</p>
       </div>
     );
@@ -119,7 +119,7 @@ export default function ThreadDetailPage() {
     thread.author?.displayName || thread.authorName || "Unknown";
 
   return (
-    <div className="max-w-3xl">
+    <div className="w-full max-w-[900px]">
       <Link
         href={`/clubs/${clubId}/discussions`}
         className="inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink mb-4 transition-colors"

@@ -2,7 +2,7 @@ import { Card } from "@/components/ui";
 
 export default function VoteLoading() {
   return (
-    <div className="max-w-4xl" data-testid="vote-loading" aria-busy="true" aria-live="polite">
+    <div className="w-full max-w-[1600px]" data-testid="vote-loading" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading voting…</span>
       <div className="h-4 w-24 rounded bg-bg-sunken animate-pulse mb-4" />
       <div className="flex items-center justify-between gap-3 mb-8">

@@ -53,7 +53,7 @@ export default async function MembersPage({
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full max-w-[1600px]">
       <header className="mb-6">
         <h1 className="font-[var(--font-display)] text-3xl font-semibold text-ink tracking-tight">
           Members

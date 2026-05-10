@@ -2,7 +2,7 @@ import { Card } from "@/components/ui";
 
 export default function ProgressLoading() {
   return (
-    <div className="max-w-3xl" data-testid="progress-loading" aria-busy="true" aria-live="polite">
+    <div className="w-full max-w-[1600px]" data-testid="progress-loading" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading progress…</span>
       <div className="flex items-center justify-between gap-3 mb-6">
         <div className="h-7 w-44 rounded bg-bg-sunken animate-pulse" />

@@ -211,7 +211,7 @@ export function MeetingsClient({
   };
 
   return (
-    <div className="max-w-3xl">
+    <div className="w-full max-w-[1600px]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
           Meetings

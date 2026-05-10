@@ -5,7 +5,7 @@ export default function MeetingsLoading() {
     <div data-testid="meetings-loading" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading meetings…</span>
       <div className="h-4 w-24 rounded bg-bg-sunken animate-pulse mb-4" />
-      <div className="max-w-3xl">
+      <div className="w-full max-w-[1600px]">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="h-7 w-32 rounded bg-bg-sunken animate-pulse" />
           <div className="h-9 w-36 rounded-[var(--radius-md)] bg-bg-sunken animate-pulse" />

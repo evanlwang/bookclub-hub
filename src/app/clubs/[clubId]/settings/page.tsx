@@ -63,7 +63,7 @@ export default async function ClubSettingsPage({
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="w-full max-w-[1200px]">
       <Link
         href={`/clubs/${clubId}`}
         className="inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink mb-4 transition-colors"

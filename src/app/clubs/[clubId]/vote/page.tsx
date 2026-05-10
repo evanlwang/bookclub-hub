@@ -116,7 +116,7 @@ export default async function VotePage({
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full max-w-[1600px]">
       <Link
         href={`/clubs/${clubId}`}
         className="inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink mb-4 transition-colors"
