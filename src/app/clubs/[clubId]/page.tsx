@@ -150,14 +150,31 @@ export default async function ClubDashboard({
                 )}
               </ul>
             </div>
-            {hasNotVoted && (
-              <Link
-                href={`/clubs/${clubId}/vote`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] bg-primary text-bg text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Cast my vote
-              </Link>
-            )}
+            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+              {hasNotVoted && (
+                <Link
+                  data-testid="banner-cta-vote"
+                  href={`/clubs/${clubId}/vote`}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] bg-primary text-bg text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  Cast my vote
+                </Link>
+              )}
+              {hasPendingMeeting && (
+                /* @spec DASH-UI-BANNER-CTA-MEET-001 */
+                <Link
+                  data-testid="banner-cta-meet"
+                  href={`/clubs/${clubId}/meetings`}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-opacity ${
+                    hasNotVoted
+                      ? "border border-line-strong text-ink hover:bg-bg-soft"
+                      : "bg-primary text-bg hover:opacity-90"
+                  }`}
+                >
+                  Respond to meetings
+                </Link>
+              )}
+            </div>
           </div>
         </Card>
       )}

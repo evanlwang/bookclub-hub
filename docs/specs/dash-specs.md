@@ -30,7 +30,7 @@ State: empty (no current book) — buttons shown: "Start a vote" link — transi
 - `[x]` **DASH-UI-BANNER-VOTE-001**: When `hasNotVoted` is true (active round in voting status AND user has 0 votes), the banner SHALL show "Voting is open — you haven't voted yet" with a primary-colored dot. (`page.tsx:42-46, 134-139`)
 - `[x]` **DASH-UI-BANNER-MEET-001**: When `hasPendingMeeting` is true (any proposed meeting where the user has no responses across any slot), the banner SHALL show "Meeting awaits your availability" with an accent-colored dot. (`page.tsx:50-60, 140-145`)
 - `[x]` **DASH-UI-BANNER-CTA-VOTE-001**: When `hasNotVoted`, a "Cast my vote" Link CTA routes to `/clubs/{clubId}/vote`. (`page.tsx:148-155`)
-- `[ ]` **DASH-UI-BANNER-CTA-MEET-001**: A "Respond to meetings" CTA in the banner when `hasPendingMeeting`. Today the banner shows the meeting item but no CTA button is rendered for the meetings case alone.
+- `[x]` **DASH-UI-BANNER-CTA-MEET-001**: When `hasPendingMeeting` is true, the attention banner SHALL render a "Respond to meetings" CTA (`data-testid="banner-cta-meet"`) linking to `/clubs/{clubId}/meetings`. When the user is *also* missing a vote, the meet CTA renders as a secondary outline button beside the primary "Cast my vote" CTA. (`src/app/clubs/[clubId]/page.tsx`)
 
 ## Currently Reading Hero
 
