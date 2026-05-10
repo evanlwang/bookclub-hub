@@ -58,7 +58,7 @@ export function CancelMeetingButton({
         data-testid={`cancel-meeting-${meetingId}`}
         className={
           className ??
-          "text-xs text-ink-3 hover:text-danger transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger rounded"
+          "text-xs font-medium text-danger hover:text-danger/80 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger rounded"
         }
       >
         Cancel meeting
