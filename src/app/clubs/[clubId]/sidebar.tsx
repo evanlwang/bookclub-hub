@@ -16,6 +16,7 @@ import {
   Badge,
 } from "@/components/ui";
 import { ClubSwitcherModal } from "@/components/club/club-switcher-modal";
+import { trpc } from "@/trpc/react-hooks";
 
 const navItems = [
   { label: "Dashboard", href: "", icon: BookIcon, adminOnly: false },
@@ -53,7 +54,8 @@ export function ClubSidebar({
   const basePath = `/clubs/${clubId}`;
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [addClubModalOpen, setAddClubModalOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
+  const logoutMutation = trpc.auth.logout.useMutation();
+  const signingOut = logoutMutation.isPending;
 
   const currentClub = clubs.find((c) => c.id === clubId);
   const hasMultipleClubs = clubs.length > 1;
@@ -121,13 +123,8 @@ export function ClubSidebar({
 
   async function handleSignOut() {
     if (signingOut) return;
-    setSigningOut(true);
     try {
-      await fetch("/api/trpc/auth.logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
+      await logoutMutation.mutateAsync();
     } catch {
       // Server emits the clearing Set-Cookie; we still wipe locally as a backup.
     }

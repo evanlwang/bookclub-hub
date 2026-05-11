@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, Badge, Button, Card } from "@/components/ui";
 import { TrashIcon } from "@/components/ui/icons";
+import { trpc } from "@/trpc/react-hooks";
 
 type Role = "owner" | "admin" | "member";
 
@@ -40,6 +41,12 @@ export function MembersClient({
   const [error, setError] = useState("");
   const [transferConfirm, setTransferConfirm] = useState("");
 
+  const removeMutation = trpc.clubs.members.remove.useMutation();
+  const updateRoleMutation = trpc.clubs.members.updateRole.useMutation();
+  const transferMutation = trpc.clubs.members.transferOwnership.useMutation();
+  const leaveMutation = trpc.clubs.leave.useMutation();
+  const utils = trpc.useUtils();
+
   const sorted = [...members].sort((a, b) => {
     const roleOrder: Record<Role, number> = { owner: 0, admin: 1, member: 2 };
     if (roleOrder[a.role] !== roleOrder[b.role]) {
@@ -54,19 +61,6 @@ export function MembersClient({
     setTransferConfirm("");
   }
 
-  async function callMutation(path: string, body: Record<string, unknown>) {
-    const res = await fetch(`/api/trpc/${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    if (data.error) {
-      throw new Error(data.error.message ?? "Mutation failed");
-    }
-    return data.result?.data;
-  }
-
   async function confirmAction() {
     if (!action || submitting) return;
     setSubmitting(true);
@@ -74,20 +68,20 @@ export function MembersClient({
     try {
       switch (action.kind) {
         case "remove":
-          await callMutation("clubs.members.remove", {
+          await removeMutation.mutateAsync({
             clubId,
             userId: action.target.userId,
           });
           break;
         case "promote":
-          await callMutation("clubs.members.updateRole", {
+          await updateRoleMutation.mutateAsync({
             clubId,
             userId: action.target.userId,
             role: "admin",
           });
           break;
         case "demote":
-          await callMutation("clubs.members.updateRole", {
+          await updateRoleMutation.mutateAsync({
             clubId,
             userId: action.target.userId,
             role: "member",
@@ -99,21 +93,18 @@ export function MembersClient({
             setSubmitting(false);
             return;
           }
-          await callMutation("clubs.members.transferOwnership", {
+          await transferMutation.mutateAsync({
             clubId,
             newOwnerUserId: action.target.userId,
           });
           break;
         case "leave":
-          await callMutation("clubs.leave", { clubId });
+          await leaveMutation.mutateAsync({ clubId });
           // Owner-cannot-leave is enforced server-side; non-owners redirect.
           // Drop into a remaining club if any, else send to onboarding.
           try {
-            const meRes = await fetch(
-              `/api/trpc/auth.me?input=${encodeURIComponent(JSON.stringify({}))}`
-            );
-            const meData = await meRes.json();
-            const remaining = meData.result?.data?.clubs;
+            const me = await utils.auth.me.fetch();
+            const remaining = me?.clubs;
             if (Array.isArray(remaining) && remaining.length > 0) {
               router.push(`/clubs/${remaining[0].id}`);
               router.refresh();

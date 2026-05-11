@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { TrashIcon } from "@/components/ui/icons";
+import { trpc } from "@/trpc/react-hooks";
 
 type Cadence = "monthly" | "six_weeks" | "flexible";
 
@@ -58,7 +59,6 @@ export function SettingsForm({
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteName, setDeleteName] = useState("");
-  const [deleting, setDeleting] = useState(false);
 
   const selectedSwatchId = matchSwatch(themeColor);
 
@@ -68,62 +68,55 @@ export function SettingsForm({
     cadence !== initialCadence ||
     themeColor !== initialThemeColor;
 
+  const updateMutation = trpc.clubs.update.useMutation({
+    onSuccess: () => {
+      setSavedAt(Date.now());
+      router.refresh();
+    },
+    onError: (err) => {
+      setError(err.message || "Failed to save");
+    },
+    onSettled: () => {
+      setSaving(false);
+    },
+  });
+
+  const deleteMutation = trpc.clubs.delete.useMutation({
+    onSuccess: () => {
+      // Force a full-page navigation — the club we're inside has just been
+      // soft-deleted, so router.push would briefly try to re-render this page
+      // against a now-inaccessible club.
+      window.location.href = "/";
+    },
+    onError: (err) => {
+      setError(err.message || "Failed to delete");
+    },
+  });
+
   async function handleSave() {
     if (!dirty || saving) return;
     setSaving(true);
     setError("");
-    try {
-      const res = await fetch("/api/trpc/clubs.update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          name: name.trim() !== initialName ? name.trim() : undefined,
-          description:
-            description !== initialDescription ? description.trim() : undefined,
-          cadence: cadence !== initialCadence ? cadence : undefined,
-          // Send null explicitly to clear; omit when unchanged so we don't
-          // overwrite with the same value.
-          themeColor:
-            themeColor !== initialThemeColor ? themeColor : undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data?.error) {
-        setError(data.error.message || "Failed to save");
-        return;
-      }
-      setSavedAt(Date.now());
-      router.refresh();
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate({
+      clubId,
+      name: name.trim() !== initialName ? name.trim() : undefined,
+      description:
+        description !== initialDescription ? description.trim() : undefined,
+      cadence: cadence !== initialCadence ? cadence : undefined,
+      // Send null explicitly to clear; omit when unchanged so we don't
+      // overwrite with the same value.
+      themeColor:
+        themeColor !== initialThemeColor ? themeColor : undefined,
+    });
   }
 
   async function handleDelete() {
-    if (!confirmingDelete || deleteName !== initialName || deleting) return;
-    setDeleting(true);
+    if (!confirmingDelete || deleteName !== initialName || deleteMutation.isPending) return;
     setError("");
-    try {
-      const res = await fetch("/api/trpc/clubs.delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId }),
-      });
-      const data = await res.json();
-      if (data?.error) {
-        setError(data.error.message || "Failed to delete");
-        setDeleting(false);
-        return;
-      }
-      window.location.href = "/";
-    } catch {
-      setError("Something went wrong");
-      setDeleting(false);
-    }
+    deleteMutation.mutate({ clubId });
   }
+
+  const deleting = deleteMutation.isPending;
 
   return (
     <form

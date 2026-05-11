@@ -6,8 +6,10 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button, Card, CheckIcon } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { trpc } from "@/trpc/react-hooks";
 
 type Tab = "join" | "create";
+type Cadence = "monthly" | "six_weeks" | "flexible";
 
 interface ClubSwitcherModalProps {
   isOpen: boolean;
@@ -20,10 +22,11 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
 
   // Join state
   const [code, setCode] = useState("");
-  const [lookupLoading, setLookupLoading] = useState(false);
-  const [clubInfo, setClubInfo] = useState<{ name: string; memberCount: number } | null>(null);
+  // The debounced, normalized code that's actually sent to the server. We
+  // update it 300ms after the user stops typing — useQuery cancels in-flight
+  // lookups automatically when this value changes.
+  const [debouncedCode, setDebouncedCode] = useState("");
   const [joinError, setJoinError] = useState("");
-  const [joining, setJoining] = useState(false);
   const [alreadyMemberClub, setAlreadyMemberClub] = useState<{ id: string; name: string } | null>(null);
 
   // @spec CLUB-NAV-CLIENT-001 — prefetch the target club's RSC the moment we
@@ -35,16 +38,42 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
   // Create state
   const [clubName, setClubName] = useState("");
   const [clubCode, setClubCode] = useState("");
-  const [cadence, setCadence] = useState("monthly");
+  const [cadence, setCadence] = useState<Cadence>("monthly");
   const [createError, setCreateError] = useState("");
-  const [creating, setCreating] = useState(false);
 
   // Created success state (shown inside create tab after successful creation)
   const [createdClub, setCreatedClub] = useState<{ id: string; name: string; code: string } | null>(null);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   useFocusTrap(dialogRef, isOpen);
+
+  // @spec CLUB-NAV-MODAL-001
+  // Debounced lookup driven by `debouncedCode`. `enabled` keeps the query
+  // dormant unless the user is on the join tab AND the code is long enough.
+  const lookupQuery = trpc.clubs.lookup.useQuery(
+    { code: debouncedCode },
+    {
+      enabled: tab === "join" && debouncedCode.length >= 4,
+      retry: false,
+      staleTime: 30_000,
+    },
+  );
+  const clubInfo =
+    lookupQuery.data && lookupQuery.data.clubName
+      ? { name: lookupQuery.data.clubName, memberCount: lookupQuery.data.memberCount }
+      : null;
+  const lookupLoading =
+    tab === "join" &&
+    code.trim().length >= 4 &&
+    (debouncedCode !== code.trim().toUpperCase() || lookupQuery.isFetching);
+
+  const joinMutation = trpc.clubs.join.useMutation();
+  const createMutation = trpc.clubs.create.useMutation();
+  const joining = joinMutation.isPending;
+  const creating = createMutation.isPending;
+  // Stand-alone lookup used inside handleCreate to surface code-collision
+  // errors before we POST clubs.create. Lazily fired via fetchQuery.
+  const utils = trpc.useUtils();
 
   const derivedCode = clubName
     .trim()
@@ -59,7 +88,7 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
   function reset() {
     setTab("join");
     setCode("");
-    setClubInfo(null);
+    setDebouncedCode("");
     setJoinError("");
     setAlreadyMemberClub(null);
     setClubName("");
@@ -95,65 +124,64 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, inFlight, createdClub]);
 
-  // Debounced join lookup
+  // Debounced join lookup: bump `debouncedCode` 300ms after the user stops
+  // typing. `useQuery` keys on this and cancels stale requests automatically.
   useEffect(() => {
     if (tab !== "join") return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
     const normalized = code.trim().toUpperCase();
     if (normalized.length < 4) {
-      setClubInfo(null);
-      setLookupLoading(false);
+      setDebouncedCode("");
       return;
     }
-
-    setLookupLoading(true);
-    setJoinError("");
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `/api/trpc/clubs.lookup?input=${encodeURIComponent(JSON.stringify({ code: normalized }))}`
-        );
-        const data = await res.json();
-        const result = data.result?.data;
-        if (result?.clubName) {
-          setClubInfo({ name: result.clubName, memberCount: result.memberCount });
-          setJoinError("");
-        } else {
-          setClubInfo(null);
-          setJoinError("No club found with that code");
-        }
-      } catch {
-        setClubInfo(null);
-        setJoinError("Failed to look up club");
-      } finally {
-        setLookupLoading(false);
-      }
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    const t = setTimeout(() => setDebouncedCode(normalized), 300);
+    return () => clearTimeout(t);
   }, [code, tab]);
+
+  // Project the query result into the existing join-error UX (404 → "no club
+  // found", network failure → "failed to look up"). Done in an effect so we
+  // don't fight React's render — setting state inline would loop.
+  useEffect(() => {
+    if (tab !== "join") return;
+    if (debouncedCode.length < 4) {
+      if (joinError) setJoinError("");
+      return;
+    }
+    if (lookupQuery.isFetching) {
+      if (joinError) setJoinError("");
+      return;
+    }
+    if (lookupQuery.isError) {
+      setJoinError("Failed to look up club");
+      return;
+    }
+    if (lookupQuery.isSuccess) {
+      if (!lookupQuery.data?.clubName) {
+        setJoinError("No club found with that code");
+      } else if (joinError) {
+        setJoinError("");
+      }
+    }
+    // joinError intentionally omitted — it's a derived clear-on-success signal,
+    // not a trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    tab,
+    debouncedCode,
+    lookupQuery.isFetching,
+    lookupQuery.isError,
+    lookupQuery.isSuccess,
+    lookupQuery.data,
+  ]);
 
   async function handleJoin() {
     if (!joinReady || joining) return;
-    setJoining(true);
     setJoinError("");
     setAlreadyMemberClub(null);
 
     try {
-      const res = await fetch("/api/trpc/clubs.join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim().toUpperCase() }),
+      const result = await joinMutation.mutateAsync({
+        code: code.trim().toUpperCase(),
       });
-      const data = await res.json();
-      if (data.error) {
-        setJoinError(data.error.message || "Failed to join club");
-        return;
-      }
-      const result = data.result?.data;
       if (!result?.club?.id) {
         setJoinError("Unexpected response format");
         return;
@@ -167,10 +195,10 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
       onClose();
       router.push(`/clubs/${targetId}`);
       router.refresh();
-    } catch {
-      setJoinError("Something went wrong");
-    } finally {
-      setJoining(false);
+    } catch (err) {
+      setJoinError(
+        err instanceof Error ? err.message : "Failed to join club",
+      );
     }
   }
 
@@ -185,20 +213,17 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
 
   async function handleCreate() {
     if (!createReady || creating) return;
-    setCreating(true);
     setCreateError("");
 
     const codeToUse = clubCode || derivedCode;
 
-    // Uniqueness check via lookup (matches /join Step 3b behavior)
+    // Uniqueness check via lookup (matches /join Step 3b behavior).
+    // utils.clubs.lookup.fetch is the imperative version of useQuery — it
+    // returns the same shape and respects the react-query cache.
     try {
-      const res = await fetch(
-        `/api/trpc/clubs.lookup?input=${encodeURIComponent(JSON.stringify({ code: codeToUse }))}`
-      );
-      const data = await res.json();
-      if (data.result?.data?.clubName) {
+      const lookup = await utils.clubs.lookup.fetch({ code: codeToUse });
+      if (lookup?.clubName) {
         setCreateError("This code is already in use");
-        setCreating(false);
         return;
       }
     } catch {
@@ -207,30 +232,20 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
 
     try {
       // @spec AUTH-UI-STEP3B-CADENCE-DATA-001
-      const res = await fetch("/api/trpc/clubs.create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: clubName.trim(),
-          code: codeToUse,
-          cadence,
-        }),
+      const result = await createMutation.mutateAsync({
+        name: clubName.trim(),
+        code: codeToUse,
+        cadence,
       });
-      const data = await res.json();
-      if (data.error) {
-        setCreateError(data.error.message || "Failed to create club");
-        return;
-      }
-      const result = data.result?.data;
       if (!result?.club?.id) {
         setCreateError("Unexpected response format");
         return;
       }
       setCreatedClub({ id: result.club.id, name: clubName.trim(), code: codeToUse });
-    } catch {
-      setCreateError("Something went wrong");
-    } finally {
-      setCreating(false);
+    } catch (err) {
+      setCreateError(
+        err instanceof Error ? err.message : "Failed to create club",
+      );
     }
   }
 
@@ -484,11 +499,11 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
                     Voting cadence
                   </label>
                   <div id="modal-cadence" className="grid grid-cols-3 gap-2">
-                    {[
+                    {([
                       { value: "monthly", label: "Monthly", sub: "12/yr" },
                       { value: "six_weeks", label: "6 weeks", sub: "~9/yr" },
                       { value: "flexible", label: "Flexible", sub: "—" },
-                    ].map((opt) => (
+                    ] as const).map((opt) => (
                       <button
                         key={opt.value}
                         type="button"

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ProgressBar } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { trpc } from "@/trpc/react-hooks";
 
 type ProgressStatus = "not_started" | "reading" | "finished";
 
@@ -34,6 +35,8 @@ export function UpdateProgressButton(props: UpdateModalProps) {
     previous: ProgressSnapshot | null;
   } | null>(null);
 
+  const undoMutation = trpc.progress.update.useMutation();
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), TOAST_DISMISS_MS);
@@ -50,19 +53,23 @@ export function UpdateProgressButton(props: UpdateModalProps) {
     if (!toast) return;
     const previous = toast.previous;
     if (previous) {
-      await fetch("/api/trpc/progress.update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const status = previous.status ?? "not_started";
+      // `progress.update.status` is typed as the enum — narrow defensively.
+      const normalizedStatus: "not_started" | "reading" | "finished" =
+        status === "reading" || status === "finished" ? status : "not_started";
+      try {
+        await undoMutation.mutateAsync({
           clubId: props.clubId,
           bookId: props.bookId,
           currentPage: previous.currentPage ?? 0,
           percentage: previous.percentage ?? 0,
           currentChapter: previous.currentChapter,
-          status: previous.status ?? "not_started",
+          status: normalizedStatus,
           totalPages: props.totalPages,
-        }),
-      });
+        });
+      } catch {
+        // Best-effort undo — failure here is non-blocking; the toast goes away.
+      }
     }
     setToast(null);
     setOverrideProgress(previous);
@@ -120,8 +127,9 @@ function UpdateModal({
   const [status, setStatus] = useState<string>(
     currentProgress?.status ?? "not_started"
   );
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const updateMutation = trpc.progress.update.useMutation();
+  const loading = updateMutation.isPending;
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   useFocusTrap(dialogRef, true);
@@ -166,42 +174,33 @@ function UpdateModal({
   }
 
   async function handleSave() {
-    setLoading(true);
     setError("");
+    // `progress.update.status` is typed as the enum — narrow defensively.
+    const normalizedStatus: "not_started" | "reading" | "finished" =
+      status === "reading" || status === "finished" ? status : "not_started";
     try {
-      const res = await fetch("/api/trpc/progress.update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          bookId,
-          currentPage: page,
-          percentage,
-          currentChapter: chapter || undefined,
-          status,
-          totalPages,
-        }),
+      await updateMutation.mutateAsync({
+        clubId,
+        bookId,
+        currentPage: page,
+        percentage,
+        currentChapter: chapter || undefined,
+        status: normalizedStatus,
+        totalPages,
       });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message || "Failed to save");
-      } else {
-        const savedPage = totalPages > 0 ? page : null;
-        const previous: ProgressSnapshot | null = currentProgress
-          ? {
-              currentPage: currentProgress.currentPage,
-              percentage: currentProgress.percentage,
-              currentChapter: currentProgress.currentChapter,
-              status: currentProgress.status,
-            }
-          : null;
-        router.refresh();
-        onSaved(savedPage, previous);
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
+      const savedPage = totalPages > 0 ? page : null;
+      const previous: ProgressSnapshot | null = currentProgress
+        ? {
+            currentPage: currentProgress.currentPage,
+            percentage: currentProgress.percentage,
+            currentChapter: currentProgress.currentChapter,
+            status: currentProgress.status,
+          }
+        : null;
+      router.refresh();
+      onSaved(savedPage, previous);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
     }
   }
 
