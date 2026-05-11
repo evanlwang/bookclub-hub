@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui";
+import { trpc } from "@/trpc/react-hooks";
 
 interface CommentComposerProps {
   clubId: string;
@@ -21,37 +22,32 @@ export function CommentComposer({
   placeholder = "Write a comment…",
 }: CommentComposerProps) {
   const [body, setBody] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const utils = trpc.useUtils();
+
+  const createComment = trpc.comments.create.useMutation({
+    onSuccess: () => {
+      setBody("");
+      // Refresh the parent thread's cached comments. The page also calls
+      // `loadThread` via the `onPosted` callback, but invalidating here keeps
+      // any other mount of `threads.get` in sync too.
+      void utils.threads.get.invalidate({ clubId, threadId });
+      onPosted();
+    },
+    onError: (err) => {
+      setError(err.message || "Failed to post comment");
+    },
+  });
 
   async function submit() {
-    if (!body.trim() || loading) return;
-    setLoading(true);
+    if (!body.trim() || createComment.isPending) return;
     setError("");
-
-    try {
-      const res = await fetch("/api/trpc/comments.create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          threadId,
-          body: body.trim(),
-          parentCommentId: parentCommentId || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message || "Failed to post comment");
-      } else {
-        setBody("");
-        onPosted();
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    createComment.mutate({
+      clubId,
+      threadId,
+      body: body.trim(),
+      parentCommentId: parentCommentId || undefined,
+    });
   }
 
   return (
@@ -89,7 +85,7 @@ export function CommentComposer({
         <Button
           variant="primary"
           size="sm"
-          loading={loading}
+          loading={createComment.isPending}
           type="submit"
           disabled={!body.trim()}
           data-testid={parentCommentId ? "submit-reply-btn" : "submit-comment-btn"}

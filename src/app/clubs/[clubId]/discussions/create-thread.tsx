@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button, ChapterChip } from "@/components/ui";
 import { detectChapterMismatch } from "@/lib/discussions/chapter-mismatch";
+import { trpc } from "@/trpc/react-hooks";
 
 interface CreateThreadProps {
   clubId: string;
@@ -51,14 +52,26 @@ function CreateThreadForm({
 }: CreateThreadProps & { onCancel: () => void }) {
   const [body, setBody] = useState("");
   const [chapterTag, setChapterTag] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const utils = trpc.useUtils();
 
   // @spec DISC-UI-COMPOSE-MISMATCH-001
   const mismatch = useMemo(
     () => detectChapterMismatch(body, chapterTag),
     [body, chapterTag],
   );
+
+  const createThread = trpc.threads.create.useMutation({
+    onSuccess: () => {
+      // Invalidate the threads list so the page (and any other mount) refetches.
+      void utils.threads.list.invalidate({ clubId, bookId });
+      onCreated();
+    },
+    onError: (err) => {
+      setError(err.message || "Failed to create thread");
+    },
+  });
+
   const canSubmit =
     body.trim().length > 0 &&
     chapterTag.trim().length > 0 &&
@@ -67,31 +80,13 @@ function CreateThreadForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
-    setLoading(true);
     setError("");
-
-    try {
-      const res = await fetch("/api/trpc/threads.create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          bookId,
-          body: body.trim(),
-          chapterTag: chapterTag.trim(),
-        }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message || "Failed to create thread");
-      } else {
-        onCreated();
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    createThread.mutate({
+      clubId,
+      bookId,
+      body: body.trim(),
+      chapterTag: chapterTag.trim(),
+    });
   }
 
   return (
@@ -109,7 +104,7 @@ function CreateThreadForm({
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              if (canSubmit && !loading) {
+              if (canSubmit && !createThread.isPending) {
                 void handleSubmit(e as unknown as React.FormEvent);
               }
             }
@@ -188,7 +183,7 @@ function CreateThreadForm({
         <Button
           variant="primary"
           size="sm"
-          loading={loading}
+          loading={createThread.isPending}
           disabled={!canSubmit}
           type="submit"
           data-testid="submit-thread-btn"

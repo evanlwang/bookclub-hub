@@ -8,6 +8,7 @@ import { Card, Avatar, Button } from "@/components/ui";
 import { TrashIcon } from "@/components/ui/icons";
 import { CommentComposer } from "../comment-composer";
 import { renderBodyHtml } from "@/lib/discussions/markdown";
+import { trpc } from "@/trpc/react-hooks";
 
 export interface CommentLike {
   id: string;
@@ -58,7 +59,6 @@ export function CommentItem({
 }: CommentItemProps) {
   const [mode, setMode] = useState<"view" | "reply" | "edit" | "confirm-delete">("view");
   const [draftBody, setDraftBody] = useState(comment.body);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -68,6 +68,28 @@ export function CommentItem({
   const canDelete = !isDeletedPlaceholder && (isAuthor || isAdmin);
 
   const authorName = comment.author?.displayName || comment.authorName || "Unknown";
+
+  const updateMutation = trpc.comments.update.useMutation({
+    onSuccess: () => {
+      setMode("view");
+      onMutated();
+    },
+    onError: (err) => {
+      setError(err.message ?? "Failed to update comment");
+    },
+  });
+
+  const deleteMutation = trpc.comments.delete.useMutation({
+    onSuccess: () => {
+      // Parent refetch handles both the row-removal and "[deleted]" cases.
+      onMutated();
+    },
+    onError: (err) => {
+      setError(err.message ?? "Failed to delete comment");
+    },
+  });
+
+  const loading = updateMutation.isPending || deleteMutation.isPending;
 
   useEffect(() => {
     if (mode === "edit") {
@@ -88,52 +110,16 @@ export function CommentItem({
     return () => window.removeEventListener("keydown", handler);
   }, [mode]);
 
-  async function handleSaveEdit() {
+  function handleSaveEdit() {
     const body = draftBody.trim();
     if (!body || body === comment.body) return;
-    setLoading(true);
     setError(null);
-    try {
-      const res = await fetch("/api/trpc/comments.update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, commentId: comment.id, body }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message ?? "Failed to update comment");
-        return;
-      }
-      setMode("view");
-      onMutated();
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    updateMutation.mutate({ clubId, commentId: comment.id, body });
   }
 
-  async function handleConfirmDelete() {
-    setLoading(true);
+  function handleConfirmDelete() {
     setError(null);
-    try {
-      const res = await fetch("/api/trpc/comments.delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, commentId: comment.id }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message ?? "Failed to delete comment");
-        return;
-      }
-      // Parent refetch handles both the row-removal and "[deleted]" cases.
-      onMutated();
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    deleteMutation.mutate({ clubId, commentId: comment.id });
   }
 
   // ---- Body content ----
@@ -159,7 +145,7 @@ export function CommentItem({
         <Button
           variant="primary"
           size="sm"
-          loading={loading}
+          loading={updateMutation.isPending}
           disabled={!draftBody.trim() || draftBody.trim() === comment.body}
           onClick={handleSaveEdit}
           data-testid={`comment-edit-save-${comment.id}`}
@@ -196,7 +182,7 @@ export function CommentItem({
         data-testid={`comment-confirm-yes-${comment.id}`}
         className="text-danger hover:underline disabled:opacity-50"
       >
-        {loading ? "Deleting…" : "Yes, delete"}
+        {deleteMutation.isPending ? "Deleting…" : "Yes, delete"}
       </button>
       <button
         type="button"

@@ -1,7 +1,7 @@
 // @spec DISC-UI-001, DISC-UI-002, DISC-UI-003, DISC-UI-005, DISC-UI-011, DISC-UI-PROGRESS-AUTOFILTER-001, DISC-UI-PROGRESS-AUTOFILTER-002
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, ChapterChip, Avatar, Badge } from "@/components/ui";
@@ -9,20 +9,8 @@ import { ChevronLeftIcon } from "@/components/ui/icons";
 import { deriveSpoilerCutoff } from "@/lib/discussions/spoiler-cutoff";
 import { CreateThreadButton } from "./create-thread";
 import { MarkDiscussionsVisited } from "./mark-visited";
+import { trpc } from "@/trpc/react-hooks";
 import "./discussions.css";
-
-type Thread = {
-  id: string;
-  title: string;
-  body: string;
-  chapterTag: string | null;
-  chapterNumber: number | null;
-  authorId: string;
-  author?: { displayName: string };
-  createdAt: string;
-  commentCount?: number;
-  isPinned?: boolean;
-};
 
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -40,89 +28,70 @@ function DiscussionsContent() {
   const clubId = params.clubId as string;
   const bookIdParam = searchParams.get("bookId");
 
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [hiddenCount, setHiddenCount] = useState(0);
   const [maxChapter, setMaxChapter] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [sort, setSort] = useState<"recent" | "comments">("recent");
-  const [error, setError] = useState("");
-  const [currentBookId, setCurrentBookId] = useState<string | null>(bookIdParam);
-  const [progressLoaded, setProgressLoaded] = useState(false);
-  const [threadsLoaded, setThreadsLoaded] = useState(false);
+  // Tracks whether we've applied the auto-filter from viewer progress yet —
+  // once applied (or skipped because there's no progress), we leave the
+  // user's input alone.
+  const [progressApplied, setProgressApplied] = useState(false);
 
-  useEffect(() => {
-    if (currentBookId) return;
-    async function fetchCurrentBook() {
-      try {
-        const input = encodeURIComponent(JSON.stringify({ clubId }));
-        const res = await fetch(`/api/trpc/selections.list?input=${input}`);
-        const data = await res.json();
-        const selections = data.result?.data;
-        if (Array.isArray(selections) && selections.length > 0) {
-          const current = selections.find((s: { isCurrent: boolean }) => s.isCurrent);
-          if (current) setCurrentBookId(current.bookId);
-        }
-      } catch {
-        setError("Failed to load current book");
-      }
-    }
-    fetchCurrentBook();
-  }, [clubId, currentBookId]);
+  // 1) Current book — only needed if not passed as a search param.
+  const selectionsQuery = trpc.selections.list.useQuery(
+    { clubId },
+    { enabled: !bookIdParam },
+  );
+  const currentBookId =
+    bookIdParam ??
+    selectionsQuery.data?.find((s) => s.isCurrent)?.bookId ??
+    null;
+  const selectionsError = selectionsQuery.error
+    ? "Failed to load current book"
+    : "";
 
+  // 2) Viewer's progress for the current book — gates the threads query.
   // @spec DISC-UI-PROGRESS-AUTOFILTER-001, DISC-UI-PROGRESS-AUTOFILTER-002
-  useEffect(() => {
-    if (!currentBookId || progressLoaded) return;
-    let cancelled = false;
-    async function loadViewerProgress() {
-      try {
-        const input = encodeURIComponent(
-          JSON.stringify({ clubId, bookId: currentBookId })
-        );
-        const res = await fetch(`/api/trpc/progress.me?input=${input}`);
-        const data = await res.json();
-        if (cancelled) return;
-        const cutoff = deriveSpoilerCutoff(data.result?.data ?? null);
-        if (cutoff != null) setMaxChapter(cutoff);
-      } catch {
-        // Soft-fail: leave the filter unset so we surface all threads.
-      } finally {
-        if (!cancelled) setProgressLoaded(true);
-      }
-    }
-    loadViewerProgress();
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, currentBookId, progressLoaded]);
-
-  const loadThreads = useCallback(async () => {
-    if (!currentBookId || !progressLoaded) return;
-    try {
-      const queryInput: Record<string, unknown> = { clubId, bookId: currentBookId, sort };
-      if (maxChapter !== null && !showAll) {
-        queryInput.maxChapter = maxChapter;
-      }
-      const input = encodeURIComponent(JSON.stringify(queryInput));
-      const res = await fetch(`/api/trpc/threads.list?input=${input}`);
-      const data = await res.json();
-      const result = data.result?.data;
-      if (result) {
-        setThreads(result.threads);
-        setHiddenCount(result.hiddenCount ?? 0);
-        setError("");
-      } else if (data.error) {
-        setError(data.error.message || "Error loading threads");
-      }
-    } catch {
-      setError("Failed to load threads");
-    } finally {
-      setThreadsLoaded(true);
-    }
-  }, [clubId, currentBookId, maxChapter, showAll, sort, progressLoaded]);
+  const progressQuery = trpc.progress.me.useQuery(
+    { clubId, bookId: currentBookId ?? "" },
+    { enabled: !!currentBookId },
+  );
 
   useEffect(() => {
-    loadThreads();
-  }, [loadThreads]);
+    if (!progressQuery.isSuccess || progressApplied) return;
+    const cutoff = deriveSpoilerCutoff(progressQuery.data ?? null);
+    if (cutoff != null) setMaxChapter(cutoff);
+    setProgressApplied(true);
+  }, [progressQuery.isSuccess, progressQuery.data, progressApplied]);
+
+  // Soft-fail: progress errors leave the filter unset so all threads surface.
+  useEffect(() => {
+    if (progressQuery.isError && !progressApplied) {
+      setProgressApplied(true);
+    }
+  }, [progressQuery.isError, progressApplied]);
+
+  // 3) Threads list — gated on progress having been resolved (either
+  // successfully applied or errored), so we don't double-fetch when the
+  // auto-filter lands.
+  const threadsInput =
+    currentBookId && progressApplied
+      ? {
+          clubId,
+          bookId: currentBookId,
+          sort,
+          ...(maxChapter !== null && !showAll ? { maxChapter } : {}),
+        }
+      : null;
+  const threadsQuery = trpc.threads.list.useQuery(
+    threadsInput ?? { clubId, bookId: "", sort },
+    { enabled: !!threadsInput },
+  );
+
+  const threads = threadsQuery.data?.threads ?? [];
+  const hiddenCount = threadsQuery.data?.hiddenCount ?? 0;
+  const threadsLoaded = threadsQuery.isSuccess;
+  const threadsError = threadsQuery.error?.message ?? "";
+  const error = selectionsError || threadsError;
 
   if (!currentBookId && !error) {
     return <ThreadListSkeleton />;
@@ -227,7 +196,9 @@ function DiscussionsContent() {
                 <CreateThreadButton
                   clubId={clubId}
                   bookId={currentBookId}
-                  onCreated={loadThreads}
+                  onCreated={() => {
+                    void threadsQuery.refetch();
+                  }}
                 />
               )}
             </div>
@@ -294,7 +265,7 @@ function DiscussionsContent() {
                               <strong className="text-ink-2 font-medium">
                                 {thread.author.displayName.split(" ")[0]}
                               </strong>
-                              {thread.createdAt && ` · ${relativeTime(thread.createdAt)}`}
+                              {thread.createdAt && ` · ${relativeTime(String(thread.createdAt))}`}
                             </span>
                           </>
                         )}

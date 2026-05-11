@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, Badge, Avatar, ChapterChip } from "@/components/ui";
@@ -8,6 +8,8 @@ import { ChevronLeftIcon } from "@/components/ui/icons";
 import { CommentComposer } from "../comment-composer";
 import { CommentItem, type CommentLike } from "./comment-item";
 import { renderBodyHtml } from "@/lib/discussions/markdown";
+import { trpc } from "@/trpc/react-hooks";
+import { useViewer } from "@/lib/auth/use-viewer";
 import "../discussions.css";
 
 type Comment = CommentLike & {
@@ -44,64 +46,71 @@ export default function ThreadDetailPage() {
   const clubId = params.clubId as string;
   const threadId = params.threadId as string;
 
-  const [thread, setThread] = useState<ThreadDetail | null>(null);
-  const [error, setError] = useState("");
-  const [viewerId, setViewerId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { viewerId, isAdmin } = useViewer(clubId);
+
+  const threadQuery = trpc.threads.get.useQuery({ clubId, threadId });
+  // The shape mirrors `ThreadDetail` (including author + comments with author),
+  // but we cast for the helper render code below — Prisma's Date columns come
+  // through as Date objects which `relativeTime` accepts via String().
+  const thread = (threadQuery.data?.thread ?? null) as ThreadDetail | null;
+  const error = threadQuery.error?.message ?? "";
+
+  const utils = trpc.useUtils();
+
   // @spec DISC-UI-EDIT-BTN-001, DISC-UI-DELETE-BTN-001, DISC-UI-PIN-BTN-001
   const [editingThread, setEditingThread] = useState(false);
   const [editBody, setEditBody] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [threadActionError, setThreadActionError] = useState("");
 
-  // One-shot: load viewer identity + role for this club.
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/trpc/auth.me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        const me = data.result?.data;
-        if (me) {
-          setViewerId(me.user?.id ?? null);
-          const myMembership = me.clubs?.find(
-            (c: { id: string; role: string }) => c.id === clubId
-          );
-          setIsAdmin(
-            myMembership?.role === "admin" || myMembership?.role === "owner"
-          );
-        }
-      })
-      .catch(() => {
-        // Falls back to viewerId=null/isAdmin=false → no edit/delete affordances.
+  const refetchThread = () => {
+    void threadQuery.refetch();
+  };
+
+  const deleteThread = trpc.threads.delete.useMutation({
+    onSuccess: () => {
+      // Preserved redirect — a full nav also re-runs the layout RSC, so the
+      // sidebar's unread-discussion badge re-renders without a separate
+      // router.refresh().
+      window.location.href = `/clubs/${clubId}/discussions`;
+    },
+    onError: (err) => {
+      setThreadActionError(err.message || "Failed to delete");
+      setConfirmingDelete(false);
+    },
+  });
+
+  const togglePinMutation = trpc.threads.update.useMutation({
+    onSuccess: (data) => {
+      // Optimistically reflect the new isPinned value in the cached query.
+      utils.threads.get.setData({ clubId, threadId }, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          thread: { ...prev.thread, isPinned: data.thread.isPinned },
+        };
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId]);
+    },
+    onError: (err) => {
+      setThreadActionError(err.message || "Failed to toggle pin");
+    },
+  });
 
-  const loadThread = useCallback(async () => {
-    try {
-      const input = encodeURIComponent(
-        JSON.stringify({ clubId, threadId })
-      );
-      const res = await fetch(`/api/trpc/threads.get?input=${input}`);
-      const data = await res.json();
-      const result = data.result?.data;
-      if (result?.thread) {
-        setThread(result.thread);
-        setError("");
-      } else if (data.error) {
-        setError(data.error.message || "Error loading thread");
-      }
-    } catch {
-      setError("Failed to load thread");
-    }
-  }, [clubId, threadId]);
-
-  useEffect(() => {
-    loadThread();
-  }, [loadThread]);
+  const updateBodyMutation = trpc.threads.update.useMutation({
+    onSuccess: (data) => {
+      utils.threads.get.setData({ clubId, threadId }, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          thread: { ...prev.thread, body: data.thread.body },
+        };
+      });
+      setEditingThread(false);
+    },
+    onError: (err) => {
+      setThreadActionError(err.message || "Failed to save");
+    },
+  });
 
   if (error) {
     return (
@@ -187,38 +196,17 @@ export default function ThreadDetailPage() {
                   setThreadActionError("");
                 }}
                 onCancelDelete={() => setConfirmingDelete(false)}
-                onConfirmDelete={async () => {
+                onConfirmDelete={() => {
                   setThreadActionError("");
-                  const res = await fetch("/api/trpc/threads.delete", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ clubId, threadId: thread.id }),
-                  });
-                  const data = await res.json();
-                  if (data?.error) {
-                    setThreadActionError(data.error.message || "Failed to delete");
-                    setConfirmingDelete(false);
-                    return;
-                  }
-                  window.location.href = `/clubs/${clubId}/discussions`;
+                  deleteThread.mutate({ clubId, threadId: thread.id });
                 }}
-                onTogglePin={async () => {
+                onTogglePin={() => {
                   setThreadActionError("");
-                  const res = await fetch("/api/trpc/threads.update", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      clubId,
-                      threadId: thread.id,
-                      isPinned: !thread.isPinned,
-                    }),
+                  togglePinMutation.mutate({
+                    clubId,
+                    threadId: thread.id,
+                    isPinned: !thread.isPinned,
                   });
-                  const data = await res.json();
-                  if (data?.error) {
-                    setThreadActionError(data.error.message || "Failed to toggle pin");
-                    return;
-                  }
-                  setThread((t) => (t ? { ...t, isPinned: !t.isPinned } : t));
                 }}
               />
             </div>
@@ -228,7 +216,7 @@ export default function ThreadDetailPage() {
               <div>
                 <div className="text-[13px] font-medium text-ink">{authorName}</div>
                 <div className="text-[11px] text-ink-3">
-                  {relativeTime(thread.createdAt)}
+                  {relativeTime(String(thread.createdAt))}
                   {wasEdited && " · edited"}
                 </div>
               </div>
@@ -248,25 +236,18 @@ export default function ThreadDetailPage() {
                   <button
                     type="button"
                     data-testid="thread-edit-save"
-                    disabled={!editBody.trim() || editBody === thread.body}
-                    onClick={async () => {
+                    disabled={
+                      !editBody.trim() ||
+                      editBody === thread.body ||
+                      updateBodyMutation.isPending
+                    }
+                    onClick={() => {
                       setThreadActionError("");
-                      const res = await fetch("/api/trpc/threads.update", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          clubId,
-                          threadId: thread.id,
-                          body: editBody.trim(),
-                        }),
+                      updateBodyMutation.mutate({
+                        clubId,
+                        threadId: thread.id,
+                        body: editBody.trim(),
                       });
-                      const data = await res.json();
-                      if (data?.error) {
-                        setThreadActionError(data.error.message || "Failed to save");
-                        return;
-                      }
-                      setThread((t) => (t ? { ...t, body: editBody.trim() } : t));
-                      setEditingThread(false);
                     }}
                     className="px-3 py-1.5 rounded-[var(--radius-md)] bg-primary text-bg text-sm font-medium disabled:opacity-50 hover:bg-primary-hover transition-colors"
                   >
@@ -314,7 +295,7 @@ export default function ThreadDetailPage() {
                 isAdmin={isAdmin}
                 canReply
                 layout="card"
-                onMutated={loadThread}
+                onMutated={refetchThread}
               >
                 {replies(comment.id).map((reply) => (
                   <CommentItem
@@ -326,7 +307,7 @@ export default function ThreadDetailPage() {
                     isAdmin={isAdmin}
                     canReply={false}
                     layout="reply"
-                    onMutated={loadThread}
+                    onMutated={refetchThread}
                   />
                 ))}
               </CommentItem>
@@ -345,7 +326,7 @@ export default function ThreadDetailPage() {
               <CommentComposer
                 clubId={clubId}
                 threadId={threadId}
-                onPosted={loadThread}
+                onPosted={refetchThread}
               />
               <p className="text-[11px] text-ink-3 mt-2 italic">
                 Markdown supported · be kind to readers behind you
@@ -377,7 +358,7 @@ export default function ThreadDetailPage() {
               <div className="flex justify-between gap-2">
                 <span className="text-ink-3">Started</span>
                 <span className="text-ink text-right">
-                  {relativeTime(thread.createdAt)}
+                  {relativeTime(String(thread.createdAt))}
                 </span>
               </div>
               <div className="flex justify-between gap-2">
