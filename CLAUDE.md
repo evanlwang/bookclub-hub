@@ -122,8 +122,8 @@ src/
 │       ├── email.ts              # Resend adapter
 │       └── open-library.ts       # Open Library book-metadata adapter
 ├── trpc/
-│   ├── client.ts                 # tRPC client for browser
-│   ├── react.tsx                 # TanStack Query integration
+│   ├── react-hooks.ts            # createTRPCReact<AppRouter>() — the canonical client
+│   ├── react.tsx                 # TRPCProvider mounting trpc.Provider + QueryClientProvider
 │   └── server.ts                 # tRPC server factory
 ├── components/
 │   └── ui/                       # Shared UI components (buttons, cards, badges, etc.)
@@ -192,6 +192,26 @@ export const voting = router({
 ```
 
 The tRPC server is composed in `src/server/routers/_app.ts` and exposed via `src/app/api/trpc/[trpc]/route.ts` (App Router convention).
+
+**Client-side calls** go through `@trpc/react-query` hooks, never raw `fetch()`. ESLint's `no-restricted-syntax` enforces this — any `fetch("/api/trpc/...")` is a build break.
+
+```tsx
+import { trpc } from "@/trpc/react-hooks";
+
+// Queries
+const { data, isPending } = trpc.threads.list.useQuery({ clubId, bookId });
+
+// Mutations
+const utils = trpc.useUtils();
+const create = trpc.threads.create.useMutation({
+  onSuccess: () => utils.threads.list.invalidate({ clubId, bookId }),
+});
+
+// Imperative one-shots (post-mutation redirect decisions, pre-submit validation)
+const me = await utils.auth.me.fetch();
+```
+
+Use `utils.x.invalidate()` to re-fetch queries after mutations; keep `router.refresh()` only where a server component must re-render with new server-derived data (e.g. dashboards aggregating across multiple queries).
 
 ### React Server Components & Client Components
 

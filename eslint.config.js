@@ -79,6 +79,22 @@ export default tseslint.config(
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "react-hooks/exhaustive-deps": "warn",
+      // Ban raw fetches into the tRPC endpoint — use trpc.* hooks from
+      // src/trpc/react-hooks.ts (or utils.x.fetch for imperative orchestration).
+      // See docs/trpc-adoption-plan.md.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "CallExpression[callee.name='fetch'] > Literal[value=/^\\/api\\/trpc\\//]",
+          message:
+            "Do not call /api/trpc/* directly with fetch — use trpc.* hooks from @/trpc/react-hooks (or utils.x.fetch for imperative one-shots).",
+        },
+        {
+          selector: "CallExpression[callee.name='fetch'] > TemplateLiteral[quasis.0.value.raw=/^\\/api\\/trpc\\//]",
+          message:
+            "Do not call /api/trpc/* directly with fetch — use trpc.* hooks from @/trpc/react-hooks (or utils.x.fetch for imperative one-shots).",
+        },
+      ],
     },
   },
 );
