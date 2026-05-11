@@ -1,5 +1,3 @@
-import { type PrismaClient } from "@prisma/client";
-
 // Re-export all factories for backward compatibility
 export * from "../factories";
 

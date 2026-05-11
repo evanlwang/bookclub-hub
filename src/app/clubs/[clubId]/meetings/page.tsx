@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getServerCaller } from "@/trpc/server";
 import { prisma } from "@/lib/db";
-import { Card, Badge } from "@/components/ui";
 import { ChevronLeftIcon } from "@/components/ui/icons";
 import { MeetingsClient } from "./meetings-client";
 

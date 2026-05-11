@@ -15,7 +15,7 @@ export async function seedMinimal(db: PrismaClient) {
   await insertAllUsers(db, [alice, bob, carol]);
   await insertAllBooks(db, [dune, leftHand]);
 
-  const club = await E.createMembership(db, {
+  await E.createMembership(db, {
     clubId: wedReads.id,
     userId: alice.id,
     role: "owner",
@@ -660,7 +660,7 @@ export async function seedDev(db: PrismaClient) {
   });
 
   // ----- Meetings: confirmed, proposed (alice unvoted → banner), completed, cancelled -----
-  const c1MeetingConfirmed = await E.createMeeting(db, {
+  await E.createMeeting(db, {
     clubId: club1.id, bookId: dune.id,
     title: "Dune — mid-book discussion",
     description: "First half: through Paul's flight into the desert.",

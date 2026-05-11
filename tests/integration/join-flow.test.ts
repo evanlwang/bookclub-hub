@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller, createAnonymousCaller } from "@tests/helpers/trpc";
-import { alice, bob, carol, dave, insertUser, insertAllUsers } from "@tests/fixtures/users";
+import { alice, bob, carol, dave, insertAllUsers } from "@tests/fixtures/users";
 import { wedReads } from "@tests/fixtures/clubs";
 import { seedClubWithMembers } from "@tests/fixtures/memberships";
 

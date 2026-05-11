@@ -1,10 +1,10 @@
 // @spec VOTE-API-009, VOTE-API-010, VOTE-BE-004, VOTE-BE-005
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller } from "@tests/helpers/trpc";
 import { alice, bob, insertAllUsers } from "@tests/fixtures/users";
 import { wedReads } from "@tests/fixtures/clubs";
-import { dune, leftHand, insertBook, insertAllBooks } from "@tests/fixtures/books";
+import { dune, leftHand, insertAllBooks } from "@tests/fixtures/books";
 import { seedClubWithMembers } from "@tests/fixtures/memberships";
 
 const db = getTestDb();
@@ -31,8 +31,6 @@ describe("books and selections", () => {
     });
 
     it("uses proper upsert logic: findFirst + create/update instead of sentinel UUID", async () => {
-      const caller = await createAuthenticatedCaller(db, alice);
-
       // Use a unique Open Library ID that won't exist in fixtures
       const uniqueOLId = "/works/UNIQUE-TEST-12345";
 
@@ -83,7 +81,7 @@ describe("books and selections", () => {
           },
         });
         expect(false, "Should have thrown a unique constraint violation").toBe(true);
-      } catch (e) {
+      } catch {
         // Expected: unique constraint violation
         expect(true).toBe(true);
       }

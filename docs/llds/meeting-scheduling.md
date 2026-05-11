@@ -18,16 +18,16 @@ proposed → cancelled
 confirmed → cancelled
 ```
 
-State: proposed — buttons shown: "Respond", per-slot "Available"/"Maybe"/"Can't", "Save Availability"; admin gap: no Confirm/Edit/Cancel buttons — transitions: → confirmed (`meetings.confirm` API; **no UI**); → cancelled (`meetings.cancel` API; **no UI**)
-State: confirmed — buttons shown: none (read-only display) — transitions: → completed (auto when time passes; **not enforced via background job**); → cancelled (API only)
+State: proposed — buttons shown: "Respond", per-slot "Available"/"Maybe"/"Can't", "Save Availability"; admin only: heatmap, per-slot "Confirm" (within `admin-confirm-section`), and Edit/Cancel under a Details disclosure — transitions: → confirmed (`meetings.confirm` via admin-confirm UI); → cancelled (Cancel button under Details)
+State: confirmed — buttons shown: read-only meeting details for all members; admin only: Edit and "Cancel meeting" hidden behind a "Details" toggle (`MEET-UI-DETAILS-DISCLOSURE-001`) — transitions: → completed (auto when time passes; **not enforced via background job**); → cancelled (Cancel under Details disclosure)
 State: completed — buttons shown: "Notes" (no-op handler) — transitions: terminal
 State: cancelled — buttons shown: rendered as Past with no-op "Notes" — transitions: terminal
 
 Phase descriptions:
-- **Proposed**: admin offers 2–5 candidate slots. Members mark availability per slot.
-- **Confirmed**: admin picks one slot. Confirmed time and location are surfaced to all members.
+- **Proposed**: admin offers 2–5 candidate slots. Members mark availability per slot. Admin sees an availability heatmap and confirms one slot.
+- **Confirmed**: a slot has been picked. Confirmed time and location are surfaced to all members. Admin can still Edit or Cancel via the Details disclosure on the confirmed card.
 - **Completed**: time has passed. Today reached only by manual `meetings.update` or via the API; no scheduled job.
-- **Cancelled**: admin cancels via API. UI does not currently expose this.
+- **Cancelled**: admin cancels via the Cancel button in the Details disclosure (or via API).
 
 ## Button Inventory
 
@@ -46,18 +46,17 @@ Button: "×" remove slot — `create-meeting.tsx:179-188` — visible: slots.len
 Button: "+ Add another time" — `create-meeting.tsx:191-200` — visible: slots.length < 5 — handler: addSlot
 Button: "Cancel" (create form) — `create-meeting.tsx:210-211` — visible: form open — handler: closes form
 Button: "Send to Members" — `create-meeting.tsx:213-221` — visible: form open — enabled: ≥2 slots have a time — handler: `meetings.create`; on success the new meeting is optimistically appended to the client list and `router.refresh()` backfills server-authoritative state (see MEET-UI-CREATE-003)
+Button: location text input — `create-meeting.tsx:248-251` — visible: form open — handler: setLocation; submitted with `meetings.create`
+Button: per-slot "Confirm" — `admin-confirm.tsx` (within `admin-confirm-section`) — visible: status="proposed", admin only — handler: `meetings.confirm` (MEET-UI-CONFIRM-BTN-001)
+Button: "Details" toggle — `meetings-client.tsx:373-394` — visible: status="confirmed", admin only — handler: toggles disclosure of Edit/Cancel buttons (MEET-UI-DETAILS-DISCLOSURE-001)
+Button: "Edit" — `edit-meeting-button.tsx` — visible: under Details disclosure on confirmed cards, or on proposed cards admin only — handler: opens focus-trapped dialog wired to `meetings.update` (MEET-UI-EDIT-BTN-001)
+Button: "Cancel meeting" — `cancel-meeting-button.tsx` — visible: under Details disclosure on confirmed cards, or on proposed cards admin only — handler: opens focus-trapped dialog wired to `meetings.cancel` (MEET-UI-CANCEL-BTN-001)
 
 ## Gaps (mutations exist, UI does not call them)
 
-Button: admin "Confirm time" per slot — `[ ]` not in UI — should call `meetings.confirm`. Mutation at `meetings.ts:141-180`.
-Button: admin "Edit meeting" — `[ ]` not in UI — should call `meetings.update`. Mutation at `meetings.ts:116-139`.
-Button: admin "Cancel meeting" — `[ ]` not in UI — should call `meetings.cancel`. Mutation at `meetings.ts:182-207`.
-Heatmap grid (admin confirm view) — `[!]` listed in older spec, not implemented.
-"Most available" badge / AI-recommended banner — `[!]` listed in older spec, not implemented.
 Linked-book dropdown in create form — `[ ]` API supports `bookId`; UI does not.
-Location text input in create form — `[ ]` API supports `location`; UI does not collect it on creation (read-only display on confirmed rows).
 Response progress bar on proposed meeting rows — `[ ]` only a textual count.
-"Notes" button handler — `[!]` button rendered without onClick.
+"Notes" button handler — `[!]` button rendered without onClick (`meetings-client.tsx:264`).
 Auto-transition to "completed" when confirmedTime passes — `[ ]` no scheduled job; status remains "confirmed" until updated.
 
 ## Data Model

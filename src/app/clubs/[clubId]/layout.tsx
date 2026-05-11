@@ -1,6 +1,4 @@
 import { getServerCaller } from "@/trpc/server";
-import Link from "next/link";
-import { LogoIcon } from "@/components/ui";
 import { ClubSidebar } from "./sidebar";
 
 // @spec CLUB-UI-THEME-APPLY-001

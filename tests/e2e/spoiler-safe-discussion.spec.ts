@@ -1,12 +1,11 @@
 // @spec DISC-UI-001, DISC-UI-002, DISC-UI-003, PROG-BE-004
 import { test, expect } from "@playwright/test";
-import { loginAs, getClubByCode, getBookByTitle } from "./helpers";
+import { loginAs, getClubByCode } from "./helpers";
 
 test.describe("Spoiler-Safe Discussions", () => {
   test("shows all threads when no chapter filter set", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");
-    const book = await getBookByTitle("Dune");
 
     // Load discussions page — the client-side component fetches threads
     await page.goto(`/clubs/${club.id}/discussions`);
