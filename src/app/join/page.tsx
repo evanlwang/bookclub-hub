@@ -1,15 +1,16 @@
 // @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003, AUTH-UI-004, CLUB-UI-001, CLUB-UI-002, CLUB-UI-003
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, LogoIcon } from "@/components/ui";
+import { trpc } from "@/trpc/react-hooks";
 import { paperBg } from "./_shared";
 import { Stepper } from "./_stepper";
 import { Step1Identity } from "./_step1-identity";
 import { Step2Path } from "./_step2-path";
 import { Step3Join } from "./_step3-join";
-import { Step3Create, type CodeStatus } from "./_step3-create";
+import { Step3Create, type Cadence, type CodeStatus } from "./_step3-create";
 import { Step4Success } from "./_step4-success";
 
 function JoinPageInner() {
@@ -31,20 +32,19 @@ function JoinPageInner() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [clubInfo, setClubInfo] = useState<{ name: string; memberCount: number } | null>(null);
   const [joinError, setJoinError] = useState("");
-  const [joiningClub, setJoiningClub] = useState(false);
 
   const [clubName, setClubName] = useState("");
   const [clubCode, setClubCode] = useState("");
-  const [cadence, setCadence] = useState("monthly");
+  const [cadence, setCadence] = useState<Cadence>("monthly");
   const [codeError, setCodeError] = useState("");
-  const [creatingClub, setCreatingClub] = useState(false);
-  // @spec CLUB-UI-CODE-LIVE-001 — debounced uniqueness check
-  const [codeStatus, setCodeStatus] = useState<CodeStatus>("idle");
-  const codeLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const codeLookupController = useRef<AbortController | null>(null);
 
   const [successClubName, setSuccessClubName] = useState("");
   const [successClubCode, setSuccessClubCode] = useState("");
+
+  const utils = trpc.useUtils();
+  const enterMutation = trpc.auth.enter.useMutation();
+  const joinMutation = trpc.clubs.join.useMutation();
+  const createMutation = trpc.clubs.create.useMutation();
 
   const identityValid =
     email.includes("@") && displayName.trim().length > 0 && passcode.length > 0;
@@ -61,39 +61,40 @@ function JoinPageInner() {
   // create-branch invite-code input. Codes resolve to either "available"
   // (lookup throws NOT_FOUND) or "taken" (lookup returns a club). Codes
   // shorter than 4 chars are skipped — clubs.lookup itself rejects them.
+  // useQuery handles request cancellation automatically when the key changes,
+  // so the old AbortController is gone.
   const effectiveCode = (clubCode || derivedCode).trim().toUpperCase();
   const shouldLookupCode =
     step === 3 && path === "create" && effectiveCode.length >= 4 && effectiveCode !== "CLUB";
+
+  const [debouncedCode, setDebouncedCode] = useState("");
   useEffect(() => {
     if (!shouldLookupCode) {
-      setCodeStatus("idle");
+      setDebouncedCode("");
       return;
     }
-    if (codeLookupTimer.current) clearTimeout(codeLookupTimer.current);
-    if (codeLookupController.current) codeLookupController.current.abort();
-    setCodeStatus("loading");
-
-    const controller = new AbortController();
-    codeLookupController.current = controller;
-    codeLookupTimer.current = setTimeout(() => {
-      const url = `/api/trpc/clubs.lookup?input=${encodeURIComponent(JSON.stringify({ code: effectiveCode }))}`;
-      fetch(url, { signal: controller.signal })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.result?.data?.clubName) setCodeStatus("taken");
-          else setCodeStatus("available");
-        })
-        .catch((err) => {
-          if (err?.name === "AbortError") return;
-          setCodeStatus("available");
-        });
-    }, 300);
-
-    return () => {
-      if (codeLookupTimer.current) clearTimeout(codeLookupTimer.current);
-      controller.abort();
-    };
+    const t = setTimeout(() => setDebouncedCode(effectiveCode), 300);
+    return () => clearTimeout(t);
   }, [effectiveCode, shouldLookupCode]);
+
+  const liveLookup = trpc.clubs.lookup.useQuery(
+    { code: debouncedCode },
+    {
+      enabled: shouldLookupCode && debouncedCode.length >= 4,
+      retry: false,
+      staleTime: 30_000,
+    },
+  );
+
+  const codeStatus: CodeStatus = !shouldLookupCode
+    ? "idle"
+    : debouncedCode !== effectiveCode || liveLookup.isPending
+      ? "loading"
+      : liveLookup.error
+        ? "available"
+        : liveLookup.data
+          ? "taken"
+          : "idle";
 
   async function handleIdentityContinue() {
     if (!identityValid) return;
@@ -101,43 +102,21 @@ function JoinPageInner() {
     setIdentityError("");
 
     try {
-      const res = await fetch("/api/trpc/auth.enter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, displayName, passcode }),
-      });
-      const data = await res.json();
-
-      if (data.error) {
-        setIdentityError(data.error.message || "Failed to create session");
-        setSigningIn(false);
-        return;
-      }
-
-      const result = data.result?.data;
-      if (!result?.sessionId) {
-        setIdentityError("Unexpected response format");
-        setSigningIn(false);
-        return;
-      }
-
       // @spec AUTH-BE-001 — server emits the HttpOnly+Secure+SameSite cookie
       // via Set-Cookie on the auth.enter response; no client-side write needed.
+      await enterMutation.mutateAsync({ email, displayName, passcode });
 
       if (pathOverride === "join" || pathOverride === "create") {
         setPath(pathOverride);
         setStep(3);
-        setSigningIn(false);
         return;
       }
 
+      // Imperative fetch — one-shot redirect decision, not an ongoing subscription.
       try {
-        const meInput = encodeURIComponent(JSON.stringify({}));
-        const meRes = await fetch(`/api/trpc/auth.me?input=${meInput}`);
-        const meData = await meRes.json();
-        const clubs = meData.result?.data?.clubs;
-        if (Array.isArray(clubs) && clubs.length > 0) {
-          router.push(`/clubs/${clubs[0].id}`);
+        const me = await utils.auth.me.fetch();
+        if (me.clubs.length > 0) {
+          router.push(`/clubs/${me.clubs[0].id}`);
           return;
         }
       } catch {
@@ -145,9 +124,10 @@ function JoinPageInner() {
       }
 
       setStep(2);
-      setSigningIn(false);
-    } catch {
-      setIdentityError("Something went wrong");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create session";
+      setIdentityError(message);
+    } finally {
       setSigningIn(false);
     }
   }
@@ -172,22 +152,15 @@ function JoinPageInner() {
     setJoinError("");
 
     try {
-      const res = await fetch(
-        `/api/trpc/clubs.lookup?input=${encodeURIComponent(JSON.stringify({ code: normalized }))}`
-      );
-      const data = await res.json();
-      const result = data.result?.data;
-
-      if (result?.clubName) {
-        setClubInfo({ name: result.clubName, memberCount: result.memberCount });
-        setJoinError("");
-      } else {
-        setClubInfo(null);
-        setJoinError("No club found with that code");
-      }
-    } catch {
+      const data = await utils.clubs.lookup.fetch({ code: normalized });
+      setClubInfo({ name: data.clubName, memberCount: data.memberCount });
+      setJoinError("");
+    } catch (err) {
       setClubInfo(null);
-      setJoinError("Failed to look up club");
+      const code = (err as { data?: { code?: string } })?.data?.code;
+      setJoinError(
+        code === "NOT_FOUND" ? "No club found with that code" : "Failed to look up club",
+      );
     } finally {
       setLookupLoading(false);
     }
@@ -195,49 +168,28 @@ function JoinPageInner() {
 
   async function handleJoinSubmit() {
     if (!joinReady) return;
-    setJoiningClub(true);
     setJoinError("");
 
     try {
-      const res = await fetch("/api/trpc/clubs.join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
-      });
-      const data = await res.json();
-
-      if (data.error) {
-        setJoinError(data.error.message || "Failed to join club");
-      } else {
-        const result = data.result?.data;
-        if (result?.club?.id) {
-          setSuccessClubName(result.club.name || "your club");
-          setStep(4);
-          setTimeout(() => router.push(`/clubs/${result.club.id}`), 1500);
-        } else {
-          setJoinError("Unexpected response format");
-        }
-      }
-    } catch {
-      setJoinError("Something went wrong");
-    } finally {
-      setJoiningClub(false);
+      const result = await joinMutation.mutateAsync({ code });
+      setSuccessClubName(result.club.name || "your club");
+      setStep(4);
+      setTimeout(() => router.push(`/clubs/${result.club.id}`), 1500);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to join club";
+      setJoinError(message);
     }
   }
 
   async function validateClubCode(testCode: string) {
     try {
-      const res = await fetch(
-        `/api/trpc/clubs.lookup?input=${encodeURIComponent(JSON.stringify({ code: testCode }))}`
-      );
-      const data = await res.json();
-      if (data.result?.data?.clubName) {
-        setCodeError("This code is already in use");
-        return false;
-      }
-      setCodeError("");
-      return true;
+      await utils.clubs.lookup.fetch({ code: testCode });
+      // Lookup succeeded → a club with this code exists → code is taken.
+      setCodeError("This code is already in use");
+      return false;
     } catch {
+      // NOT_FOUND (or network blip) — assume available; server will reject on create if needed.
+      setCodeError("");
       return true;
     }
   }
@@ -249,39 +201,22 @@ function JoinPageInner() {
     const isValid = await validateClubCode(codeToUse);
     if (!isValid) return;
 
-    setCreatingClub(true);
     setCodeError("");
 
     try {
       // @spec AUTH-UI-STEP3B-CADENCE-DATA-001, JOIN-UI-CREATE-CADENCE-001
-      const res = await fetch("/api/trpc/clubs.create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: clubName,
-          code: codeToUse,
-          cadence,
-        }),
+      const result = await createMutation.mutateAsync({
+        name: clubName,
+        code: codeToUse,
+        cadence,
       });
-      const data = await res.json();
-
-      if (data.error) {
-        setCodeError(data.error.message || "Failed to create club");
-      } else {
-        const result = data.result?.data;
-        if (result?.club?.id) {
-          setSuccessClubName(clubName);
-          setSuccessClubCode(codeToUse);
-          setStep(4);
-          setTimeout(() => router.push(`/clubs/${result.club.id}`), 1500);
-        } else {
-          setCodeError("Unexpected response format");
-        }
-      }
-    } catch {
-      setCodeError("Something went wrong");
-    } finally {
-      setCreatingClub(false);
+      setSuccessClubName(clubName);
+      setSuccessClubCode(codeToUse);
+      setStep(4);
+      setTimeout(() => router.push(`/clubs/${result.club.id}`), 1500);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create club";
+      setCodeError(message);
     }
   }
 
@@ -388,7 +323,7 @@ function JoinPageInner() {
               clubInfo={clubInfo}
               joinError={joinError}
               joinReady={joinReady}
-              joiningClub={joiningClub}
+              joiningClub={joinMutation.isPending}
               onSubmit={handleJoinSubmit}
               onBack={handleBack}
             />
@@ -406,7 +341,7 @@ function JoinPageInner() {
               codeStatus={codeStatus}
               codeError={codeError}
               createReady={createReady}
-              creatingClub={creatingClub}
+              creatingClub={createMutation.isPending}
               onSubmit={handleCreateSubmit}
               onBack={handleBack}
             />

@@ -3,7 +3,9 @@
 import { Button } from "@/components/ui";
 import { ErrorBox } from "./_shared";
 
-const CADENCE_OPTIONS = [
+export type Cadence = "monthly" | "six_weeks" | "flexible";
+
+const CADENCE_OPTIONS: { value: Cadence; label: string; sub: string }[] = [
   { value: "monthly", label: "Monthly", sub: "12 books/yr" },
   { value: "six_weeks", label: "6 weeks", sub: "~9 books/yr" },
   { value: "flexible", label: "Flexible", sub: "No schedule" },
@@ -34,8 +36,8 @@ export function Step3Create({
   clubCode: string;
   setClubCode: (v: string) => void;
   derivedCode: string;
-  cadence: string;
-  setCadence: (v: string) => void;
+  cadence: Cadence;
+  setCadence: (v: Cadence) => void;
   codeStatus: CodeStatus;
   codeError: string;
   createReady: boolean;

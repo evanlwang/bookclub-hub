@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, Card, LogoIcon, ChevronRightIcon } from "@/components/ui";
+import { trpc } from "@/trpc/react-hooks";
 
 const paperBg =
   "radial-gradient(circle at 20% 10%, oklch(0.97 0.012 75) 0, transparent 50%), radial-gradient(circle at 80% 90%, oklch(0.96 0.018 30) 0, transparent 55%), var(--color-bg)";
@@ -23,70 +24,52 @@ function ErrorBox({ children, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
 
 export default function LoginPage() {
   const router = useRouter();
+  const utils = trpc.useUtils();
   const [email, setEmail] = useState("");
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
-  const [signingIn, setSigningIn] = useState(false);
 
   const emailValid = email.includes("@") && email.includes(".");
   const canSubmit = emailValid && passcode.length > 0;
 
-  async function handleLogin() {
-    if (!canSubmit) return;
-    setSigningIn(true);
-    setError("");
-
-    try {
-      const res = await fetch("/api/trpc/auth.signIn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, passcode }),
-      });
-      const data = await res.json();
-
-      if (data.error) {
-        // NOT_FOUND or BAD_REQUEST — bounce to /join with welcome flag.
-        // The /join page reads ?welcome=1 and shows a friendly banner.
-        if (data.error.data?.code === "NOT_FOUND") {
-          router.push(`/join?welcome=1&email=${encodeURIComponent(email)}`);
-          return;
-        }
-        setError(data.error.message || "Could not sign in");
-        setSigningIn(false);
-        return;
-      }
-
-      const result = data.result?.data;
-      if (!result?.sessionId) {
-        setError("Unexpected response format");
-        setSigningIn(false);
-        return;
-      }
-
-      // @spec AUTH-BE-001 — server emits the HttpOnly+Secure+SameSite cookie
-      // via Set-Cookie on the auth.signIn response; no client-side write needed.
-
-      // User exists — drop them straight into their first club.
+  // @spec AUTH-API-SIGNIN-001 — server emits the HttpOnly+Secure+SameSite cookie
+  // via Set-Cookie on the auth.signIn response; no client-side write needed
+  // (see AUTH-BE-001).
+  const signIn = trpc.auth.signIn.useMutation({
+    onSuccess: async () => {
+      // User exists — find their first club and drop them there. We use
+      // utils.auth.me.fetch (imperative) because this is a one-shot decision
+      // that follows the signIn, not an ongoing subscription.
       try {
-        const meInput = encodeURIComponent(JSON.stringify({}));
-        const meRes = await fetch(`/api/trpc/auth.me?input=${meInput}`);
-        const meData = await meRes.json();
-        const clubs = meData.result?.data?.clubs;
-        if (Array.isArray(clubs) && clubs.length > 0) {
-          router.push(`/clubs/${clubs[0].id}`);
+        const me = await utils.auth.me.fetch();
+        if (me.clubs.length > 0) {
+          router.push(`/clubs/${me.clubs[0].id}`);
           return;
         }
       } catch {
         // Fall through to /join below — graceful degradation.
       }
-
       // Account exists but has no memberships — onboard them.
       router.push("/join?welcome=1");
-    } catch {
-      setError("Something went wrong");
-      setSigningIn(false);
-    }
+    },
+    onError: (err) => {
+      // NOT_FOUND or BAD_REQUEST — bounce to /join with welcome flag so the
+      // /join page reads ?welcome=1 and shows a friendly banner.
+      if (err.data?.code === "NOT_FOUND") {
+        router.push(`/join?welcome=1&email=${encodeURIComponent(email)}`);
+        return;
+      }
+      setError(err.message || "Could not sign in");
+    },
+  });
+
+  function handleLogin() {
+    if (!canSubmit) return;
+    setError("");
+    signIn.mutate({ email, passcode });
   }
+
+  const signingIn = signIn.isPending;
 
   return (
     <main id="main-content" className="min-h-screen flex flex-col" style={{ background: paperBg }}>
