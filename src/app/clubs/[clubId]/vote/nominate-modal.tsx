@@ -1,16 +1,12 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Button, Card, BookCover } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
-
-interface Book {
-  id: string;
-  title: string;
-  author: string;
-  pageCount?: number;
-  coverUrl?: string | null;
-}
+import { type Book, type FormErrors } from "./nominate-modal-types";
+import { NominateSearch } from "./nominate-search";
+import { NominatePitch } from "./nominate-pitch";
+import { NominateManualForm } from "./nominate-manual-form";
 
 interface NominateModalProps {
   isOpen: boolean;
@@ -18,12 +14,6 @@ interface NominateModalProps {
   clubId: string;
   roundId: string;
   onNominationSuccess?: () => void;
-}
-
-interface FormErrors {
-  title?: string;
-  author?: string;
-  pageCount?: string;
 }
 
 // @spec VOTE-API-009-MANUAL, VOTE-API-005-MANUAL, VOTE-UI-NOMMODAL-PITCH-001
@@ -39,7 +29,6 @@ export function NominateModal({
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
 
-  // Manual form state
   const [manualTitle, setManualTitle] = useState("");
   const [manualAuthor, setManualAuthor] = useState("");
   const [manualIsbn, setManualIsbn] = useState("");
@@ -47,22 +36,17 @@ export function NominateModal({
   const [pitch, setPitch] = useState("");
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  // Submission state shared by both flows (per-row Nominate + manual Add).
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  // Debounced search
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // True once the user has touched the manual Title input. We stop auto-filling
-  // from the search query after that so we never clobber what they typed.
   const manualTitleDirty = useRef(false);
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   useFocusTrap(dialogRef, isOpen);
 
-  // Escape closes
   useEffect(() => {
     if (!isOpen) return;
     function onKey(e: KeyboardEvent) {
@@ -82,7 +66,6 @@ export function NominateModal({
     [debounceTimer]
   );
 
-  // Search books when debouncedQuery changes
   useEffect(() => {
     if (debouncedQuery.length === 0) {
       setResults([]);
@@ -93,8 +76,6 @@ export function NominateModal({
     setIsSearching(true);
     setSearchError("");
 
-    // books.search is a tRPC `.query()` — fetched via GET with input as a
-    // URL-encoded JSON param.
     const input = encodeURIComponent(JSON.stringify({ query: debouncedQuery }));
     const controller = new AbortController();
     fetch(`/api/trpc/books.search?input=${input}`, { signal: controller.signal })
@@ -117,8 +98,6 @@ export function NominateModal({
     return () => controller.abort();
   }, [debouncedQuery]);
 
-  // Pre-fill manual Title from a no-results search query — only when the user
-  // hasn't typed in the Title field themselves.
   useEffect(() => {
     if (
       !manualTitleDirty.current &&
@@ -130,7 +109,6 @@ export function NominateModal({
     }
   }, [debouncedQuery, results.length, isSearching]);
 
-  // Reset everything when the modal closes so re-opening starts fresh.
   useEffect(() => {
     if (isOpen) return;
     setQuery("");
@@ -160,9 +138,6 @@ export function NominateModal({
 
   async function handleNominate(bookId: string) {
     if (!roundId) {
-      // Defense-in-depth — the modal should never be opened without a valid
-      // round, but if it is, refuse to submit rather than firing a doomed
-      // tRPC call that fails Zod uuid validation server-side.
       setSubmitError("No active voting round — start one before nominating.");
       return;
     }
@@ -262,20 +237,6 @@ export function NominateModal({
 
   if (!isOpen) return null;
 
-  // Suppress while a search is queued (user typed since last completed search)
-  // or in-flight — otherwise the prior empty result flashes against new input.
-  // @spec VOTE-UI-NOMMODAL-003
-  const noMatches =
-    debouncedQuery.length > 0 &&
-    query === debouncedQuery &&
-    results.length === 0 &&
-    !isSearching &&
-    !searchError;
-
-  const inputClass =
-    "w-full px-4 py-2.5 rounded-md border bg-bg placeholder-ink-3 text-ink focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary focus:ring-opacity-20";
-  const fieldErrorClass = "text-xs text-danger mt-1";
-
   return (
     <div
       ref={dialogRef}
@@ -308,197 +269,39 @@ export function NominateModal({
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-3">
-          <input
-            type="text"
-            placeholder="Search by title or author..."
-            value={query}
-            onChange={(e) => handleQueryChange(e.target.value)}
-            className={`${inputClass} border-line`}
-            autoFocus
-          />
-          {isSearching && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <svg className="animate-spin h-4 w-4 text-ink-3" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            </div>
-          )}
-        </div>
+        <NominateSearch
+          query={query}
+          debouncedQuery={debouncedQuery}
+          results={results}
+          isSearching={isSearching}
+          searchError={searchError}
+          submitting={submitting}
+          onQueryChange={handleQueryChange}
+          onNominate={handleNominate}
+        />
 
-        {searchError && (
-          <p className="text-xs text-ink-3 mb-3">{searchError}</p>
-        )}
+        <NominatePitch value={pitch} onChange={setPitch} />
 
-        {/* Results */}
-        {results.length > 0 && (
-          <div className="space-y-2 mb-4 max-h-56 overflow-y-auto">
-            {results.map((book) => (
-              <div
-                key={book.id}
-                className="p-3 rounded-md border border-line hover:border-line-strong hover:bg-bg-soft transition-colors cursor-pointer flex gap-3 items-center"
-                onClick={() => handleNominate(book.id)}
-              >
-                <BookCover
-                  title={book.title}
-                  author={book.author}
-                  coverUrl={book.coverUrl}
-                  size="sm"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{book.title}</p>
-                  <p className="text-xs text-ink-3 italic truncate">
-                    by {book.author}
-                    {book.pageCount ? ` · ${book.pageCount}pp` : ""}
-                  </p>
-                </div>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNominate(book.id);
-                  }}
-                  loading={submitting}
-                >
-                  Nominate
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {noMatches && (
-          <p className="text-xs text-ink-3 mb-4">
-            No matches for &ldquo;{debouncedQuery}&rdquo;. Add it manually below ↓
-          </p>
-        )}
-
-        {/* Optional pitch — applies to whichever flow the user submits below.
-            @spec VOTE-UI-NOMMODAL-PITCH-001 */}
-        <div className="border-t border-line pt-4 mt-2">
-          <label
-            htmlFor="nominate-pitch"
-            className="block text-xs font-medium text-ink-2 mb-1.5"
-          >
-            Why this book? <span className="text-ink-3 font-normal">(optional)</span>
-          </label>
-          <textarea
-            id="nominate-pitch"
-            data-testid="nominate-pitch"
-            value={pitch}
-            onChange={(e) => setPitch(e.target.value)}
-            maxLength={500}
-            rows={3}
-            placeholder="A short pitch your club will see next to the nomination."
-            className={`${inputClass} border-line resize-y`}
-          />
-          <p className="text-[11px] text-ink-3 mt-1">
-            {pitch.length} / 500 characters
-          </p>
-        </div>
-
-        {/* Manual entry — always visible */}
-        <div className="border-t border-line pt-4 mt-2">
-          <p className="text-xs uppercase tracking-wider text-ink-3 mb-3">
-            Don&rsquo;t see it? Add it manually
-          </p>
-
-          <div className="space-y-3 mb-4">
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1.5">
-                Title
-              </label>
-              <input
-                type="text"
-                value={manualTitle}
-                onChange={(e) => {
-                  manualTitleDirty.current = true;
-                  setManualTitle(e.target.value);
-                  if (formErrors.title) setFormErrors((p) => ({ ...p, title: undefined }));
-                }}
-                placeholder="The Midnight Library"
-                aria-invalid={!!formErrors.title}
-                className={`${inputClass} ${formErrors.title ? "border-danger" : "border-line"}`}
-              />
-              {formErrors.title && <p className={fieldErrorClass}>{formErrors.title}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1.5">
-                Author
-              </label>
-              <input
-                type="text"
-                value={manualAuthor}
-                onChange={(e) => {
-                  setManualAuthor(e.target.value);
-                  if (formErrors.author) setFormErrors((p) => ({ ...p, author: undefined }));
-                }}
-                placeholder="Matt Haig"
-                aria-invalid={!!formErrors.author}
-                className={`${inputClass} ${formErrors.author ? "border-danger" : "border-line"}`}
-              />
-              {formErrors.author && <p className={fieldErrorClass}>{formErrors.author}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1.5">
-                Page count
-              </label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                value={manualPageCount}
-                onChange={(e) => {
-                  setManualPageCount(e.target.value);
-                  if (formErrors.pageCount) setFormErrors((p) => ({ ...p, pageCount: undefined }));
-                }}
-                placeholder="304"
-                aria-invalid={!!formErrors.pageCount}
-                className={`${inputClass} ${formErrors.pageCount ? "border-danger" : "border-line"}`}
-              />
-              <p className="text-[11px] text-ink-3 mt-1">
-                Used to track reading progress.
-              </p>
-              {formErrors.pageCount && <p className={fieldErrorClass}>{formErrors.pageCount}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1.5">
-                ISBN <span className="text-ink-3 font-normal">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={manualIsbn}
-                onChange={(e) => setManualIsbn(e.target.value)}
-                placeholder="978-0-857-52277-7"
-                className={`${inputClass} border-line`}
-              />
-            </div>
-          </div>
-
-          {submitError && (
-            <p className="text-sm text-danger mb-3" role="alert">
-              {submitError}
-            </p>
-          )}
-
-          <Button
-            variant="primary"
-            size="md"
-            className="w-full"
-            loading={submitting}
-            onClick={handleCreateAndNominate}
-          >
-            Add &amp; Nominate
-          </Button>
-        </div>
+        <NominateManualForm
+          title={manualTitle}
+          author={manualAuthor}
+          isbn={manualIsbn}
+          pageCount={manualPageCount}
+          formErrors={formErrors}
+          submitting={submitting}
+          submitError={submitError}
+          onTitleChange={(v) => {
+            manualTitleDirty.current = true;
+            setManualTitle(v);
+          }}
+          onAuthorChange={setManualAuthor}
+          onIsbnChange={setManualIsbn}
+          onPageCountChange={setManualPageCount}
+          onClearFieldError={(field) =>
+            setFormErrors((p) => ({ ...p, [field]: undefined }))
+          }
+          onSubmit={handleCreateAndNominate}
+        />
       </Card>
     </div>
   );
