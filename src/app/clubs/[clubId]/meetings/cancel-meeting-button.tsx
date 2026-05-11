@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { trpc } from "@/trpc/react-hooks";
 import { CancelMeetingDialog } from "./cancel-meeting-dialog";
 
 interface CancelMeetingButtonProps {
@@ -21,30 +22,21 @@ export function CancelMeetingButton({
   onCancelled,
 }: CancelMeetingButtonProps) {
   const [open, setOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleConfirm() {
-    setSubmitting(true);
-    setError("");
-    try {
-      const res = await fetch("/api/trpc/meetings.cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, meetingId }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message ?? "Failed to cancel");
-        return;
-      }
+  const cancelMeeting = trpc.meetings.cancel.useMutation({
+    onSuccess: () => {
       setOpen(false);
       onCancelled?.();
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setSubmitting(false);
-    }
+    },
+    onError: (err) => {
+      setError(err.message ?? "Failed to cancel");
+    },
+  });
+
+  function handleConfirm() {
+    setError("");
+    cancelMeeting.mutate({ clubId, meetingId });
   }
 
   return (
@@ -66,11 +58,11 @@ export function CancelMeetingButton({
       {open && (
         <CancelMeetingDialog
           meetingTitle={meetingTitle}
-          submitting={submitting}
+          submitting={cancelMeeting.isPending}
           error={error}
           onConfirm={handleConfirm}
           onCancel={() => {
-            if (!submitting) {
+            if (!cancelMeeting.isPending) {
               setOpen(false);
               setError("");
             }

@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 
+import { trpc } from "@/trpc/react-hooks";
+
 type Slot = {
   id: string;
   proposedTime: string;
@@ -35,40 +37,44 @@ export function RespondMeeting({
   );
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [error, setError] = useState("");
+  // Race-guard: rapid clicks fire overlapping mutations. We only honor the
+  // most recent fire by tagging it with a token and comparing in the callback.
   const requestToken = useRef(0);
+  const latestPayload = useRef<{ slotId: string; status: ResponseStatus }[]>([]);
 
-  async function persist(next: Record<string, ResponseStatus>) {
+  const submitAvailability = trpc.meetings.submitAvailability.useMutation({
+    onSuccess: (_data, variables) => {
+      const responsesArr = variables.responses as {
+        slotId: string;
+        status: ResponseStatus;
+      }[];
+      if (responsesArr !== latestPayload.current) return;
+      setSaveStatus("saved");
+      onResponsesUpdated?.(responsesArr);
+    },
+    onError: (err, variables) => {
+      const responsesArr = variables.responses as {
+        slotId: string;
+        status: ResponseStatus;
+      }[];
+      if (responsesArr !== latestPayload.current) return;
+      setSaveStatus("error");
+      setError(err.message || "Failed to save");
+    },
+  });
+
+  function persist(next: Record<string, ResponseStatus>) {
     const responseArray = Object.entries(next).map(([slotId, status]) => ({
       slotId,
       status,
     }));
 
-    const token = ++requestToken.current;
+    requestToken.current += 1;
+    latestPayload.current = responseArray;
     setSaveStatus("saving");
     setError("");
 
-    try {
-      const res = await fetch("/api/trpc/meetings.submitAvailability", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, meetingId, responses: responseArray }),
-      });
-      const data = await res.json();
-      // Ignore stale responses if a newer click already started.
-      if (token !== requestToken.current) return;
-
-      if (data.error) {
-        setSaveStatus("error");
-        setError(data.error.message || "Failed to save");
-        return;
-      }
-      setSaveStatus("saved");
-      onResponsesUpdated?.(responseArray);
-    } catch {
-      if (token !== requestToken.current) return;
-      setSaveStatus("error");
-      setError("Something went wrong");
-    }
+    submitAvailability.mutate({ clubId, meetingId, responses: responseArray });
   }
 
   function setSlotResponse(slotId: string, status: ResponseStatus) {
@@ -80,7 +86,7 @@ export function RespondMeeting({
       next[slotId] = status;
     }
     setResponses(next);
-    void persist(next);
+    persist(next);
   }
 
   const statusOptions: { value: ResponseStatus; label: string; color: string }[] = [

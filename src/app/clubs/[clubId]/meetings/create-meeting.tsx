@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, DateTimePicker } from "@/components/ui";
+import { trpc } from "@/trpc/react-hooks";
 
 interface CreateMeetingProps {
   clubId: string;
@@ -134,10 +135,20 @@ export function CreateMeetingForm({
     { time: "", durationMinutes: DEFAULT_DURATION_MINUTES },
     { time: "", durationMinutes: DEFAULT_DURATION_MINUTES },
   ]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const minDateTime = nowLocalIsoMinutes();
   const quickPicks = buildQuickPicks();
+
+  const utils = trpc.useUtils();
+  const createMeeting = trpc.meetings.create.useMutation({
+    onSuccess: (data) => {
+      void utils.meetings.list.invalidate({ clubId });
+      onCreated(data.meeting);
+    },
+    onError: (err) => {
+      setError(err.message || "Failed to create meeting");
+    },
+  });
 
   function addSlot() {
     if (slots.length >= 5) return;
@@ -171,9 +182,8 @@ export function CreateMeetingForm({
     updateSlot(slots.length - 1, "time", iso);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
     const validSlots = slots
@@ -185,34 +195,16 @@ export function CreateMeetingForm({
 
     if (validSlots.length < 2) {
       setError("At least 2 time slots are required");
-      setLoading(false);
       return;
     }
 
-    try {
-      const res = await fetch("/api/trpc/meetings.create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          title: title || undefined,
-          location: location.trim() || undefined,
-          description: description || undefined,
-          slots: validSlots,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message || "Failed to create meeting");
-      } else {
-        // tRPC v11 HTTP response shape: { result: { data: { meeting } } }
-        onCreated(data.result?.data?.meeting);
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    createMeeting.mutate({
+      clubId,
+      title: title || undefined,
+      location: location.trim() || undefined,
+      description: description || undefined,
+      slots: validSlots,
+    });
   }
 
   return (
@@ -270,8 +262,8 @@ export function CreateMeetingForm({
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
-                if (!loading) {
-                  void handleSubmit(e as unknown as React.FormEvent);
+                if (!createMeeting.isPending) {
+                  handleSubmit(e as unknown as React.FormEvent);
                 }
               }
             }}
@@ -384,7 +376,7 @@ export function CreateMeetingForm({
         <Button
           variant="primary"
           size="sm"
-          loading={loading}
+          loading={createMeeting.isPending}
           type="submit"
           data-testid="submit-meeting-btn"
         >

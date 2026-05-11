@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { trpc } from "@/trpc/react-hooks";
 import {
   EditMeetingDialog,
   type MeetingEditableFields,
@@ -22,38 +23,33 @@ export function EditMeetingButton({
   onUpdated,
 }: EditMeetingButtonProps) {
   const [open, setOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSave(next: MeetingEditableFields) {
-    setSubmitting(true);
+  const updateMeeting = trpc.meetings.update.useMutation({
+    onError: (err) => {
+      setError(err.message ?? "Failed to save");
+    },
+  });
+
+  function handleSave(next: MeetingEditableFields) {
     setError("");
-    try {
-      const res = await fetch("/api/trpc/meetings.update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          meetingId,
-          title: next.title || undefined,
-          // Empty strings clear the field; coerce to "" so the API explicitly
-          // sees the change rather than treating undefined as "unchanged."
-          description: next.description,
-          location: next.location,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message ?? "Failed to save");
-        return;
-      }
-      setOpen(false);
-      onUpdated?.(next);
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setSubmitting(false);
-    }
+    updateMeeting.mutate(
+      {
+        clubId,
+        meetingId,
+        title: next.title || undefined,
+        // Empty strings clear the field; coerce to "" so the API explicitly
+        // sees the change rather than treating undefined as "unchanged."
+        description: next.description,
+        location: next.location,
+      },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          onUpdated?.(next);
+        },
+      },
+    );
   }
 
   return (
@@ -75,11 +71,11 @@ export function EditMeetingButton({
       {open && (
         <EditMeetingDialog
           initial={initial}
-          submitting={submitting}
+          submitting={updateMeeting.isPending}
           error={error}
           onSave={handleSave}
           onCancel={() => {
-            if (!submitting) {
+            if (!updateMeeting.isPending) {
               setOpen(false);
               setError("");
             }

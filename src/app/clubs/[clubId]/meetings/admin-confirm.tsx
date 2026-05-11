@@ -8,6 +8,7 @@ import {
   summarizeSlot,
   type ResponseStatus,
 } from "@/lib/meetings/availability";
+import { trpc } from "@/trpc/react-hooks";
 import { CancelMeetingButton } from "./cancel-meeting-button";
 import { EditMeetingButton } from "./edit-meeting-button";
 import { type MeetingEditableFields } from "./edit-meeting-dialog";
@@ -51,6 +52,22 @@ export function AdminConfirmSection({
   const [confirmingSlotId, setConfirmingSlotId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
+  const confirmMeeting = trpc.meetings.confirm.useMutation({
+    onSuccess: (_data, variables) => {
+      if (onConfirmed) {
+        onConfirmed(variables.slotId);
+      } else {
+        router.refresh();
+      }
+    },
+    onError: (err) => {
+      setError(err.message ?? "Failed to confirm");
+    },
+    onSettled: () => {
+      setConfirmingSlotId(null);
+    },
+  });
+
   const mostAvailable = useMemo(() => pickMostAvailableSlot(slots), [slots]);
   const totalResponses = useMemo(
     () => slots.reduce((acc, s) => acc + s.responses.length, 0),
@@ -76,28 +93,10 @@ export function AdminConfirmSection({
     return slot.responses.find((r) => r.userId === userId)?.status ?? "none";
   }
 
-  async function handleConfirm(slotId: string) {
+  function handleConfirm(slotId: string) {
     setConfirmingSlotId(slotId);
     setError("");
-    try {
-      const res = await fetch("/api/trpc/meetings.confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, meetingId, slotId }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message ?? "Failed to confirm");
-      } else if (onConfirmed) {
-        onConfirmed(slotId);
-      } else {
-        router.refresh();
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setConfirmingSlotId(null);
-    }
+    confirmMeeting.mutate({ clubId, meetingId, slotId });
   }
 
   return (
