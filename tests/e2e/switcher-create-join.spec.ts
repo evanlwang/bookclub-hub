@@ -3,10 +3,17 @@ import { test, expect, type Page } from "@playwright/test";
 import { loginAs, getClubByCode, getDb } from "./helpers";
 
 async function openSwitcherModal(page: Page) {
-  // Open the sidebar dropdown by clicking the club header switcher button.
-  // The header button is the first button inside the aside.
-  await page.locator("aside button").first().click();
-  await page.getByTestId("sidebar-add-club").click();
+  // Sidebar surfaces the "create or join" entry point two ways:
+  //   - multi-club users: click switcher button → dropdown → sidebar-add-club
+  //   - single-club users: a sidebar-add-club-icon "+" sits in the header
+  // Branch on whichever testid is mounted so this helper works in both flows.
+  const iconButton = page.getByTestId("sidebar-add-club-icon");
+  if (await iconButton.count()) {
+    await iconButton.click();
+  } else {
+    await page.getByTestId("sidebar-club-switcher").click();
+    await page.getByTestId("sidebar-add-club").click();
+  }
   await expect(page.getByTestId("club-switcher-modal")).toBeVisible();
 }
 
@@ -119,10 +126,12 @@ test.describe("Switcher Create/Join Modal", () => {
     await page.getByRole("button", { name: /Monthly/i }).click();
     await page.getByTestId("modal-create-submit").click();
 
-    // Success view inside the modal.
-    await expect(page.getByText(/is live!/i)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Invite code", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Copy/i })).toBeVisible();
+    // Success view inside the modal. Scope to the modal because both the
+    // sidebar and dashboard topbar carry their own "Copy" buttons.
+    const modal = page.getByTestId("club-switcher-modal");
+    await expect(modal.getByText(/is live!/i)).toBeVisible({ timeout: 10000 });
+    await expect(modal.getByText("Invite code", { exact: true })).toBeVisible();
+    await expect(modal.getByRole("button", { name: /Copy/i })).toBeVisible();
 
     // Dismissal navigates into the new club.
     await page.getByTestId("created-club-go").click();

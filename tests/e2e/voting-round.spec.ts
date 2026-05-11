@@ -1,8 +1,9 @@
 // @spec VOTE-UI-001, VOTE-UI-002
 import { test, expect } from "@playwright/test";
-import { loginAs, getClubByCode } from "./helpers";
+import { loginAs, getClubByCode, restoreSeedMembershipGraph } from "./helpers";
 
 test.describe("Voting Round", () => {
+  test.beforeEach(restoreSeedMembershipGraph);
   test("authenticated user sees voting rounds page", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const club = await getClubByCode("WEDREADS");

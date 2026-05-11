@@ -1,43 +1,14 @@
 // @spec CLUB-UI-MEMBERS-002, CLUB-UI-MEMBERS-003, CLUB-UI-MEMBERS-004, CLUB-UI-MEMBERS-005, CLUB-UI-MEMBERS-006, CLUB-NAV-MEMBERS-001, CLUB-UI-OWNERSHIP-002, CLUB-UI-OWNERSHIP-003, CLUB-UI-MEMBERS-LEAVE-001, CLUB-API-OWNERSHIP-001, CLUB-BE-LEAVE-001
 import { test, expect } from "@playwright/test";
-import { loginAs, getClubByCode, getDb } from "./helpers";
+import { loginAs, getClubByCode, getDb, restoreSeedMembershipGraph } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
-const SEED_ROLES: Array<[string, "owner" | "admin" | "member"]> = [
-  ["alice@example.com", "owner"],
-  ["bob@example.com", "admin"],
-  ["carol@example.com", "admin"],
-  ["dave@example.com", "member"],
-  ["eve@example.com", "member"],
-  ["frank@example.com", "member"],
-];
-
-async function restoreWedreadsSeed() {
-  const db = getDb();
-  const club = await db.club.findUniqueOrThrow({ where: { code: "WEDREADS" } });
-  const users = await db.user.findMany({
-    where: { email: { in: SEED_ROLES.map(([e]) => e) } },
-  });
-  const byEmail = new Map(users.map((u) => [u.email, u]));
-  for (const [email, role] of SEED_ROLES) {
-    const user = byEmail.get(email);
-    if (!user) continue;
-    await db.membership.upsert({
-      where: { clubId_userId: { clubId: club.id, userId: user.id } },
-      update: { role },
-      create: { clubId: club.id, userId: user.id, role },
-    });
-  }
-}
-
 test.describe("Members Management", () => {
-  // Reset WEDREADS membership state before each test so they don't bleed.
-  // Seed roles: alice=owner, bob=admin, carol=admin, dave=member, eve=member, frank=member
-  test.beforeEach(restoreWedreadsSeed);
-  // Restore state on exit so other test files (switcher-create-join, etc.)
-  // see WEDREADS as they expect when running in parallel.
-  test.afterAll(restoreWedreadsSeed);
+  // Reset WEDREADS membership state before each test so they don't bleed,
+  // and strip any test-created joiners that survived earlier files.
+  test.beforeEach(restoreSeedMembershipGraph);
+  test.afterAll(restoreSeedMembershipGraph);
 
   // @spec CLUB-NAV-MEMBERS-001
   test("admin sees Members nav link; member does not", async ({ page, browser }) => {

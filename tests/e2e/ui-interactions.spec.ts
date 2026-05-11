@@ -1,74 +1,79 @@
 // @spec HOME-UI-005, HOME-UI-006, JOIN-UI-007, JOIN-UI-008, JOIN-UI-009, JOIN-UI-014, JOIN-UI-015, DASH-NAV-001, DASH-UI-002, DASH-UI-CARD-VOTE-001, DASH-UI-CARD-MEET-001, DASH-UI-CARD-DISC-001, DASH-UI-PROG-001, DASH-UI-007, PROG-UI-BOOK-001, PROG-UI-DASH-009, DISC-UI-004, CLUB-NAV-003
-import { test, expect } from "@playwright/test";
-import { loginAs, getClubByCode } from "./helpers";
+import { test, expect, type Page } from "@playwright/test";
+import { loginAs, getClubByCode, getDb } from "./helpers";
 
 test.describe("Landing Page Interactions", () => {
   // @spec HOME-UI-005
-  test("Join a Club link navigates to join page", async ({ page }) => {
+  test("Sign up link navigates to join page", async ({ page }) => {
     await page.goto("/");
-    await page.locator("nav").getByRole("link", { name: "Join a club" }).click();
+    await page.locator("nav").getByRole("link", { name: "Sign up" }).click();
     await expect(page).toHaveURL("/join");
-    await expect(page.getByTestId("join-form")).toBeVisible();
   });
 
   // @spec HOME-UI-006
-  test("Sign in link navigates to join page", async ({ page }) => {
+  test("Log in link navigates to login page", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Sign in" }).click();
-    await expect(page).toHaveURL("/join");
+    await page.locator("nav").getByRole("link", { name: "Log in" }).click();
+    await expect(page).toHaveURL("/login");
   });
 });
 
 test.describe("Join Page Interactions", () => {
+  // Track emails created by these tests so we can delete the throwaway users
+  // (and their WEDREADS memberships) afterwards. Without cleanup the seed-
+  // shape assertions in members-management.spec.ts inflate over time.
+  const createdEmails: string[] = [];
+
+  test.afterAll(async () => {
+    if (createdEmails.length === 0) return;
+    const db = getDb();
+    await db.user.deleteMany({ where: { email: { in: createdEmails } } });
+    createdEmails.length = 0;
+  });
+
+  // Step 3a (code input) only renders after Step 1 (identity) + Step 2 (path).
+  // ?path=join skips the path picker but Step 1 still gates everything.
+  async function arriveAtCodeStep(page: Page, email: string) {
+    createdEmails.push(email);
+    await page.goto("/join?path=join");
+    await page.locator("#email").fill(email);
+    await page.locator("#name").fill("Test User");
+    await page.locator("#passcode").fill("pilot");
+    await page.getByRole("button", { name: /^Continue$/ }).click();
+    await expect(page.locator("#code")).toBeVisible({ timeout: 10000 });
+  }
+
   // @spec JOIN-UI-007
   test("club code input converts to uppercase", async ({ page }) => {
-    await page.goto("/join");
-    await page.getByTestId("code-input").fill("wedreads");
-    await expect(page.getByTestId("code-input")).toHaveValue("WEDREADS");
+    await arriveAtCodeStep(page, `uppercase-${Date.now()}@example.com`);
+    await page.locator("#code").fill("wedreads");
+    await expect(page.locator("#code")).toHaveValue("WEDREADS");
   });
 
   // @spec JOIN-UI-008, JOIN-UI-009
-  test("club code lookup shows club info on blur", async ({ page }) => {
-    await page.goto("/join");
-    await page.getByTestId("code-input").fill("WEDREADS");
-    await page.getByTestId("code-input").blur();
-
-    // Should show club name and member count (wait for async fetch)
-    await expect(page.getByText("Wednesday Night Reads")).toBeVisible({ timeout: 10000 });
+  test("club code lookup shows club info", async ({ page }) => {
+    await arriveAtCodeStep(page, `lookup-${Date.now()}@example.com`);
+    await page.locator("#code").fill("WEDREADS");
+    await expect(page.getByTestId("club-found-panel")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("club-found-panel")).toContainText("Wednesday Night Reads");
   });
 
   // @spec JOIN-UI-014
-  test("submit button shows loading state", async ({ page }) => {
-    await page.goto("/join");
-    await page.getByTestId("code-input").fill("WEDREADS");
-    await page.getByTestId("code-input").blur();
+  test("submit navigates to the joined club", async ({ page }) => {
+    await arriveAtCodeStep(page, `loadtest-${Date.now()}@example.com`);
+    await page.locator("#code").fill("WEDREADS");
     await expect(page.getByTestId("club-found-panel")).toBeVisible({ timeout: 10000 });
-    await page.getByTestId("continue-button").click();
-
-    await page.getByTestId("email-input").fill("loadtest@example.com");
-    await page.getByTestId("name-input").fill("Load Tester");
-
-    const button = page.getByTestId("join-button");
-    await button.click();
-
-    // Check the final state — successful navigation
-    await expect(page).toHaveURL(/\/clubs\//);
+    await page.getByRole("button", { name: /Join Wednesday Night Reads/i }).click();
+    await expect(page).toHaveURL(/\/clubs\//, { timeout: 10000 });
   });
 
   // @spec JOIN-UI-015
   test("shows success message before redirect", async ({ page }) => {
-    await page.goto("/join");
-    await page.getByTestId("code-input").fill("WEDREADS");
-    await page.getByTestId("code-input").blur();
+    await arriveAtCodeStep(page, `success-${Date.now()}@example.com`);
+    await page.locator("#code").fill("WEDREADS");
     await expect(page.getByTestId("club-found-panel")).toBeVisible({ timeout: 10000 });
-    await page.getByTestId("continue-button").click();
-
-    await page.getByTestId("email-input").fill("success-msg@example.com");
-    await page.getByTestId("name-input").fill("Success Person");
-    await page.getByTestId("join-button").click();
-
-    // Should show welcome message
-    await expect(page.getByText(/Welcome to/)).toBeVisible();
+    await page.getByRole("button", { name: /Join Wednesday Night Reads/i }).click();
+    await expect(page.getByText(/Welcome to Wednesday Night Reads/i)).toBeVisible({ timeout: 10000 });
   });
 });
 

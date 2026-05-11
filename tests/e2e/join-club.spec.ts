@@ -1,5 +1,6 @@
 // @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003, AUTH-UI-004, AUTH-UI-PATH-OVERRIDE-001, AUTH-UI-STEP3B-CADENCE-001, CLUB-UI-001, CLUB-UI-002, CLUB-UI-003, CLUB-UI-CODE-LIVE-001
 import { test, expect, type Page } from "@playwright/test";
+import { restoreSeedMembershipGraph } from "./helpers";
 
 /**
  * E2E tests for the new 4-step join/create entry flow:
@@ -91,7 +92,11 @@ test.describe("New Entry Flow — Step 2: Path choice", () => {
 });
 
 test.describe("New Entry Flow — Step 3a: Join branch", () => {
+  // The "Submitting join navigates" test adds joiner@example.com to WEDREADS.
+  // On the next iteration, smart-detect would auto-redirect joiner past
+  // Step 2 and break the beforeEach. Strip throwaway memberships first.
   test.beforeEach(async ({ page }) => {
+    await restoreSeedMembershipGraph();
     await page.goto("/join");
     await fillIdentity(page, "joiner@example.com", "Joiner");
     await chooseJoinPath(page);
@@ -344,15 +349,15 @@ test.describe("New Entry Flow — Smart detection (returning users)", () => {
   });
 
   // @spec AUTH-UI-004
-  test("header shows plain copy, not a Sign in button", async ({ page }) => {
+  test("header points returning members at /login", async ({ page }) => {
     await page.goto("/join");
-    // The old broken "Sign in" button should be gone.
+    // The old broken "Sign in" button should be gone — header only carries
+    // a "Log in" link to /login.
     await expect(
       page.locator("header").getByRole("button", { name: /^sign in$/i })
     ).toHaveCount(0);
-    await expect(page.locator("header")).toContainText(
-      /already a member.*just enter your email above/i
-    );
+    const loginLink = page.locator("header").getByRole("link", { name: /^log in$/i });
+    await expect(loginLink).toHaveAttribute("href", "/login");
   });
 });
 

@@ -11,8 +11,11 @@ test.describe("Multi-Club Switching", () => {
     await page.goto(`/clubs/${wedReads.id}`);
     await page.getByTestId("sidebar-club-switcher").click();
 
-    await expect(page.getByText("Wednesday Night Reads")).toBeVisible();
-    await expect(page.getByText("Sci-Fi Explorers")).toBeVisible();
+    // Scope to the switcher dropdown — "Wednesday Night Reads" also appears
+    // in the switcher button label and the dashboard h1, blowing up strict-mode.
+    const dropdown = page.getByRole("listbox");
+    await expect(dropdown.getByText("Wednesday Night Reads")).toBeVisible();
+    await expect(dropdown.getByText("Sci-Fi Explorers")).toBeVisible();
   });
 
   test("clicking another club in the switcher navigates to its dashboard", async ({ page }) => {

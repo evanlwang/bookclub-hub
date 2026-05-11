@@ -23,15 +23,17 @@ test.describe("Spoiler-Safe Discussions", () => {
     const club = await getClubByCode("WEDREADS");
 
     await page.goto(`/clubs/${club.id}/discussions`);
+    // Wait for the initial threads fetch so the list is settled before we
+    // change the filter (the auto-progress-cutoff effect fires on mount).
+    await expect(page.getByTestId("threads-list")).toBeVisible({ timeout: 10000 });
 
     // Set max chapter to 5
     await page.getByTestId("max-chapter-input").fill("5");
-    // Wait for re-fetch
-    await page.waitForTimeout(500);
 
-    // Should see Ch.3, Ch.5, and untagged = 3 threads, Ch.10 hidden
+    // Should see Ch.3, Ch.5, and untagged = 3 threads, Ch.10 hidden.
+    // toHaveCount auto-retries, so no manual sleep needed.
     const items = page.getByTestId("threads-list").locator("li");
-    await expect(items).toHaveCount(3);
+    await expect(items).toHaveCount(3, { timeout: 10000 });
     await expect(page.getByTestId("hidden-count")).toContainText("1");
   });
 
@@ -40,18 +42,17 @@ test.describe("Spoiler-Safe Discussions", () => {
     const club = await getClubByCode("WEDREADS");
 
     await page.goto(`/clubs/${club.id}/discussions`);
+    await expect(page.getByTestId("threads-list")).toBeVisible({ timeout: 10000 });
 
     // Set filter first
     await page.getByTestId("max-chapter-input").fill("3");
-    await page.waitForTimeout(500);
+    // Wait until show-all becomes available — proves the filter applied.
+    await expect(page.getByTestId("show-all-btn")).toBeVisible({ timeout: 10000 });
 
-    // Click show all
     await page.getByTestId("show-all-btn").click();
-    await page.waitForTimeout(500);
 
-    // All threads visible now
     const items = page.getByTestId("threads-list").locator("li");
-    await expect(items).toHaveCount(4);
+    await expect(items).toHaveCount(4, { timeout: 10000 });
   });
 
   test("chapter tags displayed on threads", async ({ page }) => {
