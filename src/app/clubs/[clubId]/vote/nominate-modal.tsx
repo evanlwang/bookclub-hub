@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Card } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { trpc } from "@/trpc/react-hooks";
 import { type Book, type FormErrors } from "./nominate-modal-types";
 import { NominateSearch } from "./nominate-search";
 import { NominatePitch } from "./nominate-pitch";
@@ -25,9 +26,6 @@ export function NominateModal({
   onNominationSuccess,
 }: NominateModalProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Book[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState("");
 
   const [manualTitle, setManualTitle] = useState("");
   const [manualAuthor, setManualAuthor] = useState("");
@@ -36,11 +34,9 @@ export function NominateModal({
   const [pitch, setPitch] = useState("");
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   const manualTitleDirty = useRef(false);
 
@@ -56,65 +52,46 @@ export function NominateModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, onClose]);
 
-  const handleQueryChange = useCallback(
-    (value: string) => {
-      setQuery(value);
-      if (debounceTimer) clearTimeout(debounceTimer);
-      const timer = setTimeout(() => setDebouncedQuery(value), 300);
-      setDebounceTimer(timer);
-    },
-    [debounceTimer]
-  );
+  // Debounce the search query: any time `query` changes, schedule a 300ms
+  // timer to copy it into `debouncedQuery` (which is what feeds the useQuery
+  // below). useQuery cancels in-flight requests automatically when its input
+  // changes, replacing the old AbortController dance.
+  const handleQueryChange = useCallback((value: string) => {
+    setQuery(value);
+  }, []);
 
   useEffect(() => {
-    if (debouncedQuery.length === 0) {
-      setResults([]);
-      setSearchError("");
-      return;
-    }
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
 
-    setIsSearching(true);
-    setSearchError("");
-
-    const input = encodeURIComponent(JSON.stringify({ query: debouncedQuery }));
-    const controller = new AbortController();
-    fetch(`/api/trpc/books.search?input=${input}`, { signal: controller.signal })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          setResults([]);
-          setSearchError("Search is unavailable — add the book manually below.");
-        } else {
-          setResults(data.result?.data || []);
-        }
-      })
-      .catch((err) => {
-        if (err?.name === "AbortError") return;
-        setResults([]);
-        setSearchError("Search is unavailable — add the book manually below.");
-      })
-      .finally(() => setIsSearching(false));
-
-    return () => controller.abort();
-  }, [debouncedQuery]);
+  const searchQuery = trpc.books.search.useQuery(
+    { query: debouncedQuery },
+    { enabled: debouncedQuery.length > 0 },
+  );
+  const results: Book[] = (searchQuery.data as Book[] | undefined) ?? [];
+  const isSearching =
+    debouncedQuery.length > 0 && (searchQuery.isPending || searchQuery.isFetching);
+  const searchError = searchQuery.isError
+    ? "Search is unavailable — add the book manually below."
+    : "";
 
   useEffect(() => {
     if (
       !manualTitleDirty.current &&
       debouncedQuery.length > 0 &&
       results.length === 0 &&
-      !isSearching
+      !isSearching &&
+      !searchQuery.isError
     ) {
       setManualTitle(debouncedQuery);
     }
-  }, [debouncedQuery, results.length, isSearching]);
+  }, [debouncedQuery, results.length, isSearching, searchQuery.isError]);
 
   useEffect(() => {
     if (isOpen) return;
     setQuery("");
     setDebouncedQuery("");
-    setResults([]);
-    setSearchError("");
     setManualTitle("");
     setManualAuthor("");
     setManualIsbn("");
@@ -124,6 +101,11 @@ export function NominateModal({
     setSubmitError("");
     manualTitleDirty.current = false;
   }, [isOpen]);
+
+  const createManualBook = trpc.books.createManual.useMutation();
+  const createNomination = trpc.nominations.create.useMutation();
+
+  const submitting = createManualBook.isPending || createNomination.isPending;
 
   function validateManual(): FormErrors {
     const errs: FormErrors = {};
@@ -137,38 +119,32 @@ export function NominateModal({
   }
 
   async function handleNominate(bookId: string) {
+    // Defense-in-depth: a recent bug let this run with an empty `roundId`,
+    // crashing the Zod uuid check on the server. Keep this guard.
     if (!roundId) {
       setSubmitError("No active voting round — start one before nominating.");
       return;
     }
-    setSubmitting(true);
     setSubmitError("");
     try {
       const trimmedPitch = pitch.trim();
-      const res = await fetch("/api/trpc/nominations.create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          roundId,
-          bookId,
-          ...(trimmedPitch ? { pitch: trimmedPitch } : {}),
-        }),
+      await createNomination.mutateAsync({
+        clubId,
+        roundId,
+        bookId,
+        ...(trimmedPitch ? { pitch: trimmedPitch } : {}),
       });
-      const data = await res.json();
-      if (data.error) {
-        setSubmitError(
-          data.error.message ||
-            "Failed to nominate book. It may have already been nominated."
-        );
-      } else {
-        onClose();
-        onNominationSuccess?.();
-      }
-    } catch {
-      setSubmitError("Something went wrong");
-    } finally {
-      setSubmitting(false);
+      onClose();
+      onNominationSuccess?.();
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to nominate book. It may have already been nominated.";
+      setSubmitError(
+        message ||
+          "Failed to nominate book. It may have already been nominated."
+      );
     }
   }
 
@@ -178,60 +154,41 @@ export function NominateModal({
       setFormErrors(errs);
       return;
     }
+    // Defense-in-depth: a recent bug let this run with an empty `roundId`,
+    // crashing the Zod uuid check on the server. Keep this guard.
     if (!roundId) {
       setSubmitError("No active voting round — start one before nominating.");
       return;
     }
     setFormErrors({});
-    setSubmitting(true);
     setSubmitError("");
 
     try {
-      const createRes = await fetch("/api/trpc/books.createManual", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: manualTitle.trim(),
-          author: manualAuthor.trim(),
-          isbn: manualIsbn.trim() || undefined,
-          pageCount: parseInt(manualPageCount, 10),
-        }),
+      const createResult = await createManualBook.mutateAsync({
+        title: manualTitle.trim(),
+        author: manualAuthor.trim(),
+        isbn: manualIsbn.trim() || undefined,
+        pageCount: parseInt(manualPageCount, 10),
       });
-      const createData = await createRes.json();
-      if (createData.error) {
-        setSubmitError(createData.error.message || "Failed to create book");
-        setSubmitting(false);
-        return;
-      }
-      const book = createData.result?.data?.book;
+      const book = createResult?.book;
       if (!book) {
         setSubmitError("Failed to create book");
-        setSubmitting(false);
         return;
       }
 
       const trimmedPitch = pitch.trim();
-      const nomRes = await fetch("/api/trpc/nominations.create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clubId,
-          roundId,
-          bookId: book.id,
-          ...(trimmedPitch ? { pitch: trimmedPitch } : {}),
-        }),
+      await createNomination.mutateAsync({
+        clubId,
+        roundId,
+        bookId: book.id,
+        ...(trimmedPitch ? { pitch: trimmedPitch } : {}),
       });
-      const nomData = await nomRes.json();
-      if (nomData.error) {
-        setSubmitError(nomData.error.message || "Failed to nominate book");
-      } else {
-        onClose();
-        onNominationSuccess?.();
-      }
-    } catch {
-      setSubmitError("Something went wrong");
-    } finally {
-      setSubmitting(false);
+      onClose();
+      onNominationSuccess?.();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to nominate book";
+      setSubmitError(message || "Failed to nominate book");
     }
   }
 

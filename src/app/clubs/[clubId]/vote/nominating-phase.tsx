@@ -7,6 +7,7 @@ import { SearchIcon } from "@/components/ui/icons";
 import { NominateModal } from "./nominate-modal";
 import { CancelRoundDialog } from "./close-voting-dialog";
 import { relativeTime, type Nomination } from "./vote-round-types";
+import { trpc } from "@/trpc/react-hooks";
 
 interface NominatingPhaseProps {
   clubId: string;
@@ -23,65 +24,52 @@ export function NominatingPhase({
   isAdmin,
 }: NominatingPhaseProps) {
   const router = useRouter();
-  const [createLoading, setCreateLoading] = useState(false);
+  const utils = trpc.useUtils();
   const [error, setError] = useState("");
   const [isNominateModalOpen, setIsNominateModalOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [adminActionLoading, setAdminActionLoading] = useState(false);
   const [adminActionError, setAdminActionError] = useState("");
   const [cancelConfirmText, setCancelConfirmText] = useState("");
 
   // @spec VOTE-API-002, VOTE-API-003
-  async function handleAdvanceRound() {
-    setCreateLoading(true);
+  const advanceRound = trpc.rounds.advance.useMutation({
+    onSuccess: () => {
+      void utils.rounds.get.invalidate({ clubId, roundId });
+      void utils.rounds.list.invalidate({ clubId });
+      router.refresh();
+    },
+    onError: (err) => {
+      setError(err.message || "Failed to advance round");
+    },
+  });
+
+  function handleAdvanceRound() {
     setError("");
-    try {
-      const res = await fetch("/api/trpc/rounds.advance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, roundId }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message || "Failed to advance round");
-      } else {
-        router.refresh();
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setCreateLoading(false);
-    }
+    advanceRound.mutate({ clubId, roundId });
   }
 
   // @spec VOTE-UI-CANCEL-002, VOTE-API-004
-  async function handleCancelRound() {
-    if (adminActionLoading) return;
+  const cancelRound = trpc.rounds.cancel.useMutation({
+    onSuccess: () => {
+      setCancelOpen(false);
+      setCancelConfirmText("");
+      void utils.rounds.get.invalidate({ clubId, roundId });
+      void utils.rounds.list.invalidate({ clubId });
+      router.refresh();
+    },
+    onError: (err) => {
+      setAdminActionError(err.message || "Failed to cancel round");
+    },
+  });
+
+  function handleCancelRound() {
+    if (cancelRound.isPending) return;
     if (cancelConfirmText.trim().toLowerCase() !== "cancel") {
       setAdminActionError('Type "cancel" to confirm');
       return;
     }
-    setAdminActionLoading(true);
     setAdminActionError("");
-    try {
-      const res = await fetch("/api/trpc/rounds.cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, roundId }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setAdminActionError(data.error.message || "Failed to cancel round");
-        return;
-      }
-      setCancelOpen(false);
-      setCancelConfirmText("");
-      router.refresh();
-    } catch {
-      setAdminActionError("Something went wrong");
-    } finally {
-      setAdminActionLoading(false);
-    }
+    cancelRound.mutate({ clubId, roundId });
   }
 
   return (
@@ -133,7 +121,7 @@ export function NominatingPhase({
           <Button
             variant="primary"
             size="md"
-            loading={createLoading}
+            loading={advanceRound.isPending}
             disabled={nominations.length < 2}
             onClick={handleAdvanceRound}
             data-testid="advance-round-btn"
@@ -162,13 +150,13 @@ export function NominatingPhase({
 
       {cancelOpen && (
         <CancelRoundDialog
-          submitting={adminActionLoading}
+          submitting={cancelRound.isPending}
           error={adminActionError}
           confirmText={cancelConfirmText}
           onConfirmTextChange={setCancelConfirmText}
           onConfirm={handleCancelRound}
           onCancel={() => {
-            if (!adminActionLoading) {
+            if (!cancelRound.isPending) {
               setCancelOpen(false);
               setCancelConfirmText("");
               setAdminActionError("");

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
+import { trpc } from "@/trpc/react-hooks";
 
 interface NonePhaseProps {
   clubId: string;
@@ -15,7 +16,7 @@ interface NonePhaseProps {
 // `roundId === ""` would fail the `nominations.create` Zod uuid check.
 export function NonePhase({ clubId, isAdmin }: NonePhaseProps) {
   const router = useRouter();
-  const [createLoading, setCreateLoading] = useState(false);
+  const utils = trpc.useUtils();
   const [error, setError] = useState("");
   // @spec VOTE-UI-DEADLINE-NOM-001, VOTE-UI-DEADLINE-VOTE-001
   const [showDeadlines, setShowDeadlines] = useState(false);
@@ -23,34 +24,30 @@ export function NonePhase({ clubId, isAdmin }: NonePhaseProps) {
   const [votingDeadline, setVotingDeadline] = useState("");
 
   // @spec VOTE-API-001, VOTE-UI-VOTE-DEADLINE-001
-  async function handleStartNewRound() {
-    setCreateLoading(true);
+  const createRound = trpc.rounds.create.useMutation({
+    onSuccess: () => {
+      setShowDeadlines(false);
+      setNominationDeadline("");
+      setVotingDeadline("");
+      void utils.rounds.list.invalidate({ clubId });
+      router.refresh();
+    },
+    onError: (err) => {
+      setError(err.message || "Failed to create round");
+    },
+  });
+
+  function handleStartNewRound() {
     setError("");
-    try {
-      const body: Record<string, unknown> = { clubId };
-      if (nominationDeadline)
-        body.nominationDeadline = new Date(nominationDeadline).toISOString();
-      if (votingDeadline)
-        body.votingDeadline = new Date(votingDeadline).toISOString();
-      const res = await fetch("/api/trpc/rounds.create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message || "Failed to create round");
-      } else {
-        setShowDeadlines(false);
-        setNominationDeadline("");
-        setVotingDeadline("");
-        router.refresh();
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setCreateLoading(false);
-    }
+    createRound.mutate({
+      clubId,
+      ...(nominationDeadline
+        ? { nominationDeadline: new Date(nominationDeadline) }
+        : {}),
+      ...(votingDeadline
+        ? { votingDeadline: new Date(votingDeadline) }
+        : {}),
+    });
   }
 
   if (!isAdmin) return null;
@@ -94,12 +91,12 @@ export function NonePhase({ clubId, isAdmin }: NonePhaseProps) {
       <Button
         variant="primary"
         size="md"
-        loading={createLoading}
+        loading={createRound.isPending}
         onClick={handleStartNewRound}
         data-testid="start-new-round-btn"
         className="group shadow-[0_2px_10px_-2px_oklch(0.42_0.06_195/0.35)] hover:shadow-[0_6px_16px_-4px_oklch(0.42_0.06_195/0.5)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_2px_6px_-2px_oklch(0.42_0.06_195/0.4)]"
         iconRight={
-          !createLoading && (
+          !createRound.isPending && (
             <svg
               width="14"
               height="14"

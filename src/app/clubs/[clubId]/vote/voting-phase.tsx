@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Badge, BookCover } from "@/components/ui";
 import { successMessage } from "@/lib/voting/prior-votes";
+import { trpc } from "@/trpc/react-hooks";
 import {
   CloseVotingDialog,
   CancelRoundDialog,
@@ -39,12 +40,12 @@ export function VotingPhase({
   activeVotingDeadline,
 }: VotingPhaseProps) {
   const router = useRouter();
+  const utils = trpc.useUtils();
   const [selected, setSelected] = useState<string[]>(initialVotes);
   const [hasVoted, setHasVoted] = useState(initialVotes.length > 0);
   // @spec VOTE-UI-CLOSE-002, VOTE-UI-CANCEL-002
   const [closeOpen, setCloseOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [adminActionLoading, setAdminActionLoading] = useState(false);
   const [adminActionError, setAdminActionError] = useState("");
   const [cancelConfirmText, setCancelConfirmText] = useState("");
   // Tracks the just-completed in-session submit so we can show a confirmation
@@ -52,7 +53,6 @@ export function VotingPhase({
   // which persists across reloads to drive the "Update N?" button label.
   const [justSubmitted, setJustSubmitted] = useState(false);
   const [lastSubmitWasUpdate, setLastSubmitWasUpdate] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // @spec VOTE-UI-PRIOR-VOTES-001, VOTE-UI-TURNOUT-LIVE-001
@@ -90,87 +90,74 @@ export function VotingPhase({
   }
 
   // @spec VOTE-API-008, VOTE-UI-TURNOUT-LIVE-001, VOTE-UI-UPDATE-CONFIRM-001
+  const submitVotes = trpc.votes.submit.useMutation({
+    onError: (err) => {
+      setError(err.message || "Failed to submit votes");
+    },
+  });
+
   async function handleSubmitVotes() {
-    setLoading(true);
     setError("");
     const wasUpdate = hasVoted;
     try {
-      const res = await fetch("/api/trpc/votes.submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, roundId, nominationIds: selected }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error.message || "Failed to submit votes");
-      } else {
-        setHasVoted(true);
-        setJustSubmitted(true);
-        setLastSubmitWasUpdate(wasUpdate);
-        // Re-fetch the server component so the voter-turnout card reflects the new count.
-        router.refresh();
-      }
+      await submitVotes.mutateAsync({ clubId, roundId, nominationIds: selected });
+      setHasVoted(true);
+      setJustSubmitted(true);
+      setLastSubmitWasUpdate(wasUpdate);
+      void utils.rounds.get.invalidate({ clubId, roundId });
+      // Re-fetch the server component so the voter-turnout card reflects
+      // the new count. @spec VOTE-UI-TURNOUT-LIVE-001
+      router.refresh();
     } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
+      // onError handler already set the error message.
     }
   }
 
   // @spec VOTE-UI-CLOSE-004, VOTE-UI-CLOSE-006, VOTE-API-003
-  async function handleCloseVoting() {
-    if (adminActionLoading) return;
-    setAdminActionLoading(true);
-    setAdminActionError("");
-    try {
-      const res = await fetch("/api/trpc/rounds.advance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, roundId }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setAdminActionError(data.error.message || "Failed to close voting");
-        return;
-      }
+  const advanceRound = trpc.rounds.advance.useMutation({
+    onSuccess: () => {
       setCloseOpen(false);
+      void utils.rounds.get.invalidate({ clubId, roundId });
+      void utils.rounds.list.invalidate({ clubId });
       router.refresh();
-    } catch {
-      setAdminActionError("Something went wrong");
-    } finally {
-      setAdminActionLoading(false);
-    }
+    },
+    onError: (err) => {
+      setAdminActionError(err.message || "Failed to close voting");
+    },
+  });
+
+  function handleCloseVoting() {
+    if (advanceRound.isPending) return;
+    setAdminActionError("");
+    advanceRound.mutate({ clubId, roundId });
   }
 
   // @spec VOTE-UI-CANCEL-002, VOTE-API-004
-  async function handleCancelRound() {
-    if (adminActionLoading) return;
+  const cancelRound = trpc.rounds.cancel.useMutation({
+    onSuccess: () => {
+      setCancelOpen(false);
+      setCancelConfirmText("");
+      void utils.rounds.get.invalidate({ clubId, roundId });
+      void utils.rounds.list.invalidate({ clubId });
+      router.refresh();
+    },
+    onError: (err) => {
+      setAdminActionError(err.message || "Failed to cancel round");
+    },
+  });
+
+  function handleCancelRound() {
+    if (cancelRound.isPending) return;
     if (cancelConfirmText.trim().toLowerCase() !== "cancel") {
       setAdminActionError('Type "cancel" to confirm');
       return;
     }
-    setAdminActionLoading(true);
     setAdminActionError("");
-    try {
-      const res = await fetch("/api/trpc/rounds.cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clubId, roundId }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setAdminActionError(data.error.message || "Failed to cancel round");
-        return;
-      }
-      setCancelOpen(false);
-      setCancelConfirmText("");
-      router.refresh();
-    } catch {
-      setAdminActionError("Something went wrong");
-    } finally {
-      setAdminActionLoading(false);
-    }
+    cancelRound.mutate({ clubId, roundId });
   }
+
+  const adminActionLoading = advanceRound.isPending || cancelRound.isPending;
+  const loading = submitVotes.isPending;
 
   return (
     <div data-testid="voting-phase" className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
