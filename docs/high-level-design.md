@@ -203,6 +203,24 @@ erDiagram
 
 This is a CRUD-heavy app with lightweight interactivity — Next.js is the fastest path to a working product. Single language (TypeScript) across the entire stack eliminates context-switching. Prisma provides migration management and type-safe database access. Vercel deployment is zero-config for Next.js. The main trade-off is tight coupling between frontend and backend; if a standalone API is needed later, Route Handlers can be extracted into a separate service.
 
+## Design System
+
+The UI is built from a small set of reusable primitives (Button, Badge, Card, Avatar, BookCover, ChapterChip, ProgressBar, DateTimePicker, AvatarStack, Icons) wired to a single palette of design tokens. The system is organized around a two-layer split that keeps visual values changeable without rewriting intent.
+
+**Values (data).** Colors, spacing, radii, shadows, and font stacks live in `src/app/globals.css` inside a Tailwind v4 `@theme` block as CSS custom properties (`--color-primary`, `--radius-md`, `--shadow-sm`, etc.). A designer can re-theme the product by editing tokens; no spec changes are required because specs reference token *names*, never values.
+
+**Behavior (intent).** When and how a token is applied — default state, hover, focus, disabled, motion preferences, dark-mode swap (when added) — is captured as EARS specs against the design-system arrow. A `COMP-BUTTON-003` spec, for example, says "WHILE the primary button is hovered, the system SHALL transition `--color-primary` to `--color-primary-hover` over 150ms"; the literal colors live in `globals.css` and can drift freely.
+
+Visual judgment — whether a page *feels* right, whether the type scale is coherent, whether the cover gradients harmonize — is not encoded in specs. It lives in `docs/bookclub-hub-designs/` (interactive prototypes) and any future Figma artifacts, and is referenced from the design LLDs but never round-tripped through EARS.
+
+### Arrow placement
+
+Design lives as a **parallel overlay** in `docs/arrows/index.yaml`: a `design-system` cluster (one segment per primitive plus a system-wide segment) that feature segments may cite from prose but do *not* declare a `blockedBy` dependency on. This keeps cascade discipline tight — a color-token rename does not auto-cascade into `vote-specs.md` — while preserving traceability, since feature specs that depend on a component's behavioral contract can grep for `COMP-BUTTON-*` to find the relevant LLD.
+
+### Theming approach (v1)
+
+A single light theme using `oklch()` notation for perceptual uniformity across monitors. The "warm paper" aesthetic — warm background neutrals, deep-teal primary, warm-amber accent — is the only theme. Token names are mode-agnostic (`--color-bg`, not `--color-bg-light`), so swapping `--color-bg` inside a `@media (prefers-color-scheme: dark)` block is the intended future path. Dark mode is deferred; the naming convention is forward-compatible.
+
 ## Key Design Decisions
 
 | Decision | Chosen | Alternatives Considered | Rationale |
@@ -218,6 +236,10 @@ This is a CRUD-heavy app with lightweight interactivity — Next.js is the faste
 | Club joining | Club code (short alphanumeric string shared out-of-band) | Invitation links with tokens; email-sent invites; QR codes | A code is the simplest thing to share verbally or in a group chat. No link formatting, no expiration tokens. |
 | Real-time updates | Polling with SWR/stale-while-revalidate (v1) | WebSockets; SSE | Polling is simpler to deploy. Real-time is nice-to-have for discussions but not critical for v1. WebSockets can be added later without data model changes. |
 | Email provider | Resend | SendGrid; AWS SES; Postmark | Resend has the simplest API, generous free tier (3k emails/month), and first-class Next.js/Vercel integration. Sufficient for v1 notification volume. |
+| Design tokens | Tailwind v4 `@theme` block of CSS custom properties in `globals.css` | Utility-class palette only (no custom tokens); CSS-in-JS (Stitches/vanilla-extract); SCSS variables | Tailwind v4 native, zero build step, designer-editable, framework-agnostic at the CSS layer. Custom-property names become the contract specs assert against. |
+| Design ↔ specs relationship | EARS specs reference token *names*, not values | Specs cite hex/oklch values directly; specs ignore styling entirely | Tokens become re-themeable without spec churn; specs stay focused on behavior. |
+| Design-arrow placement | Parallel overlay (design segments not in feature segments' `blockedBy`) | Foundational segment (every feature depends on design); off-graph (no `arrows/` entry) | Avoids cascade ricochets from cosmetic changes; keeps arrow-maintenance coverage of design. |
+| Theming (v1) | Single light theme in `oklch()`, mode-agnostic token names | Light + dark from day one; user-customizable themes | Ships v1 faster. Forward-compatible naming lets dark mode land as a token-value swap, not a rename. |
 
 ## Success Metrics
 
@@ -344,3 +366,7 @@ sequenceDiagram
 - `docs/specs/meet-specs.md`
 - `docs/specs/disc-specs.md`
 - `docs/specs/prog-specs.md`
+- `docs/llds/design-system.md` (forthcoming)
+- `docs/llds/components-*.md` (forthcoming, one per primitive)
+- `docs/specs/dsys-specs.md` (forthcoming)
+- `docs/specs/comp-*-specs.md` (forthcoming, one per primitive)
