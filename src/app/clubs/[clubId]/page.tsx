@@ -1,4 +1,11 @@
 // @spec DASH-UI-006, DASH-UI-007, DASH-UI-008, DASH-UI-011, DISC-UI-DASH-FEED-AUTOFILTER-001
+/* eslint-disable no-restricted-syntax --
+ * The fading hairline divider (~137), the attention-banner primary-tint gradient (~149),
+ * and the currently-reading hero's paper-cream radial wash (~218) are page-private
+ * decorative gradients designed for the dashboard's visual rhythm. They are not
+ * reused elsewhere and don't belong in the global token set. DSYS-TOKEN-003
+ * exemption documented per DASH-UI-007/008 intent.
+ */
 import { getServerCaller } from "@/trpc/server";
 import { prisma } from "@/lib/db";
 import Link from "next/link";

@@ -1,5 +1,13 @@
 "use client";
 
+/* eslint-disable no-restricted-syntax --
+ * The winner banner (lines ~60-90) and the Open-Library CTA color (~107) use
+ * page-private warm gradients/inks specifically designed to celebrate the
+ * round winner. These colors are intentionally not promoted to global tokens
+ * (they're not reused anywhere else and the celebratory palette is unique to
+ * this page). DSYS-TOKEN-003 exemption documented per VOTE-UI-DECIDED-WINNER-BANNER intent.
+ */
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -72,7 +80,7 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
             <div>
               <div className="flex items-center gap-2.5 mb-2">
                 <Badge tone="accent" dot>Winner</Badge>
-                <span className="font-[var(--font-mono)] text-[11px] text-[oklch(0.55_0.13_75)]">Round winner</span>
+                <span className="font-[var(--font-mono)] text-[11px] text-accent-ink">Round winner</span>
               </div>
               <h2 className="font-[var(--font-display)] text-[44px] font-semibold leading-tight tracking-tight mb-1" style={{ color: "oklch(0.25 0.05 60)" }}>
                 {winner.book.title}
@@ -198,7 +206,7 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
         {nominations.map((nom, i) => (
           <div
             key={nom.id}
-            className={`grid grid-cols-[32px_auto_1fr_auto] md:grid-cols-[40px_auto_1fr_180px_auto] gap-3 md:gap-4 items-center px-5 py-3.5 ${i === 0 ? "bg-[oklch(0.97_0.02_75)]" : ""}`}
+            className={`grid grid-cols-[32px_auto_1fr_auto] md:grid-cols-[40px_auto_1fr_180px_auto] gap-3 md:gap-4 items-center px-5 py-3.5 ${i === 0 ? "bg-accent-soft" : ""}`}
           >
             <span className={`font-[var(--font-mono)] text-sm font-semibold ${i === 0 ? "text-accent-ink" : "text-ink-3"}`}>
               {i === 0 ? "①" : `0${i + 1}`}

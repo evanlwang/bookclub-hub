@@ -31,7 +31,7 @@ export function ClubFoundPanel({ clubInfo }: { clubInfo: { name: string; memberC
     <div
       data-testid="club-found-panel"
       className="flex items-center gap-3 p-3.5 rounded-[var(--radius-md)] bg-primary-soft border animate-fade-in"
-      style={{ borderColor: "oklch(0.85 0.04 195)" }}
+      style={{ borderColor: "var(--color-primary-line)" }}
     >
       <div className="w-10 h-10 rounded-[var(--radius-md)] bg-primary text-bg flex items-center justify-center shrink-0">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -55,7 +55,7 @@ export function ErrorBox({ children, ...rest }: React.HTMLAttributes<HTMLDivElem
   return (
     <div
       className="p-3 rounded-[var(--radius-md)] bg-danger-soft text-danger text-[13px] border animate-fade-in"
-      style={{ borderColor: "oklch(0.88 0.04 25)" }}
+      style={{ borderColor: "var(--color-danger-line)" }}
       {...rest}
     >
       {children}

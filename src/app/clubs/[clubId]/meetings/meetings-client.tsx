@@ -465,7 +465,7 @@ function ProposedMeetingRow({
           className={`w-16 h-16 rounded-[10px] flex items-center justify-center ${
             viewerHasResponded
               ? "bg-success-soft text-success"
-              : "bg-warning-soft text-[oklch(0.5_0.10_70)]"
+              : "bg-warning-soft text-warning-ink"
           }`}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

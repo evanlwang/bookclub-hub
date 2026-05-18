@@ -14,7 +14,7 @@ function ErrorBox({ children, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className="p-3 rounded-[var(--radius-md)] bg-danger-soft text-danger text-[13px] border animate-fade-in"
-      style={{ borderColor: "oklch(0.88 0.04 25)" }}
+      style={{ borderColor: "var(--color-danger-line)" }}
       {...rest}
     >
       {children}

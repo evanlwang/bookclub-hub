@@ -1,4 +1,10 @@
 // @spec CLUB-UI-SETTINGS-001, CLUB-UI-SETTINGS-THEME-001
+/* eslint-disable no-restricted-syntax --
+ * The conic-gradient on the "custom color" swatch (~244) is a rainbow used as
+ * picker chrome — the hex colors ARE the data (hue spectrum the user picks
+ * from), not styling values. DSYS-TOKEN-003 doesn't apply to color content,
+ * only to color styling. CLUB-UI-SETTINGS-THEME-001 documents this affordance.
+ */
 "use client";
 
 import { useRef, useState } from "react";

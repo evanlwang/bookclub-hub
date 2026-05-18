@@ -133,7 +133,7 @@ export function EditMeetingDialog({
             <div
               role="alert"
               className="p-3 rounded-[var(--radius-md)] bg-danger-soft text-danger text-[13px] border"
-              style={{ borderColor: "oklch(0.88 0.04 25)" }}
+              style={{ borderColor: "var(--color-danger-line)" }}
             >
               {error}
             </div>

@@ -1,4 +1,10 @@
 // @spec HOME-UI-001 through HOME-UI-011, HOME-UI-PRIVACY-CALLOUT-001, HOME-A11Y-002, HOME-A11Y-004
+/* eslint-disable no-restricted-syntax --
+ * The landing page's "cream-to-primary backdrop" gradient (~191-193) is a
+ * page-private aesthetic — a subtle tonal wash distinct from the hero. The
+ * gradient stops use alpha variants that don't map to global tokens, and the
+ * pattern isn't reused elsewhere. DSYS-TOKEN-003 exemption per HOME-UI intent.
+ */
 import Link from "next/link";
 import {
   LogoIcon,

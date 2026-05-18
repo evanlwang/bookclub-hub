@@ -163,9 +163,9 @@ export default async function ProgressPage({
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
               <div data-testid="progress-ring" className="relative w-[100px] h-[100px] flex-shrink-0">
                 <svg width="100" height="100" className="-rotate-90">
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="var(--bg-sunken, #eee)" strokeWidth="10" />
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-bg-sunken)" strokeWidth="10" />
                   <circle
-                    cx="50" cy="50" r="42" fill="none" stroke="var(--primary, #2d7a8a)" strokeWidth="10"
+                    cx="50" cy="50" r="42" fill="none" stroke="var(--color-primary)" strokeWidth="10"
                     strokeDasharray={`${2 * Math.PI * 42}`}
                     strokeDashoffset={`${2 * Math.PI * 42 * (1 - median / 100)}`}
                     strokeLinecap="round"
@@ -238,7 +238,7 @@ export default async function ProgressPage({
                         {p.user?.displayName ?? "Member"}
                       </span>
                       {p.status === "finished" && (
-                        <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-accent text-[oklch(0.25_0.04_75)] shrink-0">
+                        <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-accent text-ink shrink-0">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M5 12.5l4.5 4.5L19 7" />
                           </svg>

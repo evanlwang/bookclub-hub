@@ -405,7 +405,7 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
                   <div
                     data-testid="modal-club-found"
                     className="flex items-center gap-3 p-3 rounded-[var(--radius-md)] bg-primary-soft border animate-fade-in"
-                    style={{ borderColor: "oklch(0.85 0.04 195)" }}
+                    style={{ borderColor: "var(--color-primary-line)" }}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-semibold text-primary-ink truncate">{clubInfo.name}</p>
@@ -441,7 +441,7 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
                     role="alert"
                     aria-live="assertive"
                     className="p-3 rounded-[var(--radius-md)] bg-danger-soft text-danger text-[13px] border animate-fade-in"
-                    style={{ borderColor: "oklch(0.88 0.04 25)" }}
+                    style={{ borderColor: "var(--color-danger-line)" }}
                   >
                     {joinError}
                   </div>
@@ -526,7 +526,7 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
                     role="alert"
                     aria-live="assertive"
                     className="p-3 rounded-[var(--radius-md)] bg-danger-soft text-danger text-[13px] border animate-fade-in"
-                    style={{ borderColor: "oklch(0.88 0.04 25)" }}
+                    style={{ borderColor: "var(--color-danger-line)" }}
                   >
                     {createError}
                   </div>

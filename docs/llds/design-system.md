@@ -18,9 +18,9 @@ All tokens are defined in `src/app/globals.css`. Categories:
 | Category | Prefix | Members |
 |----------|--------|---------|
 | Color — neutrals (paper + ink) | `--color-bg-*`, `--color-ink-*`, `--color-line-*` | `bg`, `bg-soft`, `bg-sunken`, `ink`, `ink-2`, `ink-3`, `ink-4`, `line`, `line-strong` |
-| Color — primary | `--color-primary*` | `primary`, `primary-hover`, `primary-soft`, `primary-ink` |
-| Color — accent | `--color-accent*` | `accent`, `accent-soft`, `accent-ink` |
-| Color — semantic | `--color-{success,warning,danger}*` | each has a base + `-soft` |
+| Color — primary | `--color-primary*` | `primary`, `primary-hover`, `primary-soft`, `primary-ink`, `primary-line` |
+| Color — accent | `--color-accent*` | `accent`, `accent-hover`, `accent-soft`, `accent-ink` |
+| Color — semantic | `--color-{success,warning,danger}*` | success: base + `-soft`; warning: base + `-soft` + `-ink`; danger: base + `-hover` + `-soft` + `-ink`(via danger) + `-line` |
 | Color — chip palette | `--color-chip-{1..5}`, `--color-chip-{1..5}-ink` | five rotating tones for chapter tagging |
 | Type — font stacks | `--font-{display,ui,mono}` | Newsreader serif, Geist sans, JetBrains Mono |
 | Radius | `--radius-{sm,md,lg,xl}` | 6px / 10px / 14px / 20px |
@@ -32,7 +32,7 @@ No formal spacing scale today — components rely on Tailwind's default spacing 
 ## Naming conventions
 
 - **Category prefix is mandatory.** `--color-*`, `--radius-*`, `--shadow-*`, `--font-*`. No bare names like `--primary`.
-- **Modifiers suffix-attached, mode-agnostic.** `--color-primary` (base), `--color-primary-hover` (interactive target), `--color-primary-soft` (low-contrast tinted background), `--color-primary-ink` (text rendered on top of a `-soft`/`-` surface). Same shape repeats for `accent` and the semantic tokens.
+- **Modifiers suffix-attached, mode-agnostic.** `--color-primary` (base), `--color-primary-hover` (interactive target), `--color-primary-soft` (low-contrast tinted background), `--color-primary-ink` (text rendered on top of a `-soft` surface), `--color-primary-line` (tinted border used to outline `-soft` panels). Same shape repeats for `accent` and the semantic tokens; not every family ships every modifier (warning only adds `-ink`; success only adds `-soft`).
 - **No mode in names.** `--color-bg`, never `--color-bg-light`. Dark mode (deferred) ships by swapping the same names inside a `@media (prefers-color-scheme: dark)` block.
 - **Component-private tokens are forbidden.** Components consume the system tokens directly; they don't define their own custom properties unless the value is genuinely unique to the component (e.g., book-cover gradients).
 - **Token references go through Tailwind utility classes, not inline `style` literals.** Write `className="bg-primary text-bg"`, not `style={{ background: 'var(--color-primary)' }}` and never `style={{ background: 'oklch(0.42 0.06 195)' }}`. Inline `style` with literal token values (whether the CSS variable reference or the resolved color) is banned because (a) it bypasses the rename safety net the utility-class layer provides and (b) it hides token usage from grep. Inline `style` is acceptable for *positional* properties (`left`, `top`, `transform`) and for *computed* values (a progress percentage, an animated transform); it is not acceptable for color, font, radius, or shadow.

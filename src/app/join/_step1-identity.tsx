@@ -35,7 +35,7 @@ export function Step1Identity({
           data-testid="welcome-banner"
           role="status"
           className="p-3 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink text-[13px] border animate-fade-in"
-          style={{ borderColor: "oklch(0.85 0.04 195)" }}
+          style={{ borderColor: "var(--color-primary-line)" }}
         >
           We couldn&apos;t find any clubs for that email — let&apos;s get you set up below.
         </div>

@@ -161,7 +161,7 @@ export function AdminConfirmSection({
                     {summary.maybe > 0 && (
                       <>
                         {" · "}
-                        <span className="text-[oklch(0.5_0.10_70)]">
+                        <span className="text-warning-ink">
                           {summary.maybe} maybe
                         </span>
                       </>
