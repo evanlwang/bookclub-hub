@@ -70,12 +70,15 @@ export default async function ClubDashboard({
 
     // Phase 3: spoiler-cut threads + progress, both depend on cutoff/bookId.
     if (bookId) {
+      // deriveSpoilerCutoff is fail-safe: returns 0 (hide chapter-tagged
+      // threads) when the viewer has no progress recorded — see
+      // DISC-LIB-CUTOFF-FAILSAFE-001.
       const cutoff = deriveSpoilerCutoff(myProgress);
       const [threadResult, progressList] = await Promise.all([
         caller.threads.list({
           clubId,
           bookId,
-          ...(cutoff != null ? { maxChapter: cutoff } : {}),
+          maxChapter: cutoff,
         }),
         caller.progress.list({ clubId, bookId }),
       ]);

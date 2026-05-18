@@ -58,14 +58,20 @@ function DiscussionsContent() {
 
   useEffect(() => {
     if (!progressQuery.isSuccess || progressApplied) return;
+    // deriveSpoilerCutoff is fail-safe: returns 0 when no progress / no chapter,
+    // which hides every chapter-tagged thread by default. The viewer can still
+    // override via the input or "Show all" — see DISC-LIB-CUTOFF-FAILSAFE-001.
     const cutoff = deriveSpoilerCutoff(progressQuery.data ?? null);
-    if (cutoff != null) setMaxChapter(cutoff);
+    setMaxChapter(cutoff);
     setProgressApplied(true);
   }, [progressQuery.isSuccess, progressQuery.data, progressApplied]);
 
-  // Soft-fail: progress errors leave the filter unset so all threads surface.
+  // Fail-safe on progress error: default to cutoff=0 (hide chapter-tagged
+  // threads) rather than showing everything. Spoiler protection over UX
+  // comfort for the rare progress-load failure.
   useEffect(() => {
     if (progressQuery.isError && !progressApplied) {
+      setMaxChapter(0);
       setProgressApplied(true);
     }
   }, [progressQuery.isError, progressApplied]);
