@@ -20,7 +20,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 ```
 
-All native `<button>` attributes (including `type`, `onClick`, `aria-*`) pass through.
+All native `<button>` attributes (including `onClick`, `aria-*`) pass through. **`type` defaults to `"button"`** in the primitive — callers must opt into `type="submit"` explicitly. This prevents the long-standing browser footgun where a `<button>` inside a `<form>` silently submits on click.
 
 ## Variant × State token map
 
@@ -75,6 +75,7 @@ The canonical visual rendering of all variant/size/state combinations is in `doc
 | Loading icon swap | Spinner replaces `icon`, `children` stays | Spinner overlays the whole button; separate `loadingText` prop | Width-stable transition between idle and loading; no flicker. [inferred] |
 | Focus indicator | Inherit global `:focus-visible` | Per-variant focus rings | One source of truth; works on every variant including solid `primary` backgrounds. |
 | `aria-busy` / `aria-disabled` | Not currently set (gap) | Set on `loading` / `disabled` | Open accessibility gap — see `COMP-BUTTON-A11Y-001`. |
+| Default `type` attribute | `"button"` | Inherit browser default (`"submit"` inside forms) | Safer default. Form-submit buttons opt in via explicit `type="submit"`. Eliminates the browser footgun of `<button>` inside `<form>` submitting on click. |
 
 ## Open Questions
 

@@ -1,0 +1,91 @@
+# Icons
+
+## Context and Design Philosophy
+
+Icons are uniformly-styled SVG glyphs delivered as React components. They share a base wrapper (`IconBase`) that fixes stroke weight, line caps, viewBox, and accessibility defaults so every icon in the app reads as visually consistent. The icon set is **fixed** — there is no on-demand SVG loader, no icon-name-as-string indirection, and no third-party icon font. Adding an icon is adding a new exported function. Implementation: `src/components/ui/icons.tsx`.
+
+## API
+
+```ts
+interface IconProps extends SVGProps<SVGSVGElement> {
+  size?: number;  // default: 16
+}
+```
+
+Every icon (except `LogoIcon`) accepts `IconProps` and forwards extras to the `<svg>`. Color is inherited via `stroke="currentColor"`, so the icon takes on the surrounding text color — wrap in a `text-primary` parent for a teal icon, `text-danger` for red.
+
+`aria-hidden="true"` is set on the base wrapper. Icons are decorative by default. When an icon stands alone as the meaning (icon-only button), callers must add an `aria-label` to the *parent* button — not the icon itself.
+
+## Icon inventory
+
+| Export | Visual | Used for |
+|--------|--------|----------|
+| `BookIcon` | open book | Books, library, reading |
+| `VoteIcon` | check mark | Voting, approval |
+| `CalendarIcon` | calendar | Meetings, scheduling |
+| `ChatIcon` | speech bubble | Discussions, threads |
+| `TrendIcon` | line graph | Reading progress |
+| `SearchIcon` | magnifying glass | Search |
+| `PlusIcon` | plus | Add, create |
+| `CheckIcon` | check | Confirm, success |
+| `XIcon` | x | Close, dismiss, error |
+| `UserIcon` | single person | Single member |
+| `UsersIcon` | group of people | Multiple members |
+| `ClockIcon` | clock | Time, schedule |
+| `EditIcon` | pencil | Edit, modify |
+| `TrashIcon` | trash can | Delete |
+| `ReplyIcon` | arrow + line | Reply |
+| `ChevronLeftIcon` | < | Previous, back |
+| `ChevronRightIcon` | > | Next, expand |
+| `ChevronDownIcon` | v | Collapse, dropdown |
+| `FilterIcon` | filter funnel | Filter, refine |
+| `MenuIcon` | hamburger | Menu, navigation |
+| `LogoIcon` | branded mark | App logo |
+
+Compared with `docs/design-system.md`, the previously-listed icons `Pin`, `Pin2`, `Bell`, `Spark`, `Copy` are not present in the implementation. Either the list was aspirational or those have been retired. The new LLD reflects what exists; if any are needed, they're a forward gap.
+
+## Default styling (IconBase)
+
+| Property | Value |
+|----------|-------|
+| viewBox | `0 0 24 24` |
+| `fill` | none |
+| `stroke` | `currentColor` |
+| `stroke-width` | 1.6 |
+| `stroke-linecap` / `stroke-linejoin` | round |
+| `aria-hidden` | true |
+
+`LogoIcon` is the **exception**: it's the only icon with hard-coded oklch fill/stroke values (the brand palette). This is a documented gap — the logo should reference design tokens (`--color-primary`, `--color-bg`, `--color-accent`) instead of inlining oklch literals. Same inline-literal ban applies; the logo is harder to fix because SVG attributes accept colors, not CSS custom properties, requiring either a CSS-variable bridge or a CSS-driven `fill` via the parent's `color`/`fill` properties.
+
+## Visual reference
+
+`docs/bookclub-hub-designs/project/primitives.jsx` shows the icon grid.
+
+## Decisions & Alternatives
+
+| Decision | Chosen | Alternatives Considered | Rationale |
+|----------|--------|------------------------|-----------|
+| Delivery | React components per icon | Sprite sheet; icon font; runtime SVG loader | Tree-shakable, type-checked, easy to add ad-hoc icons. [inferred] |
+| Coloring | `currentColor` inheritance | Per-icon color prop; CSS variable per icon | Lets callers control color via standard text-color utilities; works with `:hover`/`:disabled` propagation. [inferred] |
+| Stroke width | 1.6 | 2 (Lucide default); 1.5 | Slightly lighter than Lucide; matches the warm-paper aesthetic without thin-line fragility. [inferred] |
+| Default size | 16px | 20px; 24px | 16px is the size most icons render at in the UI; callers up-size as needed. [inferred] |
+| Accessibility default | `aria-hidden="true"` | Per-icon `role="img"` + `aria-label` | Most icons are decorative; the few that aren't need a parent `aria-label` anyway (icon-only buttons). [inferred] |
+| `LogoIcon` inline literals | Hard-coded oklch values *(gap)* | Reference tokens via CSS-bridged fill | Closing the gap requires routing colors through `currentColor` plus child `<g>` overrides; non-trivial. |
+
+## Open Questions
+
+### Resolved
+1. ✅ Fixed icon set, one component per icon.
+2. ✅ `currentColor` for coloring, `aria-hidden` by default.
+
+### Deferred / Active gaps
+1. **`LogoIcon` token migration.** Replace inline oklch literals with token references via CSS bridging.
+2. **Missing icons from old design-system.md list** (Pin, Pin2, Bell, Spark, Copy). If used, add; if not, the design-system doc was stale.
+3. **`Icon` wrapper for arbitrary SVG path data.** Today every icon is a named component. A generic `<Icon path="..." />` is intentionally not provided to discourage ad-hoc additions.
+4. **Loading-spinner icon** is currently inlined in Button. Could be promoted to a shared `SpinnerIcon` for reuse.
+
+## References
+
+- `src/components/ui/icons.tsx` — implementation.
+- `docs/llds/design-system.md` — color, focus, motion contracts.
+- `docs/specs/comp-icons-specs.md` — forthcoming.

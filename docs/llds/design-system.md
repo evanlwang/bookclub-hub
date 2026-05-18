@@ -35,6 +35,7 @@ No formal spacing scale today — components rely on Tailwind's default spacing 
 - **Modifiers suffix-attached, mode-agnostic.** `--color-primary` (base), `--color-primary-hover` (interactive target), `--color-primary-soft` (low-contrast tinted background), `--color-primary-ink` (text rendered on top of a `-soft`/`-` surface). Same shape repeats for `accent` and the semantic tokens.
 - **No mode in names.** `--color-bg`, never `--color-bg-light`. Dark mode (deferred) ships by swapping the same names inside a `@media (prefers-color-scheme: dark)` block.
 - **Component-private tokens are forbidden.** Components consume the system tokens directly; they don't define their own custom properties unless the value is genuinely unique to the component (e.g., book-cover gradients).
+- **Token references go through Tailwind utility classes, not inline `style` literals.** Write `className="bg-primary text-bg"`, not `style={{ background: 'var(--color-primary)' }}` and never `style={{ background: 'oklch(0.42 0.06 195)' }}`. Inline `style` with literal token values (whether the CSS variable reference or the resolved color) is banned because (a) it bypasses the rename safety net the utility-class layer provides and (b) it hides token usage from grep. Inline `style` is acceptable for *positional* properties (`left`, `top`, `transform`) and for *computed* values (a progress percentage, an animated transform); it is not acceptable for color, font, radius, or shadow.
 
 ## Theming
 
@@ -107,6 +108,7 @@ Every primitive has a `(variant, size, state)` matrix:
 | Spacing scale | None (rely on Tailwind defaults) | Custom `--space-*` token family | Current usage doesn't yet justify the abstraction; revisit if visual inconsistency appears. [inferred] |
 | Motion easing default | `ease` (CSS keyword) | Cubic-bezier from a curated set | Simple and good-enough for state transitions; bespoke bezier reserved for the progress-bar fill. [inferred] |
 | Prefers-reduced-motion handling | None today (gap) | Global animation/transition suppression rule | Will be added in the cascade from `DSYS-MOTION-002`. |
+| Token reference mechanism | Tailwind utility classes (`bg-primary`, `text-ink`, `rounded-md`) | Inline `style` with `var(--…)` references; inline `style` with literal `oklch(…)` values | Utility classes survive token renames at the build layer and stay grep-discoverable. Literal values bypass both. Positional/computed inline styles (`left`, `transform`) are still allowed. |
 
 ## Open Questions
 
