@@ -63,8 +63,9 @@ cookie flow, or the rest of the app.
 
 ### Out of scope
 - Magic-link replacement (deferred — passcode is the friend-pilot stopgap).
-- Rate-limiting / lockout (overkill for ~10 friends; Vercel's edge already
-  drops obvious abuse).
+- Rate-limiting / lockout. The URL is shared by trust, not made public, so
+  brute-force on a single shared passcode isn't the threat model. If the
+  URL ever leaks, rotate `PILOT_PASSCODE` rather than adding rate limits.
 - Per-user 2FA, password reset, anything resembling real auth.
 
 ## Phase B — Human pre-handoff checklist (DEFERRED)
@@ -73,8 +74,8 @@ For when deployment is unblocked. ~30 min, only the user can do these.
 
 1. **Create accounts** at github.com, vercel.com, neon.tech, resend.com —
    same email everywhere; verify each via email; complete any 2FA setup.
-2. **Add payment to Vercel.** Hobby plan won't bill at this scale, but a
-   card on file is required.
+2. **(Optional) Add payment to Vercel.** Hobby plan doesn't require a card
+   unless you exceed free-tier limits. Skip until Vercel actually prompts.
 3. **Domain decision.** Free path: skip and use the `*.vercel.app` URL.
    Custom path: buy at Cloudflare/Namecheap (~$10/yr).
 4. **Pick a passcode.** Something memorable — e.g. `wedreads-2026`. Save it
@@ -122,9 +123,16 @@ Steps in order:
    Save.
 
 4. Vercel → Settings → Build & Development Settings → set Build Command to:
-     npx prisma generate && npx prisma db push --accept-data-loss && next build
-   Redeploy. (Prisma's first-build failure on a fresh DB is the standard
-   Vercel + Prisma gotcha; this is the canonical fix.)
+     npx prisma db push --accept-data-loss && next build
+   ⚠ ONE-SHOT, FIRST DEPLOY ONLY. `--accept-data-loss` lets Prisma silently
+   drop columns/tables on any schema diff — fine against the brand-new
+   empty Neon DB, dangerous against a populated one. After the first green
+   deploy, flip the Build Command back to `next build` and apply future
+   schema changes by running `npx prisma db push` from the laptop against
+   the prod connection string (or set up `prisma/migrations/` and switch to
+   `prisma migrate deploy && next build`, which is the safer long-term form).
+   (`prisma generate` runs automatically during the `@prisma/client` install
+   on Vercel, so it doesn't need to be in the build command.)
 
 5. Wait for green deploy. Open the production URL.
 
@@ -134,6 +142,9 @@ Steps in order:
    c. Confirm you can create a club and see its dashboard.
    d. Log out, then /login with the same email + passcode → confirm session works.
    e. Try wrong passcode → confirm "Wrong passcode" error.
+   f. Confirm `/robots.txt` returns `Disallow: /` (or that the root layout
+      emits `<meta name="robots" content="noindex">`). The friend-pilot URL
+      should not be indexable.
    If any step 500s, copy the Vercel runtime log line and stop. Don't guess.
 
 7. Report back with:
@@ -157,6 +168,10 @@ Steps in order:
 ## Implementation note: why the helper is shared
 
 The original plan only touched `auth.ts`, but the unauthenticated branch of `clubs.join` also creates Users + Sessions, so leaving it ungated would have been a back door around the gate. Both routers now import `passcodeOk` from `src/lib/auth/passcode.ts`. If a future entry point accepts unauthenticated User/Session creation, gate it with the same helper.
+
+## Implementation note: fail closed in production
+
+`passcodeOk` returns `true` when `PILOT_PASSCODE` is unset — but only when `NODE_ENV !== "production"`. In production, an unset env var is treated as "no one can log in" (fail closed) rather than "anyone can log in" (fail open). This means forgetting the env var on Vercel locks the gate instead of disabling it. Canonical behavior lives in EARS rows `AUTH-API-PASSCODE-001` and `AUTH-API-PASSCODE-002` in `docs/specs/auth-specs.md`.
 
 ## Reusable bits
 
