@@ -21,7 +21,7 @@ voting → cancelled
 State: nominating — buttons shown: "Search & nominate", "Advance to Voting" (admin) — transitions: → voting (admin clicks "Advance to Voting"; needs ≥2 nominations); → cancelled (admin via API only)
 State: voting — buttons shown: nomination cards, "Submit N votes" / "Save changes" / "✓ Votes saved", "Close voting & reveal winner" (admin), "Cancel round" (admin) — transitions: → decided (admin clicks Close voting → `rounds.advance`); → cancelled (admin clicks Cancel round → `rounds.cancel`)
 State: decided — buttons shown: "Start new round" (admin) — transitions: terminal
-State: cancelled — buttons shown: none — transitions: terminal
+State: cancelled — buttons shown: none on the round itself — transitions: terminal. When all rounds in the club are cancelled (no nominating, voting, or decided round to render), admins SHALL see the NonePhase "Start new round" CTA at the page level (VOTE-UI-NONE-001).
 
 Phase descriptions:
 - **Nominating**: members add books. No duplicates within the same round (UNIQUE on `(round_id, book_id)`). Admin can set a nomination deadline (data model only; no UI).
@@ -40,6 +40,7 @@ Button: "Submit {N} votes" / "Save changes" / "✓ Votes saved" — visible: sta
 Button: "Close voting & reveal winner" — visible: status="voting" AND isAdmin — enabled: at least one approval cast — handler: opens close-voting dialog → on confirm calls `rounds.advance` (CLOSE-002..006)
 Button: "Cancel round" — visible: (status="nominating" OR "voting") AND isAdmin — enabled: always — handler: opens typed-confirmation dialog → calls `rounds.cancel` (CANCEL-002)
 Button: "Start new round" — `vote-round.tsx:331-339` — visible: status="decided" AND isAdmin — enabled: always — handler: `rounds.create`
+Button: "Start your first round" / "Start new round" (NonePhase) — `none-phase.tsx:91-118` — visible: isAdmin AND no round in club is `nominating`, `voting`, or `decided` (i.e., zero rounds OR all prior rounds cancelled) — enabled: always — handler: `rounds.create` (VOTE-UI-NONE-001)
 Button: search input (debounced) — `nominate-modal.tsx:230-247` — visible: modal open, search tab — handler: `books.search` after 300ms debounce
 Button: "Nominate" (per result row) — `nominate-modal.tsx:272-283` — visible: search results present — handler: `nominations.create`
 Button: "Enter manually" — `nominate-modal.tsx:290-305` — visible: search ran, zero results — handler: switches to manual tab

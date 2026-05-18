@@ -103,6 +103,10 @@ These specs cover what happens when a member revisits the voting page after they
 - `[x]` **VOTE-UI-DEC-002**: Below the winner, a "Final tallies" card SHALL list all nominations ranked by vote count, with position indicator (① for #1, then "0N" mono numerals), book cover, title/author, a per-row progress bar (`width = votes / maxVotes * 100%`), and a "{N} votes" right column. The first row has a tinted background. (`vote-round.tsx:343-366`)
 - `[x]` **VOTE-UI-DEC-003**: Button: "Start new round" (`vote-round.tsx:331-339`) is visible only to admins on decided phase and calls `rounds.create`.
 
+## Voting UI — No Active Round
+
+- `[x]` **VOTE-UI-NONE-001**: When a club has no round in status `nominating`, `voting`, or `decided` (i.e., zero rounds OR every prior round is `cancelled`), admins (owner/admin) SHALL see the NonePhase "Start new round" CTA that calls `rounds.create`. A cancelled-only round history MUST NOT suppress this CTA. (`page.tsx`, `none-phase.tsx`)
+
 ## Voting UI — Voting → Decided (Manual Close)
 
 - `[x]` **VOTE-UI-CLOSE-001**: The voting phase SHALL surface an admin-only UI control that calls `rounds.advance` to transition the round to "decided". Implemented per VOTE-UI-CLOSE-002+.

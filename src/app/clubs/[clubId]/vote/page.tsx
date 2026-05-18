@@ -172,31 +172,44 @@ export default async function VotePage({
         </div>
       )}
 
-      {rounds.length === 0 ? (
-        <Card className="p-10 text-center">
+      {/* Admin "Start new round" CTA whenever there is no active or decided
+          round to display — covers both the empty club and the cancelled-only
+          history case. The decided phase has its own CTA inline (VOTE-UI-DEC-003),
+          so this gate is intentionally `!activeRoundDetail` not `rounds.length === 0`.
+          @spec VOTE-UI-NONE-001 */}
+      {!activeRoundDetail && isAdmin && (
+        <Card className="p-10 text-center mb-8">
           <div className="text-ink-3 mb-2">
             <svg className="mx-auto mb-3" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 11l3 3L22 4" />
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
             </svg>
           </div>
-          <p data-testid="no-rounds" className="text-ink-2 text-sm">
-            {isAdmin
+          <p data-testid="no-active-round" className="text-ink-2 text-sm">
+            {rounds.length === 0
               ? "No voting rounds yet — start one below."
-              : "No voting rounds yet. An admin will start the next one."}
+              : "No active voting round. Start a new one below."}
           </p>
-          {isAdmin && (
-            <VoteRound
-              clubId={clubId}
-              roundId=""
-              status="none"
-              nominations={[]}
-              maxApprovals={3}
-              myVotes={[]}
-              isAdmin={isAdmin}
-            />
-          )}
+          <VoteRound
+            clubId={clubId}
+            roundId=""
+            status="none"
+            nominations={[]}
+            maxApprovals={3}
+            myVotes={[]}
+            isAdmin={isAdmin}
+          />
         </Card>
+      )}
+
+      {rounds.length === 0 ? (
+        !isAdmin && (
+          <Card className="p-10 text-center">
+            <p data-testid="no-rounds" className="text-ink-2 text-sm">
+              No voting rounds yet. An admin will start the next one.
+            </p>
+          </Card>
+        )
       ) : (
         <ul data-testid="rounds-list" className="space-y-3">
           {rounds.map((round: any) => (
