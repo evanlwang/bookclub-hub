@@ -27,10 +27,15 @@ describe("inline-literal lint rule (DSYS-TOOL-001) — active gap", () => {
       }
     }
 
+    // The actual rule uses three ESLint AST selectors (no-restricted-syntax)
+    // targeting JSXAttribute[name.name='style'], className arbitrary values,
+    // and SVG fill/stroke — all matching against /oklch\(/. Any of the three
+    // patterns being present indicates the rule is registered.
     const hasInlineLiteralBan =
-      /no-inline-token-literals/.test(eslintConfig) ||
-      /style=\{\{[^}]*background:\s*['"`]oklch/.test(eslintConfig) ||
-      /(no-restricted-syntax|no-restricted-properties)[^}]*style[^}]*oklch/.test(eslintConfig);
+      /JSXAttribute\[name\.name=['"]style['"]\][^}]*oklch/.test(eslintConfig) ||
+      /JSXAttribute\[name\.name=['"]className['"]\][^}]*oklch/.test(eslintConfig) ||
+      /JSXAttribute\[name\.name=\/\^\(fill\|stroke\)/.test(eslintConfig) ||
+      /DSYS-TOKEN-003/.test(eslintConfig);
 
     expect(hasInlineLiteralBan, "no inline-literal lint rule found in eslint config").toBe(true);
   });
