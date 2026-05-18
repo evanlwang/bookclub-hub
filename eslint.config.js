@@ -94,6 +94,28 @@ export default tseslint.config(
           message:
             "Do not call /api/trpc/* directly with fetch — use trpc.* hooks from @/trpc/react-hooks (or utils.x.fetch for imperative one-shots).",
         },
+        // DSYS-TOOL-001: ban inline `style` literals containing raw color values.
+        // Token references via `var(--token-name)` are allowed; only literal
+        // oklch/hsl/rgb/hex are flagged. Exempt files use file-level
+        // eslint-disable comments citing the spec ID (currently book-cover.tsx
+        // per COMP-BOOK-COVER-010 and chapter-chip.tsx per COMP-CHAPTER-CHIP-004).
+        {
+          selector: "JSXAttribute[name.name='style'] Literal[value=/oklch\\(|hsla?\\(|rgba?\\(|#[0-9a-fA-F]{3,8}\\b/]",
+          message:
+            "Inline style literals containing raw color values violate DSYS-TOKEN-003. Use Tailwind utility classes (bg-primary, text-ink) or `var(--token-name)`. See docs/specs/dsys-specs.md.",
+        },
+        // DSYS-TOOL-001: same ban for Tailwind arbitrary-value color classes.
+        {
+          selector: "JSXAttribute[name.name='className'] Literal[value=/(?:bg|text|border|ring|fill|stroke|outline|shadow|from|to|via)-\\[(?:oklch|hsla?|rgba?|#[0-9a-fA-F])/]",
+          message:
+            "Tailwind arbitrary-value color classes (e.g., `text-[oklch(...)]`) violate DSYS-TOKEN-003. Use the token utility (e.g., `text-warning-ink`) or add a token if one is missing.",
+        },
+        // DSYS-TOOL-001: same ban for SVG fill/stroke attributes.
+        {
+          selector: "JSXAttribute[name.name=/^(fill|stroke)$/] Literal[value=/oklch\\(|hsla?\\(|rgba?\\(|#[0-9a-fA-F]{3,8}\\b/]",
+          message:
+            "SVG fill/stroke with raw color values violates DSYS-TOKEN-003. Use `var(--token-name)` or `currentColor`. See docs/llds/components-icons.md for the LogoIcon bridging pattern.",
+        },
       ],
     },
   },

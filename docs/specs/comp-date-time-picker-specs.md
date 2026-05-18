@@ -58,7 +58,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Token Discipline
 
-- `[ ]` **COMP-DATE-TIME-PICKER-018**: The popover SHALL apply `box-shadow: var(--shadow-lg)`. Active gap — current implementation inlines a literal `oklch` shadow (`0 18px 40px -12px oklch(0.18 0.02 60 / 0.35)`) via a Tailwind arbitrary value; should reference the `--shadow-lg` token (see `DSYS-TOKEN-003`).
+- `[x]` **COMP-DATE-TIME-PICKER-018**: The popover SHALL apply `box-shadow: var(--shadow-lg)` via the `shadow-lg` utility class.
 
 ## Deferred
 

@@ -13,7 +13,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 - `[x]` **COMP-BUTTON-001**: The Button primitive SHALL accept `variant ∈ {primary, secondary, ghost, danger, accent}` and SHALL default to `secondary` when `variant` is unspecified.
 - `[x]` **COMP-BUTTON-002**: The Button primitive SHALL accept `size ∈ {sm, md, lg}` and SHALL default to `md` when `size` is unspecified.
-- `[ ]` **COMP-BUTTON-003**: The Button primitive SHALL default the underlying `<button>`'s `type` attribute to `"button"`; callers opting into form submission MUST set `type="submit"` explicitly. Active gap — currently relies on the browser default (`"submit"` inside a `<form>`).
+- `[x]` **COMP-BUTTON-003**: The Button primitive SHALL default the underlying `<button>`'s `type` attribute to `"button"`; callers opting into form submission MUST set `type="submit"` explicitly.
 - `[x]` **COMP-BUTTON-004**: Every Button SHALL apply `border-radius: var(--radius-md)`, `font-weight: 500`, and `gap: 8px` between `icon`, `children`, and `iconRight` regardless of variant or size.
 
 ## Variant × Default State
@@ -25,9 +25,9 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 - `[x]` **COMP-BUTTON-009**: While the `ghost` Button is in default state, the system SHALL apply `{ background: transparent, color: --color-ink-2 }`.
 - `[x]` **COMP-BUTTON-010**: While the `ghost` Button is hovered, the system SHALL transition `background` to `--color-bg-sunken` and `color` to `--color-ink` over `150ms ease`.
 - `[x]` **COMP-BUTTON-011**: While the `danger` Button is in default state, the system SHALL apply `{ background: --color-danger, color: white }`.
-- `[ ]` **COMP-BUTTON-012**: While the `danger` Button is hovered, the system SHALL transition `background` to `--color-danger-hover` over `150ms ease`. Active gap — current implementation uses `filter: brightness(0.93)` because the `--color-danger-hover` token does not exist (see `DSYS-TOKEN-006`).
+- `[x]` **COMP-BUTTON-012**: While the `danger` Button is hovered, the system SHALL transition `background` to `--color-danger-hover` over `150ms ease`.
 - `[x]` **COMP-BUTTON-013**: While the `accent` Button is in default state, the system SHALL apply `{ background: --color-accent, color: --color-ink }`.
-- `[ ]` **COMP-BUTTON-014**: While the `accent` Button is hovered, the system SHALL transition `background` to `--color-accent-hover` over `150ms ease`. Active gap — current implementation uses `filter: brightness(0.96)` because the `--color-accent-hover` token does not exist (see `DSYS-TOKEN-006`).
+- `[x]` **COMP-BUTTON-014**: While the `accent` Button is hovered, the system SHALL transition `background` to `--color-accent-hover` over `150ms ease`.
 
 ## Size Matrix
 
@@ -44,8 +44,8 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Accessibility
 
-- `[ ]` **COMP-BUTTON-A11Y-001**: While `loading` is true, the Button SHALL set `aria-busy="true"`. Active gap.
-- `[ ]` **COMP-BUTTON-A11Y-002**: While `disabled` (or `loading`), the Button SHALL set `aria-disabled="true"` in addition to the native `disabled` attribute (see `DSYS-A11Y-004`). Active gap.
+- `[x]` **COMP-BUTTON-A11Y-001**: While `loading` is true, the Button SHALL set `aria-busy="true"`.
+- `[x]` **COMP-BUTTON-A11Y-002**: While `disabled` (or `loading`), the Button SHALL set `aria-disabled="true"` in addition to the native `disabled` attribute (see `DSYS-A11Y-004`).
 - `[x]` **COMP-BUTTON-A11Y-003**: The Button SHALL inherit the global `:focus-visible` ring (`DSYS-FOCUS-001`) without per-variant overrides.
 
 ## Motion

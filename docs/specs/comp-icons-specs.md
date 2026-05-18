@@ -18,7 +18,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 ## Coloring
 
 - `[x]` **COMP-ICONS-004**: Icons SHALL inherit color from the surrounding text color via `currentColor`; callers control color via standard text-color utility classes (`text-primary`, `text-danger`, etc.).
-- `[ ]` **COMP-ICONS-LOGO-001**: The `LogoIcon` SHALL reference design tokens (`--color-primary`, `--color-bg`, `--color-accent`) via CSS bridging (e.g., `<g style="color: var(--color-primary)" stroke="currentColor">` for each color group) rather than hard-coded `oklch` literal `fill`/`stroke` values. Active gap (see `DSYS-TOKEN-003`).
+- `[x]` **COMP-ICONS-LOGO-001**: The `LogoIcon` SHALL reference design tokens (`--color-primary`, `--color-primary-ink`, `--color-bg`, `--color-accent`) via direct `var(--token-name)` values in the SVG `fill`/`stroke` attributes (CSS Custom Properties are supported by every modern browser for SVG presentation attributes).
 
 ## Accessibility
 

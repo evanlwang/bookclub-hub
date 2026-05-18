@@ -13,7 +13,7 @@ const toneClasses: Record<BadgeTone, string> = {
   primary: "bg-primary-soft text-primary-ink",
   accent: "bg-accent-soft text-accent-ink",
   success: "bg-success-soft text-success",
-  warning: "bg-warning-soft text-[oklch(0.45_0.10_70)]",
+  warning: "bg-warning-soft text-warning-ink",
   danger: "bg-danger-soft text-danger",
 };
 
@@ -23,6 +23,9 @@ interface BadgeProps {
   children: ReactNode;
 }
 
+// @spec COMP-BADGE-001, COMP-BADGE-002, COMP-BADGE-003
+// @spec COMP-BADGE-004..009 (tone × token map)
+// @spec COMP-BADGE-010 (dot indicator)
 export function Badge({ tone = "neutral", dot, children }: BadgeProps) {
   return (
     <span

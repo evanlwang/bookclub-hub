@@ -1,6 +1,7 @@
 "use client";
 
 // @spec MEET-UI-CREATE-002
+// @spec COMP-DATE-TIME-PICKER-001..018, COMP-DATE-TIME-PICKER-A11Y-001..006
 //
 // Custom calendar + time popover. Replaces native `<input type="datetime-local">`
 // in the meeting create form so the picker matches the rest of the service
@@ -215,7 +216,7 @@ export function DateTimePicker({
         <div
           role="dialog"
           aria-label="Choose date and time"
-          className="absolute z-30 mt-2 left-0 w-[19.5rem] bg-bg border border-line rounded-[var(--radius-lg)] shadow-[0_18px_40px_-12px_oklch(0.18_0.02_60/0.35)] overflow-hidden"
+          className="absolute z-30 mt-2 left-0 w-[19.5rem] bg-bg border border-line rounded-[var(--radius-lg)] shadow-lg overflow-hidden"
         >
           {/* Month header */}
           <div className="flex items-center justify-between px-3 py-2.5 border-b border-line">
@@ -281,6 +282,7 @@ export function DateTimePicker({
                   key={i}
                   type="button"
                   disabled={disabled}
+                  aria-disabled={disabled || undefined}
                   onClick={() => !disabled && selectDay(d)}
                   data-testid={isSelected ? "calendar-day-selected" : undefined}
                   aria-pressed={isSelected || undefined}

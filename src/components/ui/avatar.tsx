@@ -7,12 +7,14 @@ const sizeClasses: Record<AvatarSize, string> = {
   xl: "w-16 h-16 text-[22px]",
 };
 
+// Five palettes routed through the system chip tokens (per COMP-AVATAR-TOKEN-001).
+// Same-name avatars across the app render in the same palette via hashStr below.
 const palettes = [
-  { bg: "oklch(0.92 0.04 195)", ink: "oklch(0.36 0.06 195)" },
-  { bg: "oklch(0.93 0.05 75)", ink: "oklch(0.45 0.10 75)" },
-  { bg: "oklch(0.92 0.045 145)", ink: "oklch(0.40 0.07 145)" },
-  { bg: "oklch(0.92 0.045 320)", ink: "oklch(0.42 0.08 320)" },
-  { bg: "oklch(0.92 0.05 30)", ink: "oklch(0.45 0.10 30)" },
+  { bg: "var(--color-chip-1)", ink: "var(--color-chip-1-ink)" },
+  { bg: "var(--color-chip-2)", ink: "var(--color-chip-2-ink)" },
+  { bg: "var(--color-chip-3)", ink: "var(--color-chip-3-ink)" },
+  { bg: "var(--color-chip-4)", ink: "var(--color-chip-4-ink)" },
+  { bg: "var(--color-chip-5)", ink: "var(--color-chip-5-ink)" },
 ];
 
 function hashStr(s: string): number {
@@ -25,9 +27,13 @@ interface AvatarProps {
   name?: string;
   size?: AvatarSize;
   src?: string;
+  decorative?: boolean;
 }
 
-export function Avatar({ name = "", size = "md", src }: AvatarProps) {
+// @spec COMP-AVATAR-001..007 (API, size, initials, photo, palette)
+// @spec COMP-AVATAR-008, COMP-AVATAR-A11Y-001 (decorative opt-in)
+// @spec COMP-AVATAR-TOKEN-001 (chip tokens, not literal oklch)
+export function Avatar({ name = "", size = "md", src, decorative = false }: AvatarProps) {
   const initials = name
     .split(/\s+/)
     .filter(Boolean)
@@ -42,11 +48,12 @@ export function Avatar({ name = "", size = "md", src }: AvatarProps) {
     <div
       className={`inline-flex items-center justify-center rounded-full font-semibold shrink-0 ${sizeClasses[size]}`}
       style={{ background: palette.bg, color: palette.ink }}
+      aria-hidden={decorative || undefined}
     >
       {src ? (
         <img
           src={src}
-          alt={name}
+          alt={decorative ? "" : name}
           className="w-full h-full rounded-full object-cover"
         />
       ) : (

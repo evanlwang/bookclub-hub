@@ -1,3 +1,5 @@
+// @spec COMP-BOOK-COVER-001..010
+/* eslint-disable no-restricted-syntax -- COMP-BOOK-COVER-010: cloth-bound metaphor is the documented exemption from DSYS-TOKEN-003 */
 type CoverVariant = "teal" | "rust" | "sage" | "mauve" | "amber" | "ink";
 type CoverSize = "sm" | "md" | "lg" | "xl";
 

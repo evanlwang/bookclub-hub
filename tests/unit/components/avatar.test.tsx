@@ -83,9 +83,8 @@ describe("Avatar — token discipline (COMP-AVATAR-TOKEN-001)", () => {
 });
 
 describe("Avatar — decorative opt-in (COMP-AVATAR-008, COMP-AVATAR-A11Y-001)", () => {
-  // @spec COMP-AVATAR-008, COMP-AVATAR-A11Y-001 — active gap (prop doesn't exist)
+  // @spec COMP-AVATAR-008, COMP-AVATAR-A11Y-001
   it("decorative=true sets aria-hidden on container and alt='' on the photo", () => {
-    // @ts-expect-error — `decorative` does not exist on AvatarProps yet (active gap).
     const { container } = render(<Avatar name="Eve" src="x.jpg" decorative />);
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper).toHaveAttribute("aria-hidden", "true");

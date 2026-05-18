@@ -6,11 +6,9 @@ export default defineConfig({
     environment: "node",
     include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
     setupFiles: ["tests/setup.ts", "tests/setup.components.ts"],
-    environmentMatchGlobs: [
-      // Component tests run in jsdom so React Testing Library has a DOM to render into.
-      // Design-system + library tests stay in node (they read globals.css / call pure functions).
-      ["tests/unit/components/**", "jsdom"],
-    ],
+    // Per-file environment selection: component test files declare
+    // `// @vitest-environment jsdom` at the top. Design-system + library tests
+    // stay in the default Node environment.
     coverage: {
       provider: "v8",
       include: ["src/lib/**/*.ts"],

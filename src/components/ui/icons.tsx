@@ -4,6 +4,7 @@ interface IconProps extends SVGProps<SVGSVGElement> {
   size?: number;
 }
 
+// @spec COMP-ICONS-001..006 — every exported icon shares IconBase's contract
 function IconBase({
   size = 16,
   children,
@@ -202,6 +203,7 @@ export function MenuIcon(p: IconProps) {
   );
 }
 
+// @spec COMP-ICONS-LOGO-001 (token-bridged colors, no inline oklch literals)
 export function LogoIcon({ size = 22 }: { size?: number }) {
   return (
     <svg
@@ -217,11 +219,11 @@ export function LogoIcon({ size = 22 }: { size?: number }) {
     >
       <path
         d="M5 5.5A2.5 2.5 0 0 1 7.5 3H22v20H7.5A2.5 2.5 0 0 0 5 25.5V5.5z"
-        fill="oklch(0.42 0.06 195)"
-        stroke="oklch(0.32 0.06 195)"
+        fill="var(--color-primary)"
+        stroke="var(--color-primary-ink)"
       />
-      <path d="M5 22A2.5 2.5 0 0 1 7.5 19.5H22" stroke="oklch(0.985 0.006 80)" />
-      <path d="M11 8l3 4 3-4" stroke="oklch(0.78 0.13 75)" strokeWidth={2} />
+      <path d="M5 22A2.5 2.5 0 0 1 7.5 19.5H22" stroke="var(--color-bg)" />
+      <path d="M11 8l3 4 3-4" stroke="var(--color-accent)" strokeWidth={2} />
     </svg>
   );
 }

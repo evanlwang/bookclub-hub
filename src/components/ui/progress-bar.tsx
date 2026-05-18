@@ -5,6 +5,7 @@ interface ProgressBarProps {
   delay?: number;
 }
 
+// @spec COMP-PROGRESS-BAR-001..008, COMP-PROGRESS-BAR-A11Y-001
 export function ProgressBar({
   percentage,
   status = "reading",
@@ -17,9 +18,18 @@ export function ProgressBar({
       : status === "not_started"
         ? "bg-ink-4"
         : "bg-primary";
+  // Visual width is unclamped (per COMP-PROGRESS-BAR-006); aria-valuenow clamps
+  // for screen-reader correctness (per COMP-PROGRESS-BAR-A11Y-001).
+  const ariaValue = Math.min(100, Math.max(0, percentage));
 
   return (
-    <div className="h-2 bg-bg-sunken rounded-full overflow-hidden relative">
+    <div
+      className="h-2 bg-bg-sunken rounded-full overflow-hidden relative"
+      role="progressbar"
+      aria-valuenow={ariaValue}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
       <div
         className={`h-full rounded-full ${fillColor} ${animate ? "bar-anim" : ""}`}
         style={{

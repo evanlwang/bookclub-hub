@@ -4,6 +4,7 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 
+// @spec COMP-CARD-001, COMP-CARD-002, COMP-CARD-003, COMP-CARD-004
 export function Card({ children, className = "", ...rest }: CardProps) {
   return (
     <div

@@ -14,11 +14,11 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 - `[x]` **DSYS-TOKEN-001**: The system SHALL define every design token in `src/app/globals.css` inside a Tailwind v4 `@theme` block.
 - `[x]` **DSYS-TOKEN-002**: Every design token name SHALL begin with a category prefix — `--color-*`, `--radius-*`, `--shadow-*`, or `--font-*`.
-- `[ ]` **DSYS-TOKEN-003**: The codebase SHALL NOT use inline `style` literals (or Tailwind arbitrary-value classes containing literal color/radius/shadow values) for color, font, radius, or shadow properties; token references SHALL be made via Tailwind utility classes that resolve to the token name. Exemptions: (a) positional or computed inline styles (`left`, `top`, `transform`, `width`, `animationDelay`); (b) dynamic token references where the token index is computed at render time and cannot be statically resolved by Tailwind (must be LLD-documented per primitive); (c) component-private values declared as exempt in the component's LLD. Active violations: Badge warning foreground, Avatar palette, LogoIcon brand colors, DateTimePicker popover shadow.
+- `[x]` **DSYS-TOKEN-003**: The codebase SHALL NOT use inline `style` literals (or Tailwind arbitrary-value classes containing literal color/radius/shadow values) for color, font, radius, or shadow properties; token references SHALL be made via Tailwind utility classes that resolve to the token name. Exemptions: (a) positional or computed inline styles (`left`, `top`, `transform`, `width`, `animationDelay`); (b) dynamic token references where the token index is computed at render time and cannot be statically resolved by Tailwind (must be LLD-documented per primitive; current: ChapterChip per `COMP-CHAPTER-CHIP-004`); (c) component-private values declared as exempt in the component's LLD (current: BookCover per `COMP-BOOK-COVER-010`). Enforcement: lint rule per `DSYS-TOOL-001`.
 - `[x]` **DSYS-TOKEN-004**: When adding a new token, the system SHALL define it in `globals.css` and reference it only by name in specs (never by value).
 - `[x]` **DSYS-TOKEN-005**: Token names SHALL be mode-agnostic — `--color-bg`, not `--color-bg-light` — so a dark theme can ship as a value swap, not a rename.
-- `[ ]` **DSYS-TOKEN-006**: Every interactive color token SHALL provide a `-hover` variant matching the base name (e.g., `--color-primary` → `--color-primary-hover`). Active gap: `--color-danger` and `--color-accent` lack `-hover` variants (Button's danger/accent variants currently fall back to `filter: brightness()`).
-- `[ ]` **DSYS-TOKEN-007**: The system SHALL define `--color-warning-ink` to mirror the `-ink` shape of `--color-primary-ink` and `--color-accent-ink`. Active gap: Badge warning tone inlines a literal value because the token does not exist.
+- `[x]` **DSYS-TOKEN-006**: Every interactive color token SHALL provide a `-hover` variant matching the base name (e.g., `--color-primary` → `--color-primary-hover`). `--color-danger-hover` and `--color-accent-hover` ship in `globals.css`.
+- `[x]` **DSYS-TOKEN-007**: The system SHALL define `--color-warning-ink` to mirror the `-ink` shape of `--color-primary-ink` and `--color-accent-ink`. Badge warning tone consumes it via the `text-warning-ink` utility.
 
 ## Focus Contract
 
@@ -29,7 +29,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 ## Motion Contract
 
 - `[x]` **DSYS-MOTION-001**: Interactive state transitions (background, color, border, shadow, transform, opacity) SHALL default to `150ms ease`.
-- `[ ]` **DSYS-MOTION-002**: Where `prefers-reduced-motion` is `reduce`, the system SHALL suppress all CSS animations and transitions globally via `@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }` in `globals.css`. Active gap: rule not present today; affects every animated primitive.
+- `[x]` **DSYS-MOTION-002**: Where `prefers-reduced-motion` is `reduce`, the system SHALL suppress all CSS animations and transitions globally via `@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }` in `globals.css`.
 - `[x]` **DSYS-MOTION-003**: The progress-bar fill keyframe (`bar-fill`) SHALL use `500ms cubic-bezier(0.2, 0.7, 0.2, 1)`.
 - `[x]` **DSYS-MOTION-004**: Toast (`toast-in`) and fade-in animations SHALL use `150ms ease`.
 - `[x]` **DSYS-MOTION-005**: Slide-down animations SHALL use `200ms ease`.
@@ -39,7 +39,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 - `[x]` **DSYS-A11Y-001**: All primitive color combinations defined in the LLDs SHALL meet WCAG AA contrast (4.5:1 for body text) on their default token pairings. Verification: axe-core in component test pattern.
 - `[x]` **DSYS-A11Y-002**: Decorative icons SHALL set `aria-hidden="true"` by default; semantic meaning is the responsibility of the consuming component via `aria-label` on the interactive parent.
 - `[x]` **DSYS-A11Y-003**: Every form control SHALL have an associated `<label>` (either wrapping or via `htmlFor`).
-- `[ ]` **DSYS-A11Y-004**: Every disabled interactive element SHALL be both visually distinct (opacity ≤ 0.5 and `cursor: not-allowed`) AND programmatically disabled (native `disabled` attribute + `aria-disabled="true"`). Active gap: most primitives set the native `disabled` attribute but do not set `aria-disabled`.
+- `[x]` **DSYS-A11Y-004**: Every disabled interactive element SHALL be both visually distinct (opacity ≤ 0.5 and `cursor: not-allowed`) AND programmatically disabled (native `disabled` attribute + `aria-disabled="true"`). Button and DateTimePicker day cells set both.
 
 ## Variant Composition
 
@@ -55,5 +55,5 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Tooling
 
-- `[ ]` **DSYS-TOOL-001**: An ESLint rule SHALL flag inline `style` props containing literal color, font, radius, or shadow values, enforcing `DSYS-TOKEN-003`. The rule SHALL exempt (a) positional or computed properties (`left`, `top`, `transform`, `width`, `marginLeft`, `animationDelay`, etc.); (b) dynamic token references that compute the token name at render time (e.g., `` `var(--color-chip-${idx})` ``); and (c) component-private exemptions declared in component LLDs (currently: BookCover, per `COMP-BOOK-COVER-010`). Active gap — rule not configured.
+- `[x]` **DSYS-TOOL-001**: An ESLint rule SHALL flag inline `style` props containing literal color, font, radius, or shadow values, enforcing `DSYS-TOKEN-003`. The rule SHALL exempt (a) positional or computed properties (`left`, `top`, `transform`, `width`, `marginLeft`, `animationDelay`, etc.); (b) dynamic token references that compute the token name at render time (e.g., `` `var(--color-chip-${idx})` ``); and (c) component-private exemptions declared in component LLDs via file-level `eslint-disable no-restricted-syntax` comments citing the spec ID (currently: BookCover per `COMP-BOOK-COVER-010`, ChapterChip per `COMP-CHAPTER-CHIP-004`). Three `no-restricted-syntax` selectors cover inline `style`, Tailwind arbitrary-value color classes, and SVG `fill`/`stroke` attributes.
 - `[ ]` **DSYS-A11Y-005**: Component tests SHALL run axe-core contrast assertions on every documented variant combination per `DSYS-A11Y-001`. Active gap — axe-core integration is part of the Phase 5 test-suite work.

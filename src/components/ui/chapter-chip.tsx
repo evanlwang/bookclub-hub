@@ -10,8 +10,16 @@ interface ChapterChipProps {
 }
 
 // @spec DISC-API-001, DISC-DATA-001, DISC-UI-012
+// @spec COMP-CHAPTER-CHIP-001..006
+// Note: dynamic token reference via inline style (var(--color-chip-${idx})) is
+// the LLD-documented exemption per COMP-CHAPTER-CHIP-004. The DSYS-TOOL-001
+// lint selector only flags literal values, not dynamic var() references, so no
+// eslint-disable is needed.
 export function ChapterChip({ tag, chapter }: ChapterChipProps) {
-  const idx = chapter != null ? ((chapter - 1) % 5) + 1 : (Math.abs(hashStr(tag)) % 5) + 1;
+  const validChapter = Number.isInteger(chapter) && (chapter as number) > 0;
+  const idx = validChapter
+    ? (((chapter as number) - 1) % 5) + 1
+    : (Math.abs(hashStr(tag)) % 5) + 1;
 
   return (
     <span

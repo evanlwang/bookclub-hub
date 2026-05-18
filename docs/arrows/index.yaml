@@ -11,6 +11,18 @@ taxonomy:
     - meetings
     - discussions
     - reading-progress
+  design-system:
+    - design-system
+    - components-button
+    - components-badge
+    - components-card
+    - components-avatar
+    - components-avatar-stack
+    - components-book-cover
+    - components-chapter-chip
+    - components-progress-bar
+    - components-date-time-picker
+    - components-icons
 
 # The graph of segments. Each entry is one arrow segment.
 arrows:
@@ -87,6 +99,119 @@ arrows:
     blockedBy:
       - clubs
     detail: reading-progress.md
+    next: null
+    drift: null
+
+  # Design overlay — parallel to the feature arrows. No feature segment declares
+  # `blockedBy` on a design segment; design changes do not cascade into vote-specs.
+  # Feature specs may cite COMP-* IDs from prose for traceability.
+  design-system:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/design-system.md
+    next: null
+    drift: null
+
+  components-button:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-button.md
+    next: null
+    drift: null
+
+  components-badge:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-badge.md
+    next: null
+    drift: null
+
+  components-card:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-card.md
+    next: null
+    drift: null
+
+  components-avatar:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-avatar.md
+    next: null
+    drift: COMP-AVATAR-IMG-001 still open (onError fallback requires client boundary)
+
+  components-avatar-stack:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-avatar-stack.md
+    next: null
+    drift: null
+
+  components-book-cover:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-book-cover.md
+    next: null
+    drift: null
+
+  components-chapter-chip:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-chapter-chip.md
+    next: null
+    drift: null
+
+  components-progress-bar:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-progress-bar.md
+    next: null
+    drift: null
+
+  components-date-time-picker:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-date-time-picker.md
+    next: null
+    drift: COMP-DATE-TIME-PICKER-014 (out-of-range feedback) and -A11Y-005 (keyboard nav) still open
+
+  components-icons:
+    status: OK
+    sampled: 2026-05-18
+    audited: 2026-05-18
+    blocks: []
+    blockedBy: []
+    detail: ../llds/components-icons.md
     next: null
     drift: null
 

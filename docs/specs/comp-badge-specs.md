@@ -21,7 +21,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 - `[x]` **COMP-BADGE-005**: While `tone` is `primary`, the system SHALL apply `{ background: --color-primary-soft, color: --color-primary-ink }`.
 - `[x]` **COMP-BADGE-006**: While `tone` is `accent`, the system SHALL apply `{ background: --color-accent-soft, color: --color-accent-ink }`.
 - `[x]` **COMP-BADGE-007**: While `tone` is `success`, the system SHALL apply `{ background: --color-success-soft, color: --color-success }`.
-- `[ ]` **COMP-BADGE-008**: While `tone` is `warning`, the system SHALL apply `{ background: --color-warning-soft, color: --color-warning-ink }`. Active gap — current implementation inlines a literal `oklch(0.45 0.10 70)` because `--color-warning-ink` does not exist (see `DSYS-TOKEN-007`).
+- `[x]` **COMP-BADGE-008**: While `tone` is `warning`, the system SHALL apply `{ background: --color-warning-soft, color: --color-warning-ink }`.
 - `[x]` **COMP-BADGE-009**: While `tone` is `danger`, the system SHALL apply `{ background: --color-danger-soft, color: --color-danger }`.
 
 ## Dot Indicator

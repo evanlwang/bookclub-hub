@@ -7,6 +7,7 @@ interface AvatarStackProps {
 }
 
 // @spec MEET-UI-008
+// @spec COMP-AVATAR-STACK-001..005
 export function AvatarStack({ names, max = 5, size = "sm" }: AvatarStackProps) {
   const visible = names.slice(0, max);
   const overflow = names.length - max;
