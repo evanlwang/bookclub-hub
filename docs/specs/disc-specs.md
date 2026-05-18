@@ -56,7 +56,8 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[x]` **DISC-UI-PAGE-001**: Back link "Dashboard" with chevron returns to `/clubs/{clubId}`. (`discussions/page.tsx:222-228`)
 - `[x]` **DISC-UI-PAGE-002**: Page header shows "Discussions" title.
 - `[x]` **DISC-UI-PAGE-003**: Button: "New Thread" (`create-thread.tsx:21-28`) is rendered above the filter and switches the area to the create form.
-- `[x]` **DISC-UI-PAGE-EMPTY-001**: When there are zero matching threads, the list SHALL show "No discussions yet." (`discussions/page.tsx:171-174`)
+- `[x]` **DISC-UI-PAGE-EMPTY-001**: When there are zero matching threads AND zero hidden threads, the list SHALL show "No discussions yet — start one with the button above." (`discussions/page.tsx` `data-testid="empty-state-none"`)
+- `[x]` **DISC-UI-PAGE-EMPTY-SPOILER-001**: When the visible thread list is empty BUT `hiddenCount > 0` (every thread is currently hidden by the spoiler filter), the list SHALL render a distinct state explaining that the viewer's chapter setting is hiding everything, naming the hidden count and current chapter, and offering a "Show all anyway" button that toggles `showAll=true`. This prevents new readers from seeing "No discussions yet" when the club actually has active threads. (`discussions/page.tsx` `data-testid="empty-state-spoiler"`)
 - `[x]` **DISC-UI-PAGE-COUNT-001**: The thread count "{N} thread(s)" SHALL be shown above the list. (`discussions/page.tsx:151`)
 - `[x]` **DISC-UI-005**: The thread list SHALL support sort controls "Recent" / "Most comments" as tab-style toggles. (`discussions/page.tsx:152-167`)
 - `[x]` **DISC-UI-PAGE-CARD-001**: Each thread card SHALL show: chapter chip (if any), comment count (right-aligned), a 2-line body excerpt (`line-clamp-2`) as the primary content, and author avatar + name + relative time. **Intentional re-spec from older text:** title was removed; body is the prominent text now (per `DISC-UI-COMPOSE-001`). (`discussions/page.tsx:213-241`)
@@ -81,6 +82,7 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[x]` **DISC-UI-DETAIL-NESTED-001**: Replies (one level only) render below their parent with `ml-6 pl-4 border-l-2` indentation.
 - `[x]` **DISC-UI-009**: The bottom comment composer SHALL be sticky with `sticky bottom-0 bg-bg pt-4 pb-2 border-t border-line`. (`[threadId]/page.tsx:204-211`)
 - `[x]` **DISC-UI-DETAIL-COMPOSER-001**: Button: top-level "Post" (`comment-composer.tsx:79-87`) — disabled when body is empty/whitespace — calls `comments.create`.
+- `[x]` **DISC-UI-COMPOSER-DRAFT-PRESERVE-001**: The comment composer SHALL clear its textarea ONLY on `comments.create` success. On error (network failure, validation rejection, etc.) the draft SHALL remain in the textarea verbatim so the user can retry without retyping. An inline error message is the only visible side effect of a failed submit. (`comment-composer.tsx` `onSuccess` / `onError`)
 
 ## Comment Edit and Delete
 
