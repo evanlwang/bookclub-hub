@@ -44,7 +44,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 ## Variant Composition
 
 - `[x]` **DSYS-VAR-001**: For every primitive that has interactive state, state priority SHALL be `disabled > loading > hover > default`.
-- `[x]` **DSYS-VAR-002**: Where a primitive supports a `loading` state, loading SHALL imply disabled (suppress pointer events, set native `disabled` attribute).
+- `[x]` **DSYS-VAR-002**: Where a primitive declares both a `loading` state and a `disabled` state, `loading` SHALL imply `disabled` — suppress pointer events and set the native `disabled` attribute. Visual treatment of the loading state (spinner, opacity, label) is per-primitive and SHALL be specified in that primitive's `COMP-*` specs.
 - `[x]` **DSYS-VAR-003**: The global `:focus-visible` ring SHALL apply on top of any state — focus is orthogonal to variant and state.
 
 ## Theming
@@ -52,3 +52,8 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 - `[x]` **DSYS-THEME-001**: v1 SHALL render in a single light theme using `oklch()` color notation.
 - `[D]` **DSYS-THEME-002**: Where `prefers-color-scheme` is `dark`, the system SHALL swap token values inside a `@media` block without renaming tokens. Deferred — token naming is forward-compatible.
 - `[D]` **DSYS-THEME-003**: Per-club theming via DOM-scoped (rather than `:root`-scoped) token overrides. Deferred — out of v1 scope.
+
+## Tooling
+
+- `[ ]` **DSYS-TOOL-001**: An ESLint rule SHALL flag inline `style` props containing literal color, font, radius, or shadow values, enforcing `DSYS-TOKEN-003`. The rule SHALL exempt (a) positional or computed properties (`left`, `top`, `transform`, `width`, `marginLeft`, `animationDelay`, etc.); (b) dynamic token references that compute the token name at render time (e.g., `` `var(--color-chip-${idx})` ``); and (c) component-private exemptions declared in component LLDs (currently: BookCover, per `COMP-BOOK-COVER-010`). Active gap — rule not configured.
+- `[ ]` **DSYS-A11Y-005**: Component tests SHALL run axe-core contrast assertions on every documented variant combination per `DSYS-A11Y-001`. Active gap — axe-core integration is part of the Phase 5 test-suite work.

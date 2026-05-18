@@ -35,7 +35,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Token Discipline
 
-- `[x]` **COMP-BOOK-COVER-010**: BookCover SHALL be exempt from `DSYS-TOKEN-003`: its cloth-palette `oklch` values are component-private and SHALL NOT be promoted to the global token set. The exemption applies only to the six cloth-palette variants and their layered gradients — any other styling SHALL go through tokens.
+- `[x]` **COMP-BOOK-COVER-010**: BookCover SHALL be exempt from `DSYS-TOKEN-003` for **all inline-style values that render the cloth-bound book metaphor**: the six variant palettes (`{base, lift, foil, rule}`), layered radial and linear gradients, envelope drop shadows, edge highlights, spine raised-band rules, weave overlay, and foil-stamped title/author `text-shadow` values. These values are component-private and SHALL NOT be promoted to the global token set. Non-cover styling (layout utilities, positioning, generic radii like `rounded-[2px]`) SHALL go through tokens.
 
 ## Deferred
 

@@ -28,7 +28,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Accessibility
 
-- `[ ]` **COMP-PROGRESS-BAR-A11Y-001**: The track element SHALL set `role="progressbar"`, `aria-valuenow={percentage}`, `aria-valuemin="0"`, and `aria-valuemax="100"`. Active gap — none of these are set today; this is the dashboard's primary visualization.
+- `[ ]` **COMP-PROGRESS-BAR-A11Y-001**: The track element SHALL set `role="progressbar"`, `aria-valuenow={Math.min(100, Math.max(0, percentage))}` (clamped to `[0, 100]` for screen-reader correctness only — the visual fill width remains unclamped per `COMP-PROGRESS-BAR-006`), `aria-valuemin="0"`, and `aria-valuemax="100"`. Active gap — none of these are set today; this is the dashboard's primary visualization.
 
 ## Motion
 

@@ -52,6 +52,10 @@ Selected wins over today; disabled wins over everything.
 
 When `value` is empty, time defaults to 7:00 PM (book clubs meet in the evening). When `value` is set, time reflects the parsed hour/minute.
 
+## Focus styling (intentional override)
+
+The trigger button, hour input, minute select, and AM/PM toggle each apply per-control focus classes (`focus:border-primary focus:ring-2 focus:ring-primary/15`) in addition to the global `:focus-visible` ring. This is a documented exception to `DSYS-FOCUS-002` (which discourages per-component focus): the picker is composed of multiple controls inside a single dialog, and the per-control focus integrates focus into each control's chrome so the picker reads as a unified form rather than a list of floating outlines. Spec: `COMP-DATE-TIME-PICKER-A11Y-006`.
+
 ## Visual reference
 
 `docs/bookclub-hub-designs/project/artboards/meetings.jsx` (the create-meeting modal hosts the picker).

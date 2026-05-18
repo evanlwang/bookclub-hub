@@ -38,7 +38,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 ## State Behavior
 
 - `[x]` **COMP-BUTTON-018**: If `disabled` (or `loading`, which implies disabled), the Button SHALL apply `opacity: 0.5` and `cursor: not-allowed`, AND set the native `disabled` attribute.
-- `[x]` **COMP-BUTTON-019**: While `loading` is true, the Button SHALL render a 16×16 `currentColor`-stroked spinner in the icon slot, replacing any `icon` prop, AND set the native `disabled` attribute.
+- `[x]` **COMP-BUTTON-019**: While `loading` is true, the Button SHALL render a 16×16 `currentColor`-stroked spinner in the icon slot regardless of whether `icon` was provided, AND set the native `disabled` attribute (per `DSYS-VAR-002`).
 - `[x]` **COMP-BUTTON-020**: While `loading` is true and `iconRight` is provided, `iconRight` SHALL continue to render. (Locks current behavior so it does not drift.)
 - `[x]` **COMP-BUTTON-021**: While `loading` is true, the `children` text SHALL continue to render. (Width-stable transition between idle and loading.)
 

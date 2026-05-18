@@ -11,10 +11,13 @@ interface AvatarProps {
   name?: string;                          // used for initials + deterministic palette pick
   size?: "sm" | "md" | "lg" | "xl";       // default: "md"
   src?: string;                           // optional photo URL; when present, replaces initials
+  decorative?: boolean;                   // when true: aria-hidden container + alt="" on <img>
 }
 ```
 
 When `name` is empty/unset and no `src` is provided, the avatar renders a `?` placeholder on the first palette color.
+
+When `decorative={true}`, the Avatar suppresses screen-reader announcement so a caller can place it next to a visible name label without the name being announced twice. The flag is opt-in — default is decorative=false (announce normally).
 
 ## Size matrix
 

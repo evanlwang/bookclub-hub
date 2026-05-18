@@ -15,8 +15,8 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Color Picker
 
-- `[x]` **COMP-CHAPTER-CHIP-002**: When `chapter` is a positive integer, the color index SHALL be `((chapter - 1) % 5) + 1`, so chapter 1 → chip-1, chapter 2 → chip-2, etc.
-- `[x]` **COMP-CHAPTER-CHIP-003**: When `chapter` is `null` or `undefined`, the color index SHALL be `(hashStr(tag) % 5) + 1` so the same `tag` always picks the same color.
+- `[x]` **COMP-CHAPTER-CHIP-002**: When `chapter` is a positive integer ≥ 1, the color index SHALL be `((chapter - 1) % 5) + 1`, so chapter 1 → chip-1, chapter 2 → chip-2, etc.
+- `[ ]` **COMP-CHAPTER-CHIP-003**: When `chapter` is `null`, `undefined`, zero, negative, fractional, or `NaN`, the color index SHALL fall through to the tag-hash path: `(Math.abs(hashStr(tag)) % 5) + 1`, so the same `tag` always picks the same color. Active gap — current implementation routes by `chapter != null` only, so `chapter = 0` produces an invalid index 0 (no `--color-chip-0` token) and `chapter = -3` similarly diverges.
 
 ## Token Application
 

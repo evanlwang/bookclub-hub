@@ -28,7 +28,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Day Cell State
 
-- `[x]` **COMP-DATE-TIME-PICKER-009**: For each day cell, color SHALL be applied with priority `disabled > selected > today > base`. Base: `text-ink` (in-month) or `text-ink-4` (out-of-month). Today (not selected): `text-primary font-semibold` with a `ring-1 ring-inset ring-primary/40`. Selected: `bg-primary text-white font-semibold`. Disabled: `text-ink-4 opacity-50 cursor-not-allowed`.
+- `[x]` **COMP-DATE-TIME-PICKER-009**: For each day cell, color SHALL be applied with priority `disabled > selected > today > base`. Base: `text-ink` (in-month) or `text-ink-4` (out-of-month). Today (not selected): `text-primary font-semibold` with a `ring-1 ring-inset ring-primary/40`. Selected: `bg-primary text-white font-semibold`. Disabled: `text-ink-4 opacity-50 cursor-not-allowed`. This priority chain is the day-cell-specific equivalent of `DSYS-VAR-001` — the picker's day cells operate on a different state set (`selected`, `today`, `in-month`) than the universal interactive lattice (`hover`, `loading`, `disabled`), so the two priorities coexist without contradiction.
 - `[x]` **COMP-DATE-TIME-PICKER-010**: If a day's end-of-day (`23:59:59.999` local) is before `min`, the day SHALL be disabled.
 
 ## Time Behavior
@@ -54,6 +54,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 - `[x]` **COMP-DATE-TIME-PICKER-A11Y-003**: The hour input SHALL set `aria-label="Hour"`; the minute select SHALL set `aria-label="Minute"`; the prev/next month buttons SHALL set `aria-label="Previous month"` / `aria-label="Next month"`.
 - `[x]` **COMP-DATE-TIME-PICKER-A11Y-004**: Each day button SHALL set `aria-pressed={isSelected}` while selected; the selected day SHALL also carry `data-testid="calendar-day-selected"`.
 - `[ ]` **COMP-DATE-TIME-PICKER-A11Y-005**: When the popover is open, the day grid SHALL support arrow-key navigation between days, `Home`/`End` for first/last day of the week, and `PageUp`/`PageDown` for previous/next month. Active gap.
+- `[x]` **COMP-DATE-TIME-PICKER-A11Y-006**: The trigger button, hour input, minute select, and AM/PM toggle SHALL apply per-control focus styling (`focus:border-primary focus:ring-2 focus:ring-primary/15`) in addition to the global `:focus-visible` ring. This is an LLD-documented override per `DSYS-FOCUS-002` — the per-control treatment integrates focus into each control's chrome so the picker reads as a unified form, not a list of buttons with floating outlines.
 
 ## Token Discipline
 
