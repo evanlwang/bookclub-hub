@@ -86,6 +86,7 @@ describe("TRPCProvider — global UNAUTHORIZED handler", () => {
       undefined as never,
       undefined as never,
       {} as never,
+      {} as never,
     );
 
     expect(pushMock).toHaveBeenCalledTimes(1);
