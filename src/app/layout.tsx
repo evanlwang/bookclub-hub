@@ -6,9 +6,13 @@ import "./globals.css";
 // and emits the canonical <link rel="icon"> / <link rel="apple-touch-icon">.
 // The explicit `icons` entries below add the larger PNGs from /public/icons
 // for Android home-screen, PWA manifests, and high-DPI displays.
+// When the pilot passcode gate is on, the URL is shared by trust and shouldn't
+// show up in search results. Removing PILOT_PASSCODE (post-pilot) drops the
+// noindex automatically.
 export const metadata: Metadata = {
   title: "BookClub Hub",
   description: "Organize your book clubs",
+  robots: process.env.PILOT_PASSCODE ? { index: false, follow: false } : undefined,
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },

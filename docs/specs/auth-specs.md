@@ -96,6 +96,11 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 
 - `[x]` **AUTH-BE-003**: The system SHALL NOT require any OAuth provider, third-party authentication service, or password.
 
+## Pilot Passcode Gate
+
+- `[x]` **AUTH-API-PASSCODE-001**: Every entry point that creates a `User` or `Session` for an unauthenticated caller (`auth.signIn`, `auth.enter`, the unauthenticated branch of `clubs.join`) SHALL require a `passcode` input and SHALL throw `UNAUTHORIZED` with message "Wrong passcode" before any mutation when `process.env.PILOT_PASSCODE` is set and the input does not constant-time match. The gate is implemented as `passcodeOk` in `src/lib/auth/passcode.ts`.
+- `[x]` **AUTH-API-PASSCODE-002**: When `PILOT_PASSCODE` is unset, `passcodeOk` SHALL accept any input in development/test (`NODE_ENV !== "production"`) and SHALL reject every input in production (`NODE_ENV === "production"`). This makes a forgotten production env var fail closed (no one can log in) instead of fail open (anyone can log in). (`src/lib/auth/passcode.ts`)
+
 ## Deferred
 
 - `[D]` **AUTH-BE-004**: Magic-link email verification.

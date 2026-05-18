@@ -1,5 +1,5 @@
 // @spec AUTH-API-001, AUTH-API-002, AUTH-API-003, AUTH-API-004, AUTH-API-005, AUTH-API-SIGNIN-001, AUTH-API-LOGOUT-001, AUTH-API-LOGOUT-002, AUTH-BE-001, AUTH-BE-002, AUTH-BE-003
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller, createAnonymousCaller } from "@tests/helpers/trpc";
 import { alice, insertUser } from "@tests/fixtures/users";
@@ -176,6 +176,26 @@ describe("auth", () => {
         expect(result.user.email).toBe("dev-bypass@example.com");
       } finally {
         if (prev !== undefined) process.env.PILOT_PASSCODE = prev;
+      }
+    });
+
+    // @spec AUTH-API-PASSCODE-002
+    it("rejects every passcode when PILOT_PASSCODE is unset in production (fail closed)", async () => {
+      const prevPasscode = process.env.PILOT_PASSCODE;
+      delete process.env.PILOT_PASSCODE;
+      vi.stubEnv("NODE_ENV", "production");
+      try {
+        const caller = createAnonymousCaller(db);
+        await expect(
+          caller.auth.enter({
+            email: "prod-no-env@example.com",
+            displayName: "No Env",
+            passcode: "anything",
+          })
+        ).rejects.toThrow(/Wrong passcode|UNAUTHORIZED/);
+      } finally {
+        vi.unstubAllEnvs();
+        if (prevPasscode !== undefined) process.env.PILOT_PASSCODE = prevPasscode;
       }
     });
   });

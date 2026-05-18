@@ -236,6 +236,7 @@ describe("Join Flow — Integration Tests", () => {
           code: "WEDREADS",
           email: "newmember@example.com",
           displayName: "New Member",
+          passcode: "test-passcode",
         });
 
         expect(result.sessionId).toBeTruthy();
