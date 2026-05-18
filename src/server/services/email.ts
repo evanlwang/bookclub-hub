@@ -1,4 +1,5 @@
 // Email service wrapping Resend. In test mode, records calls without sending.
+// @spec VOTE-NOTIFY-NONBLOCK-001, MEET-NOTIFY-NONBLOCK-001
 
 export interface EmailCall {
   to: string[];
@@ -9,22 +10,33 @@ export interface EmailCall {
 const emailCalls: EmailCall[] = [];
 
 function isTestMode(): boolean {
-  return process.env.NODE_ENV === "test" || process.env.RESEND_API_KEY === "test";
+  const key = process.env.RESEND_API_KEY;
+  if (process.env.NODE_ENV === "test") return true;
+  if (key === "test") return true;
+  // Dev convention: any key prefixed `re_mock` short-circuits to recorded-only.
+  if (key !== undefined && key.startsWith("re_mock")) return true;
+  return false;
 }
 
 async function send(to: string[], subject: string, body: string): Promise<void> {
   emailCalls.push({ to, subject, body });
   if (isTestMode()) return;
 
-  // In production, use Resend
-  const { Resend } = await import("resend");
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  await resend.emails.send({
-    from: "BookClub Hub <noreply@bookclubhub.app>",
-    to,
-    subject,
-    html: body,
-  });
+  try {
+    const { Resend } = await import("resend");
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: "BookClub Hub <noreply@bookclubhub.app>",
+      to,
+      subject,
+      html: body,
+    });
+  } catch (err) {
+    // Notifications are best-effort. A round/meeting state change must not
+    // fail because the email provider rejected, the key is unset, or the
+    // network is down.
+    console.error("[email] send failed", { subject, recipients: to.length, err });
+  }
 }
 
 // Public API

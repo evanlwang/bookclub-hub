@@ -151,6 +151,7 @@ These specs cover what happens when a member revisits the voting page after they
 - `[x]` **VOTE-NOTIFY-002**: When a round enters "voting", the system SHALL email all club members. (`rounds.ts:118-126`)
 - `[x]` **VOTE-NOTIFY-004**: When a round is decided, the system SHALL email all club members with the winning book. (`rounds.ts:128-181`)
 - `[x]` **VOTE-NOTIFY-003**: When `VotingRound.votingDeadline` is between now and now+24h, the cron handler at `src/app/api/cron/voting-deadline-reminder/route.ts` emails non-voters with reminder copy. The cron pipeline already existed (covered by `tests/integration/cron-deadline-reminder.test.ts`) — Phase E cluster 14 unlocks it by adding the deadline-picker UI. (`src/app/api/cron/voting-deadline-reminder/route.ts`)
+- `[x]` **VOTE-NOTIFY-NONBLOCK-001**: Round notification email failures (missing/invalid API key, network errors, provider rejections) SHALL NOT cause `rounds.create` or `rounds.advance` to fail. Email is a best-effort side effect; the round transition is the contract. Failures are logged via `console.error` and swallowed inside the email service so callers do not need their own try/catch. (`src/server/services/email.ts`)
 
 ## Deferred
 

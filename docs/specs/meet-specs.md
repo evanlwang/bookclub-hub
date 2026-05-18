@@ -70,6 +70,7 @@ These specs document invariants enforced inside the `meetings` router and exerci
 - `[x]` **MEET-NOTIFY-003**: When a meeting is confirmed, the system SHALL email all members with the confirmed time and location. (`meetings.ts:141-180`)
 - `[x]` **MEET-NOTIFY-005**: When a meeting is cancelled, the system SHALL email all members. (`meetings.ts:182-207`)
 - `[x]` **MEET-NOTIFY-REMIND-001**: Voting deadline reminders, mid-book check-ins, and 48h-since-proposed availability nudges are wired into a separate reminder pipeline (`docs/specs/dash-specs.md`, `tests/integration/cron-deadline-reminder.test.ts`).
+- `[x]` **MEET-NOTIFY-NONBLOCK-001**: Meeting notification email failures SHALL NOT cause `meetings.propose`, `meetings.confirm`, or `meetings.cancel` to fail. Email is a best-effort side effect; the meeting state change is the contract. Same handling lives inside the shared email service as `VOTE-NOTIFY-NONBLOCK-001`. (`src/server/services/email.ts`)
 
 ## Meeting List UI
 
