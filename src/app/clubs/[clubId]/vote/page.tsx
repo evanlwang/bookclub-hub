@@ -77,6 +77,9 @@ export default async function VotePage({
     return <p data-testid="vote-error" className="text-danger">{error}</p>;
   }
 
+  // @spec VOTE-UI-LIST-001 — cancelled rounds are excluded from the history list.
+  const visibleRounds = rounds.filter((r: any) => r.status !== "cancelled");
+
   return (
     <div className="w-full max-w-[1600px]">
       <Link
@@ -133,10 +136,15 @@ export default async function VotePage({
         </div>
       )}
 
+      {/* @spec VOTE-UI-LIST-001
+          Cancelled rounds carry no winner and add noise to the history surface,
+          so they're filtered out of the visible list. The empty-state branch
+          below uses `visibleRounds.length` so a cancelled-only club renders the
+          same empty state as a zero-rounds club. */}
       {/* Admin "Start new round" CTA whenever there is no active or decided
           round to display — covers both the empty club and the cancelled-only
           history case. The decided phase has its own CTA inline (VOTE-UI-DEC-003),
-          so this gate is intentionally `!activeRoundDetail` not `rounds.length === 0`.
+          so this gate is intentionally `!activeRoundDetail`.
           @spec VOTE-UI-NONE-001 */}
       {!activeRoundDetail && isAdmin && (
         <Card className="p-10 text-center mb-8">
@@ -147,7 +155,7 @@ export default async function VotePage({
             </svg>
           </div>
           <p data-testid="no-active-round" className="text-ink-2 text-sm">
-            {rounds.length === 0
+            {visibleRounds.length === 0
               ? "No voting rounds yet — start one below."
               : "No active voting round. Start a new one below."}
           </p>
@@ -163,7 +171,7 @@ export default async function VotePage({
         </Card>
       )}
 
-      {rounds.length === 0 ? (
+      {visibleRounds.length === 0 ? (
         !isAdmin && (
           <Card className="p-10 text-center">
             <p data-testid="no-rounds" className="text-ink-2 text-sm">
@@ -173,19 +181,13 @@ export default async function VotePage({
         )
       ) : (
         <ul data-testid="rounds-list" className="space-y-3">
-          {rounds.map((round: any) => (
+          {visibleRounds.map((round: any) => (
             <li key={round.id} data-testid={`round-${round.id}`}>
               <Card className="p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
                     <Badge
-                      tone={
-                        round.status === "decided"
-                          ? "success"
-                          : round.status === "cancelled"
-                            ? "danger"
-                            : "neutral"
-                      }
+                      tone={round.status === "decided" ? "success" : "neutral"}
                     >
                       <span data-testid="round-status">{round.status}</span>
                     </Badge>

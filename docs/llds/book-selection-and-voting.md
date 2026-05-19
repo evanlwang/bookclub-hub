@@ -21,7 +21,7 @@ voting → cancelled
 State: nominating — buttons shown: "Search & nominate", "Advance to Voting" (admin) — transitions: → voting (admin clicks "Advance to Voting"; needs ≥2 nominations); → cancelled (admin via API only)
 State: voting — buttons shown: nomination cards, "Submit N votes" / "Save changes" / "✓ Votes saved", "Close voting & reveal winner" (admin), "Cancel round" (admin) — transitions: → decided (admin clicks Close voting → `rounds.advance`); → cancelled (admin clicks Cancel round → `rounds.cancel`)
 State: decided — buttons shown: "Start new round" (admin) — transitions: terminal
-State: cancelled — buttons shown: none on the round itself — transitions: terminal. When all rounds in the club are cancelled (no nominating, voting, or decided round to render), admins SHALL see the NonePhase "Start new round" CTA at the page level (VOTE-UI-NONE-001).
+State: cancelled — buttons shown: none on the round itself — transitions: terminal. Cancelled rounds are excluded from the voting page's round-history list (VOTE-UI-LIST-001); they remain in the DB for audit but have no UI surface. When all rounds in the club are cancelled (no nominating, voting, or decided round to render), admins SHALL see the NonePhase "Start new round" CTA at the page level (VOTE-UI-NONE-001).
 
 Phase descriptions:
 - **Nominating**: members add books. No duplicates within the same round (UNIQUE on `(round_id, book_id)`). Admin can set a nomination deadline (data model only; no UI).

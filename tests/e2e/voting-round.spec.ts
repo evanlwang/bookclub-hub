@@ -32,8 +32,8 @@ test.describe("Voting Round", () => {
     await expect(page.getByTestId("vote-error")).toBeVisible();
   });
 
-  // @spec VOTE-UI-NONE-001
-  test("admin sees start-new-round CTA after cancelling the only round", async ({ page }) => {
+  // @spec VOTE-UI-NONE-001, VOTE-UI-LIST-001
+  test("admin sees start-new-round CTA and no history list after cancelling the only round", async ({ page }) => {
     const db = getDb();
     const alice = await db.user.findUniqueOrThrow({ where: { email: "alice@example.com" } });
     // Isolated club so cancelled-only history doesn't collide with seed rounds.
@@ -59,11 +59,11 @@ test.describe("Voting Round", () => {
       await loginAs(page, "alice@example.com");
       await page.goto(`/clubs/${club.id}/vote`);
 
-      // The cancelled round is shown in history
-      await expect(page.getByTestId("rounds-list")).toBeVisible();
-      await expect(page.getByTestId("round-status")).toContainText("cancelled");
+      // Cancelled rounds are hidden from the history list (VOTE-UI-LIST-001).
+      await expect(page.getByTestId("rounds-list")).toHaveCount(0);
+      await expect(page.getByTestId("no-active-round")).toBeVisible();
 
-      // And the admin can start a new round despite the cancelled history
+      // And the admin can start a new round despite the cancelled history.
       await expect(page.getByTestId("start-new-round-btn")).toBeVisible();
     } finally {
       await db.votingRound.deleteMany({ where: { clubId: club.id } });
