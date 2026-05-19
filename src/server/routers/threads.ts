@@ -1,8 +1,29 @@
-// @spec DISC-API-001 through DISC-API-004
+// @spec DISC-API-001 through DISC-API-004, DISC-DATA-CHAPTER-BOUNDS-001
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, memberProcedure } from "../trpc";
-import { parseChapterTag } from "@/lib/validation/chapter-tag";
+import { validateChapterTag } from "@/lib/validation/chapter-tag";
+
+/**
+ * Look up the upper-bound chapter count for a book. Returns null when the
+ * book's chapter count isn't known — in that case `validateChapterTag`
+ * accepts any positive chapter (per DISC-DATA-CHAPTER-BOUNDS-001).
+ *
+ * The Book model currently carries `pageCount` only; this helper is the
+ * single seam where a future `chapterCount` (or derived value) plugs in.
+ */
+async function lookupBookMaxChapter(
+  db: { book: { findUnique: (args: { where: { id: string } }) => Promise<unknown> } },
+  bookId: string,
+): Promise<number | null> {
+  // Book schema has no chapterCount column today — wire it in here when it's
+  // added. Touching the DB defensively so we don't accidentally bypass the
+  // hook once the column exists.
+  const book = (await db.book.findUnique({ where: { id: bookId } })) as
+    | { chapterCount?: number | null }
+    | null;
+  return book?.chapterCount ?? null;
+}
 
 /**
  * Title is a vestigial NOT NULL column — the UI no longer collects one.
@@ -82,7 +103,18 @@ export const threadsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const chapterNumber = parseChapterTag(input.chapterTag);
+      // @spec DISC-DATA-CHAPTER-BOUNDS-001 — reject tags above the book's
+      // chapter count. When the book has no chapter count, validation is a
+      // no-op (any positive chapter accepted).
+      const maxChapter = await lookupBookMaxChapter(ctx.db, input.bookId);
+      const validation = validateChapterTag(input.chapterTag, maxChapter);
+      if (!validation.ok) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: validation.reason,
+        });
+      }
+      const chapterNumber = validation.chapterNumber;
       const title = input.title ?? deriveTitleFromBody(input.body);
 
       const thread = await ctx.db.discussionThread.create({
@@ -152,8 +184,17 @@ export const threadsRouter = router({
       if (input.title) data.title = input.title;
       if (input.body) data.body = input.body;
       if (input.chapterTag !== undefined) {
+        // @spec DISC-DATA-CHAPTER-BOUNDS-001
+        const maxChapter = await lookupBookMaxChapter(ctx.db, thread.bookId);
+        const validation = validateChapterTag(input.chapterTag, maxChapter);
+        if (!validation.ok) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: validation.reason,
+          });
+        }
         data.chapterTag = input.chapterTag;
-        data.chapterNumber = parseChapterTag(input.chapterTag);
+        data.chapterNumber = validation.chapterNumber;
       }
       if (input.isPinned !== undefined) data.isPinned = input.isPinned;
 

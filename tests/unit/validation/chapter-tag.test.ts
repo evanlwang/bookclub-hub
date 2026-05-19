@@ -1,5 +1,5 @@
-// @spec DISC-DATA-001
-import { describe, it, expect } from "vitest";
+// @spec DISC-DATA-001, DISC-DATA-CHAPTER-BOUNDS-001
+import { describe, it, expect, beforeAll } from "vitest";
 import { parseChapterTag } from "@/lib/validation/chapter-tag";
 
 describe("parseChapterTag", () => {
@@ -61,5 +61,50 @@ describe("parseChapterTag", () => {
 
   it("trims whitespace before parsing", () => {
     expect(parseChapterTag("  Chapter 5  ")).toBe(5);
+  });
+});
+
+// @spec DISC-DATA-CHAPTER-BOUNDS-001
+describe("validateChapterTag (bounds enforcement)", () => {
+  // Imported lazily inside the describe so the original parseChapterTag tests
+  // above stay untouched if this import shape ever changes.
+  let validateChapterTag: typeof import("@/lib/validation/chapter-tag").validateChapterTag;
+  beforeAll(async () => {
+    ({ validateChapterTag } = await import("@/lib/validation/chapter-tag"));
+  });
+
+  it("returns ok for a parseable tag within bounds", () => {
+    const result = validateChapterTag("Chapter 5", 20);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.chapterNumber).toBe(5);
+  });
+
+  it("returns ok for a parseable tag equal to maxChapter", () => {
+    const result = validateChapterTag("Chapter 20", 20);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a parseable tag above maxChapter", () => {
+    const result = validateChapterTag("Chapter 999", 20);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/20/);
+  });
+
+  it("accepts any parseable tag when maxChapter is null/undefined", () => {
+    expect(validateChapterTag("Chapter 999", null).ok).toBe(true);
+    expect(validateChapterTag("Chapter 999", undefined).ok).toBe(true);
+    expect(validateChapterTag("Chapter 999", 0).ok).toBe(true);
+  });
+
+  it("accepts unparseable tags regardless of bounds (chapterNumber will be null)", () => {
+    const result = validateChapterTag("Epilogue", 20);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.chapterNumber).toBeNull();
+  });
+
+  it("accepts empty/missing tag", () => {
+    expect(validateChapterTag("", 20).ok).toBe(true);
+    expect(validateChapterTag(null, 20).ok).toBe(true);
+    expect(validateChapterTag(undefined, 20).ok).toBe(true);
   });
 });

@@ -25,6 +25,11 @@ export function CommentComposer({
   const [error, setError] = useState("");
   const utils = trpc.useUtils();
 
+  // @spec DISC-UI-COMPOSER-DRAFT-PRESERVE-001
+  // CONTRACT: clear the draft body ONLY in `onSuccess`. On error, leave the
+  // textarea untouched so the user doesn't lose their unsent comment to a
+  // transient network failure. The inline `setError` message is the only
+  // visible side effect of a failed submit.
   const createComment = trpc.comments.create.useMutation({
     onSuccess: () => {
       setBody("");
@@ -35,6 +40,7 @@ export function CommentComposer({
       onPosted();
     },
     onError: (err) => {
+      // Draft preserved — see DISC-UI-COMPOSER-DRAFT-PRESERVE-001.
       setError(err.message || "Failed to post comment");
     },
   });

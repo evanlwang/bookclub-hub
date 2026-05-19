@@ -58,14 +58,20 @@ function DiscussionsContent() {
 
   useEffect(() => {
     if (!progressQuery.isSuccess || progressApplied) return;
+    // deriveSpoilerCutoff is fail-safe: returns 0 when no progress / no chapter,
+    // which hides every chapter-tagged thread by default. The viewer can still
+    // override via the input or "Show all" — see DISC-LIB-CUTOFF-FAILSAFE-001.
     const cutoff = deriveSpoilerCutoff(progressQuery.data ?? null);
-    if (cutoff != null) setMaxChapter(cutoff);
+    setMaxChapter(cutoff);
     setProgressApplied(true);
   }, [progressQuery.isSuccess, progressQuery.data, progressApplied]);
 
-  // Soft-fail: progress errors leave the filter unset so all threads surface.
+  // Fail-safe on progress error: default to cutoff=0 (hide chapter-tagged
+  // threads) rather than showing everything. Spoiler protection over UX
+  // comfort for the rare progress-load failure.
   useEffect(() => {
     if (progressQuery.isError && !progressApplied) {
+      setMaxChapter(0);
       setProgressApplied(true);
     }
   }, [progressQuery.isError, progressApplied]);
@@ -205,10 +211,37 @@ function DiscussionsContent() {
           </div>
 
           {/* Thread list — single Card with internal hairline rows */}
+          {/* @spec DISC-UI-PAGE-EMPTY-001, DISC-UI-PAGE-EMPTY-SPOILER-001 */}
           {!threadsLoaded ? (
             <ThreadListSkeleton compact />
+          ) : threads.length === 0 && hiddenCount > 0 && !showAll ? (
+            <Card
+              className="p-10 text-center"
+              data-testid="empty-state-spoiler"
+            >
+              <p className="text-ink text-sm font-medium mb-2">
+                {hiddenCount} thread{hiddenCount !== 1 ? "s" : ""} hidden by your
+                spoiler filter
+              </p>
+              <p className="text-ink-3 text-[13px] mb-4 max-w-md mx-auto leading-snug">
+                You&rsquo;re currently on{" "}
+                <strong className="text-ink-2 font-medium">
+                  chapter {maxChapter ?? 0}
+                </strong>
+                . Update your chapter above to see more, or reveal everything if
+                you don&rsquo;t mind spoilers.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowAll(true)}
+                data-testid="empty-state-show-all-btn"
+                className="text-sm text-primary hover:underline underline-offset-2"
+              >
+                Show all anyway
+              </button>
+            </Card>
           ) : threads.length === 0 ? (
-            <Card className="p-10 text-center">
+            <Card className="p-10 text-center" data-testid="empty-state-none">
               <p className="text-ink-3 text-sm">
                 No discussions yet — start one with the button above.
               </p>
