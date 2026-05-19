@@ -9,6 +9,19 @@ export interface EmailCall {
 
 const emailCalls: EmailCall[] = [];
 
+// User-controlled values (club names, book titles, meeting titles, locations)
+// are interpolated into HTML below. Email clients sandbox aggressively so this
+// is defense-in-depth, not an active XSS vector — but a `<b>` in a club name
+// would otherwise render as bold in the message.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function isTestMode(): boolean {
   const key = process.env.RESEND_API_KEY;
   if (process.env.NODE_ENV === "test") return true;
@@ -42,40 +55,40 @@ async function send(to: string[], subject: string, body: string): Promise<void> 
 // Public API
 export const emailService = {
   async sendRoundNominating(memberEmails: string[], clubName: string) {
-    await send(memberEmails, `New voting round in ${clubName}`, `<p>A new voting round has started in <b>${clubName}</b>. Start nominating books!</p>`);
+    await send(memberEmails, `New voting round in ${clubName}`, `<p>A new voting round has started in <b>${escapeHtml(clubName)}</b>. Start nominating books!</p>`);
   },
 
   async sendRoundVoting(memberEmails: string[], clubName: string) {
-    await send(memberEmails, `Voting is open in ${clubName}`, `<p>Nominations are closed. Cast your votes in <b>${clubName}</b>!</p>`);
+    await send(memberEmails, `Voting is open in ${clubName}`, `<p>Nominations are closed. Cast your votes in <b>${escapeHtml(clubName)}</b>!</p>`);
   },
 
   async sendVotingDeadlineReminder(memberEmails: string[], clubName: string) {
-    await send(memberEmails, `Voting deadline approaching in ${clubName}`, `<p>Voting closes in 24 hours in <b>${clubName}</b>. Don't forget to vote!</p>`);
+    await send(memberEmails, `Voting deadline approaching in ${clubName}`, `<p>Voting closes in 24 hours in <b>${escapeHtml(clubName)}</b>. Don't forget to vote!</p>`);
   },
 
   async sendRoundDecided(memberEmails: string[], clubName: string, bookTitle: string) {
-    await send(memberEmails, `Next book decided in ${clubName}: ${bookTitle}`, `<p>The next book for <b>${clubName}</b> is <b>${bookTitle}</b>!</p>`);
+    await send(memberEmails, `Next book decided in ${clubName}: ${bookTitle}`, `<p>The next book for <b>${escapeHtml(clubName)}</b> is <b>${escapeHtml(bookTitle)}</b>!</p>`);
   },
 
   async sendMeetingProposed(memberEmails: string[], clubName: string, title: string) {
-    await send(memberEmails, `Meeting proposed: ${title}`, `<p>A new meeting has been proposed in <b>${clubName}</b>. Submit your availability!</p>`);
+    await send(memberEmails, `Meeting proposed: ${title}`, `<p>A new meeting has been proposed in <b>${escapeHtml(clubName)}</b>. Submit your availability!</p>`);
   },
 
   async sendMeetingConfirmed(memberEmails: string[], clubName: string, title: string, time: string, location?: string) {
-    const locationHtml = location ? `<p>Location: ${location}</p>` : "";
-    await send(memberEmails, `Meeting confirmed: ${title}`, `<p>Meeting confirmed in <b>${clubName}</b> for ${time}.</p>${locationHtml}`);
+    const locationHtml = location ? `<p>Location: ${escapeHtml(location)}</p>` : "";
+    await send(memberEmails, `Meeting confirmed: ${title}`, `<p>Meeting confirmed in <b>${escapeHtml(clubName)}</b> for ${escapeHtml(time)}.</p>${locationHtml}`);
   },
 
   async sendMeetingReminder(memberEmails: string[], title: string, time: string) {
-    await send(memberEmails, `Reminder: ${title} tomorrow`, `<p>Your meeting <b>${title}</b> is scheduled for ${time} (24 hours from now).</p>`);
+    await send(memberEmails, `Reminder: ${title} tomorrow`, `<p>Your meeting <b>${escapeHtml(title)}</b> is scheduled for ${escapeHtml(time)} (24 hours from now).</p>`);
   },
 
   async sendMeetingCancelled(memberEmails: string[], clubName: string, title: string) {
-    await send(memberEmails, `Meeting cancelled: ${title}`, `<p>The meeting <b>${title}</b> in <b>${clubName}</b> has been cancelled.</p>`);
+    await send(memberEmails, `Meeting cancelled: ${title}`, `<p>The meeting <b>${escapeHtml(title)}</b> in <b>${escapeHtml(clubName)}</b> has been cancelled.</p>`);
   },
 
   async sendAvailabilityReminder(memberEmails: string[], clubName: string, title: string) {
-    await send(memberEmails, `Availability needed: ${title}`, `<p>You haven't submitted your availability for <b>${title}</b> in <b>${clubName}</b>.</p>`);
+    await send(memberEmails, `Availability needed: ${title}`, `<p>You haven't submitted your availability for <b>${escapeHtml(title)}</b> in <b>${escapeHtml(clubName)}</b>.</p>`);
   },
 };
 
