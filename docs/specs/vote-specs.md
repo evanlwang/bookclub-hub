@@ -35,6 +35,7 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 - `[x]` **VOTE-API-006**: When a member attempts to nominate a book already nominated in the same round, the system SHALL throw a CONFLICT error (unique on `(roundId, bookId)`).
 - `[x]` **VOTE-API-007**: When a member attempts to nominate during "voting" or "decided" phase, the system SHALL throw a BAD_REQUEST error.
 - `[x]` **VOTE-API-NOMDEL-001**: The `nominations.delete` procedure SHALL allow the original nominator OR any admin/owner to delete a nomination. (`nominations.ts:62-89`)
+- `[x]` **VOTE-API-NOMDELETE-XCLUB-001**: The `nominations.delete` procedure SHALL verify the loaded nomination's `round.clubId` matches `input.clubId` BEFORE running the author/admin authorization check, and SHALL throw NOT_FOUND on mismatch. Without this guard an admin of club A can delete any nomination from club B by passing a foreign `nominationId`, because `ctx.membership` is scoped to `input.clubId` not to the nomination's actual club. Mirrors the cross-club guard in `rounds.advance` (rounds.ts:148-150) and `threads.get` (threads.ts:151-153). (`nominations.ts`)
 - `[x]` **VOTE-DATA-001**: Each nomination SHALL have a unique `(round_id, book_id)` pair.
 
 ## Voting API

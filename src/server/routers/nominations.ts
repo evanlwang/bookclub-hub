@@ -59,6 +59,7 @@ export const nominationsRouter = router({
       return { nomination };
     }),
 
+  // @spec VOTE-API-NOMDEL-001, VOTE-API-NOMDELETE-XCLUB-001
   delete: memberProcedure
     .input(
       z.object({
@@ -71,6 +72,13 @@ export const nominationsRouter = router({
         where: { id: input.nominationId },
         include: { round: true },
       });
+
+      // Cross-club guard MUST run before authorization. `ctx.membership` is
+      // scoped to `input.clubId`, so admin-of-A would otherwise be treated as
+      // admin for a nominationId in club B.
+      if (nomination.round.clubId !== input.clubId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
 
       // Check authorization: author or admin+
       const isAuthor = nomination.nominatedBy === ctx.user.id;
