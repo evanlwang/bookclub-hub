@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getServerCaller } from "@/trpc/server";
 import { prisma } from "@/lib/db";
 import { Card, Badge, BookCover, ProgressBar, Avatar } from "@/components/ui";
+import { medianOfReading } from "@/lib/progress/median";
+import { relativeTimeShort } from "@/lib/progress/relative-time";
 import { UpdateProgressButton } from "./update-modal";
 
-// @spec PROG-API-003, PROG-UI-001, PROG-UI-004, PROG-UI-005, PROG-UI-006, PROG-UI-007, PROG-UI-008, PROG-UI-BOOK-001, PROG-UI-BOOK-002, PROG-UI-BOOK-005, PROG-UI-BOOK-006, PROG-UI-BOOK-007
+// @spec PROG-API-003, PROG-UI-001, PROG-UI-004, PROG-UI-005, PROG-UI-006, PROG-UI-007, PROG-UI-008, PROG-UI-BOOK-001, PROG-UI-BOOK-002, PROG-UI-BOOK-005, PROG-UI-BOOK-006, PROG-UI-BOOK-007, PROG-DASH-MEDIAN-001, PROG-DASH-UPDATED-001, PROG-DASH-UNKNOWN-TOTAL-001
 export default async function ProgressPage({
   params,
   searchParams,
@@ -56,7 +58,10 @@ export default async function ProgressPage({
   ];
 
   let progress: any[] = [];
-  let totalPages = 0;
+  // `totalPages` is null when neither the book nor any member record knows the
+  // page count. The modal renders an "Unknown total" branch in that case
+  // rather than fabricating a number like the old `|| 412` fallback.
+  let totalPages: number | null = null;
   let myProgress: any = null;
   let book: any = null;
   let error = "";
@@ -67,7 +72,7 @@ export default async function ProgressPage({
     myProgress = await caller.progress.me({ clubId, bookId });
     book = await prisma.book.findUnique({ where: { id: bookId } });
     const firstWithPages = progress.find((p: any) => p.totalPages);
-    totalPages = firstWithPages?.totalPages ?? book?.pageCount ?? 0;
+    totalPages = firstWithPages?.totalPages ?? book?.pageCount ?? null;
   } catch (e: unknown) {
     error = e instanceof Error ? e.message : "Error loading progress";
   }
@@ -83,10 +88,17 @@ export default async function ProgressPage({
   const finished = progress.filter((p: any) => p.status === "finished").length;
   const reading = progress.filter((p: any) => p.status === "reading").length;
   const notStarted = progress.filter((p: any) => p.status === "not_started").length;
-  const percentages = progress.map((p: any) => p.percentage ?? 0).sort((a: number, b: number) => a - b);
-  const median = percentages.length > 0
-    ? percentages[Math.floor(percentages.length / 2)]
-    : 0;
+  // @spec PROG-DASH-MEDIAN-001
+  // Median is computed over members who have started reading. Including
+  // not_started zeros made the headline number misleading when a club was
+  // mid-cycle and several members hadn't picked up the book yet.
+  const median = medianOfReading(
+    progress.map((p: any) => ({
+      percentage: p.percentage ?? 0,
+      status: p.status ?? "not_started",
+    }))
+  );
+  const startedCount = reading + finished;
 
   const isViewingPast = !!requestedBookId && requestedBookId !== currentSelection?.bookId;
 
@@ -100,7 +112,7 @@ export default async function ProgressPage({
           <UpdateProgressButton
             clubId={clubId}
             bookId={bookId}
-            totalPages={totalPages || 412}
+            totalPages={totalPages}
             currentProgress={
               myProgress
                 ? {
@@ -180,8 +192,12 @@ export default async function ProgressPage({
               </div>
 
               <div className="flex-1">
+                {/* @spec PROG-DASH-MEDIAN-001 */}
                 <p data-testid="progress-summary" className="text-sm text-ink-2 mb-3">
-                  {reading + finished} of {progress.length} reading · median at {median}%
+                  {startedCount > 0
+                    ? `median ${median}% across ${startedCount} reading`
+                    : "No one has started yet"}
+                  {notStarted > 0 && ` · ${notStarted} not started`}
                   {finished > 0 && ` · ${finished} finished`}
                 </p>
 
@@ -252,6 +268,17 @@ export default async function ProgressPage({
                           ? `Finished · ${p.totalPages ?? p.currentPage ?? ""} pages`
                           : `Page ${p.currentPage ?? 0}${p.currentChapter != null ? ` · ch. ${p.currentChapter}` : ""}`}
                     </p>
+                    {/* @spec PROG-DASH-UPDATED-001 */}
+                    {p.updatedAt && p.status !== "not_started" && (
+                      <time
+                        data-testid={`progress-updated-${p.userId}`}
+                        dateTime={new Date(p.updatedAt).toISOString()}
+                        title={new Date(p.updatedAt).toLocaleString("en-US")}
+                        className="text-[11px] text-ink-3"
+                      >
+                        Updated {relativeTimeShort(p.updatedAt)}
+                      </time>
+                    )}
                   </div>
                   <div className="order-last basis-full sm:order-none sm:basis-auto sm:flex-1 sm:min-w-0">
                     <ProgressBar
