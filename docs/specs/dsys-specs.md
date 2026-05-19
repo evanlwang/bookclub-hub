@@ -28,11 +28,13 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Motion Contract
 
-- `[x]` **DSYS-MOTION-001**: Interactive state transitions (background, color, border, shadow, transform, opacity) SHALL default to `150ms ease`.
-- `[x]` **DSYS-MOTION-002**: Where `prefers-reduced-motion` is `reduce`, the system SHALL suppress all CSS animations and transitions globally via `@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }` in `globals.css`.
-- `[x]` **DSYS-MOTION-003**: The progress-bar fill keyframe (`bar-fill`) SHALL use `500ms cubic-bezier(0.2, 0.7, 0.2, 1)`.
-- `[x]` **DSYS-MOTION-004**: Toast (`toast-in`) and fade-in animations SHALL use `150ms ease`.
-- `[x]` **DSYS-MOTION-005**: Slide-down animations SHALL use `200ms ease`.
+- `[x]` **DSYS-MOTION-001**: Interactive state transitions (background, color, border, shadow, transform, opacity) SHALL default to `tokens.duration.fast` (`0.15s`) with `tokens.easing.outQuint` (`cubic-bezier(0.22, 1, 0.36, 1)`).
+- `[x]` **DSYS-MOTION-002**: Where `prefers-reduced-motion` is `reduce`, the system SHALL suppress all CSS animations and transitions globally via `@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }` in `globals.css`. The JS path (Motion / `motion/react`) honors the same preference via `useMotionPreset` (see DSYS-MOTION-007).
+- `[x]` **DSYS-MOTION-003**: The progress-bar fill keyframe (`bar-fill`) SHALL use `tokens.duration.slow` (`0.35s`) with `tokens.easing.outQuint`.
+- `[x]` **DSYS-MOTION-004**: Toast (`toast-in`) and fade-in animations SHALL use `tokens.duration.fast` (`0.15s`) with `tokens.easing.outQuint`.
+- `[x]` **DSYS-MOTION-005**: Slide-down animations SHALL use `tokens.duration.base` (`0.2s`) with `tokens.easing.outQuint`.
+- `[x]` **DSYS-MOTION-006**: A canonical motion-token module SHALL exist at `src/lib/motion/tokens.ts` exporting `duration`, `easing`, `stagger`, `transition`, and named `presets` (fadeIn, slideUp, slideDown, scaleIn, listItem, cardEnter, modalEnter). Both the CSS path (DSYS-MOTION-001/003/004/005) and the JS path (DSYS-MOTION-007) SHALL pull their values from this module — divergence between them is a defect.
+- `[x]` **DSYS-MOTION-007**: Every `<motion.*>` consumer in `src/` SHALL obtain its preset via `useMotionPreset(name)` (`src/lib/motion/use-motion-preset.ts`). The hook returns a zero-duration empty preset when `useReducedMotion()` from `motion/react` is true, so consumers never need to branch on the user's preference at the call site.
 
 ## Accessibility Baseline
 

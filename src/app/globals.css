@@ -78,7 +78,15 @@
   }
 }
 
-/* Animations */
+/* Animations — CSS path of the motion system.
+ * Durations and easing here mirror the JS motion tokens in
+ * src/lib/motion/tokens.ts so CSS-only paths (skeletons, simple entrances)
+ * stay visually consistent with Motion-driven ones.
+ * @spec DSYS-MOTION-003, DSYS-MOTION-004, DSYS-MOTION-005, DSYS-MOTION-006
+ *
+ * outQuint = cubic-bezier(0.22, 1, 0.36, 1) — UI default
+ * Duration scale: instant 0.1s | fast 0.15s | base 0.2s | slow 0.35s | cinematic 0.6s
+ */
 @keyframes bar-fill {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
@@ -101,19 +109,19 @@
 
 .bar-anim {
   transform-origin: left center;
-  animation: bar-fill 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: bar-fill 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-toast-in {
-  animation: toast-in 150ms ease;
+  animation: toast-in 0.15s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .animate-fade-in {
-  animation: fade-in 150ms ease;
+  animation: fade-in 0.15s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .animate-slide-down {
-  animation: slide-down 200ms ease;
+  animation: slide-down 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* @spec DSYS-MOTION-002 */
