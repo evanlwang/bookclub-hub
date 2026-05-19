@@ -18,11 +18,6 @@ export default async function VotePage({
   let isAdmin = false;
   let memberCount = 0;
   let voterCount = 0;
-  let closePreview: {
-    top3: Array<{ id: string; title: string; author: string; voteCount: number }>;
-    totalVotes: number;
-    tiedAtTop: number;
-  } | null = null;
   let error = "";
 
   try {
@@ -68,43 +63,10 @@ export default async function VotePage({
           distinct: ["userId"],
         });
         voterCount = voters.length;
-
-        // @spec VOTE-UI-CLOSE-003, VOTE-UI-CLOSE-005, VOTE-UI-CLOSE-007
-        // Admin-only peek at standings for the close-voting confirmation dialog.
-        // Tallies remain hidden in the rest of the UI per VOTE-UI-001.
-        if (isAdmin) {
-          const noms = await prisma.nomination.findMany({
-            where: { roundId: activeRound.id },
-            include: { book: true, _count: { select: { votes: true } } },
-          });
-          const ranked = noms
-            .map((n) => ({
-              id: n.id,
-              title: n.book.title,
-              author: n.book.author,
-              voteCount: n._count.votes,
-              createdAt: n.createdAt.getTime(),
-            }))
-            .sort((a, b) => {
-              if (b.voteCount !== a.voteCount) return b.voteCount - a.voteCount;
-              return a.createdAt - b.createdAt;
-            });
-          const top = ranked[0];
-          const tiedAtTop = top
-            ? ranked.filter((r) => r.voteCount === top.voteCount).length
-            : 0;
-          const totalVotes = ranked.reduce((s, r) => s + r.voteCount, 0);
-          closePreview = {
-            top3: ranked.slice(0, 3).map(({ id, title, author, voteCount }) => ({
-              id,
-              title,
-              author,
-              voteCount,
-            })),
-            totalVotes,
-            tiedAtTop,
-          };
-        }
+        // @spec VOTE-UI-CLOSE-LIVE-001
+        // The admin close-voting preview now comes from `rounds.getClosePreview`
+        // on the client so it refetches on dialog open and after each vote.
+        // No server-side snapshot here — it would just go stale.
       }
     }
   } catch (e: unknown) {
@@ -161,7 +123,6 @@ export default async function VotePage({
               isAdmin={isAdmin}
               memberCount={memberCount}
               voterCount={voterCount}
-              closePreview={closePreview}
               activeVotingDeadline={
                 activeRoundDetail.votingDeadline
                   ? new Date(activeRoundDetail.votingDeadline).toISOString()

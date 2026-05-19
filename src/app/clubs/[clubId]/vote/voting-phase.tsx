@@ -43,6 +43,24 @@ export function VotingPhase({
   const utils = trpc.useUtils();
   const [selected, setSelected] = useState<string[]>(initialVotes);
   const [hasVoted, setHasVoted] = useState(initialVotes.length > 0);
+
+  // @spec VOTE-UI-CLOSE-LIVE-001
+  // Source of truth for the close-voting preview. The server-rendered
+  // `closePreview` prop is used only as the initial paint so admins don't
+  // see a flash of "no votes" — the real value comes from this query, which
+  // is refetched on dialog open and after each local vote submit so the
+  // enabled/disabled state of the close button and the standings inside the
+  // dialog always reflect freshly-arrived votes.
+  const closePreviewQuery = trpc.rounds.getClosePreview.useQuery(
+    { clubId, roundId },
+    {
+      enabled: isAdmin,
+      staleTime: 0,
+      initialData: closePreview ?? undefined,
+    }
+  );
+  const livePreview = closePreviewQuery.data ?? closePreview;
+
   // @spec VOTE-UI-CLOSE-002, VOTE-UI-CANCEL-002
   const [closeOpen, setCloseOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -105,6 +123,9 @@ export function VotingPhase({
       setJustSubmitted(true);
       setLastSubmitWasUpdate(wasUpdate);
       void utils.rounds.get.invalidate({ clubId, roundId });
+      // @spec VOTE-UI-CLOSE-LIVE-001 — own vote bumps the standings the
+      // admin will see when they next open the close dialog.
+      void utils.rounds.getClosePreview.invalidate({ clubId, roundId });
       // Re-fetch the server component so the voter-turnout card reflects
       // the new count. @spec VOTE-UI-TURNOUT-LIVE-001
       router.refresh();
@@ -301,7 +322,7 @@ export function VotingPhase({
           >
             <div className="flex flex-col">
               <span className="text-xs uppercase tracking-wider text-ink-3">Admin actions</span>
-              {closePreview && closePreview.totalVotes === 0 && (
+              {livePreview && livePreview.totalVotes === 0 && (
                 <span
                   data-testid="close-disabled-hint"
                   className="text-[11px] text-ink-3 italic mt-0.5"
@@ -327,9 +348,12 @@ export function VotingPhase({
                 type="button"
                 variant="primary"
                 size="sm"
-                disabled={!closePreview || closePreview.totalVotes === 0}
+                disabled={!livePreview || livePreview.totalVotes === 0}
                 onClick={() => {
                   setAdminActionError("");
+                  // @spec VOTE-UI-CLOSE-LIVE-001 — refetch standings on every
+                  // dialog open so admins never act on stale tallies.
+                  void closePreviewQuery.refetch();
                   setCloseOpen(true);
                 }}
                 data-testid="close-voting-btn"
@@ -340,9 +364,9 @@ export function VotingPhase({
           </div>
         )}
 
-        {closeOpen && closePreview && (
+        {closeOpen && livePreview && (
           <CloseVotingDialog
-            preview={closePreview}
+            preview={livePreview}
             submitting={adminActionLoading}
             error={adminActionError}
             onConfirm={handleCloseVoting}
