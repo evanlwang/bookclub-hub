@@ -102,8 +102,19 @@ export function NominateModal({
     manualTitleDirty.current = false;
   }, [isOpen]);
 
+  const utils = trpc.useUtils();
   const createManualBook = trpc.books.createManual.useMutation();
-  const createNomination = trpc.nominations.create.useMutation();
+  // @spec VOTE-UI-NOMMODAL-INVALIDATE-001
+  // Without this onSuccess invalidation, the rounds.get cache keeps the
+  // pre-nomination snapshot — the NominatingPhase keeps rendering the old
+  // count (and "Needs at least 2 nominations" hint) until a manual reload,
+  // and the rounds.list cache keeps a stale active-round summary too.
+  const createNomination = trpc.nominations.create.useMutation({
+    onSuccess: () => {
+      void utils.rounds.get.invalidate({ clubId, roundId });
+      void utils.rounds.list.invalidate({ clubId });
+    },
+  });
 
   const submitting = createManualBook.isPending || createNomination.isPending;
 
