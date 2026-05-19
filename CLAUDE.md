@@ -11,7 +11,7 @@ When implementing a feature, always audit the spec notation against the source c
 
 ## Project Overview
 
-**BookClub Hub** is a full-stack application that coordinates the complete lifecycle of book club activity: voting on books, scheduling meetings, discussing chapters, and tracking reading progress. It consolidates what would otherwise be scattered across group chats, spreadsheets, and scheduling tools into a single, purpose-built application.
+**Dogear** (repo directory: `bookclub-hub`) is a full-stack application that coordinates the complete lifecycle of book club activity: voting on books, scheduling meetings, discussing chapters, and tracking reading progress. It consolidates what would otherwise be scattered across group chats, spreadsheets, and scheduling tools into a single, purpose-built application.
 
 ### Core Stack
 - **Frontend**: Next.js App Router with React Server Components, TypeScript, Tailwind CSS

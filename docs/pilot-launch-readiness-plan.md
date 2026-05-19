@@ -2,7 +2,7 @@
 
 ## Context
 
-BookClub Hub is ready to invite a small group of book clubs as a passcode-gated pilot. The application logic is well-structured (tRPC + Prisma + Next.js App Router with strong test coverage, sliding-session auth, role-based authorization), but a focused audit surfaced one tenant-isolation bug, a defense-in-depth email gap, and several thin-but-load-bearing infra pieces that are missing or unverified. The user's pilot model is "any friend with the shared passcode can sign up" (keep `PILOT_PASSCODE` as-is). The bar for shipping is **critical security + minimal infra** — defer CI workflows, Prisma migrations, DB indices, Sentry-style observability, and email retries to post-pilot.
+Dogear is ready to invite a small group of book clubs as a passcode-gated pilot. The application logic is well-structured (tRPC + Prisma + Next.js App Router with strong test coverage, sliding-session auth, role-based authorization), but a focused audit surfaced one tenant-isolation bug, a defense-in-depth email gap, and several thin-but-load-bearing infra pieces that are missing or unverified. The user's pilot model is "any friend with the shared passcode can sign up" (keep `PILOT_PASSCODE` as-is). The bar for shipping is **critical security + minimal infra** — defer CI workflows, Prisma migrations, DB indices, Sentry-style observability, and email retries to post-pilot.
 
 This plan delivers the smallest set of changes that closes the real cross-tenant exposure, hardens the perimeter (rate limits, HTTP headers, email escaping), validates env at boot, and gives operations a heartbeat — without slowing the launch.
 

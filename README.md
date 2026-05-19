@@ -1,4 +1,4 @@
-# BookClub Hub
+# Dogear
 
 One app for book club coordination — picking books, scheduling meetings, tracking reading, and discussing without spoilers.
 

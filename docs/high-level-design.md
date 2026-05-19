@@ -1,4 +1,4 @@
-# High-Level Design: BookClub Hub
+# High-Level Design: Dogear
 
 ## Problem
 
@@ -12,7 +12,7 @@ The timing is straightforward: book clubs surged during and after the pandemic, 
 
 ## Approach
 
-BookClub Hub eliminates the organizer's coordination burden so that running a book club takes less effort than participating in one. One app replaces the group chat polls, shared spreadsheets, and scheduling threads. A member types a club code, enters their email, and they're in — no sign-up, no password, no OAuth consent screen.
+Dogear eliminates the organizer's coordination burden so that running a book club takes less effort than participating in one. One app replaces the group chat polls, shared spreadsheets, and scheduling threads. A member types a club code, enters their email, and they're in — no sign-up, no password, no OAuth consent screen.
 
 The app is organized around five capabilities, each designed to reduce a specific friction point:
 
@@ -256,7 +256,7 @@ A single light theme using `oklch()` notation for perceptual uniformity across m
 ```mermaid
 sequenceDiagram
     actor User
-    participant App as BookClub Hub
+    participant App as Dogear
     participant DB as PostgreSQL
     participant Email as Resend
 

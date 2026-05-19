@@ -1,7 +1,7 @@
 {
-  "name": "bookclub-hub",
+  "name": "dogear",
   "version": "1.0.0",
-  "description": "",
+  "description": "Dogear — book club coordination without the group-chat sprawl.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

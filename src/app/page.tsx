@@ -1,4 +1,4 @@
-// @spec HOME-UI-001 through HOME-UI-011, HOME-UI-PRIVACY-CALLOUT-001, HOME-A11Y-002, HOME-A11Y-004
+// @spec HOME-UI-001 through HOME-UI-011, HOME-UI-PRIVACY-CALLOUT-001, HOME-UI-ABOUT-001, HOME-A11Y-002, HOME-A11Y-004
 /* eslint-disable no-restricted-syntax --
  * The landing page's "cream-to-primary backdrop" gradient (~191-193) is a
  * page-private aesthetic — a subtle tonal wash distinct from the hero. The
@@ -28,7 +28,7 @@ export default function Home() {
         <Link href="/" className="flex items-center gap-2.5">
           <LogoIcon size={26} />
           <span className="font-[var(--font-display)] text-xl font-semibold text-ink">
-            BookClub Hub
+            Dogear
           </span>
         </Link>
         <div className="flex items-center gap-1">
@@ -290,6 +290,54 @@ export default function Home() {
         </div>
       </section>
 
+      {/* About — name origin + product elevator */}
+      {/* @spec HOME-UI-ABOUT-001 */}
+      <section
+        id="about"
+        data-testid="about-section"
+        aria-label="About Dogear"
+        className="px-4 md:px-8 lg:px-14 py-14 lg:py-20"
+      >
+        <div className="max-w-[680px] mx-auto">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
+            <span className="text-[11px] uppercase tracking-[0.22em] text-primary-ink font-medium">
+              About
+            </span>
+            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
+          </div>
+
+          <h2 className="font-[var(--font-display)] text-[34px] md:text-[42px] font-semibold text-ink text-center mb-8 tracking-[-0.02em] leading-[1.1]">
+            Why{" "}
+            <em className="italic" style={{ color: "var(--color-primary)" }}>
+              Dogear
+            </em>
+            ?
+          </h2>
+
+          <div className="space-y-5 text-[16px] md:text-[17px] text-ink-2 leading-[1.65]">
+            <p>
+              Dogear is book club coordination without the group-chat sprawl —
+              voting, scheduling, spoiler-safe discussion, and reading progress,
+              in one place built for the ritual instead of bolted onto a
+              messenger.
+            </p>
+            <p>
+              A dog-eared page is the universal &ldquo;here&apos;s where I
+              stopped.&rdquo; It&apos;s the smallest possible bookmark and the
+              first one any reader ever learns — one folded corner that says
+              <em> come back here</em>.
+            </p>
+            <p>
+              A book club is the same idea, scaled to a group: a shared place to
+              return to together. Where are we in the book, when do we meet
+              next, what&apos;s safe to say. That&apos;s the whole product, and
+              that&apos;s the whole name.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* All-features deep dive */}
       {/* @spec HOME-UI-007 */}
       <section
@@ -408,7 +456,7 @@ export default function Home() {
       <footer className="border-t border-line text-[13px] text-ink-3 flex items-center px-4 md:px-8 lg:px-14 py-7">
         <div className="flex flex-wrap items-center gap-2">
           <LogoIcon size={18} />
-          <span>BookClub Hub</span>
+          <span>Dogear</span>
           <span>·</span>
           <span>For people who finish the book.</span>
         </div>

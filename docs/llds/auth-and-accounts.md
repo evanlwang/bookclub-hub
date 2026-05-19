@@ -2,7 +2,7 @@
 
 ## Context and Design Philosophy
 
-Identity in BookClub Hub is designed for maximum frictionlessness. There is no account creation flow, no passwords, no OAuth, and no third-party authentication. A user's identity is their email address. They enter it once when they first join a club, along with a display name. The system creates a long-lived session and the user is done.
+Identity in Dogear is designed for maximum frictionlessness. There is no account creation flow, no passwords, no OAuth, and no third-party authentication. A user's identity is their email address. They enter it once when they first join a club, along with a display name. The system creates a long-lived session and the user is done.
 
 The email serves as a cross-device, cross-club identity anchor. If a user opens the app on a new device, they enter their email and are recognized — all their clubs appear. No verification step, no magic link, no password. The threat model is "people who know each other," not "adversarial strangers."
 

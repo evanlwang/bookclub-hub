@@ -22,7 +22,7 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 
 ## Landing Page — Navigation
 
-- `[x]` **HOME-UI-001**: Top nav SHALL contain: logo, "BookClub Hub" wordmark, "Log in" ghost-style link → `/login`, "Sign up" primary button → `/join`. ("Pricing" and "About" links removed — see `HOME-UI-012`.) (`page.tsx:19-40`)
+- `[x]` **HOME-UI-001**: Top nav SHALL contain: logo, "Dogear" wordmark, "Log in" ghost-style link → `/login`, "Sign up" primary button → `/join`. ("Pricing" and "About" links removed — see `HOME-UI-012`.) (`page.tsx:19-40`)
 - `[x]` **HOME-UI-005**: "Sign up" links/buttons SHALL navigate to `/join`. (`page.tsx:33-40, 71-79`)
 - `[x]` **HOME-UI-006**: "Log in" link SHALL navigate to `/login`. (`page.tsx:27-32`)
 
@@ -41,6 +41,10 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 
 - `[x]` **HOME-UI-PRIVACY-CALLOUT-001**: A full-width "promises" section (`data-testid="privacy-banner"`, `aria-label="Privacy guarantees"`) SHALL render between the hero and the feature row. It SHALL include a centered eyebrow ("Our promises") flanked by short horizontal rules, a display-font headline with an italicized primary-colored emphasis word, a muted subhead, and a three-up grid of promise cards. Each card SHALL render an icon well (primary-soft background, primary-ink icon) plus a display-font title and a one-line body. The three claims SHALL communicate, in this order: (a) no personal data ("No personal data"), (b) only email and display name are required ("Just email and display name"), (c) no ads, ever ("No ads, ever"). Cards SHALL use the same FeatureCard visual rhythm as the row below (radius, icon well, typography) but at smaller scale. (`page.tsx`)
 
+## Landing Page — About
+
+- `[x]` **HOME-UI-ABOUT-001**: Between the privacy callout and the features overview, the page SHALL render an About section (`data-testid="about-section"`, `id="about"`, `aria-label="About Dogear"`) explaining the product and the origin of the name. It SHALL include a centered eyebrow ("About") flanked by short horizontal rules matching the privacy callout pattern, a display-font headline of the form "Why {italicized primary-colored 'Dogear'}?", and at least three prose paragraphs that (a) describe what the product is in one sentence ("book club coordination without the group-chat sprawl" or equivalent), (b) explain the dog-ear bookmark metaphor (a dog-eared page = the universal "here's where I stopped"), and (c) connect the metaphor to the product (a shared place a club returns to together). The section SHALL use a `max-w-[680px]` reading column for the prose. (`page.tsx`)
+
 ## Landing Page — Features & Footer
 
 - `[x]` **HOME-UI-007**: Below the privacy callout, the page SHALL render a deep-dive features section (`data-testid="features-overview"`, `aria-label="Features overview"`) with a centered eyebrow ("Everything inside") flanked by horizontal rules, a display-font headline with an italicized primary-colored emphasis word, a muted subhead, and a responsive grid of category cards (1 col mobile / 2 cols md / 3 cols lg). Each card SHALL render a 40×40 primary-soft icon well, a 19px display-font title, a 13px ink-3 tagline, a hairline divider, and a bullet list of 4 feature points each prefixed with a primary checkmark. The category set SHALL cover: Approval voting, Meeting scheduling, Spoiler-safe threads, Reading progress, Run your club, Quiet by default. Hover state SHALL lift the card slightly (`-translate-y-0.5`) and tint the border toward primary. (`page.tsx`)
@@ -48,7 +52,7 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 
 ## Join Page — Layout
 
-- `[x]` **JOIN-UI-001**: Header SHALL contain logo and "BookClub Hub" wordmark.
+- `[x]` **JOIN-UI-001**: Header SHALL contain logo and "Dogear" wordmark.
 - `[x]` **JOIN-UI-002**: Card SHALL constrain content to maxWidth 440px with padding 32px.
 
 ## Join Page — Stepper
