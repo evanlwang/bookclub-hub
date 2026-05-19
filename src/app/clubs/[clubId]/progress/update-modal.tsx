@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ProgressBar } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { clampPage } from "@/lib/progress/clamp-page";
 import { trpc } from "@/trpc/react-hooks";
 
 type ProgressStatus = "not_started" | "reading" | "finished";
@@ -19,13 +20,14 @@ type ProgressSnapshot = {
 interface UpdateModalProps {
   clubId: string;
   bookId: string;
-  totalPages: number;
+  /** Known book length, or null when the book has no page count. */
+  totalPages: number | null;
   currentProgress?: ProgressSnapshot;
 }
 
 const TOAST_DISMISS_MS = 4000;
 
-// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001, PROG-UI-MODAL-SLIDER-001, PROG-UI-MODAL-PCT-001, PROG-UI-MODAL-TIMESTAMP-001
+// @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001, PROG-UI-MODAL-SLIDER-001, PROG-UI-MODAL-PCT-001, PROG-UI-MODAL-TIMESTAMP-001, PROG-UI-MODAL-PAGE-CLAMP-001, PROG-DASH-UNKNOWN-TOTAL-001
 export function UpdateProgressButton(props: UpdateModalProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -65,7 +67,7 @@ export function UpdateProgressButton(props: UpdateModalProps) {
           percentage: previous.percentage ?? 0,
           currentChapter: previous.currentChapter,
           status: normalizedStatus,
-          totalPages: props.totalPages,
+          ...(props.totalPages != null && { totalPages: props.totalPages }),
         });
       } catch {
         // Best-effort undo — failure here is non-blocking; the toast goes away.
@@ -142,25 +144,28 @@ function UpdateModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [loading, onClose]);
 
+  const knownPages = totalPages != null && totalPages > 0;
   const percentage =
     status === "finished"
       ? 100
-      : totalPages > 0
-        ? Math.min(100, Math.round((page / totalPages) * 100))
+      : knownPages
+        ? Math.min(100, Math.round((page / (totalPages as number)) * 100))
         : 0;
 
   function handleStatusChange(newStatus: string) {
     setStatus(newStatus);
     if (newStatus === "finished") {
-      setPage(totalPages);
+      setPage(totalPages ?? 0);
     } else if (newStatus === "not_started") {
       setPage(0);
     }
   }
 
+  // @spec PROG-UI-MODAL-PAGE-CLAMP-001
   function handlePageChange(value: number) {
-    setPage(value);
-    if (value > 0 && status === "not_started") {
+    const clamped = clampPage(value, totalPages);
+    setPage(clamped);
+    if (clamped > 0 && status === "not_started") {
       setStatus("reading");
     }
     // Mirror the server-side PROG-BE-006-AUTOFINISH rule so the status pill
@@ -168,7 +173,11 @@ function UpdateModal({
     // modal would show "Reading · 100%" until save, which contradicts the
     // dashboard's eventual "Finished" badge for the same numeric state.
     // @spec PROG-BE-006-AUTOFINISH
-    if (totalPages > 0 && value >= totalPages && status !== "finished") {
+    if (
+      knownPages &&
+      clamped >= (totalPages as number) &&
+      status !== "finished"
+    ) {
       setStatus("finished");
     }
   }
@@ -186,9 +195,9 @@ function UpdateModal({
         percentage,
         currentChapter: chapter || undefined,
         status: normalizedStatus,
-        totalPages,
+        ...(totalPages != null && { totalPages }),
       });
-      const savedPage = totalPages > 0 ? page : null;
+      const savedPage = knownPages ? page : null;
       const previous: ProgressSnapshot | null = currentProgress
         ? {
             currentPage: currentProgress.currentPage,
@@ -259,25 +268,31 @@ function UpdateModal({
           <input
             type="number"
             min={0}
-            max={totalPages}
+            {...(knownPages && { max: totalPages as number })}
             value={page}
             onChange={(e) => handlePageChange(Number(e.target.value))}
             disabled={status === "finished"}
             data-testid="page-input"
             className="w-full text-lg font-[var(--font-mono)] bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
           />
-          <input
-            type="range"
-            min={0}
-            max={totalPages}
-            value={page}
-            onChange={(e) => handlePageChange(Number(e.target.value))}
-            disabled={status === "finished"}
-            data-testid="page-slider"
-            aria-label="Current page"
-            className="w-full mt-2.5 accent-primary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-          />
-          <p className="text-xs text-ink-3 mt-1.5">of {totalPages} pages</p>
+          {knownPages && (
+            <input
+              type="range"
+              min={0}
+              max={totalPages as number}
+              value={page}
+              onChange={(e) => handlePageChange(Number(e.target.value))}
+              disabled={status === "finished"}
+              data-testid="page-slider"
+              aria-label="Current page"
+              className="w-full mt-2.5 accent-primary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            />
+          )}
+          <p className="text-xs text-ink-3 mt-1.5">
+            {knownPages
+              ? `of ${totalPages} pages`
+              : "Unknown total — record page only"}
+          </p>
         </div>
 
         <div
