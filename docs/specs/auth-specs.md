@@ -27,6 +27,9 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 - `[x]` **AUTH-UI-LOGIN-001**: The `/login` page SHALL render a single email input and a "Log in" button — no display-name prompt. The button is disabled until the email contains `@` and `.`. (`src/app/login/page.tsx`)
 - `[x]` **AUTH-UI-LOGIN-002**: On submit, the system SHALL call `auth.signIn` with the email. On success, it calls `auth.me`; if the user has one or more memberships, it SHALL `router.push("/clubs/{firstClubId}")` so the user lands directly inside a club (the standalone `/clubs` index page was removed). (`src/app/login/page.tsx`)
 - `[x]` **AUTH-UI-LOGIN-003**: When `auth.signIn` returns NOT_FOUND OR the user has zero memberships, the system SHALL `router.push("/join?welcome=1[&email=…]")`. The `/join` page SHALL render a welcome banner above Step 1 and pre-fill the email field. (`src/app/login/page.tsx`, `src/app/join/page.tsx`)
+- `[x]` **AUTH-UI-LOGIN-EMAIL-HINT-001**: When the email field is non-empty AND fails the basic `@`+`.` shape check, the `/login` page SHALL render an inline helper-text error ("Enter a valid email like name@example.com.") below the input and set `aria-invalid="true"` on the input. The helper SHALL NOT appear while the field is empty. (`src/app/login/page.tsx`)
+- `[x]` **AUTH-UI-LOGIN-PASSCODE-HINT-001**: The pilot passcode input on `/login` SHALL render a small helper text ("Contact your organizer if you don't have the passcode.") beneath the field so a returning user has a recovery path. (`src/app/login/page.tsx`)
+- `[x]` **AUTH-UI-LOGIN-AUTOCOMPLETE-001**: The `/login` email input SHALL set `autoComplete="email"` and the passcode input SHALL set `autoComplete="current-password"` so password managers recognize the form. (`src/app/login/page.tsx`)
 
 ## Entry Flow
 

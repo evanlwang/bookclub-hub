@@ -1,4 +1,4 @@
-// @spec AUTH-UI-LOGIN-001, AUTH-UI-LOGIN-002, AUTH-UI-LOGIN-003, AUTH-API-SIGNIN-001
+// @spec AUTH-UI-LOGIN-001, AUTH-UI-LOGIN-002, AUTH-UI-LOGIN-003, AUTH-UI-LOGIN-EMAIL-HINT-001, AUTH-UI-LOGIN-PASSCODE-HINT-001, AUTH-UI-LOGIN-AUTOCOMPLETE-001, AUTH-API-SIGNIN-001
 "use client";
 
 import { useState } from "react";
@@ -30,6 +30,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   const emailValid = email.includes("@") && email.includes(".");
+  // @spec AUTH-UI-LOGIN-EMAIL-HINT-001 — show inline helper only after the
+  // user has typed (avoids yelling at an empty field on initial render).
+  const showEmailFormatError = email.length > 0 && !emailValid;
   const canSubmit = emailValid && passcode.length > 0;
 
   // @spec AUTH-API-SIGNIN-001 — server emits the HttpOnly+Secure+SameSite cookie
@@ -111,9 +114,21 @@ export default function LoginPage() {
                   if (e.key === "Enter" && canSubmit && !signingIn) handleLogin();
                 }}
                 placeholder="you@example.com"
+                autoComplete="email"
+                aria-invalid={showEmailFormatError || undefined}
+                aria-describedby={showEmailFormatError ? "email-error" : undefined}
                 className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
                 autoFocus
               />
+              {showEmailFormatError && (
+                <p
+                  id="email-error"
+                  data-testid="email-format-error"
+                  className="text-xs text-danger mt-1.5"
+                >
+                  Enter a valid email like name@example.com.
+                </p>
+              )}
             </div>
 
             <div>
@@ -129,8 +144,13 @@ export default function LoginPage() {
                   if (e.key === "Enter" && canSubmit && !signingIn) handleLogin();
                 }}
                 placeholder="Shared with the pilot group"
+                autoComplete="current-password"
                 className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
               />
+              {/* @spec AUTH-UI-LOGIN-PASSCODE-HINT-001 */}
+              <p className="text-xs text-ink-3 mt-1.5">
+                Contact your organizer if you don&apos;t have the passcode.
+              </p>
             </div>
 
             {error && (
