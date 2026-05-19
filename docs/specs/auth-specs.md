@@ -27,6 +27,9 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 - `[x]` **AUTH-UI-LOGIN-001**: The `/login` page SHALL render a single email input and a "Log in" button — no display-name prompt. The button is disabled until the email contains `@` and `.`. (`src/app/login/page.tsx`)
 - `[x]` **AUTH-UI-LOGIN-002**: On submit, the system SHALL call `auth.signIn` with the email. On success, it calls `auth.me`; if the user has one or more memberships, it SHALL `router.push("/clubs/{firstClubId}")` so the user lands directly inside a club (the standalone `/clubs` index page was removed). (`src/app/login/page.tsx`)
 - `[x]` **AUTH-UI-LOGIN-003**: When `auth.signIn` returns NOT_FOUND OR the user has zero memberships, the system SHALL `router.push("/join?welcome=1[&email=…]")`. The `/join` page SHALL render a welcome banner above Step 1 and pre-fill the email field. (`src/app/login/page.tsx`, `src/app/join/page.tsx`)
+- `[x]` **AUTH-UI-LOGIN-EMAIL-HINT-001**: When the email field is non-empty AND fails the basic `@`+`.` shape check, the `/login` page SHALL render an inline helper-text error ("Enter a valid email like name@example.com.") below the input and set `aria-invalid="true"` on the input. The helper SHALL NOT appear while the field is empty. (`src/app/login/page.tsx`)
+- `[x]` **AUTH-UI-LOGIN-PASSCODE-HINT-001**: The pilot passcode input on `/login` SHALL render a small helper text ("Contact your organizer if you don't have the passcode.") beneath the field so a returning user has a recovery path. (`src/app/login/page.tsx`)
+- `[x]` **AUTH-UI-LOGIN-AUTOCOMPLETE-001**: The `/login` email input SHALL set `autoComplete="email"` and the passcode input SHALL set `autoComplete="current-password"` so password managers recognize the form. (`src/app/login/page.tsx`)
 
 ## Entry Flow
 
@@ -53,6 +56,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 - `[x]` **AUTH-UI-STEP3A-CODE-001**: Club code input (uppercase normalized, monospace, debounced lookup). On change ≥4 chars, calls `clubs.lookup`. (`join/page.tsx:265-297`)
 - `[x]` **AUTH-UI-STEP3A-BACK-001**: Button: "Back" — handler: returns to step 2.
 - `[x]` **AUTH-UI-STEP3A-JOIN-001**: Button: "Join {clubName}" / "Join the club" (`join/page.tsx:595-604`) — disabled when `!joinReady || joiningClub` — handler: `handleJoinSubmit` calls `clubs.join`.
+- `[x]` **AUTH-UI-STEP3A-ALREADY-MEMBER-001**: When `clubs.join` returns `{ alreadyMember: true }`, Step 3a SHALL render an in-flow informational banner ("You're already in {clubName}.") with a link "Open it →" that navigates to `/clubs/{id}`. The Join button SHALL be disabled while the banner is visible, and editing the code SHALL clear the banner. The system SHALL NOT advance to Step 4 in this case. (`src/app/join/page.tsx`, `src/app/join/_step3-join.tsx`)
 
 ## Step 3b Buttons (Create Branch)
 
@@ -88,6 +92,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 ## Sign Out
 
 - `[x]` **AUTH-UI-LOGOUT-001**: The club sidebar (`src/app/clubs/[clubId]/sidebar.tsx`) SHALL render a "Sign out" button in the user footer. Clicking it calls `auth.logout`, clears the `session_id` cookie client-side, and `router.push("/")`.
+- `[x]` **AUTH-UI-LOGOUT-INVALIDATE-001**: After `auth.logout` resolves, the sidebar SHALL call `utils.invalidate()` so the React Query cache drops every cached query. Without this, other open tabs (or the same tab if the user navigates back via cached data) would render stale signed-in state until each query independently re-fetched. (`src/app/clubs/[clubId]/sidebar.tsx`)
 - `[x]` **AUTH-UI-LOGOUT-003**: After sign-out, navigating back to a protected route (e.g. `/clubs/{clubId}`) SHALL render the unauthenticated state — `auth.me` throws UNAUTHORIZED and the per-club page shows its error view (`data-testid="club-error"`).
 - `[x]` **AUTH-API-LOGOUT-001**: `auth.logout` SHALL emit a `Set-Cookie: session_id=; Path=/; Max-Age=0` response header so the browser drops the cookie even if the client-side clear is skipped (defense in depth: both server and client clear).
 - `[x]` **AUTH-API-LOGOUT-002**: `auth.logout` called without a valid session SHALL return `{ success: true }` (idempotent) rather than throwing — the procedure becomes a `publicProcedure` so a stale or missing cookie still completes sign-out.

@@ -32,6 +32,10 @@ function JoinPageInner() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [clubInfo, setClubInfo] = useState<{ name: string; memberCount: number } | null>(null);
   const [joinError, setJoinError] = useState("");
+  // @spec AUTH-UI-STEP3A-ALREADY-MEMBER-001 — when the server reports the
+  // user is already in the club, render an in-flow banner with a deep link
+  // instead of pretending the join "succeeded".
+  const [alreadyMember, setAlreadyMember] = useState<{ id: string; name: string } | null>(null);
 
   const [clubName, setClubName] = useState("");
   const [clubCode, setClubCode] = useState("");
@@ -142,6 +146,8 @@ function JoinPageInner() {
   async function handleCodeChange(newCode: string) {
     const normalized = newCode.toUpperCase();
     setCode(normalized);
+    // Editing the code invalidates the previous already-member banner.
+    setAlreadyMember(null);
 
     if (normalized.length < 4) {
       setClubInfo(null);
@@ -166,12 +172,18 @@ function JoinPageInner() {
     }
   }
 
+  // @spec AUTH-UI-STEP3A-ALREADY-MEMBER-001
   async function handleJoinSubmit() {
     if (!joinReady) return;
     setJoinError("");
+    setAlreadyMember(null);
 
     try {
       const result = await joinMutation.mutateAsync({ code });
+      if (result.alreadyMember) {
+        setAlreadyMember({ id: result.club.id, name: result.club.name || "your club" });
+        return;
+      }
       setSuccessClubName(result.club.name || "your club");
       setStep(4);
       setTimeout(() => router.push(`/clubs/${result.club.id}`), 1500);
@@ -324,6 +336,7 @@ function JoinPageInner() {
               joinError={joinError}
               joinReady={joinReady}
               joiningClub={joinMutation.isPending}
+              alreadyMember={alreadyMember}
               onSubmit={handleJoinSubmit}
               onBack={handleBack}
             />

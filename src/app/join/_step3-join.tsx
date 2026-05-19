@@ -1,5 +1,7 @@
+// @spec AUTH-UI-STEP3A-CODE-001, AUTH-UI-STEP3A-JOIN-001, AUTH-UI-STEP3A-BACK-001, AUTH-UI-STEP3A-ALREADY-MEMBER-001
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui";
 import { ClubFoundPanel, ErrorBox, LookupSpinner } from "./_shared";
 
@@ -11,6 +13,7 @@ export function Step3Join({
   joinError,
   joinReady,
   joiningClub,
+  alreadyMember,
   onSubmit,
   onBack,
 }: {
@@ -21,6 +24,7 @@ export function Step3Join({
   joinError: string;
   joinReady: boolean;
   joiningClub: boolean;
+  alreadyMember: { id: string; name: string } | null;
   onSubmit: () => void;
   onBack: () => void;
 }) {
@@ -47,6 +51,26 @@ export function Step3Join({
 
       {clubInfo && <ClubFoundPanel clubInfo={clubInfo} />}
 
+      {alreadyMember && (
+        // @spec AUTH-UI-STEP3A-ALREADY-MEMBER-001
+        <div
+          data-testid="already-member-banner"
+          role="status"
+          aria-live="polite"
+          className="p-3 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink text-[13px] border animate-fade-in"
+          style={{ borderColor: "var(--color-primary-line)" }}
+        >
+          <p className="font-medium mb-1">You&apos;re already in {alreadyMember.name}.</p>
+          <Link
+            href={`/clubs/${alreadyMember.id}`}
+            data-testid="already-member-link"
+            className="text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
+          >
+            Open it →
+          </Link>
+        </div>
+      )}
+
       {joinError && (
         <ErrorBox role="alert" aria-live="assertive">
           {joinError}
@@ -68,7 +92,7 @@ export function Step3Join({
           variant="primary"
           size="lg"
           className="flex-1"
-          disabled={!joinReady || joiningClub}
+          disabled={!joinReady || joiningClub || !!alreadyMember}
           aria-busy={joiningClub}
           onClick={onSubmit}
         >
