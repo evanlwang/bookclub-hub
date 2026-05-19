@@ -1,4 +1,4 @@
-// @spec DASH-UI-001, DASH-UI-002, AUTH-UI-LOGOUT-001, CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-010, CLUB-NAV-MEMBERS-001
+// @spec DASH-UI-001, DASH-UI-002, AUTH-UI-LOGOUT-001, AUTH-UI-LOGOUT-INVALIDATE-001, CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-010, CLUB-NAV-MEMBERS-001
 "use client";
 
 import { useState } from "react";
@@ -56,6 +56,7 @@ export function ClubSidebar({
   const [addClubModalOpen, setAddClubModalOpen] = useState(false);
   const logoutMutation = trpc.auth.logout.useMutation();
   const signingOut = logoutMutation.isPending;
+  const utils = trpc.useUtils();
 
   const currentClub = clubs.find((c) => c.id === clubId);
   const hasMultipleClubs = clubs.length > 1;
@@ -129,6 +130,10 @@ export function ClubSidebar({
       // Server emits the clearing Set-Cookie; we still wipe locally as a backup.
     }
     document.cookie = "session_id=; Path=/; Max-Age=0; SameSite=Lax";
+    // @spec AUTH-UI-LOGOUT-INVALIDATE-001 — drop every cached query so any
+    // other open tab re-fetches against the now-unauthenticated session
+    // instead of rendering stale, signed-in data.
+    await utils.invalidate();
     router.push("/");
   }
 

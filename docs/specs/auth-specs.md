@@ -91,6 +91,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 ## Sign Out
 
 - `[x]` **AUTH-UI-LOGOUT-001**: The club sidebar (`src/app/clubs/[clubId]/sidebar.tsx`) SHALL render a "Sign out" button in the user footer. Clicking it calls `auth.logout`, clears the `session_id` cookie client-side, and `router.push("/")`.
+- `[x]` **AUTH-UI-LOGOUT-INVALIDATE-001**: After `auth.logout` resolves, the sidebar SHALL call `utils.invalidate()` so the React Query cache drops every cached query. Without this, other open tabs (or the same tab if the user navigates back via cached data) would render stale signed-in state until each query independently re-fetched. (`src/app/clubs/[clubId]/sidebar.tsx`)
 - `[x]` **AUTH-UI-LOGOUT-003**: After sign-out, navigating back to a protected route (e.g. `/clubs/{clubId}`) SHALL render the unauthenticated state — `auth.me` throws UNAUTHORIZED and the per-club page shows its error view (`data-testid="club-error"`).
 - `[x]` **AUTH-API-LOGOUT-001**: `auth.logout` SHALL emit a `Set-Cookie: session_id=; Path=/; Max-Age=0` response header so the browser drops the cookie even if the client-side clear is skipped (defense in depth: both server and client clear).
 - `[x]` **AUTH-API-LOGOUT-002**: `auth.logout` called without a valid session SHALL return `{ success: true }` (idempotent) rather than throwing — the procedure becomes a `publicProcedure` so a stale or missing cookie still completes sign-out.
