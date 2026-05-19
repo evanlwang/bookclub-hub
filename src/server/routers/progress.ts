@@ -1,5 +1,6 @@
-// @spec PROG-API-001, PROG-API-002, PROG-API-003, PROG-API-004, PROG-BE-001 through PROG-BE-006
+// @spec PROG-API-001, PROG-API-002, PROG-API-003, PROG-API-004, PROG-API-VALID-001, PROG-BE-001 through PROG-BE-006
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { router, memberProcedure } from "../trpc";
 import { computeProgress } from "@/lib/progress/compute";
 
@@ -58,6 +59,22 @@ export const progressRouter = router({
           where: { id: input.bookId },
         });
         totalPages = book?.pageCount ?? null;
+      }
+
+      // @spec PROG-API-VALID-001
+      // Guard against `currentPage > totalPages` reaching the DB and producing
+      // percentages > 100 on the dashboard. We only enforce the upper bound
+      // when totalPages is known; books without a page count accept any
+      // non-negative page as a free-form marker.
+      if (
+        input.currentPage != null &&
+        totalPages != null &&
+        input.currentPage > totalPages
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `currentPage (${input.currentPage}) cannot exceed totalPages (${totalPages})`,
+        });
       }
 
       const computed = computeProgress({
