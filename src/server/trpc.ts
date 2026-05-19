@@ -7,6 +7,7 @@ export type Context = {
   user: { id: string; email: string; displayName: string } | null;
   sessionId: string | null;
   resHeaders: Headers | null;
+  ip: string | null;
 };
 
 const t = initTRPC.context<Context>().create();

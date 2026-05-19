@@ -8,7 +8,7 @@ import type { Context } from "./trpc";
  */
 export async function createContext(sessionId?: string | null): Promise<Context> {
   if (!sessionId) {
-    return { db: prisma, user: null, sessionId: null, resHeaders: null };
+    return { db: prisma, user: null, sessionId: null, resHeaders: null, ip: null };
   }
 
   const session = await prisma.session.findUnique({
@@ -21,7 +21,7 @@ export async function createContext(sessionId?: string | null): Promise<Context>
       // Clean up expired session
       await prisma.session.delete({ where: { id: sessionId } });
     }
-    return { db: prisma, user: null, sessionId: null, resHeaders: null };
+    return { db: prisma, user: null, sessionId: null, resHeaders: null, ip: null };
   }
 
   // Sliding expiration: refresh on each authenticated request
@@ -39,5 +39,6 @@ export async function createContext(sessionId?: string | null): Promise<Context>
     },
     sessionId,
     resHeaders: null,
+    ip: null,
   };
 }

@@ -33,13 +33,16 @@ async function handler(req: Request) {
     }
   }
 
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  const ip = forwardedFor ? forwardedFor.split(",")[0]?.trim() || null : null;
+
   return fetchRequestHandler({
     endpoint: "/api/trpc",
     req,
     router: appRouter,
     createContext: ({ resHeaders }) => {
       if (slidingCookie) resHeaders.append("Set-Cookie", slidingCookie);
-      return { db, user, sessionId, resHeaders };
+      return { db, user, sessionId, resHeaders, ip };
     },
   });
 }

@@ -1,10 +1,48 @@
-// @spec AUTH-API-001, AUTH-API-002, AUTH-API-003, AUTH-API-004, AUTH-API-005, AUTH-API-SIGNIN-001, AUTH-API-LOGOUT-001, AUTH-API-LOGOUT-002
+// @spec AUTH-API-001, AUTH-API-002, AUTH-API-003, AUTH-API-004, AUTH-API-005, AUTH-API-SIGNIN-001, AUTH-API-LOGOUT-001, AUTH-API-LOGOUT-002, AUTH-API-RATELIMIT-001
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { normalizeEmail, validateEmail } from "@/lib/validation/email";
 import { generateSessionId, computeNewExpiry, sessionSetCookieHeader } from "@/lib/auth/session";
 import { passcodeOk } from "@/lib/auth/passcode";
+import { checkRateLimit } from "@/lib/auth/rate-limit";
+
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_PER_MINUTE = 5;
+
+// @spec AUTH-API-RATELIMIT-001
+// Applies AFTER email-format validation so malformed garbage doesn't pollute
+// buckets, but BEFORE the passcode check so failed passcodes still count.
+function enforceAuthRateLimit(
+  procedure: "signIn" | "enter",
+  ip: string | null,
+  normalizedEmail: string,
+): void {
+  if (ip) {
+    const ipCheck = checkRateLimit(
+      `${procedure}:ip:${ip}`,
+      RATE_LIMIT_PER_MINUTE,
+      RATE_LIMIT_WINDOW_MS,
+    );
+    if (!ipCheck.ok) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: "Rate limit exceeded — try again in a minute",
+      });
+    }
+  }
+  const emailCheck = checkRateLimit(
+    `${procedure}:email:${normalizedEmail}`,
+    RATE_LIMIT_PER_MINUTE,
+    RATE_LIMIT_WINDOW_MS,
+  );
+  if (!emailCheck.ok) {
+    throw new TRPCError({
+      code: "TOO_MANY_REQUESTS",
+      message: "Rate limit exceeded — try again in a minute",
+    });
+  }
+}
 
 export const authRouter = router({
   // @spec AUTH-API-SIGNIN-001
@@ -22,11 +60,14 @@ export const authRouter = router({
         });
       }
 
+      const email = normalizeEmail(input.email);
+      // @spec AUTH-API-RATELIMIT-001
+      enforceAuthRateLimit("signIn", ctx.ip, email);
+
       if (!passcodeOk(input.passcode)) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Wrong passcode" });
       }
 
-      const email = normalizeEmail(input.email);
       const user = await ctx.db.user.findUnique({ where: { email } });
 
       if (!user) {
@@ -65,11 +106,13 @@ export const authRouter = router({
         throw new Error(emailValidation.error);
       }
 
+      const email = normalizeEmail(input.email);
+      // @spec AUTH-API-RATELIMIT-001
+      enforceAuthRateLimit("enter", ctx.ip, email);
+
       if (!passcodeOk(input.passcode)) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Wrong passcode" });
       }
-
-      const email = normalizeEmail(input.email);
 
       // Create or update user
       const user = await ctx.db.user.upsert({
