@@ -242,16 +242,25 @@ describe("voting lifecycle", () => {
       roundId: round.id,
       bookId: dune.id,
     });
+    // @spec VOTE-API-ADVANCE-MINNOMS-001 — advance now requires ≥2 nominations.
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: leftHand.id,
+    });
     await adminCaller.rounds.advance({
       clubId: wedReads.id,
       roundId: round.id,
     });
 
+    const cthulhu = await db.book.create({
+      data: { title: 'The Call of Cthulhu', author: 'H.P. Lovecraft' },
+    });
     await expect(
       memberCaller.nominations.create({
         clubId: wedReads.id,
         roundId: round.id,
-        bookId: leftHand.id,
+        bookId: cthulhu.id,
       })
     ).rejects.toThrow("only accepted during the nominating");
   });
