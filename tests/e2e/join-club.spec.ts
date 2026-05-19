@@ -272,7 +272,7 @@ test.describe("New Entry Flow — Stepper", () => {
 test.describe("New Entry Flow — Layout & Accessibility", () => {
   test("renders header with logo and wordmark", async ({ page }) => {
     await page.goto("/join");
-    await expect(page.locator("header")).toContainText("BookClub Hub");
+    await expect(page.locator("header")).toContainText("Dogear");
   });
 
   test("all labels with htmlFor reference an existing input id", async ({ page }) => {

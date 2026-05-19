@@ -5,7 +5,7 @@ test.describe("Landing Page — Navigation", () => {
   test("renders top nav with logo wordmark and primary actions", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.locator("nav").getByText("BookClub Hub")).toBeVisible();
+    await expect(page.locator("nav").getByText("Dogear")).toBeVisible();
     await expect(page.locator("nav").getByRole("link", { name: /^log in$/i })).toBeVisible();
     await expect(page.locator("nav").getByRole("link", { name: /^sign up$/i })).toBeVisible();
   });
@@ -82,6 +82,23 @@ test.describe("Landing Page — Features", () => {
     await expect(page.getByText("Approval voting")).toBeVisible();
     await expect(page.getByText("Meeting scheduling")).toBeVisible();
     await expect(page.getByText("Spoiler-safe threads")).toBeVisible();
+  });
+});
+
+// @spec HOME-UI-ABOUT-001
+test.describe("Landing Page — About", () => {
+  test("about section is visible, anchorable, and explains the name", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const about = page.getByTestId("about-section");
+    await expect(about).toBeVisible();
+    await expect(about).toHaveAttribute("aria-label", "About Dogear");
+    await expect(about).toHaveAttribute("id", "about");
+    await expect(about.locator("h2")).toContainText(/why/i);
+    await expect(about.locator("h2 em")).toContainText("Dogear");
+    await expect(about).toContainText(/dog-eared/i);
+    await expect(about).toContainText(/here'?s where I stopped/i);
   });
 });
 
