@@ -108,6 +108,7 @@ These specs cover what happens when a member revisits the voting page after they
 ## Voting UI — No Active Round
 
 - `[x]` **VOTE-UI-NONE-001**: When a club has no round in status `nominating`, `voting`, or `decided` (i.e., zero rounds OR every prior round is `cancelled`), admins (owner/admin) SHALL see the NonePhase "Start new round" CTA that calls `rounds.create`. A cancelled-only round history MUST NOT suppress this CTA. (`page.tsx`, `none-phase.tsx`)
+- `[x]` **VOTE-UI-LIST-001**: The voting page's round-history list (`rounds-list`) SHALL exclude rounds in `cancelled` status — cancelled rounds carry no winner and add only noise to the history surface. The empty-state branch SHALL be driven by the count of *visible* (non-cancelled) rounds, so a cancelled-only club renders the same empty state as a zero-rounds club. `rounds.list` remains the source for active-round detection in the dashboard and layout and continues to return all statuses. (`page.tsx`)
 
 ## Voting UI — Voting → Decided (Manual Close)
 
