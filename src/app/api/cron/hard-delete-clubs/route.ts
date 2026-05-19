@@ -14,8 +14,11 @@ import { env } from "@/env";
  * etc. via the ON DELETE CASCADE relations declared in `prisma/schema.prisma`).
  */
 export async function GET(request: NextRequest) {
-  const cronSecret = request.headers.get("CRON_SECRET");
-  if (!cronSecret || cronSecret !== env.CRON_SECRET) {
+  // Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`. We accept that
+  // shape exclusively so wiring `vercel.json` "just works" without per-cron
+  // header customization.
+  const auth = request.headers.get("Authorization");
+  if (!env.CRON_SECRET || auth !== `Bearer ${env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
