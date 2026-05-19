@@ -111,6 +111,19 @@ describe("progress", () => {
 
       expect(progress.currentChapter).toBe(5);
     });
+
+    // @spec PROG-API-VALID-001
+    it("rejects currentPage > totalPages with BAD_REQUEST", async () => {
+      const caller = await createAuthenticatedCaller(db, alice);
+      await expect(
+        caller.progress.update({
+          clubId: wedReads.id,
+          bookId: dune.id,
+          currentPage: 500, // > Dune's 412
+          status: "reading",
+        })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
   });
 
   describe("progress.list", () => {

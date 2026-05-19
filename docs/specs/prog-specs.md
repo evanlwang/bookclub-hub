@@ -36,6 +36,12 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-API-004**: The `progress.me` procedure SHALL return the current user's progress for `(clubId, bookId)`, or null if no record exists.
 - `[x]` **PROG-API-005**: The `progress.summary` procedure SHALL return aggregate stats: median percentage, count by status (finished/reading/not_started), and a chapter distribution map.
 
+## Input Validation
+
+- `[x]` **PROG-API-VALID-001**: When `totalPages` is known (either provided in the request or resolvable from `existing.totalPages` or `Book.pageCount`), `progress.update` SHALL reject `currentPage > totalPages` with `TRPCError({ code: "BAD_REQUEST" })`. When `totalPages` is null, any non-negative `currentPage` is accepted. Prevents stored percentages > 100 leaking onto the dashboard. (`progress.ts`)
+- `[x]` **PROG-UI-MODAL-PAGE-CLAMP-001**: The modal SHALL clamp client-side `currentPage` changes to `[0, totalPages]` (when known) or `[0, ∞)` (when null) before calling the mutation. NaN inputs SHALL coerce to 0. Fractional inputs SHALL floor. Mirrors PROG-API-VALID-001 so the UI never displays a state the server would reject. (`clamp-page.ts`, `update-modal.tsx`)
+- `[x]` **PROG-DASH-UNKNOWN-TOTAL-001**: When the book has no known page count (`Book.pageCount` null AND no member record carries `totalPages`), the dashboard SHALL pass `null` to `UpdateProgressButton` (no fabricated fallback). The modal SHALL hide the page slider, omit the `max` attribute on the page input, and render "Unknown total — record page only" beneath the input. (`progress/page.tsx`, `update-modal.tsx`)
+
 ## Progress Computation
 
 - `[x]` **PROG-BE-001**: When `currentPage` and `totalPages` are known, percentage = `round(currentPage / totalPages * 100)`.
@@ -88,6 +94,8 @@ Auto-transitions: page input change from 0→positive while status="not_started"
   - "Finished · [totalPages] pages" (status="finished")
   - "Page [currentPage][optional · ch. [currentChapter]]" (status="reading")
 - `[x]` **PROG-UI-DASH-014**: A compact dashboard card variant (360px width, small ring, mini distribution bar) is used as a read-only preview on the main club dashboard.
+- `[x]` **PROG-DASH-MEDIAN-001**: The dashboard median percentage SHALL be computed over members whose `status !== "not_started"` only. The summary line SHALL read "median {N}% across {K} reading" and append "· {M} not started" and "· {F} finished" when those counts are positive. When zero members have started, the line SHALL read "No one has started yet". Excluding zeros for not-started members prevents the median from being dragged down mid-cycle. (`progress/page.tsx`, `median.ts`)
+- `[x]` **PROG-DASH-UPDATED-001**: Each member row in "Where everyone is" SHALL render a `<time>` element showing "Updated Xd ago" (m/h/d/w resolution; "just now" under a minute) using `ReadingProgress.updatedAt`. Hidden for `status="not_started"` members (no meaningful update). `dateTime` attribute is the ISO timestamp; the `title` attribute shows the absolute date for hover. `data-testid="progress-updated-{userId}"`. (`progress/page.tsx`, `relative-time.ts`)
 
 ## Error Handling
 
