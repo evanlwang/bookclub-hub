@@ -25,9 +25,9 @@ describe("meetings", () => {
       clubId: wedReads.id,
       title: "Dune Discussion",
       slots: [
-        { time: new Date("2026-05-18T19:00:00Z") },
-        { time: new Date("2026-05-20T20:00:00Z") },
-        { time: new Date("2026-05-23T14:00:00Z") },
+        { time: new Date(Date.now() + 7 * 86_400_000) },
+        { time: new Date(Date.now() + 9 * 86_400_000) },
+        { time: new Date(Date.now() + 12 * 86_400_000) },
       ],
     });
 
@@ -42,8 +42,8 @@ describe("meetings", () => {
       clubId: wedReads.id,
       bookId: dune.id,
       slots: [
-        { time: new Date("2026-05-18T19:00:00Z") },
-        { time: new Date("2026-05-20T20:00:00Z") },
+        { time: new Date(Date.now() + 7 * 86_400_000) },
+        { time: new Date(Date.now() + 9 * 86_400_000) },
       ],
     });
 
@@ -55,7 +55,7 @@ describe("meetings", () => {
     await expect(
       caller.meetings.create({
         clubId: wedReads.id,
-        slots: [{ time: new Date("2026-05-18T19:00:00Z") }],
+        slots: [{ time: new Date(Date.now() + 7 * 86_400_000) }],
       })
     ).rejects.toThrow();
   });
@@ -67,8 +67,8 @@ describe("meetings", () => {
     const { meeting } = await adminCaller.meetings.create({
       clubId: wedReads.id,
       slots: [
-        { time: new Date("2026-05-18T19:00:00Z") },
-        { time: new Date("2026-05-20T20:00:00Z") },
+        { time: new Date(Date.now() + 7 * 86_400_000) },
+        { time: new Date(Date.now() + 9 * 86_400_000) },
       ],
     });
 
@@ -109,8 +109,8 @@ describe("meetings", () => {
     const { meeting } = await caller.meetings.create({
       clubId: wedReads.id,
       slots: [
-        { time: new Date("2026-05-18T19:00:00Z") },
-        { time: new Date("2026-05-20T20:00:00Z") },
+        { time: new Date(Date.now() + 7 * 86_400_000) },
+        { time: new Date(Date.now() + 9 * 86_400_000) },
       ],
     });
 
@@ -131,8 +131,8 @@ describe("meetings", () => {
     const { meeting } = await caller.meetings.create({
       clubId: wedReads.id,
       slots: [
-        { time: new Date("2026-05-18T19:00:00Z") },
-        { time: new Date("2026-05-20T20:00:00Z") },
+        { time: new Date(Date.now() + 7 * 86_400_000) },
+        { time: new Date(Date.now() + 9 * 86_400_000) },
       ],
     });
 
@@ -154,8 +154,8 @@ describe("meetings", () => {
     const { meeting } = await caller.meetings.create({
       clubId: wedReads.id,
       slots: [
-        { time: new Date("2026-05-18T19:00:00Z") },
-        { time: new Date("2026-05-20T20:00:00Z") },
+        { time: new Date(Date.now() + 7 * 86_400_000) },
+        { time: new Date(Date.now() + 9 * 86_400_000) },
       ],
     });
 
