@@ -1,9 +1,22 @@
 // @vitest-environment jsdom
-// @spec COMP-PROGRESS-BAR-001 through COMP-PROGRESS-BAR-008, COMP-PROGRESS-BAR-A11Y-001, COMP-PROGRESS-BAR-MOTION-001
+// @spec COMP-PROGRESS-BAR-001 through COMP-PROGRESS-BAR-008, COMP-PROGRESS-BAR-A11Y-001, COMP-PROGRESS-BAR-MOTION-001, DSYS-MOTION-BAR-001
 // LLD: docs/llds/components-progress-bar.md
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
+
+const { useReducedMotionMock } = vi.hoisted(() => ({
+  useReducedMotionMock: vi.fn<() => boolean | null>(),
+}));
+
+vi.mock("motion/react", async () => {
+  const actual = await vi.importActual<typeof import("motion/react")>("motion/react");
+  return {
+    ...actual,
+    useReducedMotion: useReducedMotionMock,
+  };
+});
+
 import { ProgressBar } from "@/components/ui/progress-bar";
 
 function fill(container: HTMLElement): HTMLElement {
@@ -51,19 +64,37 @@ describe("ProgressBar — track + fill", () => {
   });
 });
 
-describe("ProgressBar — animation", () => {
-  // @spec COMP-PROGRESS-BAR-007
-  it("animate=true applies the bar-anim class + animation-delay", () => {
+describe("ProgressBar — animation (motion path)", () => {
+  // @spec COMP-PROGRESS-BAR-007, DSYS-MOTION-BAR-001
+  it("animate=true renders a transform-driven fill with transformOrigin: left", () => {
+    useReducedMotionMock.mockReturnValue(false);
     const { container } = render(<ProgressBar percentage={70} animate delay={120} />);
     const f = fill(container);
-    expect(f.className).toContain("bar-anim");
-    expect(f.style.animationDelay).toBe("120ms");
+    expect(f.style.transformOrigin).toBe("left");
+    // Width is the *track-relative full width*; scale carries the percentage.
+    expect(f.style.width).toBe("100%");
+    // bar-anim CSS class is no longer the source of motion — the JS path owns it.
+    expect(f.className).not.toContain("bar-anim");
+  });
+
+  // @spec DSYS-MOTION-BAR-001 + DSYS-MOTION-002
+  it("animate=true under prefers-reduced-motion skips the transform animation", () => {
+    useReducedMotionMock.mockReturnValue(true);
+    // Motion still renders the fill; the scaleX simply jumps to its end state
+    // (no entrance animation). We verify the structure stays sound — the
+    // visible "no movement" behavior is best covered by a Playwright check.
+    const { container } = render(<ProgressBar percentage={50} animate />);
+    expect(fill(container).style.transformOrigin).toBe("left");
   });
 
   // @spec COMP-PROGRESS-BAR-008
-  it("animate=false applies a 0.6s width transition", () => {
+  it("animate=false applies a 0.6s width transition (CSS path unchanged)", () => {
+    useReducedMotionMock.mockReturnValue(false);
     const { container } = render(<ProgressBar percentage={40} />);
-    expect(fill(container).style.transition).toMatch(/width\s+0\.6s/);
+    const f = fill(container);
+    expect(f.style.width).toBe("40%");
+    expect(f.style.transition).toMatch(/width\s+0\.6s/);
+    expect(f.style.transformOrigin).toBe("");
   });
 });
 

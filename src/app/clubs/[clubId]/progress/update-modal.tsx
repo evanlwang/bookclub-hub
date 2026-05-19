@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
 import { Button, ProgressBar } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { useMotionPreset } from "@/lib/motion/use-motion-preset";
 import { clampPage } from "@/lib/progress/clamp-page";
 import { trpc } from "@/trpc/react-hooks";
 
@@ -100,14 +102,17 @@ export function UpdateProgressButton(props: UpdateModalProps) {
           onSaved={handleSaved}
         />
       )}
-      {toast && (
-        <SavedToast
-          savedPage={toast.savedPage}
-          canUndo={toast.previous !== null}
-          onUndo={handleUndo}
-          onDismiss={() => setToast(null)}
-        />
-      )}
+      <AnimatePresence>
+        {toast && (
+          <SavedToast
+            key="saved-toast"
+            savedPage={toast.savedPage}
+            canUndo={toast.previous !== null}
+            onUndo={handleUndo}
+            onDismiss={() => setToast(null)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -376,6 +381,9 @@ function formatLastUpdated(value: Date | string): string {
   return `${date} · ${time}`;
 }
 
+// @spec DSYS-MOTION-TOAST-001 — toast surface mounts/unmounts via slideUp
+// preset inside the parent's <AnimatePresence>. Reduced-motion is honored at
+// the preset level, so dismissal still triggers a synchronous removal there.
 function SavedToast({
   savedPage,
   canUndo,
@@ -387,14 +395,19 @@ function SavedToast({
   onUndo: () => void;
   onDismiss: () => void;
 }) {
+  const preset = useMotionPreset("slideUp");
   const message =
     savedPage != null ? `Progress saved · page ${savedPage}` : "Progress saved";
 
   return (
-    <div
+    <motion.div
       data-testid="progress-saved-toast"
       role="status"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] border border-line bg-bg shadow-lg animate-slide-up"
+      initial={preset.initial}
+      animate={preset.animate}
+      exit={preset.exit}
+      transition={preset.transition}
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] border border-line bg-bg shadow-lg"
     >
       <span className="text-sm text-ink">{message}</span>
       {canUndo && (
@@ -415,6 +428,6 @@ function SavedToast({
       >
         ×
       </button>
-    </div>
+    </motion.div>
   );
 }

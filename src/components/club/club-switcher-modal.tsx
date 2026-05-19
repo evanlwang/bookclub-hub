@@ -1,11 +1,13 @@
-// @spec CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-002, CLUB-NAV-MODAL-003, CLUB-NAV-MODAL-004, CLUB-NAV-MODAL-005, CLUB-NAV-MODAL-006, CLUB-NAV-MODAL-007, CLUB-NAV-MODAL-008
+// @spec CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-002, CLUB-NAV-MODAL-003, CLUB-NAV-MODAL-004, CLUB-NAV-MODAL-005, CLUB-NAV-MODAL-006, CLUB-NAV-MODAL-007, CLUB-NAV-MODAL-008, DSYS-MOTION-MODAL-001
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Button, Card, CheckIcon } from "@/components/ui";
+import { AnimatePresence, motion } from "motion/react";
+import { Button, CheckIcon } from "@/components/ui";
 import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { useMotionPreset } from "@/lib/motion/use-motion-preset";
 import { trpc } from "@/trpc/react-hooks";
 
 type Tab = "join" | "create";
@@ -253,25 +255,17 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
     if (createdClub) navigator.clipboard.writeText(createdClub.code);
   }
 
-  if (!isOpen) return null;
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div
-      ref={dialogRef}
-      data-testid="club-switcher-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="club-switcher-modal-title"
-      tabIndex={-1}
-      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
-      onClick={handleClose}
-    >
-      <Card
-        className="w-full max-w-[480px] bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-5">
+    <AnimatePresence>
+      {isOpen && (
+        <ModalShell
+          dialogRef={dialogRef}
+          onBackdropClick={handleClose}
+          onPanelClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-5">
           <h2
             id="club-switcher-modal-title"
             className="font-[var(--font-display)] text-lg font-semibold text-ink"
@@ -547,8 +541,56 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
             )}
           </>
         )}
-      </Card>
-    </div>,
+        </ModalShell>
+      )}
+    </AnimatePresence>,
     document.body
+  );
+}
+
+// @spec DSYS-MOTION-MODAL-001 — backdrop fades, panel uses modalEnter (scale +
+// translate + fade). Lives in the same file as ClubSwitcherModal since it is
+// the only modal pattern in the app right now; extract when a second modal
+// shows up.
+function ModalShell({
+  dialogRef,
+  onBackdropClick,
+  onPanelClick,
+  children,
+}: {
+  dialogRef: React.RefObject<HTMLDivElement | null>;
+  onBackdropClick: () => void;
+  onPanelClick: (e: React.MouseEvent) => void;
+  children: React.ReactNode;
+}) {
+  const backdrop = useMotionPreset("fadeIn");
+  const panel = useMotionPreset("modalEnter");
+
+  return (
+    <motion.div
+      ref={dialogRef}
+      data-testid="club-switcher-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="club-switcher-modal-title"
+      tabIndex={-1}
+      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
+      onClick={onBackdropClick}
+      initial={backdrop.initial}
+      animate={backdrop.animate}
+      exit={backdrop.exit ?? { opacity: 0 }}
+      transition={backdrop.transition}
+    >
+      <motion.div
+        className="w-full max-w-[480px] bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg border border-line"
+        onClick={onPanelClick}
+        initial={panel.initial}
+        animate={panel.animate}
+        exit={panel.exit ?? { opacity: 0, scale: 0.97 }}
+        transition={panel.transition}
+      >
+        {children}
+      </motion.div>
+    </motion.div>
   );
 }

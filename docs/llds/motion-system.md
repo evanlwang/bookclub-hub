@@ -63,6 +63,25 @@ Honored on both paths via different mechanisms:
 
 Test reduced-motion behavior by emulating the preference in DevTools (Rendering panel → "Emulate CSS media feature prefers-reduced-motion") or via Playwright (`page.emulateMedia({ reducedMotion: 'reduce' })`).
 
+## Primitive application (Phase 2)
+
+These are the first consumers of the system. Each follows the same pattern: a `"use client"` component, `useMotionPreset(name)`, `<motion.div>`, and (where unmount matters) `AnimatePresence` at the mount point.
+
+| Surface | Spec | Preset | Mount/Unmount mechanism |
+|---|---|---|---|
+| `ClubSwitcherModal` panel | DSYS-MOTION-MODAL-001 | `modalEnter` | `AnimatePresence` wrapping the portal contents — the modal stays in the tree while `isOpen=false` long enough to play the exit, then is removed. |
+| `ClubSwitcherModal` backdrop | DSYS-MOTION-MODAL-001 | `fadeIn` | Same `AnimatePresence` — backdrop and panel exit together. |
+| `SavedToast` (progress flow) | DSYS-MOTION-TOAST-001 | `slideUp` | `AnimatePresence` in the parent's render so dismissal animates. |
+| `Card` (opt-in) | DSYS-MOTION-CARD-001 | `cardEnter` | Mount-only via `<motion.div>`. No `AnimatePresence` — cards don't typically unmount mid-screen. |
+| `ProgressBar` fill | DSYS-MOTION-BAR-001 | n/a (custom `animate={{ scaleX }}`) | Transform-driven. Honors reduced-motion via `useReducedMotion()` directly (the fill's `scaleX` skips to 1 instantly). |
+
+Implementation rules common to every primitive:
+
+- The component file declares `"use client"` (any of these that didn't already need it now do — `motion/react` and `useMotionPreset` are client-only).
+- The motion preset is read via `useMotionPreset(...)`. No direct imports from `tokens.ts` inside the primitive.
+- For `AnimatePresence` consumers, the conditional render goes *inside* `<AnimatePresence>` — collapsing the wrapper inside the conditional breaks the exit animation (it has no chance to play).
+- Tests live in `tests/unit/components/` (jsdom) and assert the contract: the wrapping `<motion.*>` element exists, reduced-motion is honored (via the same `vi.hoisted` + `vi.mock("motion/react", ...)` pattern as `tests/unit/motion/use-motion-preset.test.tsx`).
+
 ## Files
 
 | File | Role |
