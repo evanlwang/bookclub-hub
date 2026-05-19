@@ -1,8 +1,13 @@
-// @spec MEET-API-001 through MEET-API-005, MEET-DATA-001, MEET-BE-CROSS-001 through MEET-BE-CROSS-004, MEET-BE-STATE-001, MEET-BE-STATE-002, MEET-BE-TIME-001
+// @spec MEET-API-001 through MEET-API-005, MEET-DATA-001, MEET-BE-CROSS-001 through MEET-BE-CROSS-004, MEET-BE-STATE-001, MEET-BE-STATE-002, MEET-BE-TIME-001, MEET-BE-RESP-EMPTY-001, MEET-BE-CREATE-DEDUP-001
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, memberProcedure, adminProcedure } from "../trpc";
 import { emailService } from "../services/email";
+import {
+  assertMeetingProposed,
+  assertNonEmptyResponses,
+  assertUniqueSlotTimes,
+} from "@/lib/meetings/validation";
 
 export const meetingsRouter = router({
   list: memberProcedure
@@ -67,6 +72,9 @@ export const meetingsRouter = router({
           message: "Meeting times must be in the future",
         });
       }
+
+      // @spec MEET-BE-CREATE-DEDUP-001 — no two proposed slots may share the same instant.
+      assertUniqueSlotTimes(input.slots);
 
       // Determine title
       let title = input.title;
@@ -286,15 +294,22 @@ export const meetingsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // @spec MEET-BE-RESP-EMPTY-001 — at least one slot response required.
+      // Mirrors the client-side guard so direct API calls cannot bypass it.
+      assertNonEmptyResponses(input.responses);
+
       // @spec MEET-BE-CROSS-004 — meeting must belong to this club, and every
       // submitted slotId must belong to this meeting (no cross-meeting smuggling).
       const meeting = await ctx.db.meeting.findUnique({
         where: { id: input.meetingId },
-        select: { clubId: true },
+        select: { clubId: true, status: true },
       });
       if (!meeting || meeting.clubId !== input.clubId) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
+
+      // @spec MEET-BE-STATE-001 — confirmed/cancelled/completed meetings are read-only.
+      assertMeetingProposed(meeting.status);
 
       const slots = await ctx.db.meetingTimeSlot.findMany({
         where: { meetingId: input.meetingId },
