@@ -125,8 +125,8 @@ describe("voting lifecycle", () => {
       roundId: round.id,
       bookId: dune.id,
     });
-    // Advance needs at least 2 nominations per VOTE-UI rules, but the API allows 1.
-    // Add a second nomination so advance() doesn't reject.
+    // @spec VOTE-API-ADVANCE-MINNOMS-001 — advance requires ≥2 nominations
+    // on the server too, not just in the UI.
     await memberCaller.nominations.create({
       clubId: wedReads.id,
       roundId: round.id,

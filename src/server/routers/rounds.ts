@@ -3,6 +3,8 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, memberProcedure, adminProcedure } from "../trpc";
 import { tallyVotes } from "@/lib/voting/tally";
+import { canAdvanceFromNominating } from "@/lib/voting/advance-guard";
+import { computeClosePreview } from "@/lib/voting/close-preview";
 import { emailService } from "../services/email";
 
 export const roundsRouter = router({
@@ -95,6 +97,47 @@ export const roundsRouter = router({
       return { round: { ...round, nominations } };
     }),
 
+  // @spec VOTE-API-CLOSE-PREVIEW-001, VOTE-UI-CLOSE-LIVE-001
+  // Admin-only live standings for the close-voting confirmation dialog.
+  // The voting-phase UI hides tallies from everyone per VOTE-UI-001, so this
+  // exists as a separate adminProcedure rather than widening `rounds.get`.
+  // The dialog refetches on open so admins always see the current count.
+  getClosePreview: adminProcedure
+    .input(z.object({ clubId: z.string().uuid(), roundId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const round = await ctx.db.votingRound.findUniqueOrThrow({
+        where: { id: input.roundId },
+        select: { id: true, clubId: true, status: true },
+      });
+      if (round.clubId !== input.clubId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      if (round.status !== "voting") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Close preview only available during the voting phase (round is "${round.status}")`,
+        });
+      }
+
+      const nominations = await ctx.db.nomination.findMany({
+        where: { roundId: input.roundId },
+        include: {
+          book: { select: { title: true, author: true } },
+          _count: { select: { votes: true } },
+        },
+      });
+
+      return computeClosePreview(
+        nominations.map((n) => ({
+          id: n.id,
+          title: n.book.title,
+          author: n.book.author,
+          voteCount: n._count.votes,
+          createdAt: n.createdAt,
+        }))
+      );
+    }),
+
   advance: adminProcedure
     .input(z.object({ clubId: z.string().uuid(), roundId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
@@ -116,6 +159,19 @@ export const roundsRouter = router({
       const memberEmails = members.map((m) => m.user.email);
 
       if (round.status === "nominating") {
+        // @spec VOTE-API-ADVANCE-MINNOMS-001
+        // Mirror the UI guard (VOTE-UI-NOM-003) on the server so direct API
+        // callers and stale clients can't transition a round to voting with
+        // <2 nominations — that would leave the voting phase trivially
+        // unwinnable / single-option.
+        const nominationCount = await ctx.db.nomination.count({
+          where: { roundId: input.roundId },
+        });
+        const guard = canAdvanceFromNominating(round.status, nominationCount);
+        if (!guard.ok) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: guard.reason });
+        }
+
         await ctx.db.votingRound.update({
           where: { id: input.roundId },
           data: { status: "voting" },

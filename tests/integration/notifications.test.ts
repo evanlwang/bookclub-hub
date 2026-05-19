@@ -40,6 +40,12 @@ describe("notifications", () => {
       roundId: round.id,
       bookId: dune.id,
     });
+    // @spec VOTE-API-ADVANCE-MINNOMS-001 — advance requires ≥2 nominations.
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: leftHand.id,
+    });
 
     resetEmailCalls();
     await caller.rounds.advance({ clubId: wedReads.id, roundId: round.id });
@@ -59,10 +65,16 @@ describe("notifications", () => {
       roundId: round.id,
       bookId: dune.id,
     });
+    // @spec VOTE-API-ADVANCE-MINNOMS-001 — advance requires ≥2 nominations.
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: leftHand.id,
+    });
     await caller.rounds.advance({ clubId: wedReads.id, roundId: round.id });
 
     const nom = await db.nomination.findFirst({
-      where: { roundId: round.id },
+      where: { roundId: round.id, bookId: dune.id },
     });
     await memberCaller.votes.submit({
       clubId: wedReads.id,
