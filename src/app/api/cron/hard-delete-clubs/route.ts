@@ -1,6 +1,7 @@
 // @spec CLUB-BE-005
 import { NextRequest, NextResponse } from "next/server";
 import { prisma as db } from "@/lib/db";
+import { env } from "@/env";
 
 /**
  * Cron endpoint that hard-deletes clubs that have been soft-deleted for 30+ days.
@@ -13,8 +14,11 @@ import { prisma as db } from "@/lib/db";
  * etc. via the ON DELETE CASCADE relations declared in `prisma/schema.prisma`).
  */
 export async function GET(request: NextRequest) {
-  const cronSecret = request.headers.get("CRON_SECRET");
-  if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+  // Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`. We accept that
+  // shape exclusively so wiring `vercel.json` "just works" without per-cron
+  // header customization.
+  const auth = request.headers.get("Authorization");
+  if (!env.CRON_SECRET || auth !== `Bearer ${env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

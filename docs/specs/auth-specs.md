@@ -106,6 +106,10 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 - `[x]` **AUTH-API-PASSCODE-001**: Every entry point that creates a `User` or `Session` for an unauthenticated caller (`auth.signIn`, `auth.enter`, the unauthenticated branch of `clubs.join`) SHALL require a `passcode` input and SHALL throw `UNAUTHORIZED` with message "Wrong passcode" before any mutation when `process.env.PILOT_PASSCODE` is set and the input does not constant-time match. The gate is implemented as `passcodeOk` in `src/lib/auth/passcode.ts`.
 - `[x]` **AUTH-API-PASSCODE-002**: When `PILOT_PASSCODE` is unset, `passcodeOk` SHALL accept any input in development/test (`NODE_ENV !== "production"`) and SHALL reject every input in production (`NODE_ENV === "production"`). This makes a forgotten production env var fail closed (no one can log in) instead of fail open (anyone can log in). (`src/lib/auth/passcode.ts`)
 
+## Rate Limiting
+
+- `[x]` **AUTH-API-RATELIMIT-001**: `auth.signIn` and `auth.enter` SHALL throttle to 5 attempts per minute per source IP AND 5 per minute per normalized email. `clubs.join` SHALL throttle to 10 per minute per source IP (unauthenticated branch only). On exceed, SHALL throw TOO_MANY_REQUESTS. State is in-process memory — acceptable for pilot scale, resets on cold-start. (`auth.ts`, `clubs.ts`, `src/lib/auth/rate-limit.ts`)
+
 ## Deferred
 
 - `[D]` **AUTH-BE-004**: Magic-link email verification.

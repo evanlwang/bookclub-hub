@@ -59,7 +59,7 @@ describe("cron-deadline-reminder", () => {
     const request = new Request("http://localhost:3000/api/cron/voting-deadline-reminder", {
       method: "GET",
       headers: {
-        "CRON_SECRET": "test-secret",
+        "Authorization": "Bearer test-secret",
       },
     });
 
@@ -100,7 +100,7 @@ describe("cron-deadline-reminder", () => {
     const request = new Request("http://localhost:3000/api/cron/voting-deadline-reminder", {
       method: "GET",
       headers: {
-        "CRON_SECRET": "test-secret",
+        "Authorization": "Bearer test-secret",
       },
     });
 
@@ -132,7 +132,7 @@ describe("cron-deadline-reminder", () => {
     const request = new Request("http://localhost:3000/api/cron/voting-deadline-reminder", {
       method: "GET",
       headers: {
-        "CRON_SECRET": "test-secret",
+        "Authorization": "Bearer test-secret",
       },
     });
 
@@ -165,7 +165,7 @@ describe("cron-deadline-reminder", () => {
     const request = new Request("http://localhost:3000/api/cron/voting-deadline-reminder", {
       method: "GET",
       headers: {
-        "CRON_SECRET": "wrong-secret",
+        "Authorization": "Bearer wrong-secret",
       },
     });
 
@@ -219,7 +219,7 @@ describe("cron-deadline-reminder", () => {
     const request = new Request("http://localhost:3000/api/cron/voting-deadline-reminder", {
       method: "GET",
       headers: {
-        "CRON_SECRET": "test-secret",
+        "Authorization": "Bearer test-secret",
       },
     });
 
@@ -251,7 +251,7 @@ describe("cron-deadline-reminder", () => {
     const request = new Request("http://localhost:3000/api/cron/voting-deadline-reminder", {
       method: "GET",
       headers: {
-        "CRON_SECRET": "test-secret",
+        "Authorization": "Bearer test-secret",
       },
     });
 
@@ -297,7 +297,7 @@ describe("cron-deadline-reminder", () => {
     const request = new Request("http://localhost:3000/api/cron/voting-deadline-reminder", {
       method: "GET",
       headers: {
-        "CRON_SECRET": "test-secret",
+        "Authorization": "Bearer test-secret",
       },
     });
 

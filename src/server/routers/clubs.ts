@@ -12,6 +12,7 @@ import { normalizeCode, validateCode } from "@/lib/validation/club-code";
 import { normalizeEmail, validateEmail } from "@/lib/validation/email";
 import { generateSessionId, computeNewExpiry, sessionSetCookieHeader } from "@/lib/auth/session";
 import { passcodeOk } from "@/lib/auth/passcode";
+import { checkRateLimit } from "@/lib/auth/rate-limit";
 
 export const clubsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -487,6 +488,20 @@ export const clubsRouter = router({
             code: "BAD_REQUEST",
             message: "Email and display name required for new users",
           });
+        }
+
+        // @spec AUTH-API-RATELIMIT-001
+        // IP-only throttle on unauthenticated joins. We don't key on email
+        // because legit users may try a few clubs in quick succession; the
+        // attack we care about is bulk passcode-guessing from one source.
+        if (ctx.ip) {
+          const check = checkRateLimit(`join:ip:${ctx.ip}`, 10, 60_000);
+          if (!check.ok) {
+            throw new TRPCError({
+              code: "TOO_MANY_REQUESTS",
+              message: "Rate limit exceeded — try again in a minute",
+            });
+          }
         }
 
         if (!passcodeOk(input.passcode ?? "")) {

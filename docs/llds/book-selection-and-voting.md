@@ -145,7 +145,7 @@ BookSelection {
 | `rounds.advance` | admin+ | `{ clubId, roundId }` | `{ newStatus, winner? }` | nominating→voting OR voting→decided; throws BAD_REQUEST if decided/cancelled |
 | `rounds.cancel` | admin+ | `{ clubId, roundId }` | `{ success: true }` | throws BAD_REQUEST if decided/cancelled |
 | `nominations.create` | member | `{ clubId, roundId, bookId, pitch? }` | `{ nomination }` | requires status="nominating"; CONFLICT on duplicate |
-| `nominations.delete` | nominator OR admin+ | `{ clubId, nominationId }` | `{ success: true }` | |
+| `nominations.delete` | nominator OR admin+ | `{ clubId, nominationId }` | `{ success: true }` | NOT_FOUND if the loaded nomination's `round.clubId` differs from `input.clubId` — cross-club guard (VOTE-API-NOMDELETE-XCLUB-001) |
 | `votes.submit` | member | `{ clubId, roundId, nominationIds }` | `{ success, voteCount }` | requires status="voting"; replaces all prior votes |
 | `books.search` | required | `{ query }` | `[{ book }]` | local cache → Open Library; merged results collapsed by content key (ISBN, else title+author) so the same logical book never appears twice; empty array on API failure |
 | `books.createManual` | required | `{ title, author, isbn?, pageCount? }` | `{ book }` | openLibraryId=null |

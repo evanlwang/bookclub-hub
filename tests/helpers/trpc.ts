@@ -11,7 +11,7 @@ import { generateSessionId, computeNewExpiry } from "@/lib/auth/session";
 export async function createAuthenticatedCaller(
   db: PrismaClient,
   user: TestUser,
-  opts: { resHeaders?: Headers } = {}
+  opts: { resHeaders?: Headers; ip?: string | null } = {}
 ) {
   const sessionId = generateSessionId();
   await db.session.create({
@@ -31,6 +31,7 @@ export async function createAuthenticatedCaller(
     },
     sessionId,
     resHeaders: opts.resHeaders ?? null,
+    ip: opts.ip ?? null,
   };
 
   return appRouter.createCaller(ctx);
@@ -41,13 +42,14 @@ export async function createAuthenticatedCaller(
  */
 export function createAnonymousCaller(
   db: PrismaClient,
-  opts: { resHeaders?: Headers } = {}
+  opts: { resHeaders?: Headers; ip?: string | null } = {}
 ) {
   const ctx: Context = {
     db,
     user: null,
     sessionId: null,
     resHeaders: opts.resHeaders ?? null,
+    ip: opts.ip ?? null,
   };
 
   return appRouter.createCaller(ctx);

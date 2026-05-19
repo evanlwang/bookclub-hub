@@ -30,5 +30,5 @@ export async function getServerCaller() {
     }
   }
 
-  return appRouter.createCaller({ db, user, sessionId, resHeaders: null });
+  return appRouter.createCaller({ db, user, sessionId, resHeaders: null, ip: null });
 }
