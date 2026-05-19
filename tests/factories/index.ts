@@ -1,5 +1,5 @@
 /**
- * Test data factories and scenarios for BookClub Hub tests.
+ * Test data factories and scenarios for Dogear tests.
  *
  * These factories provide:
  * - Reusable factory functions for all data models

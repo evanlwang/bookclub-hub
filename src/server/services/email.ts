@@ -40,7 +40,7 @@ async function send(to: string[], subject: string, body: string): Promise<void> 
     const { Resend } = await import("resend");
     const resend = new Resend(env.RESEND_API_KEY);
     await resend.emails.send({
-      from: "BookClub Hub <noreply@bookclubhub.app>",
+      from: "Dogear <noreply@bookclubhub.app>",
       to,
       subject,
       html: body,

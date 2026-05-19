@@ -80,7 +80,7 @@ export default function LoginPage() {
         <Link href="/" className="flex items-center gap-2.5">
           <LogoIcon size={22} />
           <span className="font-[var(--font-display)] text-[16px] font-semibold text-ink">
-            BookClub Hub
+            Dogear
           </span>
         </Link>
         <div className="text-xs text-ink-3">

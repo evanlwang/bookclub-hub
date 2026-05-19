@@ -28,7 +28,7 @@ export default function Home() {
         <Link href="/" className="flex items-center gap-2.5">
           <LogoIcon size={26} />
           <span className="font-[var(--font-display)] text-xl font-semibold text-ink">
-            BookClub Hub
+            Dogear
           </span>
         </Link>
         <div className="flex items-center gap-1">
@@ -408,7 +408,7 @@ export default function Home() {
       <footer className="border-t border-line text-[13px] text-ink-3 flex items-center px-4 md:px-8 lg:px-14 py-7">
         <div className="flex flex-wrap items-center gap-2">
           <LogoIcon size={18} />
-          <span>BookClub Hub</span>
+          <span>Dogear</span>
           <span>·</span>
           <span>For people who finish the book.</span>
         </div>

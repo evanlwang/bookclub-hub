@@ -10,8 +10,8 @@ import "./globals.css";
 // show up in search results. Removing PILOT_PASSCODE (post-pilot) drops the
 // noindex automatically.
 export const metadata: Metadata = {
-  title: "BookClub Hub",
-  description: "Organize your book clubs",
+  title: "Dogear",
+  description: "Dogear — book club coordination without the group-chat sprawl.",
   robots: process.env.PILOT_PASSCODE ? { index: false, follow: false } : undefined,
   icons: {
     icon: [

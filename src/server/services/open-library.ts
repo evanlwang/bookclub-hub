@@ -20,7 +20,7 @@ export interface OpenLibraryBook {
 
 const BASE_URL = process.env.OPEN_LIBRARY_BASE_URL || "https://openlibrary.org";
 const COVERS_URL = "https://covers.openlibrary.org";
-const USER_AGENT = "BookClubHub/0.1 (+https://github.com/anthropics/bookclub-hub)";
+const USER_AGENT = "Dogear/0.1 (+https://github.com/anthropics/bookclub-hub)";
 const TIMEOUT_MS = 5_000;
 
 const TIMEOUT_SENTINEL: unique symbol = Symbol("ol-timeout");

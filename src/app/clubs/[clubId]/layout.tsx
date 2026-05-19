@@ -15,9 +15,9 @@ export async function generateMetadata({
   try {
     const caller = await getServerCaller();
     const { club } = await caller.clubs.get({ clubId });
-    return { title: `${club.name} · BookClub Hub` };
+    return { title: `${club.name} · Dogear` };
   } catch {
-    return { title: "BookClub Hub" };
+    return { title: "Dogear" };
   }
 }
 
