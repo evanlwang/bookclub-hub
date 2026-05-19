@@ -1,6 +1,6 @@
 # Pilot Operations Runbook
 
-How to run the BookClub Hub passcode-gated friends pilot.
+How to run the Dogear passcode-gated friends pilot.
 
 ## URLs
 

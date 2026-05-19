@@ -22,7 +22,7 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 
 ## Landing Page — Navigation
 
-- `[x]` **HOME-UI-001**: Top nav SHALL contain: logo, "BookClub Hub" wordmark, "Log in" ghost-style link → `/login`, "Sign up" primary button → `/join`. ("Pricing" and "About" links removed — see `HOME-UI-012`.) (`page.tsx:19-40`)
+- `[x]` **HOME-UI-001**: Top nav SHALL contain: logo, "Dogear" wordmark, "Log in" ghost-style link → `/login`, "Sign up" primary button → `/join`. ("Pricing" and "About" links removed — see `HOME-UI-012`.) (`page.tsx:19-40`)
 - `[x]` **HOME-UI-005**: "Sign up" links/buttons SHALL navigate to `/join`. (`page.tsx:33-40, 71-79`)
 - `[x]` **HOME-UI-006**: "Log in" link SHALL navigate to `/login`. (`page.tsx:27-32`)
 
@@ -48,7 +48,7 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 
 ## Join Page — Layout
 
-- `[x]` **JOIN-UI-001**: Header SHALL contain logo and "BookClub Hub" wordmark.
+- `[x]` **JOIN-UI-001**: Header SHALL contain logo and "Dogear" wordmark.
 - `[x]` **JOIN-UI-002**: Card SHALL constrain content to maxWidth 440px with padding 32px.
 
 ## Join Page — Stepper
