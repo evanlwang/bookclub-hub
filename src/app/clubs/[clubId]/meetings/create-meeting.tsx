@@ -182,6 +182,7 @@ export function CreateMeetingForm({
     updateSlot(slots.length - 1, "time", iso);
   }
 
+  // @spec MEET-UI-CREATE-VAL-001, MEET-BE-CREATE-DEDUP-001
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -196,6 +197,18 @@ export function CreateMeetingForm({
     if (validSlots.length < 2) {
       setError("At least 2 time slots are required");
       return;
+    }
+
+    // @spec MEET-BE-CREATE-DEDUP-001 — pre-flight inline warning before the
+    // server rejects. Compare by exact ISO instant; differing durations at the
+    // same instant still count as duplicates.
+    const seen = new Set<string>();
+    for (const s of validSlots) {
+      if (seen.has(s.time)) {
+        setError("Two time slots have the same date and time");
+        return;
+      }
+      seen.add(s.time);
     }
 
     createMeeting.mutate({

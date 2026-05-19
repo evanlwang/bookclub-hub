@@ -1,3 +1,4 @@
+// @spec MEET-UI-RESP-SAVE-001, MEET-BE-RESP-EMPTY-001
 "use client";
 
 import { useRef, useState } from "react";
@@ -69,6 +70,14 @@ export function RespondMeeting({
       status,
     }));
 
+    // @spec MEET-UI-RESP-SAVE-001 — inline error when no slot has a response.
+    // Catches the "toggle the only selection off" case before we hit the server.
+    if (responseArray.length === 0) {
+      setSaveStatus("error");
+      setError("Please select availability for at least one time");
+      return;
+    }
+
     requestToken.current += 1;
     latestPayload.current = responseArray;
     setSaveStatus("saving");
@@ -78,6 +87,10 @@ export function RespondMeeting({
   }
 
   function setSlotResponse(slotId: string, status: ResponseStatus) {
+    // Rapid-click guard: while a save is in flight, ignore further clicks so
+    // overlapping mutations can't race past the object-ref dedup token.
+    if (submitAvailability.isPending) return;
+
     // Toggle off if the same option is clicked again.
     const next = { ...responses };
     if (next[slotId] === status) {
@@ -119,8 +132,9 @@ export function RespondMeeting({
                   key={opt.value}
                   type="button"
                   onClick={() => setSlotResponse(slot.id, opt.value)}
+                  disabled={submitAvailability.isPending}
                   data-testid={`slot-${slot.id}-${opt.value}`}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-[var(--radius-sm)] border transition-all duration-150 cursor-pointer ${
+                  className={`px-2.5 py-1 text-xs font-medium rounded-[var(--radius-sm)] border transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
                     responses[slot.id] === opt.value
                       ? opt.color
                       : "border-line bg-bg text-ink-3 hover:border-line-strong"
