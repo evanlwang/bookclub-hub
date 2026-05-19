@@ -1,5 +1,25 @@
+import type { Metadata } from "next";
 import { getServerCaller } from "@/trpc/server";
 import { ClubSidebar } from "./sidebar";
+
+// Tab title resolves to the club's name so users with several open tabs can
+// tell them apart. We swallow auth/not-found failures and fall back to the
+// generic title rather than throwing — generateMetadata throwing would surface
+// a 500 above the route's own error.tsx boundary.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ clubId: string }>;
+}): Promise<Metadata> {
+  const { clubId } = await params;
+  try {
+    const caller = await getServerCaller();
+    const { club } = await caller.clubs.get({ clubId });
+    return { title: `${club.name} · BookClub Hub` };
+  } catch {
+    return { title: "BookClub Hub" };
+  }
+}
 
 // @spec CLUB-UI-THEME-APPLY-001
 // Re-enter perceptual color space so hover/soft/ink track the picked hue
