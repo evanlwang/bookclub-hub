@@ -21,6 +21,7 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 
 - `[x]` **VOTE-API-001**: When an admin calls `rounds.create`, the system SHALL create the round in "nominating" status. (`rounds.ts:17`)
 - `[x]` **VOTE-API-002**: When an admin calls `rounds.advance` on a round in "nominating", the system SHALL transition it to "voting" status. (`rounds.ts:118-126`)
+- `[x]` **VOTE-API-ADVANCE-MINNOMS-001**: `rounds.advance` SHALL throw BAD_REQUEST when transitioning from "nominating" to "voting" with fewer than 2 nominations. Server-side mirror of the UI guard (VOTE-UI-NOM-003) so direct API callers and stale clients can't push a round into a trivially unwinnable voting phase. (`rounds.ts`, `src/lib/voting/advance-guard.ts`)
 - `[x]` **VOTE-API-003**: When an admin calls `rounds.advance` on a round in "voting", the system SHALL transition it to "decided", determine the winner via `tallyVotes`, set the winning book as the club's current book (BookSelection with isCurrent=true), and demote any prior current selection. (`rounds.ts:128-181`)
 - `[x]` **VOTE-API-DECIDED-FINISHED-001**: When demoting a prior current `BookSelection` (during `rounds.advance` to "decided" or `selections.createDirectPick`), the system SHALL also stamp `finishedAt: new Date()` on that prior selection so the history picker renders it as "Finished {MMM YYYY}" per `PROG-UI-BOOK-008` instead of falling back to "Selected {MMM YYYY}". Already-stamped `finishedAt` values SHALL NOT be overwritten. (`rounds.ts:156-160`, `selections.ts:23-26`)
 - `[x]` **VOTE-API-004**: When an admin calls `rounds.cancel`, the system SHALL set status to "cancelled" and delete all associated nominations and votes. (`rounds.ts:189-217`)
@@ -67,6 +68,7 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 - `[x]` **VOTE-UI-NOMMODAL-006**: Button: "Back" (`nominate-modal.tsx:383-394`) returns from manual tab to search tab and resets manual form fields.
 - `[x]` **VOTE-UI-NOMMODAL-007**: Button: "Cancel" (`nominate-modal.tsx:311-318`) and the close X icon and the backdrop click (`nominate-modal.tsx:204-224`) all call `onClose`.
 - `[x]` **VOTE-UI-NOMMODAL-PITCH-001**: The NominateModal SHALL render an optional "Why this book?" textarea (max 500 chars, `data-testid="nominate-pitch"`, native `maxlength="500"`, live `{N} / 500` character counter) between the search-results section and the manual-entry section. The pitch SHALL apply to whichever submit path the user takes — both the per-row "Nominate" buttons on Open Library results AND the manual "Add & Nominate" submit include the trimmed pitch in the `nominations.create` body when non-empty. Persists to `Nomination.pitch` (already declared `String? @db.VarChar(500)` in `prisma/schema.prisma`). (`nominate-modal.tsx`)
+- `[x]` **VOTE-UI-NOMMODAL-INVALIDATE-001**: On a successful `nominations.create` from the NominateModal, the client SHALL invalidate the `rounds.get` and `rounds.list` query caches for the active round so the nomination list and "{N} nominations so far" header reflect the new entry without requiring a manual reload. (`nominate-modal.tsx`)
 
 ## Voting UI — Voting Phase
 
@@ -117,6 +119,8 @@ These specs cover what happens when a member revisits the voting page after they
 - `[x]` **VOTE-UI-CLOSE-005**: If a tie exists at close time, the dialog SHALL display "Tied with N other(s) — earliest nomination wins" next to the leader, naming the rule applied (per VOTE-BE-001).
 - `[x]` **VOTE-UI-CLOSE-006**: After successful close, the page SHALL transition to the decided view without a hard reload, and the club dashboard's "Current Book" card SHALL reflect the new pick on next visit (already wired via `BookSelection.isCurrent`).
 - `[x]` **VOTE-UI-CLOSE-007**: The Close button SHALL be disabled with helper text "No votes cast yet" if zero approvals exist across all nominations.
+- `[x]` **VOTE-API-CLOSE-PREVIEW-001**: An admin-only `rounds.getClosePreview` query SHALL return the live ranked top-3 standings, total vote count, and tied-at-top count for a round in "voting" status. The query SHALL throw NOT_FOUND for cross-club access and BAD_REQUEST for non-voting rounds. Tallies remain hidden from members via VOTE-UI-001; this exists as a separate adminProcedure rather than widening `rounds.get`. (`rounds.ts`, `src/lib/voting/close-preview.ts`)
+- `[x]` **VOTE-UI-CLOSE-LIVE-001**: The voting phase SHALL source the close-preview standings (used by VOTE-UI-CLOSE-003/005/007) from `rounds.getClosePreview` rather than a request-time server snapshot, and SHALL refetch on every Close-dialog open and after a successful local vote submit. This keeps the disabled/enabled state of the "Close voting" button and the tallies shown in the dialog consistent with real-time vote arrivals without a manual page refresh. (`voting-phase.tsx`)
 
 ## Cancel Round UI
 
