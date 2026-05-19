@@ -157,6 +157,42 @@ describe("computeProgress", () => {
     });
   });
 
+  // @spec PROG-BE-001
+  describe("boundary inputs", () => {
+    it("returns percentage=100 when currentPage equals totalPages", () => {
+      const result = computeProgress({
+        currentPage: 412,
+        totalPages: 412,
+        status: "reading",
+      });
+      // PROG-BE-006-AUTOFINISH then flips status to finished.
+      expect(result.percentage).toBe(100);
+    });
+
+    it("returns percentage=0 when currentPage is 0", () => {
+      const result = computeProgress({
+        currentPage: 0,
+        totalPages: 412,
+        status: "reading",
+      });
+      expect(result.percentage).toBe(0);
+    });
+
+    // Out-of-range currentPage values produce out-of-range percentages here —
+    // input validation lives at the API boundary (`progress.update`), not in
+    // this pure compute function. Documented so the server-side guard isn't
+    // accidentally weakened later.
+    // @spec PROG-API-VALID-001
+    it("DOES NOT clamp currentPage > totalPages (server is responsible)", () => {
+      const result = computeProgress({
+        currentPage: 500,
+        totalPages: 412,
+        status: "reading",
+      });
+      expect(result.percentage).toBeGreaterThan(100);
+    });
+  });
+
   describe("status: not_started", () => {
     it("sets percentage to 0 and currentPage to null", () => {
       const result = computeProgress({
