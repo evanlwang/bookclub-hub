@@ -98,8 +98,8 @@ describe("notifications", () => {
       clubId: wedReads.id,
       title: "Dune Discussion",
       slots: [
-        { time: new Date("2026-05-18T19:00:00Z") },
-        { time: new Date("2026-05-20T20:00:00Z") },
+        { time: new Date(Date.now() + 7 * 86_400_000) },
+        { time: new Date(Date.now() + 9 * 86_400_000) },
       ],
     });
 
@@ -114,8 +114,8 @@ describe("notifications", () => {
       clubId: wedReads.id,
       title: "Discussion",
       slots: [
-        { time: new Date("2026-05-18T19:00:00Z") },
-        { time: new Date("2026-05-20T20:00:00Z") },
+        { time: new Date(Date.now() + 7 * 86_400_000) },
+        { time: new Date(Date.now() + 9 * 86_400_000) },
       ],
     });
 
@@ -137,8 +137,8 @@ describe("notifications", () => {
       clubId: wedReads.id,
       title: "To Cancel",
       slots: [
-        { time: new Date("2026-05-18T19:00:00Z") },
-        { time: new Date("2026-05-20T20:00:00Z") },
+        { time: new Date(Date.now() + 7 * 86_400_000) },
+        { time: new Date(Date.now() + 9 * 86_400_000) },
       ],
     });
 
