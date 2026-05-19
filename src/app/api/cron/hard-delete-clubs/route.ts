@@ -1,6 +1,7 @@
 // @spec CLUB-BE-005
 import { NextRequest, NextResponse } from "next/server";
 import { prisma as db } from "@/lib/db";
+import { env } from "@/env";
 
 /**
  * Cron endpoint that hard-deletes clubs that have been soft-deleted for 30+ days.
@@ -14,7 +15,7 @@ import { prisma as db } from "@/lib/db";
  */
 export async function GET(request: NextRequest) {
   const cronSecret = request.headers.get("CRON_SECRET");
-  if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+  if (!cronSecret || cronSecret !== env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

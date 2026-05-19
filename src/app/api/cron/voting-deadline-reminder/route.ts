@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma as db } from "@/lib/db";
 import { emailService } from "@/server/services/email";
+import { env } from "@/env";
 
 /**
  * Cron endpoint that sends voting deadline reminders to club members.
@@ -18,7 +19,7 @@ import { emailService } from "@/server/services/email";
 export async function GET(request: NextRequest) {
   // Validate CRON_SECRET header
   const cronSecret = request.headers.get("CRON_SECRET");
-  if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+  if (!cronSecret || cronSecret !== env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -1,5 +1,6 @@
 // Email service wrapping Resend. In test mode, records calls without sending.
 // @spec VOTE-NOTIFY-NONBLOCK-001, MEET-NOTIFY-NONBLOCK-001
+import { env } from "@/env";
 
 export interface EmailCall {
   to: string[];
@@ -23,8 +24,8 @@ function escapeHtml(s: string): string {
 }
 
 function isTestMode(): boolean {
-  const key = process.env.RESEND_API_KEY;
-  if (process.env.NODE_ENV === "test") return true;
+  const key = env.RESEND_API_KEY;
+  if (env.NODE_ENV === "test") return true;
   if (key === "test") return true;
   // Dev convention: any key prefixed `re_mock` short-circuits to recorded-only.
   if (key !== undefined && key.startsWith("re_mock")) return true;
@@ -37,7 +38,7 @@ async function send(to: string[], subject: string, body: string): Promise<void> 
 
   try {
     const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const resend = new Resend(env.RESEND_API_KEY);
     await resend.emails.send({
       from: "BookClub Hub <noreply@bookclubhub.app>",
       to,

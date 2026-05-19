@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "crypto";
+import { env } from "@/env";
 
 // Pilot gate — reject if PILOT_PASSCODE is set in env and the input doesn't
 // match. When the env var is unset, behavior depends on NODE_ENV: dev/test
@@ -11,10 +12,10 @@ import { timingSafeEqual } from "crypto";
 // clubs.join. If you add another such entry point, gate it here too.
 // @spec AUTH-API-PASSCODE-001
 export function passcodeOk(input: string): boolean {
-  const expected = process.env.PILOT_PASSCODE;
+  const expected = env.PILOT_PASSCODE;
   if (!expected) {
     // @spec AUTH-API-PASSCODE-002
-    if (process.env.NODE_ENV === "production") return false;
+    if (env.NODE_ENV === "production") return false;
     return true;
   }
   const a = Buffer.from(input);
