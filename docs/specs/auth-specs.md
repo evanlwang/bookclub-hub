@@ -56,6 +56,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 - `[x]` **AUTH-UI-STEP3A-CODE-001**: Club code input (uppercase normalized, monospace, debounced lookup). On change ≥4 chars, calls `clubs.lookup`. (`join/page.tsx:265-297`)
 - `[x]` **AUTH-UI-STEP3A-BACK-001**: Button: "Back" — handler: returns to step 2.
 - `[x]` **AUTH-UI-STEP3A-JOIN-001**: Button: "Join {clubName}" / "Join the club" (`join/page.tsx:595-604`) — disabled when `!joinReady || joiningClub` — handler: `handleJoinSubmit` calls `clubs.join`.
+- `[x]` **AUTH-UI-STEP3A-ALREADY-MEMBER-001**: When `clubs.join` returns `{ alreadyMember: true }`, Step 3a SHALL render an in-flow informational banner ("You're already in {clubName}.") with a link "Open it →" that navigates to `/clubs/{id}`. The Join button SHALL be disabled while the banner is visible, and editing the code SHALL clear the banner. The system SHALL NOT advance to Step 4 in this case. (`src/app/join/page.tsx`, `src/app/join/_step3-join.tsx`)
 
 ## Step 3b Buttons (Create Branch)
 
