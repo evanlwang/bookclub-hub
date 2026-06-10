@@ -1,52 +1,66 @@
 // @spec COMP-BOOK-COVER-001..010
 /* eslint-disable no-restricted-syntax -- COMP-BOOK-COVER-010: cloth-bound metaphor is the documented exemption from DSYS-TOKEN-003 */
-type CoverVariant = "teal" | "rust" | "sage" | "mauve" | "amber" | "ink";
+// Cozy redesign: six warm cloth-bound variants (no cool tones). Each is a
+// palette: deep cloth, lifted highlight, cream foil ink, mid rule.
+type CoverVariant =
+  | "rust"
+  | "olive"
+  | "terracotta"
+  | "bronze"
+  | "clay"
+  | "sienna";
 type CoverSize = "sm" | "md" | "lg" | "xl";
 
-// Each variant is a cloth-bound palette: deep cover, lifted highlight, foil ink.
 const variants: Record<
   CoverVariant,
   { base: string; lift: string; foil: string; rule: string }
 > = {
-  teal: {
-    base: "oklch(0.36 0.045 200)",
-    lift: "oklch(0.52 0.075 195)",
-    foil: "oklch(0.92 0.025 80)",
-    rule: "oklch(0.78 0.06 80 / 0.55)",
-  },
   rust: {
-    base: "oklch(0.36 0.075 30)",
-    lift: "oklch(0.55 0.115 35)",
-    foil: "oklch(0.94 0.04 75)",
-    rule: "oklch(0.85 0.07 75 / 0.55)",
+    base: "oklch(0.42 0.10 35)",
+    lift: "oklch(0.55 0.12 38)",
+    foil: "oklch(0.93 0.04 82)",
+    rule: "oklch(0.82 0.06 78 / 0.55)",
   },
-  sage: {
-    base: "oklch(0.38 0.04 150)",
-    lift: "oklch(0.56 0.06 145)",
-    foil: "oklch(0.93 0.03 90)",
-    rule: "oklch(0.80 0.06 90 / 0.55)",
+  olive: {
+    base: "oklch(0.45 0.06 128)",
+    lift: "oklch(0.58 0.07 126)",
+    foil: "oklch(0.94 0.03 100)",
+    rule: "oklch(0.82 0.05 100 / 0.55)",
   },
-  mauve: {
-    base: "oklch(0.34 0.06 315)",
-    lift: "oklch(0.50 0.085 320)",
-    foil: "oklch(0.93 0.03 85)",
-    rule: "oklch(0.82 0.05 80 / 0.55)",
+  terracotta: {
+    base: "oklch(0.50 0.12 40)",
+    lift: "oklch(0.62 0.13 42)",
+    foil: "oklch(0.95 0.04 85)",
+    rule: "oklch(0.86 0.06 80 / 0.55)",
   },
-  amber: {
-    base: "oklch(0.40 0.085 55)",
-    lift: "oklch(0.62 0.115 70)",
-    foil: "oklch(0.20 0.03 50)",
-    rule: "oklch(0.30 0.04 50 / 0.55)",
+  bronze: {
+    base: "oklch(0.45 0.06 75)",
+    lift: "oklch(0.58 0.08 78)",
+    foil: "oklch(0.94 0.035 92)",
+    rule: "oklch(0.82 0.05 88 / 0.55)",
   },
-  ink: {
-    base: "oklch(0.18 0.015 250)",
-    lift: "oklch(0.30 0.025 250)",
-    foil: "oklch(0.88 0.035 80)",
-    rule: "oklch(0.72 0.05 80 / 0.55)",
+  clay: {
+    base: "oklch(0.52 0.07 50)",
+    lift: "oklch(0.64 0.09 55)",
+    foil: "oklch(0.95 0.035 85)",
+    rule: "oklch(0.85 0.05 80 / 0.55)",
+  },
+  sienna: {
+    base: "oklch(0.44 0.09 45)",
+    lift: "oklch(0.56 0.11 48)",
+    foil: "oklch(0.93 0.04 82)",
+    rule: "oklch(0.83 0.06 78 / 0.55)",
   },
 };
 
-const order: CoverVariant[] = ["teal", "rust", "sage", "mauve", "amber", "ink"];
+const order: CoverVariant[] = [
+  "rust",
+  "olive",
+  "terracotta",
+  "bronze",
+  "clay",
+  "sienna",
+];
 
 // FNV-1a-ish stable hash → deterministic palette per title. Same book renders
 // in the same color across the app, but different books get different colors.

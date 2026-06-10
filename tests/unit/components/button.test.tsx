@@ -12,10 +12,10 @@ describe("Button — API defaults", () => {
   it("defaults to variant=secondary, size=md", () => {
     render(<Button>Click</Button>);
     const btn = screen.getByRole("button", { name: "Click" });
-    // secondary variant has bg-bg + line-strong border
-    expect(btn).toHaveClass("bg-bg", "border-line-strong");
-    // md size: h-[38px]
-    expect(btn).toHaveClass("h-[38px]");
+    // secondary variant: card surface + terracotta text (inset ring via shadow)
+    expect(btn).toHaveClass("bg-bg-soft", "text-primary");
+    // md size: min-h-[44px]
+    expect(btn).toHaveClass("min-h-[44px]");
   });
 
   // @spec COMP-BUTTON-003 — active gap
@@ -25,10 +25,10 @@ describe("Button — API defaults", () => {
   });
 
   // @spec COMP-BUTTON-004
-  it("applies --radius-md, font-weight 500, and gap-2 regardless of variant", () => {
+  it("applies a full pill, Nunito display font, extrabold, and gap-1.5 regardless of variant", () => {
     render(<Button variant="primary">Click</Button>);
     const btn = screen.getByRole("button");
-    expect(btn).toHaveClass("rounded-[var(--radius-md)]", "font-medium", "gap-2");
+    expect(btn).toHaveClass("rounded-full", "font-[var(--font-display)]", "font-extrabold", "gap-1.5");
   });
 });
 
@@ -46,17 +46,18 @@ describe("Button — variant × default state", () => {
   });
 
   // @spec COMP-BUTTON-007
-  it("secondary applies bg-bg + text-ink + border-line-strong", () => {
+  it("secondary applies a card surface + terracotta text + soft inset ring", () => {
     render(<Button variant="secondary">S</Button>);
-    expect(screen.getByRole("button")).toHaveClass("bg-bg", "text-ink", "border-line-strong");
+    const btn = screen.getByRole("button");
+    expect(btn).toHaveClass("bg-bg-soft", "text-primary");
+    expect(btn.className).toMatch(/shadow-\[inset_0_0_0_2px_var\(--color-primary-soft\)/);
   });
 
   // @spec COMP-BUTTON-008
-  it("secondary declares hover:bg-bg-soft + hover:border-ink-4", () => {
+  it("secondary fills the inset ring to full terracotta on hover", () => {
     render(<Button variant="secondary">S</Button>);
     const cls = screen.getByRole("button").className;
-    expect(cls).toMatch(/hover:bg-bg-soft/);
-    expect(cls).toMatch(/hover:border-ink-4/);
+    expect(cls).toMatch(/hover:shadow-\[inset_0_0_0_2px_var\(--color-primary\)/);
   });
 
   // @spec COMP-BUTTON-009
@@ -74,9 +75,9 @@ describe("Button — variant × default state", () => {
   });
 
   // @spec COMP-BUTTON-011
-  it("danger applies bg-danger + text-white", () => {
+  it("danger applies bg-danger + cream text", () => {
     render(<Button variant="danger">D</Button>);
-    expect(screen.getByRole("button")).toHaveClass("bg-danger", "text-white");
+    expect(screen.getByRole("button")).toHaveClass("bg-danger", "text-bg");
   });
 
   // @spec COMP-BUTTON-012 — active gap (currently uses filter:brightness)
@@ -100,19 +101,19 @@ describe("Button — variant × default state", () => {
 
 describe("Button — size matrix", () => {
   // @spec COMP-BUTTON-015
-  it("sm renders h-[30px], px-3 py-1.5, text-[13px]", () => {
+  it("sm renders min-h-[36px], px-4, text-[13.5px]", () => {
     render(<Button size="sm">x</Button>);
-    expect(screen.getByRole("button")).toHaveClass("h-[30px]", "px-3", "py-1.5", "text-[13px]");
+    expect(screen.getByRole("button")).toHaveClass("min-h-[36px]", "px-4", "text-[13.5px]");
   });
   // @spec COMP-BUTTON-016
-  it("md renders h-[38px], px-4 py-2, text-sm", () => {
+  it("md renders min-h-[44px], px-[22px], text-[15px]", () => {
     render(<Button size="md">x</Button>);
-    expect(screen.getByRole("button")).toHaveClass("h-[38px]", "px-4", "py-2", "text-sm");
+    expect(screen.getByRole("button")).toHaveClass("min-h-[44px]", "px-[22px]", "text-[15px]");
   });
   // @spec COMP-BUTTON-017
-  it("lg renders h-[46px], px-5 py-2.5, text-[15px]", () => {
+  it("lg renders min-h-[52px], px-7, text-[17px]", () => {
     render(<Button size="lg">x</Button>);
-    expect(screen.getByRole("button")).toHaveClass("h-[46px]", "px-5", "py-2.5", "text-[15px]");
+    expect(screen.getByRole("button")).toHaveClass("min-h-[52px]", "px-7", "text-[17px]");
   });
 });
 

@@ -23,10 +23,12 @@ describe("Badge — API", () => {
       "inline-flex",
       "items-center",
       "gap-1.5",
-      "text-xs",
-      "font-medium",
-      "px-2",
-      "py-0.5",
+      "text-[11px]",
+      "font-extrabold",
+      "uppercase",
+      "tracking-[0.04em]",
+      "px-2.5",
+      "py-1",
       "rounded-full",
     );
   });

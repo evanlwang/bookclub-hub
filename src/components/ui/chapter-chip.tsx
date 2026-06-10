@@ -23,7 +23,7 @@ export function ChapterChip({ tag, chapter }: ChapterChipProps) {
 
   return (
     <span
-      className="inline-flex items-center px-2 py-0.5 rounded-[var(--radius-sm)] font-[var(--font-mono)] text-[11px] font-medium"
+      className="inline-flex items-center px-2 py-0.5 rounded-[var(--radius-sm)] font-[var(--font-mono)] text-[11px] font-medium uppercase tracking-[0.08em]"
       style={{
         background: `var(--color-chip-${idx})`,
         color: `var(--color-chip-${idx}-ink)`,

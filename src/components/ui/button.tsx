@@ -11,23 +11,26 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
+// Cozy redesign: full-pill buttons in Nunito 800. Primary/accent/danger get a
+// `0 2px 0` darker bottom edge so they read as physically "pressable"; secondary
+// is a card surface with a terracotta-soft inset ring that fills on hover.
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary text-bg hover:bg-primary-hover",
+    "bg-primary text-bg shadow-[0_2px_0_var(--color-primary-hover),0_8px_18px_-6px_var(--color-primary)] hover:bg-primary-hover",
   secondary:
-    "bg-bg text-ink border border-line-strong shadow-sm hover:bg-bg-soft hover:border-ink-4",
+    "bg-bg-soft text-primary shadow-[inset_0_0_0_2px_var(--color-primary-soft),var(--shadow-sm)] hover:shadow-[inset_0_0_0_2px_var(--color-primary),var(--shadow-sm)]",
   ghost:
     "bg-transparent text-ink-2 hover:bg-bg-sunken hover:text-ink",
   danger:
-    "bg-danger text-white hover:bg-danger-hover",
+    "bg-danger text-bg shadow-[0_2px_0_var(--color-danger-hover)] hover:bg-danger-hover",
   accent:
-    "bg-accent text-ink hover:bg-accent-hover",
+    "bg-accent text-ink shadow-[0_2px_0_var(--color-accent-hover),0_8px_18px_-6px_var(--color-accent)] hover:bg-accent-hover",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "text-[13px] px-3 py-1.5 h-[30px]",
-  md: "text-sm px-4 py-2 h-[38px]",
-  lg: "text-[15px] px-5 py-2.5 h-[46px]",
+  sm: "text-[13.5px] px-4 min-h-[36px]",
+  md: "text-[15px] px-[22px] min-h-[44px]",
+  lg: "text-[17px] px-7 min-h-[52px]",
 };
 
 // @spec COMP-BUTTON-001, COMP-BUTTON-002, COMP-BUTTON-003, COMP-BUTTON-004
@@ -52,7 +55,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`touch-target inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] cursor-pointer select-none transition-all duration-150 ease whitespace-nowrap ${variantClasses[variant]} ${sizeClasses[size]} ${className} disabled:cursor-not-allowed disabled:opacity-50`}
+      className={`touch-target inline-flex items-center justify-center gap-1.5 font-[var(--font-display)] font-extrabold rounded-full cursor-pointer select-none transition-all duration-150 ease whitespace-nowrap active:scale-[0.97] ${variantClasses[variant]} ${sizeClasses[size]} ${className} disabled:cursor-not-allowed disabled:opacity-50`}
       disabled={isDisabled}
       aria-busy={loading || undefined}
       aria-disabled={isDisabled || undefined}

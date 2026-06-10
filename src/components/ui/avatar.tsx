@@ -46,7 +46,7 @@ export function Avatar({ name = "", size = "md", src, decorative = false }: Avat
 
   return (
     <div
-      className={`inline-flex items-center justify-center rounded-full font-semibold shrink-0 ${sizeClasses[size]}`}
+      className={`inline-flex items-center justify-center rounded-full font-[var(--font-display)] font-extrabold shrink-0 ${sizeClasses[size]}`}
       style={{ background: palette.bg, color: palette.ink }}
       aria-hidden={decorative || undefined}
     >

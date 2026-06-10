@@ -6,7 +6,8 @@ type BadgeTone =
   | "accent"
   | "success"
   | "warning"
-  | "danger";
+  | "danger"
+  | "ink";
 
 const toneClasses: Record<BadgeTone, string> = {
   neutral: "bg-bg-sunken text-ink-2",
@@ -15,21 +16,28 @@ const toneClasses: Record<BadgeTone, string> = {
   success: "bg-success-soft text-success",
   warning: "bg-warning-soft text-warning-ink",
   danger: "bg-danger-soft text-danger",
+  // @spec COMP-BADGE-INK-001 — dark stamp/label badge (used on dark surfaces).
+  ink: "bg-ink text-bg",
 };
 
 interface BadgeProps {
   tone?: BadgeTone;
   dot?: boolean;
+  /** Solid terracotta fill with cream text — the "LIVE" emphasis style. */
+  solid?: boolean;
   children: ReactNode;
 }
 
 // @spec COMP-BADGE-001, COMP-BADGE-002, COMP-BADGE-003
 // @spec COMP-BADGE-004..009 (tone × token map)
-// @spec COMP-BADGE-010 (dot indicator)
-export function Badge({ tone = "neutral", dot, children }: BadgeProps) {
+// @spec COMP-BADGE-010 (dot indicator), COMP-BADGE-SOLID-001 (LIVE style)
+// Cozy redesign: uppercase Nunito-800 pills, 11px, letter-spaced.
+export function Badge({ tone = "neutral", dot, solid, children }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${toneClasses[tone]}`}
+      className={`inline-flex items-center gap-1.5 font-[var(--font-display)] font-extrabold text-[11px] uppercase tracking-[0.04em] leading-tight px-2.5 py-1 rounded-full ${
+        solid ? "bg-primary text-bg" : toneClasses[tone]
+      }`}
     >
       {dot && (
         <span className="w-1.5 h-1.5 rounded-full bg-current opacity-85" />
