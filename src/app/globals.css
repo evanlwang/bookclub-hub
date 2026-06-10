@@ -141,6 +141,14 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* @spec TOUCH-BTN-001 — on touch (coarse) pointers, lift any control to the
+   44px minimum target without touching fine-pointer (desktop) density. */
+@media (pointer: coarse) {
+  .touch-target {
+    min-height: 44px;
+  }
+}
+
 /* @spec DSYS-MOTION-002 */
 @media (prefers-reduced-motion: reduce) {
   *,

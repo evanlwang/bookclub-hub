@@ -35,7 +35,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 // @spec COMP-BUTTON-015..017 (size matrix)
 // @spec COMP-BUTTON-018..021 (disabled/loading state behavior)
 // @spec COMP-BUTTON-A11Y-001, COMP-BUTTON-A11Y-002, COMP-BUTTON-A11Y-003
-// @spec COMP-BUTTON-MOTION-001
+// @spec COMP-BUTTON-MOTION-001, TOUCH-BTN-001
 export function Button({
   variant = "secondary",
   size = "md",
@@ -52,7 +52,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] cursor-pointer select-none transition-all duration-150 ease whitespace-nowrap ${variantClasses[variant]} ${sizeClasses[size]} ${className} disabled:cursor-not-allowed disabled:opacity-50`}
+      className={`touch-target inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] cursor-pointer select-none transition-all duration-150 ease whitespace-nowrap ${variantClasses[variant]} ${sizeClasses[size]} ${className} disabled:cursor-not-allowed disabled:opacity-50`}
       disabled={isDisabled}
       aria-busy={loading || undefined}
       aria-disabled={isDisabled || undefined}

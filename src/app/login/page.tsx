@@ -76,7 +76,8 @@ export default function LoginPage() {
 
   return (
     <main id="main-content" className="min-h-screen flex flex-col" style={{ background: paperBg }}>
-      <header className="flex items-center justify-between" style={{ padding: "20px 32px" }}>
+      {/* @spec TOUCH-HEADER-001 */}
+      <header className="flex items-center justify-between px-4 py-4 sm:px-8 sm:py-5 safe-top">
         <Link href="/" className="flex items-center gap-2.5">
           <LogoIcon size={22} />
           <span className="font-[var(--font-display)] text-[16px] font-semibold text-ink">

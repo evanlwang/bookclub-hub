@@ -264,7 +264,7 @@ function UpdateModal({
               disabled={status === "finished"}
               data-testid="page-slider"
               aria-label="Current page"
-              className="w-full mt-2.5 accent-primary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="w-full mt-2.5 h-6 accent-primary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             />
           )}
           <p className="text-xs text-ink-3 mt-1.5">
@@ -372,7 +372,8 @@ function SavedToast({
     <div
       data-testid="progress-saved-toast"
       role="status"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] border border-line bg-bg shadow-lg animate-slide-up"
+      // @spec TOUCH-TOAST-001 — lift above the mobile tab bar on phones.
+      className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+0.75rem)] md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] border border-line bg-bg shadow-lg animate-slide-up"
     >
       <span className="text-sm text-ink">{message}</span>
       {canUndo && (
