@@ -1,9 +1,7 @@
 // @spec VOTE-UI-CLOSE-003, VOTE-UI-CLOSE-004, VOTE-UI-CLOSE-005, VOTE-UI-CLOSE-006
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Button, Card } from "@/components/ui";
-import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { Button, Sheet } from "@/components/ui";
 
 export interface ClosePreview {
   top3: Array<{ id: string; title: string; author: string; voteCount: number }>;
@@ -24,33 +22,17 @@ export function CloseVotingDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  useFocusTrap(dialogRef, true);
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !submitting) onCancel();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [submitting, onCancel]);
-
   const leader = preview.top3[0];
   const showTieNote = leader && preview.tiedAtTop > 1;
 
   return (
-    <div
-      ref={dialogRef}
-      data-testid="close-voting-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="close-voting-title"
-      tabIndex={-1}
-      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !submitting) onCancel();
-      }}
+    <Sheet
+      open
+      onClose={onCancel}
+      dismissible={!submitting}
+      labelledById="close-voting-title"
+      testId="close-voting-dialog"
     >
-      <Card className="w-full max-w-md bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg">
         <h2
           id="close-voting-title"
           className="font-[var(--font-display)] text-lg font-semibold text-ink mb-2"
@@ -140,8 +122,7 @@ export function CloseVotingDialog({
             {submitting ? "Closing…" : "Close voting"}
           </Button>
         </div>
-      </Card>
-    </div>
+    </Sheet>
   );
 }
 
@@ -161,30 +142,14 @@ export function CancelRoundDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  useFocusTrap(dialogRef, true);
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !submitting) onCancel();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [submitting, onCancel]);
-
   return (
-    <div
-      ref={dialogRef}
-      data-testid="cancel-round-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cancel-round-title"
-      tabIndex={-1}
-      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !submitting) onCancel();
-      }}
+    <Sheet
+      open
+      onClose={onCancel}
+      dismissible={!submitting}
+      labelledById="cancel-round-title"
+      testId="cancel-round-dialog"
     >
-      <Card className="w-full max-w-md bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg">
         <h2
           id="cancel-round-title"
           className="font-[var(--font-display)] text-lg font-semibold text-ink mb-2"
@@ -243,7 +208,6 @@ export function CancelRoundDialog({
             {submitting ? "Cancelling…" : "Cancel round"}
           </Button>
         </div>
-      </Card>
-    </div>
+    </Sheet>
   );
 }

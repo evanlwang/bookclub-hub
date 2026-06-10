@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Button, Card } from "@/components/ui";
-import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { useState } from "react";
+import { Button, Sheet } from "@/components/ui";
 
 export interface MeetingEditableFields {
   title: string;
@@ -23,20 +22,9 @@ export function EditMeetingDialog({
   onSave: (next: MeetingEditableFields) => void;
   onCancel: () => void;
 }) {
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  useFocusTrap(dialogRef, true);
-
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description);
   const [location, setLocation] = useState(initial.location);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !submitting) onCancel();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [submitting, onCancel]);
 
   const dirty =
     title.trim() !== initial.title ||
@@ -54,27 +42,21 @@ export function EditMeetingDialog({
   }
 
   return (
-    <div
-      ref={dialogRef}
-      data-testid="edit-meeting-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-meeting-title"
-      tabIndex={-1}
-      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !submitting) onCancel();
-      }}
+    <Sheet
+      open
+      onClose={onCancel}
+      dismissible={!submitting}
+      labelledById="edit-meeting-title"
+      testId="edit-meeting-dialog"
     >
-      <Card className="w-full max-w-md bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg">
-        <h2
-          id="edit-meeting-title"
-          className="font-[var(--font-display)] text-lg font-semibold text-ink mb-4"
-        >
-          Edit meeting
-        </h2>
+      <h2
+        id="edit-meeting-title"
+        className="font-[var(--font-display)] text-lg font-semibold text-ink mb-4"
+      >
+        Edit meeting
+      </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label
               htmlFor="edit-meeting-title-input"
@@ -161,7 +143,6 @@ export function EditMeetingDialog({
             </Button>
           </div>
         </form>
-      </Card>
-    </div>
+    </Sheet>
   );
 }

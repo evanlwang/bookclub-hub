@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, ProgressBar } from "@/components/ui";
-import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { Button, ProgressBar, Sheet } from "@/components/ui";
 import { clampPage } from "@/lib/progress/clamp-page";
 import { trpc } from "@/trpc/react-hooks";
 
@@ -133,17 +132,6 @@ function UpdateModal({
   const updateMutation = trpc.progress.update.useMutation();
   const loading = updateMutation.isPending;
 
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  useFocusTrap(dialogRef, true);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !loading) onClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [loading, onClose]);
-
   const knownPages = totalPages != null && totalPages > 0;
   const percentage =
     status === "finished"
@@ -214,22 +202,13 @@ function UpdateModal({
   }
 
   return (
-    <div
-      ref={dialogRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="update-progress-title"
-      tabIndex={-1}
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      data-testid="progress-modal"
+    <Sheet
+      open
+      onClose={onClose}
+      dismissible={!loading}
+      labelledById="update-progress-title"
+      testId="progress-modal"
     >
-      <div
-        className="absolute inset-0 backdrop-blur-md bg-bg/40"
-        onClick={() => {
-          if (!loading) onClose();
-        }}
-      />
-      <div className="relative bg-bg border border-line rounded-[var(--radius-xl)] shadow-lg p-6 w-full max-w-md mx-4 animate-slide-down">
         <h2
           id="update-progress-title"
           className="font-[var(--font-display)] text-xl font-semibold text-ink mb-6"
@@ -357,8 +336,7 @@ function UpdateModal({
             Save Progress
           </Button>
         </div>
-      </div>
-    </div>
+    </Sheet>
   );
 }
 

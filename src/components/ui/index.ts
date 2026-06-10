@@ -3,6 +3,7 @@ export { Avatar } from "./avatar";
 export { AvatarStack } from "./avatar-stack";
 export { Badge } from "./badge";
 export { Card } from "./card";
+export { Sheet } from "./sheet";
 export { BookCover } from "./book-cover";
 export { DateTimePicker } from "./date-time-picker";
 export { ChapterChip } from "./chapter-chip";
