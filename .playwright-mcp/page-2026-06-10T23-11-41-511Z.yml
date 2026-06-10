@@ -1,0 +1,235 @@
+- generic [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - main [ref=e4]:
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - paragraph [ref=e80]: Club Dashboard
+          - heading "Wednesday Night Reads" [level=1] [ref=e82]
+          - paragraph [ref=e84]:
+            - generic [ref=e85]: "Code: WEDREADS"
+            - button "Copy invite code" [ref=e86]:
+              - img [ref=e87]
+              - text: Copy
+        - generic [ref=e92]:
+          - img [ref=e94]
+          - generic [ref=e97]:
+            - paragraph [ref=e98]: 2 things need your attention
+            - list [ref=e99]:
+              - listitem [ref=e100]:
+                - img [ref=e101]
+                - text: Voting is open — you haven't voted yet
+              - listitem [ref=e104]:
+                - img [ref=e105]
+                - text: Meeting awaits your availability
+          - generic [ref=e108]:
+            - link "Cast my vote" [ref=e109] [cursor=pointer]:
+              - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/vote
+            - link "Respond to meetings" [ref=e110] [cursor=pointer]:
+              - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/meetings
+        - generic [ref=e112]:
+          - generic "Dune by Frank Herbert" [ref=e113]:
+            - generic [ref=e114]:
+              - generic [ref=e118]: Dune
+              - generic [ref=e123]: Frank Herbert
+          - generic [ref=e127]:
+            - paragraph [ref=e128]: Currently Reading
+            - heading "Dune" [level=2] [ref=e130]
+            - paragraph [ref=e131]:
+              - text: by Frank Herbert
+              - generic [ref=e132]: · 412 pages
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - generic [ref=e136]:
+                  - generic [ref=e137]: 75%
+                  - generic [ref=e138]: Median
+                - generic [ref=e139]:
+                  - generic [ref=e140]: "2"
+                  - generic [ref=e141]: Finished
+                - generic [ref=e142]:
+                  - generic [ref=e143]: "3"
+                  - generic [ref=e144]: Reading
+              - generic [ref=e145]:
+                - generic [ref=e146]:
+                  - progressbar [ref=e147]
+                  - generic:
+                    - button "Bob Martinez — Ch. 22" [ref=e149]
+                    - button "Carol Park — Ch. 22" [ref=e150]
+                    - button "Eve Thompson — Ch. 15" [ref=e151]
+                    - button "Alice Chen — Ch. 12" [ref=e152]
+                    - button "Dave Singh — Ch. 10" [ref=e153]
+                    - button "Frank Wilson — 0%" [ref=e154]
+                - generic [ref=e155]:
+                  - generic "Bob Martinez — Ch. 22" [ref=e156]:
+                    - generic [ref=e157]: BM
+                  - generic "Carol Park — Ch. 22" [ref=e158]:
+                    - generic [ref=e159]: CP
+                  - generic "Eve Thompson — Ch. 15" [ref=e160]:
+                    - generic [ref=e161]: ET
+                  - generic "Alice Chen — Ch. 12" [ref=e162]:
+                    - generic [ref=e163]: AC
+                  - generic "Dave Singh — Ch. 10" [ref=e164]:
+                    - generic [ref=e165]: DS
+                  - generic "Frank Wilson — 0%" [ref=e166]:
+                    - generic [ref=e167]: FW
+        - generic [ref=e168]:
+          - generic [ref=e169]:
+            - generic [ref=e170]:
+              - img [ref=e172]
+              - heading "Active Vote" [level=3] [ref=e175]
+            - generic [ref=e176]:
+              - generic [ref=e177]:
+                - paragraph [ref=e178]: Voting live
+                - paragraph [ref=e179]: Cast up to your approval cap
+              - generic [ref=e181]: voting
+              - link "Cast my vote" [ref=e183] [cursor=pointer]:
+                - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/vote
+                - text: Cast my vote
+                - img [ref=e184]
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - img [ref=e189]
+              - heading "Next Meeting" [level=3] [ref=e192]
+            - generic [ref=e193]:
+              - generic [ref=e194]:
+                - paragraph [ref=e195]: Dune — final wrap-up
+                - paragraph [ref=e196]: 5 members responded
+              - generic [ref=e198]: Awaiting responses
+              - link "View meetings" [ref=e200] [cursor=pointer]:
+                - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/meetings
+                - text: View meetings
+                - img [ref=e201]
+          - generic [ref=e203]:
+            - generic [ref=e204]:
+              - img [ref=e206]
+              - heading "Recent Discussions" [level=3] [ref=e208]
+            - list [ref=e209]:
+              - listitem [ref=e210]:
+                - generic [ref=e211]: Drop your favorite lines! No chapter context needed.
+                - generic "2 comments" [ref=e212]:
+                  - img [ref=e213]
+                  - text: "2"
+              - listitem [ref=e215]:
+                - generic [ref=e217]: Chapter 10
+                - generic [ref=e218]: Does anyone else feel Paul's visions are a bit much? It feels like he always knows exactly what to do.
+                - generic "2 comments" [ref=e219]:
+                  - img [ref=e220]
+                  - text: "2"
+              - listitem [ref=e222]:
+                - generic [ref=e224]: Chapter 5
+                - generic [ref=e225]: The swordsmanship training scenes are vivid. Anyone else marking these up?
+                - generic "0 comments" [ref=e226]:
+                  - img [ref=e227]
+                  - text: "0"
+            - link "View all" [ref=e229] [cursor=pointer]:
+              - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/discussions
+              - text: View all
+              - img [ref=e230]
+        - generic [ref=e232]:
+          - generic [ref=e233]:
+            - generic [ref=e234]:
+              - img [ref=e236]
+              - heading "Reading Progress" [level=3] [ref=e239]
+            - link "View progress" [ref=e240] [cursor=pointer]:
+              - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/progress
+              - text: View progress
+              - img [ref=e241]
+          - list [ref=e243]:
+            - listitem [ref=e244]:
+              - generic [ref=e245]: BM
+              - generic [ref=e247]:
+                - generic [ref=e248]: Bob Martinez
+                - generic "Finished" [ref=e249]:
+                  - img [ref=e250]
+              - generic [ref=e254]: 100%
+            - listitem [ref=e255]:
+              - generic [ref=e256]: CP
+              - generic [ref=e258]:
+                - generic [ref=e259]: Carol Park
+                - generic "Finished" [ref=e260]:
+                  - img [ref=e261]
+              - generic [ref=e265]: 100%
+            - listitem [ref=e266]:
+              - generic [ref=e267]: ET
+              - generic [ref=e270]: Eve Thompson
+              - generic [ref=e273]: 75%
+            - listitem [ref=e274]:
+              - generic [ref=e275]: AC
+              - generic [ref=e278]: Alice Chen
+              - generic [ref=e281]: 61%
+            - listitem [ref=e282]:
+              - generic [ref=e283]: DS
+              - generic [ref=e286]: Dave Singh
+              - generic [ref=e289]: 50%
+            - listitem [ref=e290]:
+              - generic [ref=e291]: FW
+              - generic [ref=e294]: Frank Wilson
+              - generic [ref=e296]: 0%
+    - navigation "Primary" [ref=e31]:
+      - list [ref=e32]:
+        - listitem [ref=e33]:
+          - link "Dashboard" [ref=e34] [cursor=pointer]:
+            - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7
+            - img [ref=e36]
+            - generic [ref=e39]: Dashboard
+        - listitem [ref=e40]:
+          - link "Voting" [ref=e41] [cursor=pointer]:
+            - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/vote
+            - img [ref=e43]
+            - generic [ref=e47]: Voting
+        - listitem [ref=e48]:
+          - link "Meetings" [ref=e49] [cursor=pointer]:
+            - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/meetings
+            - img [ref=e51]
+            - generic [ref=e55]: Meetings
+        - listitem [ref=e56]:
+          - link "Discussions" [ref=e57] [cursor=pointer]:
+            - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/discussions
+            - img [ref=e59]
+            - generic [ref=e62]: Discussions
+        - listitem [ref=e63]:
+          - button "More" [expanded] [ref=e64]:
+            - img [ref=e65]
+            - generic [ref=e67]: More
+  - button "Open Next.js Dev Tools" [ref=e73] [cursor=pointer]:
+    - img [ref=e74]
+  - alert [ref=e77]
+  - dialog "More navigation" [ref=e297]:
+    - generic [ref=e301]:
+      - generic [ref=e303]: Wednesday Night Reads
+      - generic [ref=e304]:
+        - generic [ref=e305]: owner
+        - button "Copy invite code" [active] [ref=e306]:
+          - generic [ref=e307]: WEDREADS
+          - img [ref=e308]
+      - navigation [ref=e311]:
+        - link "Progress" [ref=e312] [cursor=pointer]:
+          - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/progress
+          - img [ref=e313]
+          - text: Progress
+        - link "Members" [ref=e316] [cursor=pointer]:
+          - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/members
+          - img [ref=e317]
+          - text: Members
+        - link "Settings" [ref=e322] [cursor=pointer]:
+          - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/settings
+          - img [ref=e323]
+          - text: Settings
+      - generic [ref=e328]:
+        - paragraph [ref=e329]: Switch club
+        - link "Sci-Fi Explorers 2 new member" [ref=e330] [cursor=pointer]:
+          - /url: /clubs/4e13e4c4-c491-4a42-abf5-3ec3aafcc191
+          - generic [ref=e331]:
+            - generic [ref=e332]: Sci-Fi Explorers
+            - generic "2 new" [ref=e333]
+          - generic [ref=e334]: member
+        - link "Sleepy Reads (archived) member" [ref=e335] [cursor=pointer]:
+          - /url: /clubs/34f4acf9-eda7-4220-b48f-1c9c0aed0197
+          - generic [ref=e337]: Sleepy Reads (archived)
+          - generic [ref=e338]: member
+        - button "+ Create or join a club" [ref=e339]
+      - generic [ref=e340]:
+        - generic [ref=e341]: AC
+        - generic [ref=e342]: Alice Chen
+        - button "Sign out" [ref=e343]

@@ -1,0 +1,161 @@
+- generic [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - main [ref=e4]:
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - heading "Reading Progress" [level=1] [ref=e80]
+          - button "Update My Progress" [active] [ref=e81] [cursor=pointer]
+        - generic [ref=e82]:
+          - paragraph [ref=e83]: Book history
+          - list [ref=e84]:
+            - listitem [ref=e85]:
+              - link "Dune Current" [ref=e86] [cursor=pointer]:
+                - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/progress?bookId=c6d86d80-a240-4439-ade2-7b2e54bcbf62
+                - generic [ref=e87]: Dune
+                - generic [ref=e89]: Current
+            - listitem [ref=e90]:
+              - link "Kindred Finished May 2026" [ref=e91] [cursor=pointer]:
+                - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/progress?bookId=7a89ebcf-fe41-4e1c-a0af-17dcd0746d46
+                - generic [ref=e92]: Kindred
+                - generic [ref=e93]: Finished May 2026
+        - generic [ref=e95]:
+          - generic "Dune by Frank Herbert" [ref=e96]:
+            - generic [ref=e97]:
+              - generic [ref=e101]: Dune
+              - generic [ref=e106]: Frank Herbert
+          - generic [ref=e110]:
+            - heading "Dune" [level=2] [ref=e111]
+            - paragraph [ref=e112]: Frank Herbert
+            - paragraph [ref=e113]: 412 pages
+        - generic [ref=e115]:
+          - generic [ref=e116]:
+            - img [ref=e117]
+            - generic [ref=e121]: 75%
+          - generic [ref=e122]:
+            - paragraph [ref=e123]: median 75% across 5 reading · 1 not started · 2 finished
+            - generic [ref=e128]:
+              - generic [ref=e129]:
+                - text: Finished
+                - strong [ref=e131]: "2"
+              - generic [ref=e132]:
+                - text: Reading
+                - strong [ref=e134]: "3"
+              - generic [ref=e135]:
+                - text: Not started
+                - strong [ref=e137]: "1"
+        - generic [ref=e138]:
+          - heading "Where everyone is" [level=2] [ref=e139]
+          - generic [ref=e140]: Sorted by progress
+        - list [ref=e142]:
+          - listitem [ref=e143]:
+            - generic [ref=e144]: BM
+            - generic [ref=e145]:
+              - generic [ref=e146]:
+                - generic [ref=e147]: Bob Martinez
+                - img [ref=e149]
+              - paragraph [ref=e151]: Finished · 412 pages
+              - time [ref=e152]: Updated 2m ago
+            - progressbar [ref=e154]
+            - generic [ref=e156]: 100%
+            - generic [ref=e158]: Done
+          - listitem [ref=e159]:
+            - generic [ref=e160]: CP
+            - generic [ref=e161]:
+              - generic [ref=e162]:
+                - generic [ref=e163]: Carol Park
+                - img [ref=e165]
+              - paragraph [ref=e167]: Finished · 412 pages
+              - time [ref=e168]: Updated 2m ago
+            - progressbar [ref=e170]
+            - generic [ref=e172]: 100%
+            - generic [ref=e174]: Done
+          - listitem [ref=e175]:
+            - generic [ref=e176]: ET
+            - generic [ref=e177]:
+              - generic [ref=e179]: Eve Thompson
+              - paragraph [ref=e180]: Page 309 · ch. 15
+              - time [ref=e181]: Updated 2m ago
+            - progressbar [ref=e183]
+            - generic [ref=e185]: 75%
+            - generic [ref=e187]: Reading
+          - listitem [ref=e189]:
+            - generic [ref=e190]: AC
+            - generic [ref=e191]:
+              - generic [ref=e193]: Alice Chen
+              - paragraph [ref=e194]: Page 251 · ch. 12
+              - time [ref=e195]: Updated 2m ago
+            - progressbar [ref=e197]
+            - generic [ref=e199]: 61%
+            - generic [ref=e201]: Reading
+          - listitem [ref=e203]:
+            - generic [ref=e204]: DS
+            - generic [ref=e205]:
+              - generic [ref=e207]: Dave Singh
+              - paragraph [ref=e208]: Page 206 · ch. 10
+              - time [ref=e209]: Updated 2m ago
+            - progressbar [ref=e211]
+            - generic [ref=e213]: 50%
+            - generic [ref=e215]: Reading
+          - listitem [ref=e217]:
+            - generic [ref=e218]: FW
+            - generic [ref=e219]:
+              - generic [ref=e221]: Frank Wilson
+              - paragraph [ref=e222]: Not started yet
+            - progressbar [ref=e224]
+            - generic [ref=e225]: 0%
+            - generic [ref=e227]: Waiting
+    - navigation "Primary" [ref=e31]:
+      - list [ref=e32]:
+        - listitem [ref=e33]:
+          - link "Dashboard" [ref=e34] [cursor=pointer]:
+            - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7
+            - img [ref=e36]
+            - generic [ref=e39]: Dashboard
+        - listitem [ref=e40]:
+          - link "Voting" [ref=e41] [cursor=pointer]:
+            - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/vote
+            - img [ref=e43]
+            - generic [ref=e47]: Voting
+        - listitem [ref=e48]:
+          - link "Meetings" [ref=e49] [cursor=pointer]:
+            - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/meetings
+            - img [ref=e51]
+            - generic [ref=e55]: Meetings
+        - listitem [ref=e56]:
+          - link "Discussions" [ref=e57] [cursor=pointer]:
+            - /url: /clubs/61965b98-03f9-4b85-abc9-9fa18a4446d7/discussions
+            - img [ref=e59]
+            - generic [ref=e62]: Discussions
+        - listitem [ref=e63]:
+          - button "More" [ref=e64]:
+            - img [ref=e65]
+            - generic [ref=e67]: More
+  - button "Open Next.js Dev Tools" [ref=e73] [cursor=pointer]:
+    - img [ref=e74]
+  - alert [ref=e77]
+  - dialog "Update Progress" [ref=e228]:
+    - generic [ref=e232]:
+      - heading "Update Progress" [level=2] [ref=e233]
+      - generic [ref=e234]:
+        - button "Not Started" [ref=e235] [cursor=pointer]
+        - button "Reading" [ref=e236] [cursor=pointer]
+        - button "Finished" [ref=e237] [cursor=pointer]
+      - generic [ref=e238]:
+        - generic [ref=e239]: Current Page
+        - spinbutton [ref=e240]: "251"
+        - slider "Current page" [ref=e241] [cursor=pointer]: "251"
+        - paragraph [ref=e242]: of 412 pages
+      - generic [ref=e243]:
+        - generic [ref=e244]:
+          - generic [ref=e245]: Progress
+          - generic [ref=e246]: 61%
+        - progressbar [ref=e247]
+      - generic [ref=e249]:
+        - generic [ref=e250]: Chapter (optional)
+        - spinbutton [ref=e251]: "12"
+      - paragraph [ref=e252]: Last updated Jun 10, 2026 · 7:09 PM
+      - generic [ref=e253]:
+        - button "Cancel" [ref=e254] [cursor=pointer]
+        - button "Save Progress" [ref=e255] [cursor=pointer]

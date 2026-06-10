@@ -1,65 +1,73 @@
 @import "tailwindcss";
 
 @theme {
-  /* Color tokens — warm literary palette */
-  --color-bg: oklch(0.985 0.006 80);
-  --color-bg-soft: oklch(0.965 0.01 80);
-  --color-bg-sunken: oklch(0.945 0.012 80);
-  --color-ink: oklch(0.22 0.012 60);
-  --color-ink-2: oklch(0.42 0.012 60);
-  --color-ink-3: oklch(0.62 0.01 60);
-  --color-ink-4: oklch(0.78 0.008 60);
-  --color-line: oklch(0.91 0.008 70);
-  --color-line-strong: oklch(0.84 0.01 70);
+  /* ── Cozy redesign tokens — source: design_handoff_dogear_redesign/tokens.css.
+     Direction: warm paper, terracotta primary (no teal), amber celebration. ── */
 
-  --color-primary: oklch(0.42 0.06 195);
-  --color-primary-hover: oklch(0.36 0.065 195);
-  --color-primary-soft: oklch(0.94 0.025 195);
-  --color-primary-ink: oklch(0.32 0.06 195);
-  --color-primary-line: oklch(0.85 0.04 195);
+  /* neutrals: warm paper + warm ink (no pure white anywhere) */
+  --color-bg: oklch(0.955 0.018 90);          /* #F7F0E2 page "paper" */
+  --color-bg-soft: oklch(0.985 0.012 95);     /* #FFFBF1 raised cards */
+  --color-bg-sunken: oklch(0.90 0.03 90);     /* #EADFC9 wells, tracks, page edges */
+  --color-ink: oklch(0.32 0.025 60);          /* #3D2F24 primary text */
+  --color-ink-2: oklch(0.47 0.03 60);         /* #6B5A4A secondary */
+  --color-ink-3: oklch(0.63 0.035 70);        /* #9A8772 muted, timestamps */
+  --color-ink-4: oklch(0.72 0.03 80);         /* #B5A48E disabled, not-started */
+  --color-line: oklch(0.90 0.03 90);          /* #EADFC9 hairlines */
+  --color-line-strong: oklch(0.84 0.035 85);  /* #D9C9AC input borders */
 
-  --color-accent: oklch(0.78 0.13 75);
-  --color-accent-hover: oklch(0.74 0.13 75);
-  --color-accent-soft: oklch(0.95 0.04 75);
-  --color-accent-ink: oklch(0.55 0.13 75);
+  /* primary: terracotta (replaces deep teal entirely) */
+  --color-primary: oklch(0.58 0.13 40);       /* #C75B39 */
+  --color-primary-hover: oklch(0.50 0.12 38); /* #A84A2C */
+  --color-primary-soft: oklch(0.92 0.025 45); /* #F4DFD4 */
+  --color-primary-ink: oklch(0.47 0.11 40);   /* #9C4528 text on -soft */
+  --color-primary-line: oklch(0.85 0.045 45); /* #E8C8B9 */
 
-  --color-success: oklch(0.62 0.10 155);
-  --color-success-soft: oklch(0.94 0.035 155);
-  --color-warning: oklch(0.72 0.13 70);
-  --color-warning-soft: oklch(0.95 0.04 70);
-  --color-warning-ink: oklch(0.45 0.10 70);
-  --color-danger: oklch(0.55 0.16 25);
-  --color-danger-hover: oklch(0.49 0.16 25);
-  --color-danger-soft: oklch(0.95 0.04 25);
-  --color-danger-line: oklch(0.88 0.04 25);
+  /* accent: golden amber (celebration, finished states) */
+  --color-accent: oklch(0.73 0.13 80);        /* #DD9A33 */
+  --color-accent-hover: oklch(0.62 0.12 78);  /* #B97B1F */
+  --color-accent-soft: oklch(0.94 0.035 90);  /* #F8E9C9 */
+  --color-accent-ink: oklch(0.50 0.10 80);    /* #8A5C12 */
 
-  /* Chapter chip palette */
-  --color-chip-1: oklch(0.92 0.05 75);
-  --color-chip-1-ink: oklch(0.45 0.10 75);
-  --color-chip-2: oklch(0.92 0.05 145);
-  --color-chip-2-ink: oklch(0.40 0.08 145);
-  --color-chip-3: oklch(0.92 0.045 220);
-  --color-chip-3-ink: oklch(0.40 0.07 220);
-  --color-chip-4: oklch(0.92 0.05 320);
-  --color-chip-4-ink: oklch(0.42 0.08 320);
-  --color-chip-5: oklch(0.92 0.05 30);
-  --color-chip-5-ink: oklch(0.45 0.10 30);
+  /* semantics: re-derived warm-leaning, sit on cream */
+  --color-success: oklch(0.60 0.10 125);      /* #6F8B43 olive */
+  --color-success-soft: oklch(0.93 0.03 115); /* #E9EDD6 */
+  --color-warning: oklch(0.62 0.12 78);       /* #B97B1F amber family */
+  --color-warning-soft: oklch(0.94 0.035 90); /* #F8E9C9 */
+  --color-warning-ink: oklch(0.50 0.10 80);   /* #8A5C12 */
+  --color-danger: oklch(0.50 0.14 32);        /* #B23B2A warm brick */
+  --color-danger-hover: oklch(0.45 0.13 30);  /* #9C3022 */
+  --color-danger-soft: oklch(0.91 0.025 35);  /* #F4DCD4 */
+  --color-danger-line: oklch(0.83 0.05 35);   /* #E5BDB2 */
 
-  /* Typography */
-  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
-  --font-ui: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* chapter-chip palette: five warm rotations (Avatar reuses these) */
+  --color-chip-1: oklch(0.92 0.025 45);
+  --color-chip-1-ink: oklch(0.50 0.12 38);
+  --color-chip-2: oklch(0.94 0.035 90);
+  --color-chip-2-ink: oklch(0.62 0.12 78);
+  --color-chip-3: oklch(0.93 0.03 115);
+  --color-chip-3-ink: oklch(0.60 0.10 125);
+  --color-chip-4: oklch(0.92 0.02 40);
+  --color-chip-4-ink: oklch(0.49 0.09 35);
+  --color-chip-5: oklch(0.92 0.025 90);
+  --color-chip-5-ink: oklch(0.53 0.07 85);
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  /* type: Nunito display/UI, Newsreader prose, Courier Prime mono.
+     Family names resolve through next/font CSS variables (see layout.tsx). */
+  --font-display: var(--font-nunito), system-ui, sans-serif;
+  --font-ui: var(--font-nunito), system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-mono: var(--font-courier-prime), "JetBrains Mono", monospace;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 0 oklch(0.85 0.012 70 / 0.5), 0 1px 2px oklch(0.5 0.02 60 / 0.04);
-  --shadow-md: 0 1px 0 oklch(0.85 0.012 70 / 0.5), 0 6px 18px -6px oklch(0.4 0.02 60 / 0.10);
-  --shadow-lg: 0 1px 0 oklch(0.85 0.012 70 / 0.5), 0 18px 36px -12px oklch(0.3 0.02 60 / 0.15);
+  /* radii: rounder everywhere; CTAs use rounded-full (pill) */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+
+  /* shadows: warm-toned, layered ("liftable" cards) */
+  --shadow-sm: 0 1px 2px oklch(0.45 0.05 60 / 0.05);
+  --shadow-md: 0 1px 2px oklch(0.45 0.05 60 / 0.05), 0 6px 18px oklch(0.45 0.05 60 / 0.07);
+  --shadow-lg: 0 2px 4px oklch(0.45 0.05 60 / 0.07), 0 14px 32px oklch(0.45 0.05 60 / 0.13);
 }
 
 @layer base {
