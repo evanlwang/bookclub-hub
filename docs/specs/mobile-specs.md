@@ -26,12 +26,12 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Mobile navigation (bottom tab bar)
 
-- `[ ]` **NAV-MOBILE-001**: On viewports below `md`, the system SHALL present a fixed bottom tab bar (hidden at `md+`) exposing the primary destinations Dashboard, Voting, Meetings, Discussions, plus a "More" entry, so club navigation is reachable on phones where the sidebar is hidden. (`src/app/clubs/[clubId]/mobile-tab-bar.tsx`)
-- `[ ]` **NAV-MOBILE-002**: Each tab SHALL present a thumb-sized (≥44px) touch target and reflect the active route. (`src/app/clubs/[clubId]/mobile-tab-bar.tsx`)
-- `[ ]` **NAV-MOBILE-003**: The tab bar SHALL surface the same activity signals as the sidebar — active vote, unresponded meeting, unread discussions — as compact dot badges. (`src/app/clubs/[clubId]/mobile-tab-bar.tsx`)
-- `[ ]` **NAV-MOBILE-004**: The "More" entry SHALL open a sheet exposing secondary destinations (Progress, and admin-only Members/Settings), the club switcher with current club identity/code, and sign-out. (`src/app/clubs/[clubId]/more-sheet.tsx`)
-- `[ ]` **NAV-MOBILE-005**: The bottom tab bar SHALL clear the home indicator via safe-area padding, and main content SHALL pad its bottom so nothing hides behind the bar. (`src/app/clubs/[clubId]/layout.tsx`)
-- `[ ]` **NAV-MOBILE-006**: The desktop sidebar and the mobile tab bar SHALL derive their destinations and admin-gating from one shared config module. (`src/app/clubs/[clubId]/nav-items.ts`)
+- `[x]` **NAV-MOBILE-001**: On viewports below `md`, the system SHALL present a fixed bottom tab bar (hidden at `md+`) exposing the primary destinations Dashboard, Voting, Meetings, Discussions, plus a "More" entry, so club navigation is reachable on phones where the sidebar is hidden. (`src/app/clubs/[clubId]/mobile-tab-bar.tsx`)
+- `[x]` **NAV-MOBILE-002**: Each tab SHALL present a thumb-sized (≥44px) touch target and reflect the active route. (`src/app/clubs/[clubId]/mobile-tab-bar.tsx`)
+- `[x]` **NAV-MOBILE-003**: The tab bar SHALL surface the same activity signals as the sidebar — active vote, unresponded meeting, unread discussions — as compact dot badges. (`src/app/clubs/[clubId]/mobile-tab-bar.tsx`)
+- `[x]` **NAV-MOBILE-004**: The "More" entry SHALL open a sheet exposing secondary destinations (Progress, and admin-only Members/Settings), the club switcher with current club identity/code, and sign-out. (`src/app/clubs/[clubId]/more-sheet.tsx`)
+- `[x]` **NAV-MOBILE-005**: The bottom tab bar SHALL clear the home indicator via safe-area padding, and main content SHALL pad its bottom so nothing hides behind the bar. (`src/app/clubs/[clubId]/layout.tsx`)
+- `[x]` **NAV-MOBILE-006**: The desktop sidebar and the mobile tab bar SHALL derive their destinations and admin-gating from one shared config module. (`src/app/clubs/[clubId]/nav-items.ts`)
 
 ## Responsive overlays (Sheet)
 

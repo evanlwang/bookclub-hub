@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getServerCaller } from "@/trpc/server";
 import { ClubSidebar } from "./sidebar";
+import { MobileTabBar } from "./mobile-tab-bar";
 
 // Tab title resolves to the club's name so users with several open tabs can
 // tell them apart. We swallow auth/not-found failures and fall back to the
@@ -99,7 +100,19 @@ export default async function ClubLayout({
         hasUnrespondedMeeting={hasUnrespondedMeeting}
         unreadDiscussionCounts={unreadDiscussionCounts}
       />
-      <main className="flex-1 min-w-0 p-[clamp(1rem,2.5vw,3.5rem)]">{children}</main>
+      {/* @spec NAV-MOBILE-005 — pad the content bottom on phones so nothing
+          hides behind the fixed tab bar (56px bar + home-indicator inset). */}
+      <main className="flex-1 min-w-0 p-[clamp(1rem,2.5vw,3.5rem)] pb-[calc(56px+env(safe-area-inset-bottom)+1rem)] md:pb-[clamp(1rem,2.5vw,3.5rem)]">
+        {children}
+      </main>
+      <MobileTabBar
+        clubId={clubId}
+        userName={userName}
+        clubs={clubs}
+        hasActiveVote={hasActiveVote}
+        hasUnrespondedMeeting={hasUnrespondedMeeting}
+        unreadDiscussionCounts={unreadDiscussionCounts}
+      />
     </div>
   );
 }
