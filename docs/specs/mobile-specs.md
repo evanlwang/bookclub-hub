@@ -41,11 +41,11 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Mobile density (no horizontal overflow at 375px)
 
-- `[ ]` **DENSITY-MEET-001**: The meeting availability heatmap SHALL render a per-slot mobile layout below `md` (avatar groups by available/maybe/can't) instead of the member×slot matrix, so it does not horizontally scroll. (`src/app/clubs/[clubId]/meetings/admin-confirm.tsx`)
-- `[ ]` **DENSITY-MEET-002**: The respond-meeting slot controls SHALL stack the status buttons below the time and span full width below `sm`. (`src/app/clubs/[clubId]/meetings/respond-meeting.tsx`)
-- `[ ]` **DENSITY-MEMBER-001**: The members roster SHALL render a card list below `md` (table at `md+`) so roles and actions fit without overflow. (`src/app/clubs/[clubId]/members/members-client.tsx`)
-- `[ ]` **DENSITY-VOTE-001**: The voting results leaderboard SHALL collapse its multi-column grid to a stacked layout below `md`. (`src/app/clubs/[clubId]/vote/decided-phase.tsx`)
-- `[ ]` **DENSITY-VOTE-002**: Nomination cards SHALL keep their title legible on the narrowest screens by stacking or shrinking the cover. (`src/app/clubs/[clubId]/vote/nominating-phase.tsx`)
+- `[x]` **DENSITY-MEET-001**: The meeting availability heatmap SHALL keep its member×slot matrix scroll-contained (never overflowing the page) and pin the member-name column with `position: sticky` so names stay visible while the slot columns scroll horizontally on narrow screens. (`src/app/clubs/[clubId]/meetings/admin-confirm.tsx`)
+- `[x]` **DENSITY-MEET-002**: The respond-meeting slot controls SHALL stack the status buttons below the time and span full width below `sm`. (`src/app/clubs/[clubId]/meetings/respond-meeting.tsx`)
+- `[x]` **DENSITY-MEMBER-001**: The members roster SHALL render a card list below `md` (table at `md+`) so roles and actions fit without overflow. (`src/app/clubs/[clubId]/members/members-client.tsx`)
+- `[x]` **DENSITY-VOTE-001**: The voting results leaderboard SHALL collapse its multi-column grid to a stacked layout below `md`. (`src/app/clubs/[clubId]/vote/decided-phase.tsx`)
+- `[x]` **DENSITY-VOTE-002**: Nomination cards SHALL keep their title legible on the narrowest screens by stacking or shrinking the cover. (`src/app/clubs/[clubId]/vote/nominating-phase.tsx`)
 
 ## Touch & feel polish
 

@@ -1,9 +1,9 @@
-// @spec CLUB-UI-MEMBERS-002, CLUB-UI-MEMBERS-003, CLUB-UI-MEMBERS-004, CLUB-UI-MEMBERS-005, CLUB-UI-MEMBERS-006, CLUB-UI-OWNERSHIP-002, CLUB-UI-OWNERSHIP-003, CLUB-UI-MEMBERS-LEAVE-001
+// @spec CLUB-UI-MEMBERS-002, CLUB-UI-MEMBERS-003, CLUB-UI-MEMBERS-004, CLUB-UI-MEMBERS-005, CLUB-UI-MEMBERS-006, CLUB-UI-OWNERSHIP-002, CLUB-UI-OWNERSHIP-003, CLUB-UI-MEMBERS-LEAVE-001, DENSITY-MEMBER-001
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Avatar, Badge, Button, Card } from "@/components/ui";
+import { Avatar, Badge, Button, Card, Sheet } from "@/components/ui";
 import { TrashIcon } from "@/components/ui/icons";
 import { trpc } from "@/trpc/react-hooks";
 
@@ -128,8 +128,11 @@ export function MembersClient({
 
   return (
     <Card className="p-0 overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-bg-soft text-ink-3 text-[12px] uppercase tracking-wider">
+      {/* @spec DENSITY-MEMBER-001 — one DOM tree (single testids), but the
+          table collapses to stacked "cards" below md via display utilities so
+          it never overflows 375px. */}
+      <table className="block md:table w-full text-sm">
+        <thead className="hidden md:table-header-group bg-bg-soft text-ink-3 text-[12px] uppercase tracking-wider">
           <tr>
             <th className="text-left px-5 py-2.5 font-medium">Member</th>
             <th className="text-left px-5 py-2.5 font-medium">Role</th>
@@ -137,7 +140,7 @@ export function MembersClient({
             <th className="text-right px-5 py-2.5 font-medium">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="block md:table-row-group">
           {sorted.map((m) => (
             <MemberTableRow
               key={m.userId}
@@ -165,6 +168,100 @@ export function MembersClient({
   );
 }
 
+function MemberActions({
+  row,
+  isSelf,
+  viewerRole,
+  onAction,
+  className = "",
+}: {
+  row: MemberRow;
+  isSelf: boolean;
+  viewerRole: "admin" | "owner";
+  onAction: (a: Action) => void;
+  className?: string;
+}) {
+  const isOwnerRow = row.role === "owner";
+  const canRemove = !isOwnerRow && !isSelf;
+  const canPromote = viewerRole === "owner" && row.role === "member";
+  const canDemote = viewerRole === "owner" && row.role === "admin";
+  const canTransfer = viewerRole === "owner" && row.role === "admin";
+  const canLeave = isSelf && !isOwnerRow;
+  const isOwnerSelf = isSelf && isOwnerRow;
+
+  return (
+    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+      {canPromote && (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => onAction({ kind: "promote", target: row })}
+          data-testid={`promote-${row.userId}`}
+        >
+          Promote to admin
+        </Button>
+      )}
+      {canDemote && (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => onAction({ kind: "demote", target: row })}
+          data-testid={`demote-${row.userId}`}
+        >
+          Demote to member
+        </Button>
+      )}
+      {canTransfer && (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => onAction({ kind: "transfer", target: row })}
+          data-testid={`transfer-${row.userId}`}
+        >
+          Transfer ownership
+        </Button>
+      )}
+      {canRemove && (
+        <Button
+          size="sm"
+          variant="danger"
+          icon={<TrashIcon size={14} />}
+          onClick={() => onAction({ kind: "remove", target: row })}
+          data-testid={`remove-${row.userId}`}
+        >
+          Remove
+        </Button>
+      )}
+      {canLeave && (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onAction({ kind: "leave", target: row })}
+          data-testid={`leave-${row.userId}`}
+        >
+          Leave club
+        </Button>
+      )}
+      {isOwnerSelf && (
+        <span
+          data-testid={`owner-leave-hint-${row.userId}`}
+          className="text-xs text-ink-3 italic"
+        >
+          Transfer ownership to leave
+        </span>
+      )}
+    </div>
+  );
+}
+
+function joinedLabel(joinedAt: string): string {
+  return new Date(joinedAt).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function MemberTableRow({
   row,
   isSelf,
@@ -177,103 +274,44 @@ function MemberTableRow({
   onAction: (a: Action) => void;
 }) {
   const isOwnerRow = row.role === "owner";
-  const canRemove = !isOwnerRow && !isSelf;
-  const canPromote = viewerRole === "owner" && row.role === "member";
-  const canDemote = viewerRole === "owner" && row.role === "admin";
-  const canTransfer = viewerRole === "owner" && row.role === "admin";
-  const canLeave = isSelf && !isOwnerRow;
-  const isOwnerSelf = isSelf && isOwnerRow;
-
-  const joined = new Date(row.joinedAt).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 
   return (
     <tr
       data-testid={`member-row-${row.userId}`}
       data-role={row.role}
-      className="border-t border-line"
+      className="block md:table-row border-t border-line p-4 md:p-0"
     >
-      <td className="px-5 py-3">
+      <td className="block md:table-cell md:px-5 md:py-3">
         <div className="flex items-center gap-3">
           <Avatar name={row.displayName} size="sm" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="font-medium text-ink truncate">
               {row.displayName}
               {isSelf && <span className="text-ink-3 font-normal"> (you)</span>}
             </p>
             <p className="text-xs text-ink-3 truncate">{row.email}</p>
           </div>
+          {/* Role badge sits inline with the name on mobile; own column on desktop. */}
+          <span className="md:hidden">
+            <Badge tone={isOwnerRow ? "primary" : "neutral"}>{row.role}</Badge>
+          </span>
         </div>
       </td>
-      <td className="px-5 py-3">
+      <td className="hidden md:table-cell md:px-5 md:py-3">
         <Badge tone={isOwnerRow ? "primary" : "neutral"}>{row.role}</Badge>
       </td>
-      <td className="px-5 py-3 text-ink-3">{joined}</td>
-      <td className="px-5 py-3">
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {canPromote && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onAction({ kind: "promote", target: row })}
-              data-testid={`promote-${row.userId}`}
-            >
-              Promote to admin
-            </Button>
-          )}
-          {canDemote && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onAction({ kind: "demote", target: row })}
-              data-testid={`demote-${row.userId}`}
-            >
-              Demote to member
-            </Button>
-          )}
-          {canTransfer && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onAction({ kind: "transfer", target: row })}
-              data-testid={`transfer-${row.userId}`}
-            >
-              Transfer ownership
-            </Button>
-          )}
-          {canRemove && (
-            <Button
-              size="sm"
-              variant="danger"
-              icon={<TrashIcon size={14} />}
-              onClick={() => onAction({ kind: "remove", target: row })}
-              data-testid={`remove-${row.userId}`}
-            >
-              Remove
-            </Button>
-          )}
-          {canLeave && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onAction({ kind: "leave", target: row })}
-              data-testid={`leave-${row.userId}`}
-            >
-              Leave club
-            </Button>
-          )}
-          {isOwnerSelf && (
-            <span
-              data-testid={`owner-leave-hint-${row.userId}`}
-              className="text-xs text-ink-3 italic"
-            >
-              Transfer ownership to leave
-            </span>
-          )}
-        </div>
+      <td className="block md:table-cell text-xs md:text-sm text-ink-3 mt-2 md:mt-0 md:px-5 md:py-3">
+        <span className="md:hidden">Joined </span>
+        {joinedLabel(row.joinedAt)}
+      </td>
+      <td className="block md:table-cell mt-3 md:mt-0 md:px-5 md:py-3">
+        <MemberActions
+          row={row}
+          isSelf={isSelf}
+          viewerRole={viewerRole}
+          onAction={onAction}
+          className="md:justify-end"
+        />
       </td>
     </tr>
   );
@@ -333,16 +371,13 @@ function ActionDialog({
   })();
 
   return (
-    <div
-      data-testid="member-action-dialog"
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !submitting) onCancel();
-      }}
+    <Sheet
+      open
+      onClose={onCancel}
+      dismissible={!submitting}
+      ariaLabel={copy.title}
+      testId="member-action-dialog"
     >
-      <Card className="w-full max-w-md bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg">
         <h2 className="font-[var(--font-display)] text-lg font-semibold text-ink mb-2">
           {copy.title}
         </h2>
@@ -401,7 +436,6 @@ function ActionDialog({
             {submitting ? "Working…" : copy.confirm}
           </Button>
         </div>
-      </Card>
-    </div>
+    </Sheet>
   );
 }
