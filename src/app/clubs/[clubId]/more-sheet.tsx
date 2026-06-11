@@ -1,20 +1,19 @@
 // @spec NAV-MOBILE-004
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Avatar, Badge, Sheet } from "@/components/ui";
 import { useSignOut } from "@/lib/hooks/use-sign-out";
-import { navItems, canSeeNavItem, PRIMARY_TAB_LABELS } from "./nav-items";
+import { navItems, canSeeNavItem, PRIMARY_TAB_SLUGS } from "./nav-items";
 
 type ClubInfo = { id: string; name: string; code: string; role: string };
 
-const PRIMARY = new Set<string>(PRIMARY_TAB_LABELS);
+const PRIMARY = new Set<string>(PRIMARY_TAB_SLUGS);
 
 /**
- * The mobile "More" destination: everything the bottom tab bar can't hold —
- * secondary pages (Progress, admin Members/Settings), the club switcher with
- * the current club's identity/code, and sign-out.
+ * The mobile club menu (opened from the header): secondary admin pages
+ * (Members/Settings), club switching + create/join, and sign-out. Primary
+ * destinations live on the bottom tab bar; the invite code lives in the header.
  */
 export function MoreSheet({
   open,
@@ -37,23 +36,11 @@ export function MoreSheet({
   const currentClub = clubs.find((c) => c.id === clubId);
   const role = currentClub?.role;
   const { signOut, signingOut } = useSignOut();
-  const [codeCopied, setCodeCopied] = useState(false);
 
   const secondary = navItems.filter(
-    (item) => !PRIMARY.has(item.label) && canSeeNavItem(item, role),
+    (item) => !PRIMARY.has(item.slug) && canSeeNavItem(item, role),
   );
   const otherClubs = clubs.filter((c) => c.id !== clubId);
-
-  async function copyCode() {
-    if (!currentClub?.code) return;
-    try {
-      await navigator.clipboard.writeText(currentClub.code);
-      setCodeCopied(true);
-      setTimeout(() => setCodeCopied(false), 1500);
-    } catch {
-      // Clipboard write fails outside secure contexts; silently no-op.
-    }
-  }
 
   return (
     <Sheet
@@ -69,34 +56,15 @@ export function MoreSheet({
           {currentClub?.name ?? "Club"}
         </span>
       </div>
-      <div className="flex items-center gap-1.5 flex-wrap mb-5">
-        {role && (
+      {role && (
+        <div className="flex items-center gap-1.5 flex-wrap mb-5">
           <Badge
             tone={role === "owner" ? "primary" : role === "admin" ? "accent" : "neutral"}
           >
             {role}
           </Badge>
-        )}
-        {currentClub?.code && (
-          <button
-            type="button"
-            onClick={copyCode}
-            data-testid="more-copy-code"
-            aria-label={codeCopied ? "Invite code copied" : "Copy invite code"}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-bg-sunken text-xs font-[var(--font-mono)] text-ink-2 active:bg-line transition-colors"
-          >
-            <span className="tracking-[0.04em]">{currentClub.code}</span>
-            {codeCopied ? (
-              <span className="text-success">✓</span>
-            ) : (
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="9" y="9" width="11" height="11" rx="2" />
-                <path d="M5 15V5a2 2 0 0 1 2-2h10" />
-              </svg>
-            )}
-          </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Secondary destinations */}
       <nav className="space-y-0.5 mb-2">
@@ -104,10 +72,10 @@ export function MoreSheet({
           const Icon = item.icon;
           return (
             <Link
-              key={item.label}
+              key={item.slug}
               href={`${basePath}${item.href}`}
               onClick={onClose}
-              data-testid={`more-nav-${item.label.toLowerCase()}`}
+              data-testid={`more-nav-${item.slug}`}
               className="flex items-center gap-3 px-3 py-3 rounded-[var(--radius-md)] text-[15px] font-medium text-ink-2 active:bg-bg-sunken transition-colors"
             >
               <Icon size={18} />

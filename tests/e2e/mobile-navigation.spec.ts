@@ -43,7 +43,7 @@ test.describe("Mobile navigation (bottom tab bar)", () => {
     await expect(page.getByTestId("mobile-tab-bar")).toBeVisible();
     await expect(page.locator("aside")).toBeHidden();
 
-    // Primary tabs navigate.
+    // Five primary tabs navigate (Progress is now a direct tab).
     await page.getByTestId("mobile-tab-voting").click();
     await expect(page).toHaveURL(new RegExp(`/clubs/${clubId}/vote`));
 
@@ -53,22 +53,25 @@ test.describe("Mobile navigation (bottom tab bar)", () => {
     await page.getByTestId("mobile-tab-discussions").click();
     await expect(page).toHaveURL(new RegExp(`/clubs/${clubId}/discussions`));
 
+    await page.getByTestId("mobile-tab-progress").click();
+    await expect(page).toHaveURL(new RegExp(`/clubs/${clubId}/progress`));
+
     await page.getByTestId("mobile-tab-dashboard").click();
     await expect(page).toHaveURL(new RegExp(`/clubs/${clubId}$`));
   });
 
-  test("More sheet exposes secondary destinations and sign-out", async ({
+  test("club-switcher header menu exposes admin destinations and sign-out", async ({
     page,
   }) => {
     await loginAs(page, "alice@example.com");
     await page.goto(`/clubs/${clubId}`);
     await disarmDevOverlay(page);
 
-    await page.getByTestId("mobile-tab-more").click();
+    // Secondary destinations + sign-out live in the header menu, not a tab.
+    await page.getByTestId("mobile-club-switcher").click();
     const sheet = page.getByTestId("mobile-more-sheet");
     await expect(sheet).toBeVisible();
     // Alice owns WEDREADS, so admin destinations appear.
-    await expect(sheet.getByTestId("more-nav-progress")).toBeVisible();
     await expect(sheet.getByTestId("more-nav-members")).toBeVisible();
     await expect(sheet.getByText("Sign out")).toBeVisible();
 

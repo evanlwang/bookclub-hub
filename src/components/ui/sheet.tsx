@@ -113,7 +113,7 @@ export function Sheet({
       aria-labelledby={labelledById}
       aria-label={ariaLabel}
       data-testid={testId}
-      className="fixed inset-0 z-50 flex items-end justify-center backdrop-blur-md bg-bg/40 md:items-center md:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/45 md:items-center md:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget && dismissible) onClose();
       }}
@@ -126,8 +126,8 @@ export function Sheet({
         onTouchEnd={onTouchEnd}
         style={dragY > 0 ? { transform: `translateY(${dragY}px)` } : undefined}
         className={[
-          // shared surface
-          "w-full bg-bg shadow-lg overflow-y-auto overscroll-contain outline-none",
+          // shared surface (paper-card)
+          "w-full bg-bg-soft shadow-lg overflow-y-auto overscroll-contain outline-none",
           // mobile bottom-sheet
           "max-h-[90dvh] rounded-t-[var(--radius-xl)] animate-sheet-up safe-bottom",
           // desktop centered modal
@@ -137,7 +137,7 @@ export function Sheet({
         ].join(" ")}
       >
         {/* Drag handle — mobile affordance only. */}
-        <div className="md:hidden sticky top-0 flex justify-center pt-2.5 pb-1 bg-bg">
+        <div className="md:hidden sticky top-0 flex justify-center pt-2.5 pb-1 bg-bg-soft">
           <span
             aria-hidden="true"
             className="h-1 w-9 rounded-full bg-line-strong"
