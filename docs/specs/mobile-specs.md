@@ -54,6 +54,13 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 - `[x]` **NAV-MOBILE-HEADER-001**: A mobile-only sticky header SHALL show the Dogear glyph + club name/role and open the club menu (switch/admin/sign-out), with a dashed mono invite-code chip. (`src/app/clubs/[clubId]/mobile-club-header.tsx`)
 - `[x]` **PROG-UI-DOGEAR-001**: Saving progress SHALL trigger a folded-corner "dog-ear" reward animation on the progress summary card. (`src/app/clubs/[clubId]/progress/bookmark.tsx`)
 - `[x]` **PROG-UI-BOOKMARK-SLIDER-001**: The update sheet SHALL present a draggable page-edge bookmark slider, bidirectionally synced with the page input and keyboard-accessible. (`src/app/clubs/[clubId]/progress/bookmark.tsx`)
+- `[x]` **DASH-UI-BOOKMARK-EDGE-001**: The dashboard hero SHALL render member progress as tappable bookmarks at reading depth on a page-edge bar with an ink tooltip, replacing the avatar-tick overlay. (`src/app/clubs/[clubId]/bookmark-edge.tsx`)
+- `[x]` **VOTE-UI-SLIP-001 / VOTE-UI-SLIPFOLD-001**: Nominations SHALL render as rotated-pitch paper slips; in the voting phase, picking a slip folds a 44px dog-ear corner instead of a checkbox. (`src/app/clubs/[clubId]/vote/slip.tsx`)
+- `[x]` **VOTE-UI-EARGLYPH-001**: Pick counts SHALL render as folded-corner glyphs filling up ("2/3 dog-eared"). (`src/components/ui/ear-glyph.tsx`)
+- `[x]` **DISC-UI-SPOILERBAR-001**: The discussions spoiler filter SHALL read as the bookmark voice ("You're on chapter N — later notes stay tucked away") with a serif hidden-notes line. (`src/app/clubs/[clubId]/discussions/page.tsx`)
+- `[x]` **MEET-UI-DATESTAMP-001**: Confirmed/past meetings SHALL carry a rotated rubber-stamp date block (muted for past, plus a rotated PAST stamp). (`src/components/ui/date-stamp.tsx`, `meetings-client.tsx`)
+- `[x]` **MEET-UI-RSVP-POSTCARD-001**: Availability responses SHALL use three-state postcard checkboxes (dashed idle; olive / amber / brick marks when picked). (`src/app/clubs/[clubId]/meetings/respond-meeting.tsx`)
+- `[x]` **JOIN-UI-LIBRARYCARD-001**: Join/create success SHALL present the library-card moment — the card slides from an amber pocket and a JOINED date stamp presses on. (`src/app/join/_step4-success.tsx`)
 
 ## Touch & feel polish
 

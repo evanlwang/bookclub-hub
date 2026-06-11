@@ -1,0 +1,26 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=e3]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - generic [ref=e10]: Dogear
+    - generic [ref=e100]:
+      - heading "Porch Light Readers is live!" [level=2] [ref=e101]
+      - paragraph [ref=e102]: Your library card, freshly stamped.
+      - generic [ref=e104]:
+        - generic [ref=e105]: DOGEAR LENDING LIBRARY
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - generic [ref=e109]: June Park
+            - generic [ref=e110]: Member · Porch Light Readers
+            - generic [ref=e111]: PORCHLIGHT
+          - generic [ref=e112]:
+            - text: JOINED
+            - text: JUN 10, 2026
+        - paragraph [ref=e114]: Invite code — share it with your members
+        - button "PORCHLIGHT · COPY" [ref=e115] [cursor=pointer]
+      - paragraph [ref=e117]: Opening your reading nook…
+  - button "Open Next.js Dev Tools" [ref=e40] [cursor=pointer]:
+    - img [ref=e41]
+  - alert [ref=e44]

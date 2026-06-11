@@ -1,0 +1,39 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e6]
+        - generic [ref=e10]: Dogear
+      - generic [ref=e11]:
+        - text: Already a member?
+        - link "Log in" [ref=e12] [cursor=pointer]:
+          - /url: /login
+    - generic [ref=e14]:
+      - heading "Welcome, June" [level=1] [ref=e45]
+      - paragraph [ref=e16]: Are you joining a club someone invited you to, or starting your own?
+      - generic [ref=e17]:
+        - generic "Step 1 (done)" [ref=e46]
+        - generic "Step 2 (current)" [ref=e47]
+        - generic "Step 3" [ref=e20]
+        - generic [ref=e48]: Path
+      - generic [ref=e49]:
+        - button "Join an existing club Use an invite code from your organizer. Most readers start here. 2,400+ readers in 340 clubs" [ref=e50] [cursor=pointer]:
+          - img [ref=e52]
+          - generic [ref=e57]:
+            - heading "Join an existing club" [level=3] [ref=e58]
+            - paragraph [ref=e59]: Use an invite code from your organizer. Most readers start here.
+            - paragraph [ref=e60]: 2,400+ readers in 340 clubs
+          - img [ref=e61]
+        - button "Create a new club Start fresh, invite your friends, and run the first vote. Takes about 2 minutes" [ref=e63] [cursor=pointer]:
+          - img [ref=e65]
+          - generic [ref=e67]:
+            - heading "Create a new club" [level=3] [ref=e68]
+            - paragraph [ref=e69]: Start fresh, invite your friends, and run the first vote.
+            - paragraph [ref=e70]: Takes about 2 minutes
+          - img [ref=e71]
+        - button "← Back" [ref=e73]
+  - button "Open Next.js Dev Tools" [ref=e40] [cursor=pointer]:
+    - img [ref=e41]
+  - alert [ref=e44]

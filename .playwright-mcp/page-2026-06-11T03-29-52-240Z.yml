@@ -1,0 +1,39 @@
+- generic [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e6]
+        - generic [ref=e10]: Dogear
+      - generic [ref=e11]:
+        - text: Already a member?
+        - link "Log in" [ref=e12] [cursor=pointer]:
+          - /url: /login
+    - generic [ref=e14]:
+      - heading "Let's get you started" [level=1] [ref=e15]
+      - paragraph [ref=e16]: Tell us who you are.
+      - generic [ref=e17]:
+        - generic "Step 1 (current)" [ref=e18]
+        - generic "Step 2" [ref=e19]
+        - generic "Step 3" [ref=e20]
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Email
+          - textbox "Email" [active] [ref=e24]:
+            - /placeholder: you@example.com
+        - generic [ref=e25]:
+          - generic [ref=e26]: Display name
+          - textbox "Display name" [ref=e27]:
+            - /placeholder: e.g. Marisol
+          - paragraph [ref=e28]: Visible to other members in the club
+        - generic [ref=e29]:
+          - generic [ref=e30]: Pilot passcode
+          - textbox "Pilot passcode" [ref=e31]:
+            - /placeholder: Shared with the pilot group
+        - button "Continue" [disabled] [ref=e32]:
+          - text: Continue
+          - img [ref=e33]
+  - button "Open Next.js Dev Tools" [ref=e40] [cursor=pointer]:
+    - img [ref=e41]
+  - alert [ref=e44]
