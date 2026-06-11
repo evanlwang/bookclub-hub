@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, ChapterChip } from "@/components/ui";
+import { Button, ChapterChip, Sheet } from "@/components/ui";
 import { detectChapterMismatch } from "@/lib/discussions/chapter-mismatch";
 import { trpc } from "@/trpc/react-hooks";
 
@@ -18,29 +18,30 @@ export function CreateThreadButton({
 }: CreateThreadProps) {
   const [open, setOpen] = useState(false);
 
-  if (!open) {
-    return (
+  return (
+    <>
       <Button
         variant="primary"
-        size="md"
+        size="sm"
         onClick={() => setOpen(true)}
         data-testid="new-thread-btn"
       >
-        New Thread
+        + New note
       </Button>
-    );
-  }
-
-  return (
-    <CreateThreadForm
-      clubId={clubId}
-      bookId={bookId}
-      onCreated={() => {
-        setOpen(false);
-        onCreated();
-      }}
-      onCancel={() => setOpen(false)}
-    />
+      {open && (
+        <Sheet open onClose={() => setOpen(false)} ariaLabel="Leave a margin note">
+          <CreateThreadForm
+            clubId={clubId}
+            bookId={bookId}
+            onCreated={() => {
+              setOpen(false);
+              onCreated();
+            }}
+            onCancel={() => setOpen(false)}
+          />
+        </Sheet>
+      )}
+    </>
   );
 }
 
@@ -90,12 +91,10 @@ function CreateThreadForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      data-testid="create-thread-form"
-      className="bg-bg border border-line rounded-[var(--radius-lg)] p-5 mb-6 animate-slide-down"
-    >
-      <h3 className="font-medium text-ink text-sm mb-4">New Thread</h3>
+    <form onSubmit={handleSubmit} data-testid="create-thread-form">
+      <h3 className="font-[var(--font-display)] text-[21px] font-extrabold text-ink mb-3">
+        Leave a margin note
+      </h3>
 
       <div className="mb-4">
         <textarea
@@ -111,19 +110,19 @@ function CreateThreadForm({
           }}
           required
           autoFocus
-          placeholder="What's on your mind?"
+          placeholder="What did the book do to you?"
           data-testid="thread-body-input"
           rows={4}
-          className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-vertical"
+          className="w-full font-[var(--font-serif)] text-[15.5px] bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3.5 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft resize-none"
         />
       </div>
 
       <div className="mb-4">
         <label
           htmlFor="thread-chapter-input"
-          className="block text-[13px] font-medium text-ink-2 mb-1.5"
+          className="block font-[var(--font-display)] text-[12.5px] font-extrabold text-ink-2 mb-1.5"
         >
-          Chapter <span className="text-danger" aria-label="required">*</span>
+          Chapter tag <span className="text-danger" aria-label="required">*</span>
         </label>
         <div className="flex flex-wrap items-center gap-3">
           <input
@@ -134,7 +133,7 @@ function CreateThreadForm({
             required
             placeholder="e.g. Chapter 5, Prologue, Part II"
             data-testid="thread-chapter-input"
-            className="flex-1 min-w-[16rem] text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            className="flex-1 min-w-[14rem] font-[var(--font-display)] font-bold text-sm bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink placeholder:text-ink-4 placeholder:font-semibold focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft"
           />
           {chapterTag.trim() && (
             <span data-testid="chapter-tag-preview" className="shrink-0">
@@ -142,9 +141,6 @@ function CreateThreadForm({
             </span>
           )}
         </div>
-        <p className="text-xs text-ink-3 mt-1.5 leading-snug">
-          Used to filter threads by reader progress so members don&rsquo;t see spoilers ahead of where they are.
-        </p>
       </div>
 
       {/* @spec DISC-UI-COMPOSE-MISMATCH-WARN-001, DISC-UI-COMPOSE-INFO-001 */}
@@ -152,23 +148,25 @@ function CreateThreadForm({
         <div
           data-testid="compose-mismatch-warning"
           role="alert"
-          className="p-3 rounded-[var(--radius-md)] bg-danger-soft border border-danger/40 text-sm text-ink mb-3"
+          className="rounded-[12px] bg-danger-soft px-3 py-2.5 mb-3"
         >
-          <strong className="text-danger">Spoiler ahead:</strong> the body
-          mentions Chapter {mismatch.bodyChapter}, but you tagged this thread
-          for Chapter {mismatch.tagChapter}. Members reading along at the
-          tagged chapter will be spoiled. Either bump the chapter tag up to
-          match the body, or trim the body so it stays at or below the tag.
+          <p className="m-0 font-[var(--font-display)] text-[12.5px] font-bold leading-[1.45] text-danger">
+            Spoiler ahead: your note mentions Chapter {mismatch.bodyChapter} but
+            is tagged Chapter {mismatch.tagChapter} — readers behind you would
+            see it. Raise the tag or soften the note.
+          </p>
         </div>
       ) : (
         body.trim().length > 0 && chapterTag.trim().length > 0 && (
-          <p
+          <div
             data-testid="compose-info-card"
-            className="text-xs text-ink-3 mb-3"
+            className="rounded-[12px] bg-success-soft px-3 py-2.5 mb-3"
           >
-            💡 Spoiler-safe by default — only members past Chapter{" "}
-            {mismatch.tagChapter ?? "—"} will see this thread.
-          </p>
+            <p className="m-0 font-[var(--font-display)] text-[12.5px] font-bold leading-[1.45] text-success">
+              Spoiler-safe by default — only members past Chapter{" "}
+              {mismatch.tagChapter ?? "—"} will see this.
+            </p>
+          </div>
         )
       )}
 
@@ -176,20 +174,21 @@ function CreateThreadForm({
         <p className="text-sm text-danger mb-3">{error}</p>
       )}
 
-      <div className="flex gap-2 justify-end">
-        <Button variant="ghost" size="sm" onClick={onCancel} type="button">
+      <div className="flex gap-2.5">
+        <Button variant="ghost" size="md" onClick={onCancel} type="button">
           Cancel
         </Button>
         <Button
-          variant="primary"
-          size="sm"
+          variant={mismatch.mismatch ? "danger" : "primary"}
+          size="md"
+          className="flex-1"
           loading={createThread.isPending}
           disabled={!canSubmit}
           type="submit"
           data-testid="submit-thread-btn"
         >
           {/* @spec DISC-UI-COMPOSE-MISMATCH-DISABLE-001 */}
-          {mismatch.mismatch ? "Resolve spoiler warning" : "Post Thread"}
+          {mismatch.mismatch ? "Resolve spoiler warning" : "Post note"}
         </Button>
       </div>
     </form>

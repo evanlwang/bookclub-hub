@@ -116,20 +116,15 @@ function DiscussionsContent() {
             </p>
           )}
 
-          {/* Spoiler protection — primary-tinted Card per the design system */}
+          {/* Spoiler bar — terracotta-tint, bookmark voice. @spec DISC-UI-SPOILERBAR-001 */}
           <Card
             data-testid="chapter-filter"
-            className="p-3.5 mb-4 bg-primary-soft/70 border-primary/20"
+            className="p-3.5 mb-4 bg-primary-soft border-primary/15"
           >
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2 text-primary-ink">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M3 6h18M6 12h12M10 18h4" />
-                </svg>
-                <span className="text-[13px] font-medium">Spoiler protection</span>
-              </div>
-              <label className="flex items-center gap-2 text-[13px] text-primary-ink">
-                <span>I&rsquo;m on chapter</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span aria-hidden="true" className="text-[15px]">🔖</span>
+              <label className="flex items-center gap-2 font-[var(--font-display)] text-[13.5px] font-extrabold text-primary-ink">
+                <span>You&rsquo;re on chapter</span>
                 <input
                   type="number"
                   value={maxChapter ?? ""}
@@ -138,76 +133,73 @@ function DiscussionsContent() {
                     setMaxChapter(e.target.value ? Number(e.target.value) : null);
                   }}
                   data-testid="max-chapter-input"
-                  className="w-16 text-center font-[var(--font-mono)] text-sm h-8 bg-bg border border-line-strong rounded-[var(--radius-sm)] px-2 py-1 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                  className="w-16 text-center font-[var(--font-mono)] text-sm font-bold h-8 bg-bg-soft border-2 border-line-strong rounded-[10px] px-2 py-1 text-ink focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft"
                   placeholder="—"
                   aria-label="Your current chapter"
                 />
-                <span className="text-ink-3">— hide threads tagged later</span>
+                <span>— later notes stay tucked away</span>
               </label>
-              <div className="ml-auto text-xs text-primary-ink">
-                {hiddenCount > 0 && !showAll ? (
-                  <p data-testid="hidden-count">
-                    <strong>
-                      {hiddenCount} thread{hiddenCount !== 1 ? "s" : ""} hidden
-                    </strong>
-                    <button
-                      type="button"
-                      onClick={() => setShowAll(true)}
-                      data-testid="show-all-btn"
-                      className="ml-2 text-primary hover:underline underline-offset-2"
-                    >
-                      Show all anyway
-                    </button>
-                  </p>
-                ) : (
-                  <span>All threads visible</span>
-                )}
-              </div>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3 text-[13.5px]">
+              {hiddenCount > 0 && !showAll ? (
+                <p data-testid="hidden-count" className="m-0 font-[var(--font-serif)] italic text-ink-2">
+                  {hiddenCount} note{hiddenCount !== 1 ? "s" : ""} waiting past your bookmark
+                  <button
+                    type="button"
+                    onClick={() => setShowAll(true)}
+                    data-testid="show-all-btn"
+                    className="ml-2 font-[var(--font-display)] not-italic font-extrabold text-[12.5px] text-primary underline"
+                  >
+                    Show all anyway
+                  </button>
+                </p>
+              ) : showAll ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAll(false)}
+                  className="font-[var(--font-display)] font-extrabold text-[12.5px] text-primary underline"
+                >
+                  Hide spoilers again
+                </button>
+              ) : (
+                <span className="font-[var(--font-serif)] italic text-ink-2">All notes visible</span>
+              )}
             </div>
           </Card>
 
-          {/* Sort + thread count + New thread */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <span className="text-[13px] text-ink-3">
-              {threads.length} thread{threads.length !== 1 ? "s" : ""}
-            </span>
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1 p-0.5 bg-bg-soft rounded-[var(--radius-md)] border border-line">
-                <button
-                  type="button"
-                  data-testid="sort-recent"
-                  onClick={() => setSort("recent")}
-                  className={`px-3 py-1 text-xs rounded-[var(--radius-sm)] transition-colors ${
-                    sort === "recent"
-                      ? "bg-bg font-medium text-ink shadow-sm"
-                      : "text-ink-3 hover:text-ink-2"
-                  }`}
-                >
-                  Recent
-                </button>
-                <button
-                  type="button"
-                  data-testid="sort-comments"
-                  onClick={() => setSort("comments")}
-                  className={`px-3 py-1 text-xs rounded-[var(--radius-sm)] transition-colors ${
-                    sort === "comments"
-                      ? "bg-bg font-medium text-ink shadow-sm"
-                      : "text-ink-3 hover:text-ink-2"
-                  }`}
-                >
-                  Most comments
-                </button>
-              </div>
-              {currentBookId && (
-                <CreateThreadButton
-                  clubId={clubId}
-                  bookId={currentBookId}
-                  onCreated={() => {
-                    void threadsQuery.refetch();
-                  }}
-                />
-              )}
+          {/* Sort pills + New note */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5">
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                data-testid="sort-recent"
+                onClick={() => setSort("recent")}
+                className={`min-h-[32px] rounded-full px-3.5 py-1.5 font-[var(--font-display)] text-[12.5px] font-extrabold shadow-sm transition-colors ${
+                  sort === "recent" ? "bg-ink text-bg" : "bg-bg-soft text-ink-2"
+                }`}
+              >
+                Recent
+              </button>
+              <button
+                type="button"
+                data-testid="sort-comments"
+                onClick={() => setSort("comments")}
+                className={`min-h-[32px] rounded-full px-3.5 py-1.5 font-[var(--font-display)] text-[12.5px] font-extrabold shadow-sm transition-colors ${
+                  sort === "comments" ? "bg-ink text-bg" : "bg-bg-soft text-ink-2"
+                }`}
+              >
+                Most replies
+              </button>
             </div>
+            {currentBookId && (
+              <CreateThreadButton
+                clubId={clubId}
+                bookId={currentBookId}
+                onCreated={() => {
+                  void threadsQuery.refetch();
+                }}
+              />
+            )}
           </div>
 
           {/* Thread list — single Card with internal hairline rows */}
@@ -247,75 +239,65 @@ function DiscussionsContent() {
               </p>
             </Card>
           ) : (
-            <Card className="p-0 overflow-hidden">
-              <ul data-testid="threads-list">
-                {threads.map((thread, i) => (
-                  <li
-                    key={thread.id}
-                    data-testid={`thread-${thread.id}`}
-                    data-pinned={thread.isPinned ? "true" : "false"}
-                    className={i > 0 ? "border-t border-line" : ""}
+            <ul data-testid="threads-list" className="flex flex-col gap-3">
+              {threads.map((thread, i) => (
+                <li
+                  key={thread.id}
+                  data-testid={`thread-${thread.id}`}
+                  data-pinned={thread.isPinned ? "true" : "false"}
+                  style={{
+                    transform: thread.isPinned
+                      ? "none"
+                      : `rotate(${i % 2 === 0 ? -0.6 : 0.5}deg)`,
+                  }}
+                >
+                  <Link
+                    href={`/clubs/${clubId}/discussions/${thread.id}`}
+                    className={`block rounded-[var(--radius-lg)] border px-4 py-3.5 shadow-md transition-shadow hover:shadow-lg ${
+                      thread.isPinned
+                        ? "bg-accent-soft border-accent/20"
+                        : "bg-bg-soft border-line"
+                    }`}
                   >
-                    <Link
-                      href={`/clubs/${clubId}/discussions/${thread.id}`}
-                      className={`block px-[18px] py-4 transition-colors hover:bg-bg-soft ${
-                        thread.isPinned ? "bg-warning-soft/40 hover:bg-warning-soft/55" : ""
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                        {/* @spec DISC-UI-PIN-VISUAL-001 */}
-                        {thread.isPinned && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold tracking-wide text-accent-ink">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <path d="M12 17v5M5 9l1 5h12l1-5M7 9l2-7h6l2 7" />
-                            </svg>
-                            PINNED
-                          </span>
-                        )}
-                        {thread.chapterTag ? (
-                          <span data-testid="chapter-tag">
-                            <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
-                          </span>
-                        ) : (
-                          <Badge tone="neutral">No tag</Badge>
-                        )}
-                      </div>
-
-                      {thread.body && (
-                        <p
-                          data-testid="thread-body-preview"
-                          className="font-[var(--font-display)] text-[15px] font-medium text-ink leading-snug mb-1.5 line-clamp-2 tracking-[-0.005em]"
-                        >
-                          {thread.body}
-                        </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {thread.chapterTag ? (
+                        <span data-testid="chapter-tag">
+                          <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
+                        </span>
+                      ) : (
+                        <Badge tone="neutral">No tag</Badge>
                       )}
+                      {/* @spec DISC-UI-PIN-VISUAL-001 */}
+                      {thread.isPinned && <Badge tone="accent">Pinned</Badge>}
+                      {thread.commentCount != null && (
+                        <span className="ml-auto rounded-full bg-primary-soft px-2.5 py-0.5 font-[var(--font-display)] text-xs font-extrabold text-primary tabular-nums">
+                          {thread.commentCount}
+                        </span>
+                      )}
+                    </div>
 
-                      <div className="flex items-center gap-2.5 text-xs text-ink-3">
-                        {thread.author && (
-                          <>
-                            <Avatar name={thread.author.displayName} size="sm" />
-                            <span>
-                              <strong className="text-ink-2 font-medium">
-                                {thread.author.displayName.split(" ")[0]}
-                              </strong>
-                              {thread.createdAt && ` · ${relativeTime(String(thread.createdAt))}`}
-                            </span>
-                          </>
-                        )}
-                        {thread.commentCount != null && (
-                          <span className="ml-auto inline-flex items-center gap-1">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0z" />
-                            </svg>
-                            {thread.commentCount}
-                          </span>
-                        )}
+                    {thread.body && (
+                      <p
+                        data-testid="thread-body-preview"
+                        className="font-[var(--font-serif)] text-sm leading-[1.45] text-ink-2 mt-2 mb-0 line-clamp-2"
+                      >
+                        {thread.body}
+                      </p>
+                    )}
+
+                    {thread.author && (
+                      <div className="mt-2.5 flex items-center gap-1.5">
+                        <Avatar name={thread.author.displayName} size="sm" decorative />
+                        <span className="font-[var(--font-display)] text-[11.5px] font-bold text-ink-3">
+                          {thread.author.displayName}
+                          {thread.createdAt && ` · ${relativeTime(String(thread.createdAt))}`}
+                        </span>
                       </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
@@ -395,8 +377,8 @@ export default function DiscussionsPage() {
         Dashboard
       </Link>
 
-      <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight mb-5">
-        Discussions
+      <h1 className="font-[var(--font-display)] text-[26px] font-extrabold text-primary tracking-tight mb-5">
+        Margin notes
       </h1>
 
       <Suspense

@@ -227,25 +227,26 @@ export function AdminConfirmSection({
                     </td>
                     {slots.map((slot) => {
                       const status = statusFor(slot, r.userId);
+                      // @spec MEET-UI-CONFIRM-HEATMAP-001 — soft semantic cells
+                      // with ✓ ? ✗ marks (cozy redesign), one per member×slot.
                       return (
-                        <td
-                          key={slot.id}
-                          className="px-2 py-1 text-center"
-                        >
+                        <td key={slot.id} className="px-1 py-0.5 text-center">
                           <span
                             data-testid={`heatmap-cell-${r.userId}-${slot.id}`}
                             data-status={status}
-                            className={`inline-block w-3 h-3 rounded-full ${
-                              status === "available"
-                                ? "bg-success"
-                                : status === "maybe"
-                                  ? "bg-warning"
-                                  : status === "unavailable"
-                                    ? "bg-danger"
-                                    : "bg-bg-sunken border border-line"
-                            }`}
                             aria-label={status}
-                          />
+                            className={`inline-flex h-[26px] min-w-[34px] items-center justify-center rounded-[7px] font-[var(--font-display)] text-xs font-black ${
+                              status === "available"
+                                ? "bg-success-soft text-success"
+                                : status === "maybe"
+                                  ? "bg-warning-soft text-warning-ink"
+                                  : status === "unavailable"
+                                    ? "bg-danger-soft text-danger"
+                                    : "bg-bg-sunken text-transparent"
+                            }`}
+                          >
+                            {status === "available" ? "✓" : status === "maybe" ? "?" : status === "unavailable" ? "✗" : ""}
+                          </span>
                         </td>
                       );
                     })}
