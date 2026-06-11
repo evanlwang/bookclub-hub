@@ -90,26 +90,39 @@ export default async function VotePage({
         Dashboard
       </Link>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
-        <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
-          Voting Rounds
-        </h1>
+      <div className="mb-6">
+        <div className="flex items-baseline gap-2.5 flex-wrap">
+          <h1 className="font-[var(--font-display)] text-[26px] font-extrabold text-primary tracking-tight">
+            Recommendation slips
+          </h1>
+          {activeRoundDetail && (
+            activeRoundDetail.status === "voting" ? (
+              <Badge solid dot>Voting open</Badge>
+            ) : (
+              <Badge
+                tone={activeRoundDetail.status === "decided" ? "accent" : "primary"}
+                dot
+              >
+                {activeRoundDetail.status === "nominating" ? "Nominating" : "Decided"}
+              </Badge>
+            )
+          )}
+        </div>
+        <p className="font-[var(--font-serif)] italic text-sm text-ink-2 mt-0.5">
+          {activeRoundDetail?.status === "voting"
+            ? "Dog-ear your favorites"
+            : activeRoundDetail?.status === "decided"
+              ? "The club has spoken"
+              : activeRoundDetail
+                ? "Slip your recommendations in"
+                : "Pick the club's next read"}
+        </p>
       </div>
 
       {/* Active round interactive component */}
       {activeRoundDetail && (
         <div className="mb-8">
-          <Card className="p-5 border-primary/30">
-            <div className="flex items-center gap-3 mb-4">
-              <Badge
-                tone={activeRoundDetail.status === "nominating" ? "accent" : "primary"}
-                dot
-              >
-                {activeRoundDetail.status}
-              </Badge>
-              <span className="text-xs text-ink-3">Active Round</span>
-            </div>
-            <VoteRound
+          <VoteRound
               clubId={clubId}
               roundId={activeRoundDetail.id}
               status={activeRoundDetail.status}
@@ -132,7 +145,6 @@ export default async function VotePage({
                   : null
               }
             />
-          </Card>
         </div>
       )}
 

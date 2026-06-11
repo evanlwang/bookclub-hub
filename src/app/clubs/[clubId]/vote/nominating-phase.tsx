@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, BookCover, Avatar } from "@/components/ui";
-import { SearchIcon } from "@/components/ui/icons";
+import { Button, Card } from "@/components/ui";
 import { NominateModal } from "./nominate-modal";
 import { CancelRoundDialog } from "./close-voting-dialog";
-import { relativeTime, type Nomination } from "./vote-round-types";
+import { Slip } from "./slip";
+import { type Nomination } from "./vote-round-types";
 import { trpc } from "@/trpc/react-hooks";
 
 interface NominatingPhaseProps {
@@ -74,79 +74,68 @@ export function NominatingPhase({
 
   return (
     <div data-testid="nominating-phase">
-      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-        <p className="text-sm text-ink-2">
-          {nominations.length} nomination{nominations.length !== 1 ? "s" : ""} so far. Anyone can nominate.
-        </p>
+      {/* Info card header — count + the nominate CTA. @spec DENSITY-VOTE-002 */}
+      <Card className="p-3.5 mb-3.5 flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="font-[var(--font-display)] text-sm font-extrabold text-ink">
+            Nominations are open
+          </p>
+          <p className="font-[var(--font-display)] text-xs font-semibold text-ink-3 mt-0.5">
+            {nominations.length} slip{nominations.length !== 1 ? "s" : ""} so far · anyone can nominate
+          </p>
+        </div>
         <Button
           variant="primary"
-          size="md"
+          size="sm"
           onClick={() => setIsNominateModalOpen(true)}
           data-testid="search-and-nominate-btn"
-          className="inline-flex items-center gap-2"
         >
-          <SearchIcon size={16} />
-          Search & nominate a book
+          + Nominate
         </Button>
-      </div>
+      </Card>
 
       <div className="space-y-3 mb-6">
         {nominations.map((nom) => (
-          <Card key={nom.id} className="p-4 sm:p-5">
-            {/* @spec DENSITY-VOTE-002 — tighten the cover/text gutter and title
-                on phones so the title keeps room beside the large cover. */}
-            <div className="grid grid-cols-[auto_1fr] gap-3.5 sm:gap-5">
-              <BookCover title={nom.book.title} author={nom.book.author} coverUrl={nom.book.coverUrl} size="lg" />
-              <div className="min-w-0">
-                <p className="font-[var(--font-display)] text-[17px] sm:text-[19px] font-semibold tracking-tight text-ink break-words">{nom.book.title}</p>
-                <p className="text-sm text-ink-2 italic mb-2.5">by {nom.book.author}</p>
-                {nom.pitch && (
-                  <p className="text-sm text-ink-2 leading-relaxed mb-3">
-                    &ldquo;{nom.pitch}&rdquo;
-                  </p>
-                )}
-                <div className="flex items-center gap-2">
-                  <Avatar name={nom.nominator.displayName} size="sm" />
-                  <span className="text-xs text-ink-3">
-                    Nominated by <strong className="text-ink-2">{nom.nominator.displayName}</strong>
-                    {nom.createdAt && ` · ${relativeTime(nom.createdAt)}`}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Card>
+          <Slip key={nom.id} nom={nom} />
         ))}
       </div>
 
       {isAdmin && (
-        <div className="mt-6 flex gap-3 items-center">
-          <Button
-            variant="primary"
-            size="md"
-            loading={advanceRound.isPending}
-            disabled={nominations.length < 2}
-            onClick={handleAdvanceRound}
-            data-testid="advance-round-btn"
-          >
-            Advance to Voting
-          </Button>
+        <Card className="p-3.5 mt-6">
+          <p className="font-[var(--font-display)] text-[13px] font-extrabold uppercase tracking-[0.05em] text-ink-2 mb-2.5">
+            Admin
+          </p>
+          <div className="flex gap-2 items-center">
+            <Button
+              variant="primary"
+              size="sm"
+              className="flex-1"
+              loading={advanceRound.isPending}
+              disabled={nominations.length < 2}
+              onClick={handleAdvanceRound}
+              data-testid="advance-round-btn"
+            >
+              Advance to Voting
+            </Button>
+            {/* @spec VOTE-UI-CANCEL-002 */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setAdminActionError("");
+                setCancelOpen(true);
+              }}
+              data-testid="cancel-round-btn"
+            >
+              Cancel round
+            </Button>
+          </div>
           {nominations.length < 2 && (
-            <span className="text-xs text-ink-3 self-center">Needs at least 2 nominations</span>
+            <p className="font-[var(--font-display)] text-[11.5px] font-semibold text-ink-3 mt-2 mb-0">
+              Needs at least 2 nominations — you have {nominations.length}.
+            </p>
           )}
-          {/* @spec VOTE-UI-CANCEL-002 */}
-          <Button
-            variant="ghost"
-            size="md"
-            className="ml-auto"
-            onClick={() => {
-              setAdminActionError("");
-              setCancelOpen(true);
-            }}
-            data-testid="cancel-round-btn"
-          >
-            Cancel round
-          </Button>
-        </div>
+        </Card>
       )}
       {error && <p className="text-sm text-danger mt-2">{error}</p>}
 
