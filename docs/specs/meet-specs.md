@@ -99,6 +99,12 @@ These specs document invariants enforced inside the `meetings` router and exerci
 
 - `[x]` **MEET-UI-009**: Past meetings (`status="completed"` or `status="cancelled"`) SHALL render with `opacity-70`, a calendar icon block, "Past" neutral badge, the date, title, location, and attended count. (`meetings-client.tsx:241-267`)
 
+## Live Updates (mechanism: docs/llds/live-updates.md)
+
+- `[ ]` **MEET-UI-LIVE-001**: WHILE a member is viewing the meetings page, other members' availability responses (response counts, progress bar fill per MEET-UI-PROP-PROGRESS-001, heatmap cells, attendee stacks) and meeting state changes SHALL appear within 30s via a polled `meetings.list` query — without a reload.
+- `[ ]` **MEET-UI-CACHE-SOT-001**: The meetings client SHALL render from the `meetings.list` query cache (seeded with RSC `initialData`) rather than a one-time `useState` copy of initial props, so polled refetches and `setData` writes are the single source of truth. The existing optimistic `apply*` helpers become cache transforms with unchanged reshaping semantics.
+- `[ ]` **MEET-UI-RESPOND-OPTIMISTIC-001**: WHEN the viewer saves availability, the response counts and their own per-slot selections SHALL update immediately via a cache write. IF the mutation fails, the prior cache state SHALL be restored and the existing inline error shown. On settle, `meetings.list` SHALL be invalidated for server reconciliation.
+
 ## Meeting Creation UI
 
 - `[x]` **MEET-UI-CREATE-001**: Button: "Propose Meeting" (`create-meeting.tsx:17-24`) is rendered in the meetings page header (admin only via membership check upstream). When clicked it switches the area to the create form.

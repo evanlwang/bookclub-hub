@@ -97,6 +97,11 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-DASH-MEDIAN-001**: The dashboard median percentage SHALL be computed over members whose `status !== "not_started"` only. The summary line SHALL read "median {N}% across {K} reading" and append "· {M} not started" and "· {F} finished" when those counts are positive. When zero members have started, the line SHALL read "No one has started yet". Excluding zeros for not-started members prevents the median from being dragged down mid-cycle. (`progress/page.tsx`, `median.ts`)
 - `[x]` **PROG-DASH-UPDATED-001**: Each member row in "Where everyone is" SHALL render a `<time>` element showing "Updated Xd ago" (m/h/d/w resolution; "just now" under a minute) using `ReadingProgress.updatedAt`. Hidden for `status="not_started"` members (no meaningful update). `dateTime` attribute is the ISO timestamp; the `title` attribute shows the absolute date for hover. `data-testid="progress-updated-{userId}"`. (`progress/page.tsx`, `relative-time.ts`)
 
+## Live Updates (mechanism: docs/llds/live-updates.md)
+
+- `[ ]` **PROG-DASH-LIVE-001**: WHILE a member is viewing the progress dashboard, other members' progress rows and the aggregate summary SHALL refresh within 60s via a polled `progress.list` query — without a reload. Row animations SHALL NOT replay on background refetches (stable keys, in-place swaps).
+- `[ ]` **PROG-UI-OPTIMISTIC-001**: WHEN the viewer saves progress from the update modal, their own dashboard row and the `progress.me` cache SHALL reflect the new values immediately (`onMutate` cache write). IF the mutation fails, the prior values SHALL be restored and the modal's existing inline error shown (PROG-ERR-001). The undo-toast contract (PROG-UI-MODAL-UNDO-001) is unchanged.
+
 ## Error Handling
 
 - `[x]` **PROG-ERR-001**: If `progress.update` fails, the modal SHALL display the error message inline (`update-modal.tsx:193-197`).

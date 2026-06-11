@@ -70,6 +70,14 @@ admin → "Close voting & reveal winner" button (voting phase)
 
 The Close button is disabled with helper text "No votes cast yet" when zero approvals exist across nominations (CLOSE-007). Tie-break behavior is the existing `VOTE-BE-001` rule — surfaced in copy rather than overridable. Manual tie override is deferred (`VOTE-BE-TIE-MANUAL-001`).
 
+## Live Updates
+
+Mechanism owned by `docs/llds/live-updates.md`; this segment's surfaces:
+
+- **Voter turnout card** renders from a polled `rounds.turnout` client query (`{ voterCount, memberCount, status }`, 15s interval, RSC-seeded `initialData`) instead of server-component props + `router.refresh()` (VOTE-API-TURNOUT-001, VOTE-UI-LIVE-POLL-001). When the polled status leaves "voting" (another admin closed/cancelled), the page makes one ref-guarded `router.refresh()` to render the new phase — the structural-transition carve-out in the live-updates `router.refresh()` policy.
+- **Nominating phase** polls `rounds.get` at 15s so other members' nominations appear without reload (VOTE-UI-NOM-LIVE-001).
+- **Vote submit is optimistic** (VOTE-UI-OPTIMISTIC-001): button saved-state flips in `onMutate`; first vote bumps the turnout cache; rollback on error; `onSettled` invalidates `rounds.turnout` + `rounds.getClosePreview`.
+
 ## Gaps (UI not yet built; mutations exist)
 
 Button: "Set up first meeting" CTA on winner banner — `[!]` listed in older spec, not implemented.
@@ -144,6 +152,7 @@ BookSelection {
 | `rounds.get` | member | `{ clubId, roundId }` | `{ round, nominations, votes? }` | hides tallies pre-decided |
 | `rounds.advance` | admin+ | `{ clubId, roundId }` | `{ newStatus, winner? }` | nominating→voting OR voting→decided; throws BAD_REQUEST if decided/cancelled |
 | `rounds.cancel` | admin+ | `{ clubId, roundId }` | `{ success: true }` | throws BAD_REQUEST if decided/cancelled |
+| `rounds.turnout` | member | `{ clubId, roundId }` | `{ voterCount, memberCount, status }` | cheap poll target for the turnout card (VOTE-API-TURNOUT-001) |
 | `nominations.create` | member | `{ clubId, roundId, bookId, pitch? }` | `{ nomination }` | requires status="nominating"; CONFLICT on duplicate |
 | `nominations.delete` | nominator OR admin+ | `{ clubId, nominationId }` | `{ success: true }` | NOT_FOUND if the loaded nomination's `round.clubId` differs from `input.clubId` — cross-club guard (VOTE-API-NOMDELETE-XCLUB-001) |
 | `votes.submit` | member | `{ clubId, roundId, nominationIds }` | `{ success, voteCount }` | requires status="voting"; replaces all prior votes |

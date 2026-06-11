@@ -33,6 +33,13 @@ Live preview progress bar in modal — `[ ]` not implemented.
 Toast notification with Undo (4s auto-dismiss) — `[ ]` not implemented; modal closes silently on save.
 "Last updated" timestamp in modal — `[ ]` not implemented.
 
+## Live Updates
+
+Mechanism owned by `docs/llds/live-updates.md`; this segment's surfaces:
+
+- **Dashboard member list + summary** render from a polled `progress.list` client query (60s interval, RSC-seeded `initialData` with ISO-stringified dates) so other members' updates appear without reload (PROG-DASH-LIVE-001). Row stagger animations run on first paint only — background refetches swap data in place under stable keys.
+- **Progress save is optimistic** (PROG-UI-OPTIMISTIC-001): the viewer's row and `progress.me` cache rewrite in `onMutate`; rollback on error; `onSettled` invalidates. The undo toast (PROG-UI-MODAL-UNDO-001) keeps its pre-save snapshot semantics; its revert path uses invalidation instead of `router.refresh()`.
+
 ## Progress Model
 
 ```

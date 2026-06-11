@@ -97,8 +97,9 @@ This project does not currently declare a coherence-check script — audits run 
 | Segment | LLD | Spec file(s) | Status |
 |---|---|---|---|
 | `auth` | `auth-and-accounts.md` | `auth-specs.md`, `home-specs.md` | OK |
-| `clubs` | `club-management.md` | `club-specs.md`, `dash-specs.md` | OK |
-| `voting` | `book-selection-and-voting.md` | `vote-specs.md` | OK |
-| `meetings` | `meeting-scheduling.md` | `meet-specs.md` | OK |
-| `discussions` | `discussion-threads.md` | `disc-specs.md` | OK |
-| `reading-progress` | `reading-progress.md` | `prog-specs.md` | OK |
+| `clubs` | `club-management.md` | `club-specs.md`, `dash-specs.md` | PARTIAL (live-updates gaps) |
+| `voting` | `book-selection-and-voting.md` | `vote-specs.md` | PARTIAL (live-updates gaps) |
+| `meetings` | `meeting-scheduling.md` | `meet-specs.md` | PARTIAL (live-updates gaps) |
+| `discussions` | `discussion-threads.md` | `disc-specs.md` | PARTIAL (live-updates gaps) |
+| `reading-progress` | `reading-progress.md` | `prog-specs.md` | PARTIAL (live-updates gaps) |
+| `live-updates` | `live-updates.md` | `live-specs.md` (+ consumer-side IDs in the five segments above) | MAPPED |

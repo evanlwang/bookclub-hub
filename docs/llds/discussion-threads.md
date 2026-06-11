@@ -39,6 +39,15 @@ Warning banner + disabled "Resolve spoiler warning" Post — `[ ]` not implement
 Markdown rendering — `[ ]` bodies render as plain text (whitespace-pre-wrap).
 Thread detail sidebar metadata — `[ ]` metadata is inline in the header instead.
 
+## Live Updates
+
+Mechanism owned by `docs/llds/live-updates.md`; this segment's surfaces:
+
+- **Thread detail** polls `threads.get` at 10s so other members' comments and edits arrive in place, scroll position preserved (DISC-UI-LIVE-001).
+- **Discussions list** polls `threads.list` at 30s (DISC-UI-LIST-LIVE-001).
+- **Comment post is optimistic** (DISC-UI-COMMENT-OPTIMISTIC-001): a temp comment (pending style) appends in `onMutate`; rollback on error leaves the draft intact (DISC-UI-COMPOSER-DRAFT-PRESERVE-001 unchanged); `onSettled` invalidates `threads.get`.
+- **No client waterfall** (DISC-UI-FETCH-PARALLEL-001): the page RSC resolves current book + spoiler cutoff in parallel via `getServerCaller()` and seeds the client component, replacing the prior selections → progress → threads chain.
+
 ## Thread Model
 
 A **thread** is a top-level discussion topic attached to a book within a club. A thread has a title, an optional chapter tag, and a body. A thread contains **comments** — replies to the thread or to other comments (one level of nesting only).

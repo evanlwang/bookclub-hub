@@ -71,6 +71,11 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 - `[x]` **DASH-NAV-001**: The sidebar SHALL render five nav links: Dashboard / Voting / Meetings / Discussions / Progress. The active link uses `bg-primary-soft text-primary-ink`. (`sidebar.tsx:18-126`)
 - Voting "Live" badge and Discussions unread badge are owned by `dash-specs.md` (DASH-UI-002 and DASH-UI-NAV-UNREAD-001 respectively); see that file for status.
 
+## Live Nav Badges (mechanism: docs/llds/live-updates.md)
+
+- `[ ]` **CLUB-API-NAVSTATE-001**: A member-scoped `clubs.navState` query SHALL return `{ hasActiveVote, hasUnrespondedMeeting, unreadDiscussionCounts }` for the current club in one call — consolidating the three separate reads (`rounds.list`, `meetings.list`, `clubs.unreadDiscussionCounts`) the club layout previously made per render. `unreadDiscussionCounts` remains the cross-club map (it also feeds the switcher dots per CLUB-NAV-UNREAD-001).
+- `[ ]` **CLUB-NAV-BADGE-LIVE-001**: Sidebar and mobile-tab-bar badges (active-vote "Live" dot, unresponded-meeting indicator, unread-discussions count) SHALL render from a `clubs.navState` client query seeded by the layout RSC — updated via targeted invalidation after the viewer's own mutations and via a 60s poll while the tab is visible — NOT via full-layout `router.refresh()`. Visiting the discussions page still clears the unread badge (CLUB-NAV-UNREAD-001), now via `navState` invalidation instead of a layout refresh.
+
 ## Roles and Authorization
 
 - `[x]` **CLUB-BE-002**: Role-based access enforcement: member+ for viewing, admin+ for editing settings and managing members, owner for deletion and ownership transfer. (Enforced at tRPC procedure level via `memberProcedure` / `adminProcedure`.) Note: `members.remove` is admin+; `members.updateRole` is owner-only; `members.transferOwnership` is owner-only.

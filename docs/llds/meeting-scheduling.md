@@ -52,6 +52,14 @@ Button: "Details" toggle — `meetings-client.tsx:373-394` — visible: status="
 Button: "Edit" — `edit-meeting-button.tsx` — visible: under Details disclosure on confirmed cards, or on proposed cards admin only — handler: opens focus-trapped dialog wired to `meetings.update` (MEET-UI-EDIT-BTN-001)
 Button: "Cancel meeting" — `cancel-meeting-button.tsx` — visible: under Details disclosure on confirmed cards, or on proposed cards admin only — handler: opens focus-trapped dialog wired to `meetings.cancel` (MEET-UI-CANCEL-BTN-001)
 
+## Live Updates
+
+Mechanism owned by `docs/llds/live-updates.md`; this segment's surfaces:
+
+- **`meetings.list` query cache is the client source of truth** (MEET-UI-CACHE-SOT-001): the meetings client renders from the polled query (30s interval, RSC-seeded `initialData`) instead of a one-time `useState(initialMeetings)` copy. The optimistic `apply*` helpers (create/confirm/cancel/respond) become `utils.meetings.list.setData` transforms with the same reshaping bodies; trailing `router.refresh()` calls on counter-only paths are replaced by invalidation (`meetings.list`, `clubs.navState`).
+- **Other members' responses appear within 30s** — response counts, the amber→green progress bar, heatmap cells, attendee stacks (MEET-UI-LIVE-001).
+- **Availability submit is optimistic with rollback** (MEET-UI-RESPOND-OPTIMISTIC-001).
+
 ## Gaps (mutations exist, UI does not call them)
 
 Linked-book dropdown in create form — `[ ]` API supports `bookId`; UI does not.

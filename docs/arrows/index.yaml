@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: 2026-05-10
+last_updated: 2026-06-11
 
 # Taxonomy groups segments by domain cluster. Purely organizational.
 taxonomy:
@@ -11,6 +11,7 @@ taxonomy:
     - meetings
     - discussions
     - reading-progress
+    - live-updates
   design-system:
     - design-system
     - components-button
@@ -39,7 +40,7 @@ arrows:
     drift: null
 
   clubs:
-    status: OK
+    status: PARTIAL
     sampled: 2026-05-07
     audited: 2026-05-10
     audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
@@ -50,56 +51,79 @@ arrows:
       - reading-progress
     blockedBy:
       - auth
+      - live-updates
     detail: clubs.md
-    next: null
+    next: implement CLUB-API-NAVSTATE-001 + CLUB-NAV-BADGE-LIVE-001 (live-updates plan Phase 1/3)
     drift: null
 
   voting:
-    status: OK
+    status: PARTIAL
     sampled: 2026-05-07
     audited: 2026-05-10
     audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
     blocks: []
     blockedBy:
       - clubs
+      - live-updates
     detail: voting.md
-    next: null
+    next: implement VOTE-API-TURNOUT-001 + VOTE-UI-LIVE-POLL/NOM-LIVE/OPTIMISTIC-001 (live-updates plan Phases 1/2/5)
     drift: null
 
   meetings:
-    status: OK
+    status: PARTIAL
     sampled: 2026-05-07
     audited: 2026-05-10
     audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
     blocks: []
     blockedBy:
       - clubs
+      - live-updates
     detail: meetings.md
-    next: null
+    next: implement MEET-UI-LIVE-001 + MEET-UI-CACHE-SOT-001 + MEET-UI-RESPOND-OPTIMISTIC-001 (live-updates plan Phase 5)
     drift: null
 
   discussions:
-    status: OK
+    status: PARTIAL
     sampled: 2026-05-07
     audited: 2026-05-10
     audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
     blocks: []
     blockedBy:
       - clubs
+      - live-updates
     detail: discussions.md
-    next: null
+    next: implement DISC-UI-LIVE-001 + DISC-UI-LIST-LIVE-001 + DISC-UI-COMMENT-OPTIMISTIC-001 + DISC-UI-FETCH-PARALLEL-001 (live-updates plan Phases 2/4/5)
     drift: null
 
   reading-progress:
-    status: OK
+    status: PARTIAL
     sampled: 2026-05-07
     audited: 2026-05-10
     audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
     blocks: []
     blockedBy:
       - clubs
+      - live-updates
     detail: reading-progress.md
-    next: null
+    next: implement PROG-DASH-LIVE-001 + PROG-UI-OPTIMISTIC-001 (live-updates plan Phases 2/5)
+    drift: null
+
+  # Cross-cutting liveness mechanism (polling hook + optimistic conventions).
+  # Blocks the feature segments that consume its behavioral contract.
+  live-updates:
+    status: MAPPED
+    sampled: 2026-06-11
+    audited: null
+    audited_sha: null
+    blocks:
+      - clubs
+      - voting
+      - meetings
+      - discussions
+      - reading-progress
+    blockedBy: []
+    detail: live-updates.md
+    next: implement LIVE-HOOK-* + LIVE-UX-GENTLE-001 (live-updates plan Phase 1)
     drift: null
 
   # Design overlay — parallel to the feature arrows. No feature segment declares

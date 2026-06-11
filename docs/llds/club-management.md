@@ -116,6 +116,10 @@ No Invitation table. The club code on the Club record is the only join mechanism
 
 Sidebar dropdown on every club-scoped page. Lists all clubs the user is in. Each row links to `/clubs/{id}` (full route load). Bottom row is "Create or join a club" → opens the Switcher Modal in place. The Voting nav link displays a "Live" Badge (accent dot) when an active round exists for the current club.
 
+## Live Nav Badges
+
+Mechanism owned by `docs/llds/live-updates.md`. The three badge inputs the club layout previously computed from separate RSC fetches (`rounds.list`, `meetings.list`, `clubs.unreadDiscussionCounts`) consolidate into one member-scoped `clubs.navState` query returning `{ hasActiveVote, hasUnrespondedMeeting, unreadDiscussionCounts }` (CLUB-API-NAVSTATE-001) — `unreadDiscussionCounts` stays the cross-club map because the switcher dots (CLUB-NAV-UNREAD-001) consume it. The layout RSC seeds a `useNavState(clubId, initial)` client hook (60s poll); `ClubSidebar`, `MobileTabBar`, and `MobileClubHeader` read the hook instead of props. Feature mutations that affect badges call `utils.clubs.navState.invalidate()` instead of `router.refresh()` (CLUB-NAV-BADGE-LIVE-001); visiting discussions clears the unread badge the same way.
+
 ## Switcher Modal Flow
 
 Centered `<Dialog>` opened from the switcher dropdown for users who are already authenticated. Skips the identity step that `/join` enforces and runs only the join-by-code or create-club paths.
@@ -154,6 +158,7 @@ The sidebar's clubs list is loaded server-side via `auth.me` in `clubs/[clubId]/
 | `clubs.leave` | member+ | `{ clubId }` | `{ ok: true }` (owner blocked) |
 | `clubs.join` | optional | `{ code, email?, displayName? }` | `{ club }` |
 | `clubs.lookup` | none | `{ code }` | `{ clubName, memberCount }` or 404 |
+| `clubs.navState` | member | `{ clubId }` | `{ hasActiveVote, hasUnrespondedMeeting, unreadDiscussionCounts }` (CLUB-API-NAVSTATE-001) |
 
 ## Theming (Per-Club Primary Color)
 

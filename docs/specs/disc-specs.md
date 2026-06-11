@@ -85,6 +85,13 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 - `[x]` **DISC-UI-DETAIL-COMPOSER-001**: Button: top-level "Post" (`comment-composer.tsx:79-87`) — disabled when body is empty/whitespace — calls `comments.create`.
 - `[x]` **DISC-UI-COMPOSER-DRAFT-PRESERVE-001**: The comment composer SHALL clear its textarea ONLY on `comments.create` success. On error (network failure, validation rejection, etc.) the draft SHALL remain in the textarea verbatim so the user can retry without retyping. An inline error message is the only visible side effect of a failed submit. (`comment-composer.tsx` `onSuccess` / `onError`)
 
+## Live Updates (mechanism: docs/llds/live-updates.md)
+
+- `[ ]` **DISC-UI-LIVE-001**: WHILE a member is viewing a thread detail page, new comments and edits from other members SHALL appear within 10s via a polled `threads.get` query, preserving the viewer's scroll position (stable comment keys; arrivals append in place).
+- `[ ]` **DISC-UI-LIST-LIVE-001**: WHILE a member is viewing the discussions list, new threads and updated comment counts SHALL appear within 30s via a polled `threads.list` query.
+- `[ ]` **DISC-UI-COMMENT-OPTIMISTIC-001**: WHEN the viewer posts a comment, it SHALL append to the thread immediately with a pending visual treatment (reduced opacity) before the server responds. IF the mutation fails, the pending comment SHALL be removed and the draft preserved in the composer (extends DISC-UI-COMPOSER-DRAFT-PRESERVE-001 — draft clears only on success). On settle, the thread query SHALL be invalidated so the temp comment is replaced by the server row.
+- `[ ]` **DISC-UI-FETCH-PARALLEL-001**: The discussions page SHALL resolve the current book and the viewer's spoiler cutoff server-side (RSC, parallel fetches) and pass them as initial values to the client — eliminating the client-side selections → progress → threads request waterfall. Fail-safe cutoff semantics per DISC-LIB-CUTOFF-FAILSAFE-001 are unchanged.
+
 ## Comment Edit and Delete
 
 - `[x]` **DISC-UI-COMMENT-CONTROLS-001**: Each non-deleted comment row (top-level or reply) SHALL render a small affordance row at the bottom containing "Reply" (top-level only), "Edit" (viewer is author), and "Delete" (viewer is author OR admin/owner). Buttons are text links, not icons. When the viewer has none of these privileges, only the existing Reply (if applicable) renders. (`comment-item.tsx:170-217`; viewer/role from `auth.me` in `[threadId]/page.tsx:36-58`)
