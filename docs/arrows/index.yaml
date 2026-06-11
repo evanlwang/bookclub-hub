@@ -111,7 +111,7 @@ arrows:
   # Cross-cutting liveness mechanism (polling hook + optimistic conventions).
   # Blocks the feature segments that consume its behavioral contract.
   live-updates:
-    status: MAPPED
+    status: PARTIAL
     sampled: 2026-06-11
     audited: null
     audited_sha: null
@@ -123,7 +123,7 @@ arrows:
       - reading-progress
     blockedBy: []
     detail: live-updates.md
-    next: implement LIVE-HOOK-* + LIVE-UX-GENTLE-001 (live-updates plan Phase 1)
+    next: LIVE-HOOK-* implemented; LIVE-UX-GENTLE-001 lands with the Phase 5 surface conversions
     drift: null
 
   # Design overlay — parallel to the feature arrows. No feature segment declares

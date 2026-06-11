@@ -97,6 +97,35 @@ export const roundsRouter = router({
       return { round: { ...round, nominations } };
     }),
 
+  // @spec VOTE-API-TURNOUT-001
+  // Cheap poll target for the voter-turnout card (live-updates segment).
+  // Returns status too so the voting page can detect a close/cancel by
+  // another admin without a full reload.
+  turnout: memberProcedure
+    .input(z.object({ clubId: z.string().uuid(), roundId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const round = await ctx.db.votingRound.findUniqueOrThrow({
+        where: { id: input.roundId },
+        select: { clubId: true, status: true },
+      });
+      if (round.clubId !== input.clubId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const [memberCount, voters] = await Promise.all([
+        ctx.db.membership.count({ where: { clubId: input.clubId } }),
+        ctx.db.vote.findMany({
+          where: { roundId: input.roundId },
+          select: { userId: true },
+          distinct: ["userId"],
+        }),
+      ]);
+      return {
+        voterCount: voters.length,
+        memberCount,
+        status: round.status,
+      };
+    }),
+
   // @spec VOTE-API-CLOSE-PREVIEW-001, VOTE-UI-CLOSE-LIVE-001
   // Admin-only live standings for the close-voting confirmation dialog.
   // The voting-phase UI hides tallies from everyone per VOTE-UI-001, so this

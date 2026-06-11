@@ -13,11 +13,11 @@ Surface-specific live/optimistic specs live in each consuming segment's spec fil
 
 ## Polling Hook
 
-- `[ ]` **LIVE-HOOK-001**: Polling SHALL be opt-in per query via the `useLiveQueryOptions({ intervalMs, ... })` hook; the app SHALL NOT set a global `refetchInterval` default on the QueryClient.
-- `[ ]` **LIVE-HOOK-PAUSE-HIDDEN-001**: WHILE the browser tab is hidden, interval polling SHALL pause (React Query default `refetchIntervalInBackground: false`; this spec pins that default — the hook SHALL NOT override it to `true`).
-- `[ ]` **LIVE-HOOK-PAUSE-MUTATING-001**: WHILE any mutation is in flight (`useIsMutating() > 0`), the hook's `refetchInterval` function SHALL return `false` (when `pauseWhenMutating` is enabled, the default), so an interval refetch cannot overwrite optimistic cache state mid-mutation.
-- `[ ]` **LIVE-HOOK-STALETIME-001**: The hook SHALL set `staleTime` equal to `intervalMs` so window-focus refetches do not stack on top of interval refetches for live queries.
-- `[ ]` **LIVE-HOOK-ENABLED-001**: WHEN the caller passes `enabled: false`, the hook SHALL return `refetchInterval` resolving to `false` (no polling) without affecting the query's own fetch-on-mount behavior.
+- `[x]` **LIVE-HOOK-001**: Polling SHALL be opt-in per query via the `useLiveQueryOptions({ intervalMs, ... })` hook; the app SHALL NOT set a global `refetchInterval` default on the QueryClient.
+- `[x]` **LIVE-HOOK-PAUSE-HIDDEN-001**: WHILE the browser tab is hidden, interval polling SHALL pause (React Query default `refetchIntervalInBackground: false`; this spec pins that default — the hook SHALL NOT override it to `true`).
+- `[x]` **LIVE-HOOK-PAUSE-MUTATING-001**: WHILE any mutation is in flight (`useIsMutating() > 0`), the hook's `refetchInterval` function SHALL return `false` (when `pauseWhenMutating` is enabled, the default), so an interval refetch cannot overwrite optimistic cache state mid-mutation.
+- `[x]` **LIVE-HOOK-STALETIME-001**: The hook SHALL set `staleTime` equal to `intervalMs` so window-focus refetches do not stack on top of interval refetches for live queries.
+- `[x]` **LIVE-HOOK-ENABLED-001**: WHEN the caller passes `enabled: false`, the hook SHALL return `refetchInterval` resolving to `false` (no polling) without affecting the query's own fetch-on-mount behavior.
 
 ## Freshness UX
 
