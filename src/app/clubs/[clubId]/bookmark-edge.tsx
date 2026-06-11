@@ -28,6 +28,19 @@ export function BookmarkEdge({
 }) {
   const [active, setActive] = useState<EdgeMember | null>(null);
 
+  // Fan out bookmarks that would overlap (e.g. several members finished at
+  // 100%): sort by depth, then nudge any bookmark within 4% of its neighbor
+  // leftward so every one stays individually tappable.
+  const placed = [...members]
+    .sort((a, b) => b.pct - a.pct)
+    .reduce<Array<EdgeMember & { displayPct: number }>>((acc, m) => {
+      let p = Math.max(2, Math.min(97, m.pct));
+      const prev = acc[acc.length - 1];
+      if (prev && prev.displayPct - p < 4) p = prev.displayPct - 4;
+      acc.push({ ...m, displayPct: Math.max(2, p) });
+      return acc;
+    }, []);
+
   return (
     <div className="relative pt-[30px]" data-testid="bookmark-edge">
       {/* tooltip */}
@@ -65,8 +78,7 @@ export function BookmarkEdge({
           style={{ width: `${Math.min(100, Math.max(0, median))}%` }}
         />
         {/* member bookmarks sticking out the top */}
-        {members.map((m) => {
-          const pct = Math.max(2, Math.min(97, m.pct));
+        {placed.map((m) => {
           const isActive = active?.userId === m.userId;
           return (
             <button
@@ -79,7 +91,7 @@ export function BookmarkEdge({
                 setActive(isActive ? null : m);
               }}
               className="absolute -top-4 h-[34px] w-[14px] cursor-pointer bg-transparent p-0"
-              style={{ left: `calc(${pct}% - 7px)` }}
+              style={{ left: `calc(${m.displayPct}% - 7px)` }}
             >
               <span
                 className={`block h-full w-full rounded-t-[3px] shadow-[1px_0_2px_rgba(96,64,32,0.25)] transition-transform duration-200 ${
