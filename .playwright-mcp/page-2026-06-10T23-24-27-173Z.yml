@@ -1,0 +1,35 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - main [ref=e4]:
+      - generic [ref=e6]: Loading dashboard…
+    - navigation "Primary" [ref=e31]:
+      - list [ref=e32]:
+        - listitem [ref=e33]:
+          - link "Dashboard" [ref=e34] [cursor=pointer]:
+            - /url: /clubs/1dd8e2c1-c390-41c1-9e13-565816fcf16a
+            - img [ref=e36]
+            - generic [ref=e39]: Dashboard
+        - listitem [ref=e40]:
+          - link "Voting" [ref=e41] [cursor=pointer]:
+            - /url: /clubs/1dd8e2c1-c390-41c1-9e13-565816fcf16a/vote
+            - img [ref=e43]
+            - generic [ref=e47]: Voting
+        - listitem [ref=e48]:
+          - link "Meetings" [ref=e49] [cursor=pointer]:
+            - /url: /clubs/1dd8e2c1-c390-41c1-9e13-565816fcf16a/meetings
+            - img [ref=e51]
+            - generic [ref=e55]: Meetings
+        - listitem [ref=e56]:
+          - link "Discussions" [ref=e57] [cursor=pointer]:
+            - /url: /clubs/1dd8e2c1-c390-41c1-9e13-565816fcf16a/discussions
+            - img [ref=e59]
+            - generic [ref=e62]: Discussions
+        - listitem [ref=e63]:
+          - button "More" [ref=e64]:
+            - img [ref=e65]
+            - generic [ref=e67]: More
+  - button "Open Next.js Dev Tools" [ref=e73] [cursor=pointer]:
+    - img [ref=e74]
+  - alert [ref=e77]

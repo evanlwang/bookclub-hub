@@ -79,7 +79,7 @@ export function CommentComposer({
         placeholder={placeholder}
         rows={parentCommentId ? 2 : 3}
         data-testid={parentCommentId ? "reply-input" : "comment-input"}
-        className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-vertical"
+        className="w-full font-[var(--font-serif)] text-[15px] bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3.5 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft resize-vertical"
       />
       {error && <p className="text-xs text-danger">{error}</p>}
       <div className="flex gap-2 justify-end">

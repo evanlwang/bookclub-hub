@@ -1,0 +1,112 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - main [ref=e4]:
+      - generic [ref=e6]:
+        - button "Wednesday Night Reads owner" [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e12]: Wednesday Night Reads
+          - generic [ref=e13]: owner
+          - img [ref=e14]
+        - button "Copy invite code" [ref=e16]:
+          - generic [ref=e17]: WEDREADS
+          - generic [ref=e18]: Copy
+      - generic [ref=e20]:
+        - link "Dashboard" [ref=e21] [cursor=pointer]:
+          - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253
+          - img [ref=e22]
+          - text: Dashboard
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - heading "RSVP postcards" [level=1] [ref=e27]
+              - paragraph [ref=e28]: When are we meeting?
+            - button "Propose Meeting" [ref=e29] [cursor=pointer]
+          - generic [ref=e30]:
+            - button "All · 4" [ref=e31]:
+              - text: All
+              - generic [ref=e32]: · 4
+            - button "Proposed · 1" [ref=e33]:
+              - text: Proposed
+              - generic [ref=e34]: · 1
+            - button "Confirmed · 1" [ref=e35]:
+              - text: Confirmed
+              - generic [ref=e36]: · 1
+            - button "Past · 1" [ref=e37]:
+              - text: Past
+              - generic [ref=e38]: · 1
+          - list [ref=e39]:
+            - listitem [ref=e40]:
+              - generic [ref=e43] [cursor=pointer]:
+                - img [ref=e45]
+                - generic [ref=e48]:
+                  - generic [ref=e49]:
+                    - generic [ref=e50]: Awaiting your response
+                    - generic [ref=e52]: · Dune
+                  - paragraph [ref=e53]: Dune — final wrap-up
+                  - generic [ref=e54]:
+                    - generic [ref=e55]: 3 time slots proposed
+                    - generic [ref=e56]: ·
+                    - generic [ref=e57]: 5 responded
+                  - progressbar "5 of 6 members responded" [ref=e58]
+                - button "Respond" [ref=e60]
+            - listitem [ref=e61]:
+              - generic [ref=e63]:
+                - generic [ref=e64]:
+                  - generic [ref=e65]:
+                    - generic [ref=e66]: MON
+                    - generic [ref=e67]: "15"
+                    - generic [ref=e68]: JUN
+                  - generic [ref=e69]:
+                    - generic [ref=e70]:
+                      - generic [ref=e71]: Dune — mid-book discussion
+                      - generic [ref=e72]: Confirmed
+                    - paragraph [ref=e73]: 10:55 PM · Alice's place — 1442 Birch St · Dune
+                    - generic [ref=e75]: 0 going
+                - button "Details" [ref=e78]:
+                  - text: Details
+                  - img [ref=e79]
+            - listitem [ref=e81]:
+              - generic [ref=e83]:
+                - generic [ref=e84]:
+                  - generic [ref=e85]: SAT
+                  - generic [ref=e86]: "16"
+                  - generic [ref=e87]: MAY
+                - generic [ref=e88]:
+                  - paragraph [ref=e89]: Kindred — final discussion
+                  - paragraph [ref=e90]: Carol's living room ·
+                - generic [ref=e91]: PAST
+            - listitem [ref=e92]:
+              - generic [ref=e94]:
+                - generic [ref=e96]: —
+                - generic [ref=e97]:
+                  - paragraph [ref=e98]: Coffee-shop chapter chat
+                  - paragraph [ref=e99]: Cancelled
+                - generic [ref=e100]: CANCELLED
+    - navigation "Primary" [ref=e101]:
+      - link "Nook" [ref=e102] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253
+        - img [ref=e104]
+        - generic [ref=e106]: Nook
+      - link "LIVE Voting" [ref=e107] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/vote
+        - generic [ref=e108]:
+          - img [ref=e109]
+          - generic [ref=e112]: LIVE
+        - generic [ref=e113]: Voting
+      - link "Meetings" [ref=e114] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/meetings
+        - img [ref=e116]
+        - generic [ref=e119]: Meetings
+      - link "Notes" [ref=e120] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/discussions
+        - img [ref=e122]
+        - generic [ref=e124]: Notes
+      - link "Progress" [ref=e125] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/progress
+        - img [ref=e127]
+        - generic [ref=e129]: Progress
+  - button "Open Next.js Dev Tools" [ref=e135] [cursor=pointer]:
+    - img [ref=e136]
+  - alert [ref=e139]

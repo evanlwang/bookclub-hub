@@ -35,7 +35,7 @@ export function ProgressBar({
         style={{
           width: `${percentage}%`,
           animationDelay: animate ? `${delay}ms` : undefined,
-          transition: animate ? undefined : "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+          transition: animate ? undefined : "width 0.7s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       />
     </div>

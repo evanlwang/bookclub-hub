@@ -93,16 +93,16 @@ test.describe("Sidebar Navigation", () => {
     await page.getByRole("link", { name: "Meetings" }).click();
     await expect(page).toHaveURL(`/clubs/${club.id}/meetings`);
 
-    // Click Discussions
-    await page.getByRole("link", { name: "Discussions" }).click();
+    // Click Notes (the redesign's name for Discussions)
+    await page.getByRole("link", { name: "Notes" }).click();
     await expect(page).toHaveURL(`/clubs/${club.id}/discussions`);
 
     // Click Progress
     await page.getByRole("link", { name: "Progress" }).click();
     await expect(page).toHaveURL(`/clubs/${club.id}/progress`);
 
-    // Click Dashboard to go back
-    await page.getByRole("link", { name: "Dashboard" }).click();
+    // Click Nook (the redesign's name for Dashboard) to go back
+    await page.getByRole("link", { name: "Nook" }).click();
     await expect(page).toHaveURL(`/clubs/${club.id}`);
   });
 
@@ -128,7 +128,7 @@ test.describe("Dashboard Interactions", () => {
     await page.goto(`/clubs/${club.id}`);
 
     // Golden dataset has Dune as current book
-    await expect(page.getByText("Currently Reading")).toBeVisible();
+    await expect(page.getByText(/now reading/i)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Dune" })).toBeVisible();
   });
 
@@ -245,6 +245,11 @@ test.describe("Sidebar Club Switcher Interactions", () => {
 
     await page.getByRole("link", { name: /Sci-Fi Explorers/i }).click();
     await expect(page).toHaveURL(/\/clubs\/.+/);
-    await expect(page.getByTestId("club-name")).toContainText("Sci-Fi Explorers");
+    // Assert on the rendered h1: in dev, Next can briefly keep the previous
+    // page's segment in the DOM while the new one streams, so the bare
+    // club-name testid can transiently resolve to two nodes.
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Sci-Fi Explorers" }),
+    ).toBeVisible();
   });
 });

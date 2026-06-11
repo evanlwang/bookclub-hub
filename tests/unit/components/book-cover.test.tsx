@@ -43,7 +43,7 @@ describe("BookCover — variant pick", () => {
 
   // @spec COMP-BOOK-COVER-003
   it("uses the explicit variant when variant is provided (overrides hash)", () => {
-    const { container: a } = render(<BookCover title="t" author="a" variant="teal" />);
+    const { container: a } = render(<BookCover title="t" author="a" variant="olive" />);
     const { container: b } = render(<BookCover title="t" author="a" variant="rust" />);
     const aBg = (a.firstChild as HTMLElement).style.backgroundImage;
     const bBg = (b.firstChild as HTMLElement).style.backgroundImage;

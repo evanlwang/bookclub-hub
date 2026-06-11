@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, Badge, Button, AvatarStack } from "@/components/ui";
+import { Card, Badge, Button, AvatarStack, DateStamp } from "@/components/ui";
 import { CreateMeetingForm, ProposeMeetingTrigger } from "./create-meeting";
 import { RespondMeeting } from "./respond-meeting";
 import { AdminConfirmSection } from "./admin-confirm";
@@ -23,21 +23,6 @@ interface MeetingsClientProps {
 }
 
 type ResponseStatus = "available" | "maybe" | "unavailable";
-
-function DateBlock({ date }: { date: Date }) {
-  const d = new Date(date);
-  const day = d.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
-  const num = d.getDate();
-  const month = d.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
-
-  return (
-    <div className="text-center px-3.5 py-2.5 bg-accent-soft rounded-[10px] min-w-[64px]">
-      <div className="text-[10px] text-accent-ink uppercase tracking-widest">{day}</div>
-      <div className="font-[var(--font-display)] text-2xl font-semibold text-accent-ink leading-none">{num}</div>
-      <div className="text-[10px] text-accent-ink">{month}</div>
-    </div>
-  );
-}
 
 function getResponseCounts(meeting: any) {
   const responses = meeting.slots?.flatMap((s: any) => s.responses ?? []) ?? [];
@@ -213,9 +198,14 @@ export function MeetingsClient({
   return (
     <div className="w-full max-w-[1600px]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
-          Meetings
-        </h1>
+        <div>
+          <h1 className="font-[var(--font-display)] text-[26px] font-extrabold text-primary tracking-tight">
+            RSVP postcards
+          </h1>
+          <p className="font-[var(--font-serif)] italic text-sm text-ink-2 mt-0.5">
+            When are we meeting?
+          </p>
+        </div>
         {!proposing && (
           <ProposeMeetingTrigger onClick={() => setProposing(true)} />
         )}
@@ -232,8 +222,8 @@ export function MeetingsClient({
         />
       )}
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 p-0.5 bg-bg-soft rounded-[var(--radius-md)] border border-line mb-6 w-fit">
+      {/* Filter chips */}
+      <div className="flex gap-1.5 mb-5 overflow-x-auto pb-0.5">
         {[
           { key: "all", label: "All" },
           { key: "proposed", label: "Proposed" },
@@ -244,11 +234,15 @@ export function MeetingsClient({
             key={f.key}
             data-testid={`filter-${f.key}`}
             onClick={() => setFilter(f.key)}
-            className={`px-3 py-1 text-xs rounded-[var(--radius-sm)] transition-colors inline-flex items-center gap-1.5 ${filter === f.key ? "bg-bg font-medium text-ink shadow-sm" : "text-ink-3 hover:text-ink-2"}`}
+            className={`min-h-[32px] shrink-0 rounded-full px-3.5 py-1.5 font-[var(--font-display)] text-[12.5px] font-extrabold shadow-sm transition-colors inline-flex items-center gap-1.5 ${
+              filter === f.key ? "bg-ink text-bg" : "bg-bg-soft text-ink-2"
+            }`}
           >
             {f.label}
             {counts[f.key as keyof typeof counts] > 0 && (
-              <span className="text-[11px] text-ink-3 tabular-nums">{counts[f.key as keyof typeof counts]}</span>
+              <span className={`tabular-nums ${filter === f.key ? "text-bg/70" : "text-ink-3"}`}>
+                · {counts[f.key as keyof typeof counts]}
+              </span>
             )}
           </button>
         ))}
@@ -331,36 +325,26 @@ function ConfirmedMeetingRow({
 
   return (
     <div>
-      <div className="grid grid-cols-[auto_1fr_auto] gap-5 items-center">
-        {meeting.confirmedTime && <DateBlock date={new Date(meeting.confirmedTime)} />}
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Badge tone="success" dot>Confirmed</Badge>
-            {meeting.book && <span className="text-xs text-ink-3">· {meeting.book.title}</span>}
+      <div className="flex gap-3.5 items-center">
+        {meeting.confirmedTime && <DateStamp date={meeting.confirmedTime} />}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="font-[var(--font-display)] text-[15.5px] font-extrabold text-ink truncate">{meeting.title}</span>
+            <Badge tone="success">Confirmed</Badge>
           </div>
-          <p className="text-sm font-medium text-ink mb-1.5">{meeting.title}</p>
-          <div className="flex items-center gap-3.5 text-xs text-ink-2">
-            {time && (
-              <span className="inline-flex items-center gap-1">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                {time}
-              </span>
+          <p className="font-[var(--font-serif)] text-[13.5px] text-ink-2 m-0">
+            {time}
+            {meeting.location ? ` · ${meeting.location}` : ""}
+            {meeting.book ? ` · ${meeting.book.title}` : ""}
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            {attendeeNames.length > 0 && (
+              <AvatarStack names={attendeeNames} max={4} size="sm" />
             )}
-            {meeting.location && (
-              <span className="inline-flex items-center gap-1">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                {meeting.location}
-              </span>
-            )}
+            <span className="font-[var(--font-display)] text-xs font-bold text-ink-3">
+              {going} going{maybe > 0 ? ` · ${maybe} maybe` : ""}
+            </span>
           </div>
-        </div>
-        <div className="text-right">
-          {attendeeNames.length > 0 && (
-            <div className="flex justify-end mb-1.5">
-              <AvatarStack names={attendeeNames} max={5} size="sm" />
-            </div>
-          )}
-          <p className="text-[11px] text-ink-3">{going} going{maybe > 0 ? ` · ${maybe} maybe` : ""}</p>
         </div>
       </div>
       {/* @spec MEET-UI-DETAILS-DISCLOSURE-001 */}
@@ -530,30 +514,33 @@ function ProposedMeetingRow({
   );
 }
 
-// @spec MEET-UI-009
+// @spec MEET-UI-009 — muted stamp + rotated PAST rubber stamp.
 function PastMeetingRow({ meeting }: { meeting: any }) {
   const { going } = getResponseCounts(meeting);
+  const cancelled = meeting.status === "cancelled";
 
   return (
-    <div className="grid grid-cols-[auto_1fr_auto] gap-5 items-center opacity-70">
-      <div className="w-16 h-16 rounded-[10px] bg-bg-sunken flex items-center justify-center text-ink-3">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4.5" width="18" height="17" rx="2" />
-          <path d="M16 2.5v4M8 2.5v4M3 10h18" />
-        </svg>
-      </div>
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Badge tone="neutral">Past</Badge>
-          {meeting.confirmedTime && (
-            <span className="text-xs text-ink-3">· {new Date(meeting.confirmedTime).toLocaleDateString()}</span>
-          )}
+    <div className="relative flex gap-3.5 items-center opacity-75">
+      {meeting.confirmedTime ? (
+        <DateStamp date={meeting.confirmedTime} muted />
+      ) : (
+        <div className="w-[58px] shrink-0 -rotate-2 rounded-[12px] border-2 border-line-strong py-1.5 text-center text-ink-3">
+          <div className="font-[var(--font-display)] font-extrabold text-2xl leading-none">—</div>
         </div>
-        <p className="text-sm font-semibold text-ink">{meeting.title}</p>
-        <p className="text-xs text-ink-3 mt-1">
-          {meeting.location && `${meeting.location} · `}{going > 0 ? `${going} attended` : ""}
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="font-[var(--font-display)] text-[15.5px] font-extrabold text-ink m-0 truncate">{meeting.title}</p>
+        <p className="font-[var(--font-serif)] text-[13px] text-ink-3 mt-1 mb-0">
+          {meeting.location && `${meeting.location} · `}
+          {going > 0 ? `${going} attended` : cancelled ? "Cancelled" : ""}
         </p>
       </div>
+      <span
+        aria-hidden="true"
+        className="absolute top-0 right-0 rotate-6 rounded-[5px] border-2 border-ink-3 px-1.5 py-0.5 font-[var(--font-mono)] text-[9.5px] font-bold tracking-[0.14em] text-ink-3 opacity-80"
+      >
+        {cancelled ? "CANCELLED" : "PAST"}
+      </span>
     </div>
   );
 }

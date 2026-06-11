@@ -1,38 +1,17 @@
 "use client";
 
-import { CheckIcon } from "@/components/ui";
-
+// Cozy-redesign stepper: springy pills — the active step stretches wide,
+// done steps stay terracotta, upcoming steps are paper-edge dots.
 function StepDot({ n, state }: { n: number; state: "active" | "done" | "inactive" }) {
-  const base = "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-medium shrink-0";
-
-  if (state === "done") {
-    return (
-      <div data-testid={`step-dot-${n}`} data-state="done" className={`${base} bg-primary text-bg`}>
-        <CheckIcon size={12} />
-      </div>
-    );
-  }
-
-  if (state === "active") {
-    return (
-      <div
-        data-testid={`step-dot-${n}`}
-        data-state="active"
-        className={`${base} border-[1.5px] border-primary text-primary`}
-      >
-        {n}
-      </div>
-    );
-  }
-
   return (
     <div
       data-testid={`step-dot-${n}`}
-      data-state="inactive"
-      className={`${base} border-[1.5px] border-line-strong text-ink-3`}
-    >
-      {n}
-    </div>
+      data-state={state}
+      aria-label={`Step ${n}${state === "active" ? " (current)" : state === "done" ? " (done)" : ""}`}
+      className={`h-2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+        state === "active" ? "w-6 bg-primary" : state === "done" ? "w-2 bg-primary" : "w-2 bg-bg-sunken"
+      }`}
+    />
   );
 }
 
@@ -46,13 +25,15 @@ export function Stepper({ step, stepLabel }: { step: 1 | 2 | 3 | 4; stepLabel?: 
   }
 
   return (
-    <div data-testid="stepper" className="flex items-center gap-2 mb-6">
+    <div data-testid="stepper" className="flex items-center justify-center gap-2 mb-6">
       <StepDot n={1} state={dotState(1)} />
-      <div className={`flex-1 h-px ${step > 1 ? "bg-primary" : "bg-line"}`} />
       <StepDot n={2} state={dotState(2)} />
-      <div className={`flex-1 h-px ${step > 2 ? "bg-primary" : "bg-line"}`} />
       <StepDot n={3} state={dotState(3)} />
-      {stepLabel && <span className="text-xs font-medium text-ink-2 ml-2">{stepLabel}</span>}
+      {stepLabel && (
+        <span className="font-[var(--font-display)] text-xs font-bold text-ink-2 ml-2">
+          {stepLabel}
+        </span>
+      )}
     </div>
   );
 }

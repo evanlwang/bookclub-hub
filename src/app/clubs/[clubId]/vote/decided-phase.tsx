@@ -1,18 +1,11 @@
 "use client";
 
-/* eslint-disable no-restricted-syntax --
- * The winner banner (lines ~60-90) and the Open-Library CTA color (~107) use
- * page-private warm gradients/inks specifically designed to celebrate the
- * round winner. These colors are intentionally not promoted to global tokens
- * (they're not reused anywhere else and the celebratory palette is unique to
- * this page). DSYS-TOKEN-003 exemption documented per VOTE-UI-DECIDED-WINNER-BANNER intent.
- */
-
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Card, Badge, BookCover } from "@/components/ui";
+import { Button, Badge, BookCover } from "@/components/ui";
 import { trpc } from "@/trpc/react-hooks";
+import { Slip } from "./slip";
 import type { Nomination } from "./vote-round-types";
 
 interface DecidedPhaseProps {
@@ -63,72 +56,56 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
 
   return (
     <div data-testid="decided-phase">
-      {/* Winner banner */}
+      {/* The "Now reading" shelf moment — amber wash, centered cover resting
+          on an ink shelf. @spec VOTE-UI-DEC-CTA-MEETING-001, VOTE-UI-DEC-CTA-OPENLIB-001 */}
       {winner && (
-        <div
-          className="rounded-[var(--radius-lg)] border p-8 mb-6 relative overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, oklch(0.96 0.04 75) 0%, oklch(0.94 0.05 30) 100%)",
-            borderColor: "oklch(0.85 0.06 60)",
-          }}
-        >
-          <div className="absolute -top-5 -right-5 text-[200px] opacity-[0.06] font-[var(--font-display)] font-bold leading-none" style={{ color: "oklch(0.45 0.10 30)" }}>
-            ✦
-          </div>
-          <div className="flex flex-col sm:grid sm:grid-cols-[auto_1fr] gap-5 sm:gap-7 sm:items-center relative">
-            <BookCover title={winner.book.title} author={winner.book.author} coverUrl={winner.book.coverUrl} size="xl" />
-            <div>
-              <div className="flex items-center gap-2.5 mb-2">
-                <Badge tone="accent" dot>Winner</Badge>
-                <span className="font-[var(--font-mono)] text-[11px] text-accent-ink">Round winner</span>
-              </div>
-              <h2 className="font-[var(--font-display)] text-[32px] sm:text-[44px] font-semibold leading-tight tracking-tight mb-1 break-words" style={{ color: "oklch(0.25 0.05 60)" }}>
-                {winner.book.title}
-              </h2>
-              <p className="text-base italic mb-4" style={{ color: "oklch(0.40 0.04 60)" }}>
-                by {winner.book.author} · nominated by {winner.nominator.displayName}
-              </p>
-              <div className="flex items-center gap-4 mb-4">
-                <div>
-                  <span className="font-[var(--font-display)] text-[32px] font-semibold leading-none" style={{ color: "oklch(0.25 0.05 60)" }}>
-                    {winner.voteCount ?? 0}
-                  </span>
-                  <span className="text-sm ml-1" style={{ color: "oklch(0.45 0.04 60)" }}>votes</span>
-                </div>
-              </div>
-              {/* @spec VOTE-UI-DEC-CTA-MEETING-001, VOTE-UI-DEC-CTA-OPENLIB-001 */}
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href={`/clubs/${clubId}/meetings`}
-                  data-testid="winner-cta-meeting"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] bg-primary text-bg text-sm font-medium hover:bg-primary-hover transition-colors"
-                >
-                  Set up first meeting
-                </Link>
-                {winner.book.openLibraryId && (
-                  <a
-                    href={`https://openlibrary.org${winner.book.openLibraryId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    data-testid="winner-cta-openlib"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] border border-line-strong text-sm font-medium text-ink hover:bg-bg-soft transition-colors"
-                    style={{ color: "oklch(0.30 0.05 60)" }}
-                  >
-                    View on Open Library
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M7 17L17 7M7 7h10v10" />
-                    </svg>
-                  </a>
-                )}
-              </div>
+        <>
+          <div
+            className="relative overflow-hidden rounded-[var(--radius-lg)] border border-line shadow-md px-4 pt-6 pb-0 text-center"
+            style={{
+              background:
+                "linear-gradient(180deg, var(--color-accent-soft), var(--color-bg-soft) 75%)",
+            }}
+          >
+            <Badge tone="accent" dot>Now reading</Badge>
+            <h2 className="font-[var(--font-display)] text-[23px] font-extrabold leading-tight tracking-tight text-ink mt-2.5 mb-0.5 break-words">
+              {winner.book.title}
+            </h2>
+            <p className="font-[var(--font-serif)] italic text-[15px] text-ink-2 m-0">
+              {winner.book.author} · {winner.voteCount ?? 0} approval vote{(winner.voteCount ?? 0) === 1 ? "" : "s"} · nominated by {winner.nominator.displayName}
+            </p>
+            <div className="flex justify-center mt-3.5">
+              <BookCover title={winner.book.title} author={winner.book.author} coverUrl={winner.book.coverUrl} size="md" />
             </div>
+            {/* the shelf */}
+            <div className="h-3 -mx-4 rounded-t bg-ink shadow-[0_-3px_8px_rgba(96,64,32,0.18)]" />
           </div>
-        </div>
+          <div className="flex gap-2 mt-3 mb-6">
+            <Link
+              href={`/clubs/${clubId}/meetings`}
+              data-testid="winner-cta-meeting"
+              className="flex-1 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 font-[var(--font-display)] text-[13.5px] font-extrabold text-bg shadow-[0_2px_0_var(--color-primary-hover)] hover:bg-primary-hover transition-colors"
+            >
+              Set up first meeting
+            </Link>
+            {winner.book.openLibraryId && (
+              <a
+                href={`https://openlibrary.org${winner.book.openLibraryId}`}
+                target="_blank"
+                rel="noreferrer"
+                data-testid="winner-cta-openlib"
+                className="inline-flex items-center gap-1 justify-center rounded-full bg-bg-soft px-4 py-2 font-[var(--font-display)] text-[13.5px] font-extrabold text-primary shadow-[inset_0_0_0_2px_var(--color-primary-soft)] hover:shadow-[inset_0_0_0_2px_var(--color-primary)] transition-all"
+              >
+                Open Library ↗
+              </a>
+            )}
+          </div>
+        </>
       )}
 
       {/* Final tallies */}
       <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
-        <h3 className="font-[var(--font-display)] text-lg font-semibold">Final tallies</h3>
+        <h3 className="font-[var(--font-display)] text-[19px] font-extrabold">Final tallies</h3>
         {isAdmin && (
           <div className="flex flex-col items-end gap-1.5">
             <Button
@@ -137,7 +114,7 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
               loading={createRound.isPending}
               onClick={handleStartNewRound}
               data-testid="start-new-round-btn"
-              className="group shadow-[0_2px_10px_-2px_oklch(0.42_0.06_195/0.35)] hover:shadow-[0_6px_16px_-4px_oklch(0.42_0.06_195/0.5)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_2px_6px_-2px_oklch(0.42_0.06_195/0.4)]"
+              className="group"
               iconRight={
                 !createRound.isPending && (
                   <svg
@@ -202,33 +179,19 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
         </div>
       )}
 
-      <Card className="divide-y divide-line">
+      {/* @spec DENSITY-VOTE-001 — ranked slips with vote bars stack cleanly
+          at any width; the rank badge marks the winner in amber. */}
+      <div className="flex flex-col gap-2.5">
         {nominations.map((nom, i) => (
-          <div
+          <Slip
             key={nom.id}
-            className={`grid grid-cols-[22px_auto_1fr_auto] md:grid-cols-[40px_auto_1fr_180px_auto] gap-2.5 md:gap-4 items-center px-3 py-3 sm:px-5 sm:py-3.5 ${i === 0 ? "bg-accent-soft" : ""}`}
-          >
-            <span className={`font-[var(--font-mono)] text-sm font-semibold ${i === 0 ? "text-accent-ink" : "text-ink-3"}`}>
-              {i === 0 ? "①" : `0${i + 1}`}
-            </span>
-            <BookCover title={nom.book.title} author={nom.book.author} coverUrl={nom.book.coverUrl} size="md" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-ink truncate">{nom.book.title}</p>
-              <p className="text-xs text-ink-3 italic truncate">by {nom.book.author}</p>
-            </div>
-            <div className="hidden md:block h-1.5 bg-bg-sunken rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full ${i === 0 ? "bg-accent" : "bg-primary"}`}
-                style={{ width: `${((nom.voteCount ?? 0) / maxVotes) * 100}%` }}
-              />
-            </div>
-            <div className="text-right">
-              <span className="font-[var(--font-display)] text-lg font-semibold">{nom.voteCount ?? 0}</span>
-              <span className="text-xs text-ink-3 ml-1 hidden sm:inline">votes</span>
-            </div>
-          </div>
+            nom={nom}
+            rank={i + 1}
+            votes={nom.voteCount ?? 0}
+            maxVotes={maxVotes}
+          />
         ))}
-      </Card>
+      </div>
 
       {error && <p className="text-sm text-danger mt-2">{error}</p>}
     </div>

@@ -50,7 +50,7 @@ export function Step1Identity({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
+          className="w-full text-sm bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft transition-all duration-150"
           autoFocus
         />
       </div>
@@ -64,7 +64,7 @@ export function Step1Identity({
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="e.g. Marisol"
-          className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
+          className="w-full text-sm bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft transition-all duration-150"
         />
         <p className="text-xs text-ink-3 mt-1.5">Visible to other members in the club</p>
       </div>
@@ -79,7 +79,7 @@ export function Step1Identity({
           value={passcode}
           onChange={(e) => setPasscode(e.target.value)}
           placeholder="Shared with the pilot group"
-          className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
+          className="w-full text-sm bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft transition-all duration-150"
         />
       </div>
 

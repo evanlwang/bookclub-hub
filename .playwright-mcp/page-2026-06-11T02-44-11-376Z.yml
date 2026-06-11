@@ -1,0 +1,43 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - main [ref=e4]:
+      - generic [ref=e6]:
+        - button "Wednesday Night Reads owner" [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e12]: Wednesday Night Reads
+          - generic [ref=e13]: owner
+          - img [ref=e14]
+        - button "Copy invite code" [ref=e16]:
+          - generic [ref=e17]: WEDREADS
+          - generic [ref=e18]: Copy
+      - generic [ref=e21]: Loading voting…
+    - navigation "Primary" [ref=e47]:
+      - link "Nook" [ref=e48] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7
+        - img [ref=e50]
+        - generic [ref=e52]: Nook
+      - link "LIVE Voting" [ref=e53] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7/vote
+        - generic [ref=e54]:
+          - img [ref=e55]
+          - generic [ref=e58]: LIVE
+        - generic [ref=e59]: Voting
+      - link "Meetings" [ref=e60] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7/meetings
+        - img [ref=e62]
+        - generic [ref=e65]: Meetings
+      - link "7 Notes" [ref=e66] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7/discussions
+        - generic [ref=e67]:
+          - img [ref=e68]
+          - generic [ref=e70]: "7"
+        - generic [ref=e71]: Notes
+      - link "Progress" [ref=e72] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7/progress
+        - img [ref=e74]
+        - generic [ref=e76]: Progress
+  - button "Open Next.js Dev Tools" [ref=e82] [cursor=pointer]:
+    - img [ref=e83]
+  - alert [ref=e86]

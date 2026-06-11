@@ -61,9 +61,9 @@ describe("ProgressBar — animation", () => {
   });
 
   // @spec COMP-PROGRESS-BAR-008
-  it("animate=false applies a 0.6s width transition", () => {
+  it("animate=false applies a 0.7s width transition", () => {
     const { container } = render(<ProgressBar percentage={40} />);
-    expect(fill(container).style.transition).toMatch(/width\s+0\.6s/);
+    expect(fill(container).style.transition).toMatch(/width\s+0\.7s/);
   });
 });
 

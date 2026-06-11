@@ -240,19 +240,19 @@ export function ClubSidebar({
               ? pathname === basePath
               : pathname.startsWith(href);
           const Icon = item.icon;
-          const showLiveBadge = item.label === "Voting" && hasActiveVote;
+          const showLiveBadge = item.slug === "voting" && hasActiveVote;
           const showRespondBadge =
-            item.label === "Meetings" && hasUnrespondedMeeting;
+            item.slug === "meetings" && hasUnrespondedMeeting;
           // @spec DASH-UI-NAV-UNREAD-001
           const unreadDiscussionsForCurrent =
             (unreadDiscussionCounts[clubId] ?? 0) > 0;
           const showDiscussionsUnread =
-            item.label === "Discussions" && unreadDiscussionsForCurrent;
+            item.slug === "discussions" && unreadDiscussionsForCurrent;
           return (
             <Link
-              key={item.label}
+              key={item.slug}
               href={href}
-              data-testid={`sidebar-nav-${item.label.toLowerCase()}`}
+              data-testid={`sidebar-nav-${item.slug}`}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-md)] text-[clamp(14px,0.3vw+10px,16px)] font-medium transition-colors duration-150 ${
                 isActive
                   ? "bg-primary-soft text-primary-ink"
@@ -262,7 +262,7 @@ export function ClubSidebar({
               <Icon size={16} />
               {item.label}
               {showLiveBadge && (
-                <Badge tone="accent" dot>Live</Badge>
+                <Badge solid dot>Live</Badge>
               )}
               {showRespondBadge && (
                 <span data-testid="sidebar-meetings-badge">

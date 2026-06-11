@@ -4,6 +4,8 @@ export { AvatarStack } from "./avatar-stack";
 export { Badge } from "./badge";
 export { Card } from "./card";
 export { Sheet } from "./sheet";
+export { EarGlyph } from "./ear-glyph";
+export { DateStamp } from "./date-stamp";
 export { BookCover } from "./book-cover";
 export { DateTimePicker } from "./date-time-picker";
 export { ChapterChip } from "./chapter-chip";

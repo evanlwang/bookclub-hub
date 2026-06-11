@@ -11,6 +11,9 @@ import {
 } from "@/components/ui";
 
 export type NavItem = {
+  /** Stable identifier — drives test ids, decoupled from the display label. */
+  slug: string;
+  /** Display label (cozy redesign vocabulary: "Nook", "Notes"). */
   label: string;
   /** href suffix appended to /clubs/{clubId} */
   href: string;
@@ -19,22 +22,24 @@ export type NavItem = {
 };
 
 export const navItems: NavItem[] = [
-  { label: "Dashboard", href: "", icon: BookIcon, adminOnly: false },
-  { label: "Voting", href: "/vote", icon: VoteIcon, adminOnly: false },
-  { label: "Meetings", href: "/meetings", icon: CalendarIcon, adminOnly: false },
-  { label: "Discussions", href: "/discussions", icon: ChatIcon, adminOnly: false },
-  { label: "Progress", href: "/progress", icon: TrendIcon, adminOnly: false },
-  { label: "Members", href: "/members", icon: UsersIcon, adminOnly: true },
+  { slug: "dashboard", label: "Nook", href: "", icon: BookIcon, adminOnly: false },
+  { slug: "voting", label: "Voting", href: "/vote", icon: VoteIcon, adminOnly: false },
+  { slug: "meetings", label: "Meetings", href: "/meetings", icon: CalendarIcon, adminOnly: false },
+  { slug: "discussions", label: "Notes", href: "/discussions", icon: ChatIcon, adminOnly: false },
+  { slug: "progress", label: "Progress", href: "/progress", icon: TrendIcon, adminOnly: false },
+  { slug: "members", label: "Members", href: "/members", icon: UsersIcon, adminOnly: true },
   // @spec CLUB-UI-SETTINGS-001
-  { label: "Settings", href: "/settings", icon: UsersIcon, adminOnly: true },
+  { slug: "settings", label: "Settings", href: "/settings", icon: UsersIcon, adminOnly: true },
 ];
 
-/** Labels rendered directly on the mobile tab bar; the rest live behind "More". */
-export const PRIMARY_TAB_LABELS = [
-  "Dashboard",
-  "Voting",
-  "Meetings",
-  "Discussions",
+/** Slugs rendered directly on the mobile bottom tab bar (the 5 primary
+ *  destinations). Admin items live in the club-switcher header menu instead. */
+export const PRIMARY_TAB_SLUGS = [
+  "dashboard",
+  "voting",
+  "meetings",
+  "discussions",
+  "progress",
 ] as const;
 
 export function isAdminRole(role: string | undefined): boolean {

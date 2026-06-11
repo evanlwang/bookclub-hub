@@ -1,0 +1,170 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - button "Open Next.js Dev Tools" [ref=e35] [cursor=pointer]:
+    - img [ref=e36]
+  - alert [ref=e39]: Wednesday Night Reads · Dogear
+  - generic [ref=e40]:
+    - main [ref=e41]:
+      - generic [ref=e43]:
+        - button "Wednesday Night Reads owner" [ref=e44]:
+          - img [ref=e45]
+          - generic [ref=e49]: Wednesday Night Reads
+          - generic [ref=e50]: owner
+          - img [ref=e51]
+        - button "Copy invite code" [ref=e53]:
+          - generic [ref=e54]: WEDREADS
+          - generic [ref=e55]: Copy
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - paragraph [ref=e59]: 2 things need your attention
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - generic [ref=e62]: Voting is open — you haven't voted yet
+              - link "Cast my vote" [ref=e63] [cursor=pointer]:
+                - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/vote
+            - generic [ref=e64]:
+              - generic [ref=e65]: Meeting awaits your availability
+              - link "Respond to meetings" [ref=e66] [cursor=pointer]:
+                - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/meetings
+        - generic [ref=e67]:
+          - generic [ref=e68]: Now reading
+          - link "Dune by Frank Herbert Dune Frank Herbert · 412 pages 75% Median 2 Finished 1 Not started" [ref=e70] [cursor=pointer]:
+            - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/progress
+            - generic "Dune by Frank Herbert" [ref=e71]:
+              - generic [ref=e72]:
+                - generic [ref=e76]: Dune
+                - generic [ref=e81]: Frank Herbert
+            - generic [ref=e85]:
+              - heading "Dune" [level=2] [ref=e86]
+              - paragraph [ref=e87]:
+                - text: Frank Herbert
+                - generic [ref=e88]: · 412 pages
+              - generic [ref=e89]:
+                - generic [ref=e90]:
+                  - generic [ref=e91]: 75%
+                  - generic [ref=e92]: Median
+                - generic [ref=e93]:
+                  - generic [ref=e94]: "2"
+                  - generic [ref=e95]: Finished
+                - generic [ref=e96]:
+                  - generic [ref=e97]: "1"
+                  - generic [ref=e98]: Not started
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - button "Bob Martinez, 100%" [ref=e103] [cursor=pointer]
+              - button "Carol Park, 100%" [ref=e105] [cursor=pointer]
+              - button "Eve Thompson, 75%" [ref=e107] [cursor=pointer]
+              - button "Alice Chen, 61%" [ref=e109] [cursor=pointer]
+              - button "Dave Singh, 50%" [ref=e111] [cursor=pointer]
+              - button "Frank Wilson, 0%" [ref=e113] [cursor=pointer]
+            - generic [ref=e115]:
+              - generic [ref=e116]: FIRST PAGE
+              - generic [ref=e117]: THE END
+          - paragraph [ref=e118]: Tap a bookmark to see who’s there
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - heading "Active vote" [level=3] [ref=e121]
+            - generic [ref=e123]:
+              - generic [ref=e124]:
+                - generic [ref=e125]: Voting live
+                - generic [ref=e126]: Voting
+              - generic [ref=e132]: 0/2 picks dog-eared
+              - link "Cast my vote" [ref=e133] [cursor=pointer]:
+                - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/vote
+          - generic [ref=e134]:
+            - heading "Next meeting" [level=3] [ref=e135]
+            - link "? TBD Dune — final wrap-up Awaiting responses 5 members responded" [ref=e137] [cursor=pointer]:
+              - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/meetings
+              - generic [ref=e138]:
+                - generic [ref=e139]: "?"
+                - generic [ref=e140]: TBD
+              - generic [ref=e141]:
+                - generic [ref=e142]:
+                  - generic [ref=e143]: Dune — final wrap-up
+                  - generic [ref=e144]: Awaiting responses
+                - paragraph [ref=e145]: 5 members responded
+          - generic [ref=e146]:
+            - heading "Margin notes" [level=3] [ref=e147]
+            - generic [ref=e148]:
+              - list [ref=e149]:
+                - listitem [ref=e150]:
+                  - generic [ref=e151]:
+                    - paragraph [ref=e152]: Drop your favorite lines! No chapter context needed.
+                    - paragraph [ref=e153]: Dave Singh
+                  - generic "2 comments" [ref=e154]: "2"
+                - listitem [ref=e155]:
+                  - generic [ref=e157]: Chapter 10
+                  - generic [ref=e158]:
+                    - paragraph [ref=e159]: Does anyone else feel Paul's visions are a bit much? It feels like he always knows exactly what to do.
+                    - paragraph [ref=e160]: Carol Park
+                  - generic "2 comments" [ref=e161]: "2"
+                - listitem [ref=e162]:
+                  - generic [ref=e164]: Chapter 5
+                  - generic [ref=e165]:
+                    - paragraph [ref=e166]: The swordsmanship training scenes are vivid. Anyone else marking these up?
+                    - paragraph [ref=e167]: Bob Martinez
+                  - generic "0 comments" [ref=e168]: "0"
+              - link "View all →" [ref=e169] [cursor=pointer]:
+                - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/discussions
+        - generic [ref=e170]:
+          - generic [ref=e171]:
+            - heading "Where everyone is" [level=3] [ref=e172]
+            - link "View progress →" [ref=e173] [cursor=pointer]:
+              - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/progress
+          - list [ref=e175]:
+            - listitem [ref=e176]:
+              - generic [ref=e177]: BM
+              - generic [ref=e179]:
+                - generic [ref=e180]: Bob Martinez
+                - generic "Finished" [ref=e181]:
+                  - img [ref=e182]
+              - generic [ref=e186]: 100%
+            - listitem [ref=e187]:
+              - generic [ref=e188]: CP
+              - generic [ref=e190]:
+                - generic [ref=e191]: Carol Park
+                - generic "Finished" [ref=e192]:
+                  - img [ref=e193]
+              - generic [ref=e197]: 100%
+            - listitem [ref=e198]:
+              - generic [ref=e199]: ET
+              - generic [ref=e202]: Eve Thompson
+              - generic [ref=e205]: 75%
+            - listitem [ref=e206]:
+              - generic [ref=e207]: AC
+              - generic [ref=e210]: Alice Chen
+              - generic [ref=e213]: 61%
+            - listitem [ref=e214]:
+              - generic [ref=e215]: DS
+              - generic [ref=e218]: Dave Singh
+              - generic [ref=e221]: 50%
+            - listitem [ref=e222]:
+              - generic [ref=e223]: FW
+              - generic [ref=e226]: Frank Wilson
+              - generic [ref=e228]: 0%
+    - navigation "Primary" [ref=e229]:
+      - link "Nook" [ref=e230] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253
+        - img [ref=e232]
+        - generic [ref=e234]: Nook
+      - link "LIVE Voting" [ref=e235] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/vote
+        - generic [ref=e236]:
+          - img [ref=e237]
+          - generic [ref=e240]: LIVE
+        - generic [ref=e241]: Voting
+      - link "Meetings" [ref=e242] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/meetings
+        - img [ref=e244]
+        - generic [ref=e247]: Meetings
+      - link "7 Notes" [ref=e248] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/discussions
+        - generic [ref=e249]:
+          - img [ref=e250]
+          - generic [ref=e252]: "7"
+        - generic [ref=e253]: Notes
+      - link "Progress" [ref=e254] [cursor=pointer]:
+        - /url: /clubs/4d0c6c38-8ff9-4817-80c2-62b038a1f253/progress
+        - img [ref=e256]
+        - generic [ref=e258]: Progress

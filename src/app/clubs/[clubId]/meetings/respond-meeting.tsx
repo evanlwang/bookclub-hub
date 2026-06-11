@@ -102,10 +102,18 @@ export function RespondMeeting({
     persist(next);
   }
 
-  const statusOptions: { value: ResponseStatus; label: string; color: string }[] = [
-    { value: "available", label: "Available", color: "border-success bg-success-soft text-success" },
-    { value: "maybe", label: "Maybe", color: "border-warning bg-warning-soft text-[oklch(0.45_0.10_70)]" },
-    { value: "unavailable", label: "Can't", color: "border-danger bg-danger-soft text-danger" },
+  // @spec MEET-UI-RSVP-POSTCARD-001 — three-state postcard checkboxes:
+  // dashed-border idle, colored border + tint + ✓?✗ mark when picked.
+  const statusOptions: {
+    value: ResponseStatus;
+    label: string;
+    mark: string;
+    active: string;
+    markColor: string;
+  }[] = [
+    { value: "available", label: "Available", mark: "✓", active: "border-success bg-success-soft text-success", markColor: "border-success text-success" },
+    { value: "maybe", label: "Maybe", mark: "?", active: "border-warning bg-warning-soft text-warning-ink", markColor: "border-warning text-warning-ink" },
+    { value: "unavailable", label: "Can't", mark: "✗", active: "border-danger bg-danger-soft text-danger", markColor: "border-danger text-danger" },
   ];
 
   return (
@@ -114,9 +122,9 @@ export function RespondMeeting({
         {slots.map((slot) => (
           <div
             key={slot.id}
-            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line"
+            className="p-3.5 bg-bg-soft rounded-[var(--radius-md)] border border-line"
           >
-            <div className="text-sm text-ink">
+            <div className="font-[var(--font-display)] text-[14.5px] font-extrabold text-ink">
               {new Date(slot.proposedTime).toLocaleString(undefined, {
                 weekday: "short",
                 month: "short",
@@ -124,25 +132,35 @@ export function RespondMeeting({
                 hour: "numeric",
                 minute: "2-digit",
               })}
-              <span className="text-ink-3 ml-1">({slot.durationMinutes}min)</span>
+              <span className="text-ink-3 font-semibold text-xs ml-1.5">({slot.durationMinutes}min)</span>
             </div>
-            <div className="flex gap-1.5 w-full sm:w-auto">
-              {statusOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setSlotResponse(slot.id, opt.value)}
-                  disabled={submitAvailability.isPending}
-                  data-testid={`slot-${slot.id}-${opt.value}`}
-                  className={`flex-1 sm:flex-none px-2.5 py-2 sm:py-1 text-xs font-medium rounded-[var(--radius-sm)] border transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
-                    responses[slot.id] === opt.value
-                      ? opt.color
-                      : "border-line bg-bg text-ink-3 hover:border-line-strong"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div className="flex gap-2 mt-2.5">
+              {statusOptions.map((opt) => {
+                const active = responses[slot.id] === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setSlotResponse(slot.id, opt.value)}
+                    disabled={submitAvailability.isPending}
+                    data-testid={`slot-${slot.id}-${opt.value}`}
+                    className={`flex flex-1 min-h-[44px] items-center justify-center gap-1.5 rounded-[12px] border-2 px-1 py-2 transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+                      active
+                        ? `${opt.active} scale-[1.03]`
+                        : "border-dashed border-line-strong bg-transparent text-ink-2"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border-2 bg-bg-soft font-[var(--font-display)] text-xs font-black ${
+                        active ? opt.markColor : "border-ink-3 text-transparent"
+                      }`}
+                    >
+                      {active ? opt.mark : ""}
+                    </span>
+                    <span className="font-[var(--font-display)] text-xs font-extrabold">{opt.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}

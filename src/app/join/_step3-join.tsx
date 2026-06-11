@@ -41,7 +41,7 @@ export function Step3Join({
             value={code}
             onChange={(e) => onCodeChange(e.target.value)}
             placeholder="OAKWOOD-7Q"
-            className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150 font-[var(--font-mono)] tracking-[0.08em] uppercase pr-10"
+            className="w-full text-sm bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft transition-all duration-150 font-[var(--font-mono)] tracking-[0.08em] uppercase pr-10"
             autoFocus
           />
           {lookupLoading && <LookupSpinner />}

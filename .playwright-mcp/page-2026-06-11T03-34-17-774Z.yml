@@ -1,0 +1,26 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=e3]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - generic [ref=e10]: Dogear
+    - generic [ref=e73]:
+      - heading "Dusk Til Dawn Readers 528 is live!" [level=2] [ref=e74]
+      - paragraph [ref=e75]: Your library card, freshly stamped.
+      - generic [ref=e77]:
+        - generic [ref=e78]: DOGEAR LENDING LIBRARY
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - generic [ref=e82]: June Park
+            - generic [ref=e83]: Member · Dusk Til Dawn Readers 528
+            - generic [ref=e84]: DUSKTILDAW
+          - generic [ref=e85]:
+            - text: JOINED
+            - text: JUN 10, 2026
+        - paragraph [ref=e87]: Invite code — share it with your members
+        - button "DUSKTILDAW · COPY" [ref=e88] [cursor=pointer]
+      - paragraph [ref=e90]: Opening your reading nook…
+  - button "Open Next.js Dev Tools" [ref=e40] [cursor=pointer]:
+    - img [ref=e41]
+  - alert [ref=e44]

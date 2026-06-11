@@ -5,6 +5,7 @@ import { Card, Badge, BookCover, ProgressBar, Avatar } from "@/components/ui";
 import { medianOfReading } from "@/lib/progress/median";
 import { relativeTimeShort } from "@/lib/progress/relative-time";
 import { UpdateProgressButton } from "./update-modal";
+import { DogEarCorner } from "./bookmark";
 
 // @spec PROG-API-003, PROG-UI-001, PROG-UI-004, PROG-UI-005, PROG-UI-006, PROG-UI-007, PROG-UI-008, PROG-UI-BOOK-001, PROG-UI-BOOK-002, PROG-UI-BOOK-005, PROG-UI-BOOK-006, PROG-UI-BOOK-007, PROG-DASH-MEDIAN-001, PROG-DASH-UPDATED-001, PROG-DASH-UNKNOWN-TOTAL-001
 export default async function ProgressPage({
@@ -105,9 +106,16 @@ export default async function ProgressPage({
   return (
     <div className="w-full max-w-[1600px]">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <h1 className="font-[var(--font-display)] text-2xl font-semibold text-ink tracking-tight">
-          Reading Progress
-        </h1>
+        <div>
+          <h1 className="font-[var(--font-display)] text-[26px] font-extrabold text-primary tracking-tight">
+            Dog-eared pages
+          </h1>
+          {book && (
+            <p className="font-[var(--font-serif)] italic text-sm text-ink-2 mt-0.5">
+              {book.title} · {book.author}
+            </p>
+          )}
+        </div>
         {!isViewingPast && (
           <UpdateProgressButton
             clubId={clubId}
@@ -171,7 +179,8 @@ export default async function ProgressPage({
         </Card>
       ) : (
         <>
-          <Card className="p-6 mb-6">
+          <Card className="relative p-6 mb-6">
+            <DogEarCorner />
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
               <div data-testid="progress-ring" className="relative w-[100px] h-[100px] flex-shrink-0">
                 <svg width="100" height="100" className="-rotate-90">
@@ -201,25 +210,25 @@ export default async function ProgressPage({
                   {finished > 0 && ` · ${finished} finished`}
                 </p>
 
-                <div data-testid="distribution-bar" className="flex rounded-lg overflow-hidden h-3 mb-2 bg-[var(--bg-sunken)]">
+                <div data-testid="distribution-bar" className="flex rounded-full overflow-hidden h-3 mb-2.5 gap-0.5 bg-bg-sunken">
                   {finished > 0 && (
-                    <div style={{ width: `${(finished / progress.length) * 100}%` }} className="bg-[var(--accent,oklch(0.78_0.13_75))]" />
+                    <div style={{ width: `${(finished / progress.length) * 100}%` }} className="bg-accent" />
                   )}
                   {reading > 0 && (
-                    <div style={{ width: `${(reading / progress.length) * 100}%` }} className="bg-[var(--primary,oklch(0.42_0.06_195))]" />
+                    <div style={{ width: `${(reading / progress.length) * 100}%` }} className="bg-primary" />
                   )}
                   {notStarted > 0 && (
-                    <div style={{ width: `${(notStarted / progress.length) * 100}%` }} className="bg-ink-4" />
+                    <div style={{ width: `${(notStarted / progress.length) * 100}%` }} className="bg-bg-sunken" />
                   )}
                 </div>
 
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
                   <span data-testid="legend-finished" className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-sm bg-[var(--accent,oklch(0.78_0.13_75))]" />
+                    <span className="w-2 h-2 rounded-sm bg-accent" />
                     Finished <strong className="text-ink">{finished}</strong>
                   </span>
                   <span data-testid="legend-reading" className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-sm bg-[var(--primary,oklch(0.42_0.06_195))]" />
+                    <span className="w-2 h-2 rounded-sm bg-primary" />
                     Reading <strong className="text-ink">{reading}</strong>
                   </span>
                   <span data-testid="legend-not-started" className="flex items-center gap-1.5">

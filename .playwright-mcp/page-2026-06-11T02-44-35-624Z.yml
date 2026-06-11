@@ -1,0 +1,125 @@
+- generic [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - main [ref=e4]:
+      - generic [ref=e6]:
+        - button "Wednesday Night Reads owner" [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e12]: Wednesday Night Reads
+          - generic [ref=e13]: owner
+          - img [ref=e14]
+        - button "Copy invite code" [ref=e16]:
+          - generic [ref=e17]: WEDREADS
+          - generic [ref=e18]: Copy
+      - generic [ref=e87]:
+        - link "Dashboard" [ref=e88] [cursor=pointer]:
+          - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7
+          - img [ref=e89]
+          - text: Dashboard
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - heading "Recommendation slips" [level=1] [ref=e93]
+            - generic [ref=e94]: Voting open
+          - paragraph [ref=e96]: Dog-ear your favorites
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - generic [ref=e102]: Picks
+              - generic [ref=e106]: 1/2 dog-eared
+              - generic [ref=e107]: 5 of 6 have voted
+            - paragraph [ref=e108]: Approve up to 2 books. Your selections stay private — tallies are revealed when voting closes.
+          - generic [ref=e109]:
+            - button "Project Hail Mary by Andy Weir Project Hail Mary Andy Weir “Fun recent sci-fi” Bob Martinez · 0m ago" [active] [ref=e110] [cursor=pointer]:
+              - generic "Project Hail Mary by Andy Weir" [ref=e111]:
+                - generic [ref=e112]:
+                  - generic [ref=e116]: Project Hail Mary
+                  - generic [ref=e117]: Andy Weir
+              - generic [ref=e121]:
+                - paragraph [ref=e122]: Project Hail Mary
+                - paragraph [ref=e123]: Andy Weir
+                - paragraph [ref=e125]: “Fun recent sci-fi”
+                - generic [ref=e126]:
+                  - generic [ref=e127]: BM
+                  - generic [ref=e128]: Bob Martinez · 0m ago
+            - button "Piranesi by Susanna Clarke Piranesi Susanna Clarke “Mysterious and immersive” Carol Park · 0m ago" [ref=e129] [cursor=pointer]:
+              - generic "Piranesi by Susanna Clarke" [ref=e130]:
+                - generic [ref=e131]:
+                  - generic [ref=e135]: Piranesi
+                  - generic [ref=e136]: Susanna Clarke
+              - generic [ref=e140]:
+                - paragraph [ref=e141]: Piranesi
+                - paragraph [ref=e142]: Susanna Clarke
+                - paragraph [ref=e144]: “Mysterious and immersive”
+                - generic [ref=e145]:
+                  - generic [ref=e146]: CP
+                  - generic [ref=e147]: Carol Park · 0m ago
+            - 'button "Exhalation: Stories by Ted Chiang Exhalation: Stories Ted Chiang “Thought-provoking short stories” Dave Singh · 0m ago" [ref=e148] [cursor=pointer]':
+              - 'generic "Exhalation: Stories by Ted Chiang" [ref=e149]':
+                - generic [ref=e150]:
+                  - generic [ref=e154]: "Exhalation: Stories"
+                  - generic [ref=e155]: Ted Chiang
+              - generic [ref=e159]:
+                - paragraph [ref=e160]: "Exhalation: Stories"
+                - paragraph [ref=e161]: Ted Chiang
+                - paragraph [ref=e163]: “Thought-provoking short stories”
+                - generic [ref=e164]:
+                  - generic [ref=e165]: DS
+                  - generic [ref=e166]: Dave Singh · 0m ago
+          - button "Submit 1 vote" [ref=e199] [cursor=pointer]
+          - generic [ref=e168]:
+            - generic [ref=e170]: Admin actions
+            - generic [ref=e171]:
+              - button "Cancel round" [ref=e172] [cursor=pointer]
+              - button "Close voting & reveal winner" [ref=e173] [cursor=pointer]
+        - list [ref=e174]:
+          - listitem [ref=e175]:
+            - generic [ref=e177]:
+              - generic [ref=e180]: voting
+              - generic [ref=e181]: 6/10/2026
+          - listitem [ref=e182]:
+            - generic [ref=e184]:
+              - generic [ref=e185]:
+                - generic [ref=e187]: decided
+                - generic [ref=e188]: "Winner: Dune"
+              - generic [ref=e189]: 6/10/2026
+          - listitem [ref=e190]:
+            - generic [ref=e192]:
+              - generic [ref=e193]:
+                - generic [ref=e195]: decided
+                - generic [ref=e196]: "Winner: Kindred"
+              - generic [ref=e197]: 6/10/2026
+    - navigation "Primary" [ref=e47]:
+      - link "Nook" [ref=e48] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7
+        - img [ref=e50]
+        - generic [ref=e52]: Nook
+      - link "LIVE Voting" [ref=e53] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7/vote
+        - generic [ref=e54]:
+          - img [ref=e55]
+          - generic [ref=e58]: LIVE
+        - generic [ref=e59]: Voting
+      - link "Meetings" [ref=e60] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7/meetings
+        - img [ref=e62]
+        - generic [ref=e65]: Meetings
+      - link "7 Notes" [ref=e66] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7/discussions
+        - generic [ref=e67]:
+          - img [ref=e68]
+          - generic [ref=e70]: "7"
+        - generic [ref=e71]: Notes
+      - link "Progress" [ref=e72] [cursor=pointer]:
+        - /url: /clubs/92c7c417-857b-4c77-81da-15450b68bde7/progress
+        - img [ref=e74]
+        - generic [ref=e76]: Progress
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - button "Open Next.js Dev Tools":
+                - img
+  - alert [ref=e86]

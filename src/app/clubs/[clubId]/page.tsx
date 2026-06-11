@@ -1,18 +1,11 @@
-// @spec DASH-UI-006, DASH-UI-007, DASH-UI-008, DASH-UI-011, DISC-UI-DASH-FEED-AUTOFILTER-001
-/* eslint-disable no-restricted-syntax --
- * The fading hairline divider (~137), the attention-banner primary-tint gradient (~149),
- * and the currently-reading hero's paper-cream radial wash (~218) are page-private
- * decorative gradients designed for the dashboard's visual rhythm. They are not
- * reused elsewhere and don't belong in the global token set. DSYS-TOKEN-003
- * exemption documented per DASH-UI-007/008 intent.
- */
+// @spec DASH-UI-006, DASH-UI-007, DASH-UI-008, DASH-UI-011, DISC-UI-DASH-FEED-AUTOFILTER-001, DASH-UI-BOOKMARK-EDGE-001
 import { getServerCaller } from "@/trpc/server";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
-import { Card, Badge, BookCover, ProgressBar, ChapterChip, Avatar } from "@/components/ui";
-import { VoteIcon, CalendarIcon, ChatIcon, TrendIcon } from "@/components/ui/icons";
+import { Card, Badge, BookCover, ChapterChip, Avatar, EarGlyph, DateStamp } from "@/components/ui";
 import { deriveSpoilerCutoff } from "@/lib/discussions/spoiler-cutoff";
 import { CopyClubCode } from "./copy-club-code";
+import { BookmarkEdge, type EdgeMember } from "./bookmark-edge";
 
 export default async function ClubDashboard({
   params,
@@ -30,6 +23,8 @@ export default async function ClubDashboard({
   let error = "";
   let hasNotVoted = false;
   let hasPendingMeeting = false;
+  let viewerId = "";
+  let myVoteCount: number | null = null;
 
   try {
     const caller = await getServerCaller();
@@ -48,6 +43,7 @@ export default async function ClubDashboard({
       (r: any) => r.status === "nominating" || r.status === "voting"
     );
     const userId = me.user.id;
+    viewerId = userId;
 
     // Pending-meeting flag is derived server-side now (viewerHasResponded).
     hasPendingMeeting = meetings.some(
@@ -66,7 +62,10 @@ export default async function ClubDashboard({
       // recent-discussions feed never leaks spoilers above the viewer's chapter.
       bookId ? caller.progress.me({ clubId, bookId }) : Promise.resolve(null),
     ]);
-    if (voteCount !== null) hasNotVoted = voteCount === 0;
+    if (voteCount !== null) {
+      hasNotVoted = voteCount === 0;
+      myVoteCount = voteCount;
+    }
 
     // Phase 3: spoiler-cut threads + progress, both depend on cutoff/bookId.
     if (bookId) {
@@ -120,18 +119,29 @@ export default async function ClubDashboard({
   const percentages = progress.map((p: any) => p.percentage ?? 0).sort((a: number, b: number) => a - b);
   const median = percentages.length > 0 ? percentages[Math.floor(percentages.length / 2)] : 0;
   const finished = progress.filter((p: any) => p.status === "finished").length;
-  const reading = progress.filter((p: any) => p.status === "reading").length;
+  const notStarted = progress.filter((p: any) => p.status === "not_started").length;
+
+  // BookmarkEdge data — one bookmark per member at their reading depth.
+  const edgeMembers: EdgeMember[] = progress.map((p: any) => ({
+    userId: p.userId,
+    name: p.user?.displayName ?? "Member",
+    pct: Math.min(Math.max(p.percentage ?? 0, 0), 100),
+    status: (p.status ?? "not_started") as EdgeMember["status"],
+    chapter: p.currentChapter ?? null,
+    you: p.userId === viewerId,
+  }));
 
   return (
     <div className="w-full max-w-[1600px]">
-      {/* Header */}
-      <div className="mb-8">
-        <p className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.18em] mb-2">
-          Club Dashboard
+      {/* Header — desktop only; the mobile club-switcher header carries
+          name/code below md. Kept visible at md+ for the club-name testid. */}
+      <div className="mb-8 hidden md:block">
+        <p className="text-[11px] font-bold font-[var(--font-display)] text-ink-3 uppercase tracking-[0.18em] mb-2">
+          Your reading nook
         </p>
         <div className="flex items-baseline gap-3 flex-wrap">
           <h1
-            className="font-[var(--font-display)] text-[clamp(28px,2.6vw,40px)] font-semibold text-ink tracking-tight leading-none"
+            className="font-[var(--font-display)] text-[clamp(28px,2.6vw,40px)] font-extrabold text-ink tracking-tight leading-none"
             data-testid="club-name"
           >
             {club.name}
@@ -140,203 +150,124 @@ export default async function ClubDashboard({
         <div className="mt-2 flex items-center gap-3">
           <CopyClubCode code={club.code} />
         </div>
-        <div
-          className="mt-5 h-px"
-          style={{
-            background:
-              "linear-gradient(90deg, oklch(0.84 0.01 70) 0%, oklch(0.84 0.01 70 / 0.5) 40%, oklch(0.84 0.01 70 / 0) 100%)",
-          }}
-        />
+        <div className="mt-5 h-px bg-line" />
       </div>
 
-      {/* Attention Banner */}
+      {/* Attention Banner — amber-tint card with per-item CTA rows */}
       {(hasNotVoted || hasPendingMeeting) && (
         <Card
           data-testid="attention-banner"
-          className="p-5 mb-6 border-primary/30"
-          style={{
-            background:
-              "linear-gradient(135deg, oklch(0.96 0.02 195 / 0.4), oklch(0.98 0.005 195 / 0.2))",
-          }}
+          className="p-4 mb-6 bg-warning-soft border-warning/20"
         >
-          <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr_auto] sm:gap-4 sm:items-center">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-ink mb-1">
-                {hasNotVoted && hasPendingMeeting
-                  ? "2 things need your attention"
-                  : "1 thing needs your attention"}
-              </p>
-              <ul className="space-y-0.5">
-                {hasNotVoted && (
-                  <li className="text-xs text-ink-2 flex items-center gap-1.5">
-                    <VoteIcon size={12} className="text-primary shrink-0" />
-                    Voting is open — you haven&apos;t voted yet
-                  </li>
-                )}
-                {hasPendingMeeting && (
-                  <li className="text-xs text-ink-2 flex items-center gap-1.5">
-                    <CalendarIcon size={12} className="text-accent-ink shrink-0" />
-                    Meeting awaits your availability
-                  </li>
-                )}
-              </ul>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-              {hasNotVoted && (
+          <p className="font-[var(--font-display)] font-extrabold text-[14.5px] text-warning-ink mb-2.5">
+            {hasNotVoted && hasPendingMeeting
+              ? "2 things need your attention"
+              : "1 thing needs your attention"}
+          </p>
+          <div className="flex flex-col gap-2">
+            {hasNotVoted && (
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-[var(--font-serif)] text-[14.5px] text-ink">
+                  Voting is open — you haven&apos;t voted yet
+                </span>
                 <Link
                   data-testid="banner-cta-vote"
                   href={`/clubs/${clubId}/vote`}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] bg-primary text-bg text-sm font-medium hover:opacity-90 transition-opacity"
+                  className="inline-flex shrink-0 items-center rounded-full bg-primary px-4 py-1.5 font-[var(--font-display)] text-[13.5px] font-extrabold text-bg shadow-[0_2px_0_var(--color-primary-hover)] hover:bg-primary-hover transition-colors"
                 >
                   Cast my vote
                 </Link>
-              )}
-              {hasPendingMeeting && (
-                /* @spec DASH-UI-BANNER-CTA-MEET-001 */
+              </div>
+            )}
+            {hasPendingMeeting && (
+              /* @spec DASH-UI-BANNER-CTA-MEET-001 */
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-[var(--font-serif)] text-[14.5px] text-ink">
+                  Meeting awaits your availability
+                </span>
                 <Link
                   data-testid="banner-cta-meet"
                   href={`/clubs/${clubId}/meetings`}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-opacity ${
+                  className={`inline-flex shrink-0 items-center rounded-full px-4 py-1.5 font-[var(--font-display)] text-[13.5px] font-extrabold transition-colors ${
                     hasNotVoted
-                      ? "border border-line-strong text-ink hover:bg-bg-soft"
-                      : "bg-primary text-bg hover:opacity-90"
+                      ? "bg-bg-soft text-primary shadow-[inset_0_0_0_2px_var(--color-primary-soft)] hover:shadow-[inset_0_0_0_2px_var(--color-primary)]"
+                      : "bg-primary text-bg shadow-[0_2px_0_var(--color-primary-hover)] hover:bg-primary-hover"
                   }`}
                 >
                   Respond to meetings
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </Card>
       )}
 
-      {/* Currently Reading hero */}
+      {/* Currently Reading hero — bookmark edge replaces the tick overlay
+          @spec DASH-UI-BOOKMARK-EDGE-001 */}
       {currentBook?.book ? (
-        <Card className="p-6 sm:p-7 mb-6 relative overflow-hidden">
-          {/* Subtle paper-cream wash, top-right vignette */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(120% 80% at 100% 0%, oklch(0.97 0.02 75 / 0.45) 0%, transparent 55%)",
-            }}
-          />
-          <div className="relative flex flex-col sm:flex-row gap-5 sm:gap-7">
+        <Card className="p-5 mb-6 relative">
+          <Badge tone="primary" dot>Now reading</Badge>
+          <Link
+            href={`/clubs/${clubId}/progress`}
+            className="flex gap-4 mt-3"
+          >
             <BookCover
               title={currentBook.book.title}
               author={currentBook.book.author}
               coverUrl={currentBook.book.coverUrl}
-              size="lg"
+              size="md"
             />
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.18em] mb-2 flex items-center gap-2">
-                <span className="inline-block w-4 h-px bg-ink-3/60" aria-hidden="true" />
-                Currently Reading
-              </p>
-              <h2 className="font-[var(--font-display)] text-[clamp(20px,2vw,28px)] font-semibold text-ink leading-tight tracking-tight mb-1">
+              <h2 className="font-[var(--font-display)] text-[22px] font-extrabold text-ink leading-tight tracking-tight">
                 {currentBook.book.title}
               </h2>
-              <p className="text-ink-2 text-sm italic mb-4">
-                by {currentBook.book.author}
+              <p className="font-[var(--font-serif)] italic text-ink-2 text-[14.5px]">
+                {currentBook.book.author}
                 {currentBook.book.pageCount && (
                   <span className="text-ink-4 not-italic"> · {currentBook.book.pageCount} pages</span>
                 )}
               </p>
-
-              {/* Progress stats */}
               {progress.length > 0 && (
-                <>
-                  <div className="h-px bg-line my-4" aria-hidden="true" />
-                  <div className="space-y-4">
-                    {/* Labeled stat trio — display numerals, small caps labels */}
-                    <div className="flex flex-wrap gap-x-7 gap-y-2">
-                      <div>
-                        <div className="font-[var(--font-display)] text-2xl font-semibold text-ink leading-none tabular-nums">
-                          {median}<span className="text-ink-3 text-lg">%</span>
-                        </div>
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-ink-3 mt-1.5">
-                          Median
-                        </div>
-                      </div>
-                      <div>
-                        <div className="font-[var(--font-display)] text-2xl font-semibold text-ink leading-none tabular-nums">
-                          {finished}
-                        </div>
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-ink-3 mt-1.5">
-                          Finished
-                        </div>
-                      </div>
-                      <div>
-                        <div className="font-[var(--font-display)] text-2xl font-semibold text-ink leading-none tabular-nums">
-                          {reading}
-                        </div>
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-ink-3 mt-1.5">
-                          Reading
-                        </div>
-                      </div>
+                <div className="flex gap-5 mt-3">
+                  <div>
+                    <div className="font-[var(--font-display)] text-[21px] font-extrabold text-primary leading-none tabular-nums">
+                      {median}%
                     </div>
-
-                    {/* Progress bar with member tick-marks + below-row avatars
-                        @spec DASH-UI-HERO-TICKS-001, DASH-UI-HERO-TOOLTIP-001 */}
-                    <div className="relative">
-                      <div className="relative">
-                        <ProgressBar percentage={median} status="reading" animate />
-                        <div className="absolute inset-0 pointer-events-none">
-                          {progress.map((p: any) => {
-                            const pct = Math.min(Math.max(p.percentage ?? 0, 0), 100);
-                            const name = p.user?.displayName ?? "Member";
-                            const chapter =
-                              p.currentChapter != null
-                                ? `Ch. ${p.currentChapter}`
-                                : `${pct}%`;
-                            return (
-                              <button
-                                key={`tick-${p.userId}`}
-                                type="button"
-                                data-testid={`hero-tick-${p.userId}`}
-                                data-percentage={pct}
-                                title={`${name} — ${chapter}`}
-                                aria-label={`${name} — ${chapter}`}
-                                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-3 rounded-full bg-ink/60 hover:bg-ink hover:w-1.5 hover:h-4 transition-all pointer-events-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                                style={{ left: `${pct}%` }}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                      <div className="relative h-6 mt-1">
-                        {progress.slice(0, 8).map((p: any) => {
-                          const pct = Math.min(Math.max(p.percentage ?? 0, 0), 100);
-                          const name = p.user?.displayName ?? "Member";
-                          const chapter =
-                            p.currentChapter != null
-                              ? `Ch. ${p.currentChapter}`
-                              : `${pct}%`;
-                          return (
-                            <div
-                              key={p.userId}
-                              className="absolute -translate-x-1/2"
-                              style={{ left: `${pct}%` }}
-                              title={`${name} — ${chapter}`}
-                            >
-                              <Avatar name={name} size="sm" />
-                            </div>
-                          );
-                        })}
-                      </div>
+                    <div className="font-[var(--font-display)] text-[10.5px] font-bold uppercase tracking-[0.05em] text-ink-3 mt-1">
+                      Median
                     </div>
                   </div>
-                </>
+                  <div>
+                    <div className="font-[var(--font-display)] text-[21px] font-extrabold text-ink leading-none tabular-nums">
+                      {finished}
+                    </div>
+                    <div className="font-[var(--font-display)] text-[10.5px] font-bold uppercase tracking-[0.05em] text-ink-3 mt-1">
+                      Finished
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-[var(--font-display)] text-[21px] font-extrabold text-ink leading-none tabular-nums">
+                      {notStarted}
+                    </div>
+                    <div className="font-[var(--font-display)] text-[10.5px] font-bold uppercase tracking-[0.05em] text-ink-3 mt-1">
+                      Not started
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
-          </div>
+          </Link>
+
+          {progress.length > 0 && (
+            <>
+              <div className="mt-2">
+                <BookmarkEdge members={edgeMembers} median={median} />
+              </div>
+              <p className="font-[var(--font-serif)] italic text-center text-[13px] text-ink-3 mt-2 mb-0">
+                Tap a bookmark to see who&rsquo;s there
+              </p>
+            </>
+          )}
         </Card>
       ) : (
         <Card className="p-8 mb-6 text-center">
@@ -359,217 +290,195 @@ export default async function ClubDashboard({
         </Card>
       )}
 
-      {/* Three-up grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Preview sections — stacked on mobile, three-up at md */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 mb-6">
         {/* Active Vote */}
-        <Card className="p-5 flex flex-col transition-all hover:border-line-strong hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="flex items-center justify-center w-7 h-7 rounded-[var(--radius-sm)] bg-primary-soft text-primary-ink">
-              <VoteIcon size={14} />
-            </span>
-            <h3 className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.16em]">
-              Active Vote
-            </h3>
-          </div>
-          {activeRound ? (
-            <div className="flex flex-col gap-3 flex-1">
-              <div>
-                <p className="font-[var(--font-display)] text-lg font-semibold text-ink leading-tight capitalize">
-                  {activeRound.status === "nominating" ? "Nominations open" : "Voting live"}
-                </p>
-                <p className="text-xs text-ink-3 mt-1 italic">
-                  {activeRound.status === "nominating"
-                    ? "Suggest a book for the club"
-                    : "Cast up to your approval cap"}
-                </p>
-              </div>
-              <div>
-                <Badge
-                  tone={activeRound.status === "nominating" ? "accent" : "primary"}
-                  dot
+        <section>
+          <h3 className="font-[var(--font-display)] text-[19px] font-extrabold text-ink mb-2.5 px-0.5">
+            Active vote
+          </h3>
+          <Card className="p-4">
+            {activeRound ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-[var(--font-display)] text-[15.5px] font-extrabold text-ink">
+                    {activeRound.status === "nominating" ? "Nominations open" : "Voting live"}
+                  </span>
+                  {activeRound.status === "voting" ? (
+                    <Badge solid dot>Voting</Badge>
+                  ) : (
+                    <Badge tone="accent" dot>Nominating</Badge>
+                  )}
+                </div>
+                {activeRound.status === "voting" && myVoteCount != null && (
+                  <div className="flex items-center gap-2">
+                    <span className="flex gap-1">
+                      {Array.from({
+                        length: activeRound.maxApprovalsPerMember ?? 3,
+                      }).map((_, i) => (
+                        <EarGlyph key={i} filled={i < (myVoteCount ?? 0)} />
+                      ))}
+                    </span>
+                    <span className="font-[var(--font-display)] text-[12.5px] font-bold text-ink-2">
+                      {myVoteCount}/{activeRound.maxApprovalsPerMember ?? 3} picks dog-eared
+                    </span>
+                  </div>
+                )}
+                <Link
+                  href={`/clubs/${clubId}/vote`}
+                  data-testid="nav-vote"
+                  className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 font-[var(--font-display)] text-[13.5px] font-extrabold text-bg shadow-[0_2px_0_var(--color-primary-hover)] hover:bg-primary-hover transition-colors"
                 >
-                  {activeRound.status}
-                </Badge>
+                  {activeRound.status === "nominating" ? "Nominate a book" : "Cast my vote"}
+                </Link>
               </div>
-              <Link
-                href={`/clubs/${clubId}/vote`}
-                className="mt-auto pt-2 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
-                data-testid="nav-vote"
-              >
-                {activeRound.status === "nominating" ? "Nominate a book" : "Cast my vote"}
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 flex-1">
-              <p className="font-[var(--font-display)] text-lg text-ink-2 italic">No active vote</p>
-              <p className="text-xs text-ink-3">Pick the club's next read.</p>
-              <Link
-                href={`/clubs/${clubId}/vote`}
-                className="mt-auto pt-2 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
-                data-testid="nav-vote"
-              >
-                Start a vote
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </Link>
-            </div>
-          )}
-        </Card>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="font-[var(--font-serif)] italic text-[15px] text-ink-2">No active vote</p>
+                <p className="font-[var(--font-display)] text-xs font-semibold text-ink-3">Pick the club&apos;s next read.</p>
+                <Link
+                  href={`/clubs/${clubId}/vote`}
+                  data-testid="nav-vote"
+                  className="mt-1 inline-flex items-center gap-1.5 font-[var(--font-display)] text-sm font-extrabold text-primary hover:underline"
+                >
+                  Start a vote →
+                </Link>
+              </div>
+            )}
+          </Card>
+        </section>
 
         {/* Next Meeting */}
-        <Card className="p-5 flex flex-col transition-all hover:border-line-strong hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="flex items-center justify-center w-7 h-7 rounded-[var(--radius-sm)] bg-accent-soft text-accent-ink">
-              <CalendarIcon size={14} />
-            </span>
-            <h3 className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.16em]">
-              Next Meeting
-            </h3>
-          </div>
-          {nextMeeting ? (
-            <div className="flex flex-col gap-3 flex-1">
-              <div>
-                <p className="font-[var(--font-display)] text-base font-semibold text-ink leading-tight truncate">
-                  {nextMeeting.title}
-                </p>
+        <section>
+          <h3 className="font-[var(--font-display)] text-[19px] font-extrabold text-ink mb-2.5 px-0.5">
+            Next meeting
+          </h3>
+          <Card className="p-4">
+            {nextMeeting ? (
+              <Link
+                href={`/clubs/${clubId}/meetings`}
+                data-testid="nav-meetings"
+                className="flex items-center gap-3.5"
+              >
                 {nextMeeting.confirmedTime ? (
-                  <p className="text-xs text-ink-2 mt-1.5 italic">
-                    {new Date(nextMeeting.confirmedTime).toLocaleDateString(undefined, {
-                      weekday: "long",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                    {" · "}
-                    {new Date(nextMeeting.confirmedTime).toLocaleTimeString(undefined, {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                ) : meetingResponseCount != null ? (
-                  <p className="text-xs text-ink-2 mt-1.5 italic">
-                    {meetingResponseCount} member{meetingResponseCount === 1 ? "" : "s"} responded
-                  </p>
-                ) : null}
-              </div>
-              <div>
-                <Badge
-                  tone={nextMeeting.status === "confirmed" ? "success" : "warning"}
-                  dot
+                  <DateStamp date={nextMeeting.confirmedTime} />
+                ) : (
+                  <div className="w-[58px] shrink-0 -rotate-2 rounded-[12px] border-2 border-dashed border-line-strong py-1.5 text-center text-ink-3">
+                    <div className="font-[var(--font-display)] font-extrabold text-2xl leading-none">?</div>
+                    <div className="font-[var(--font-mono)] text-[9.5px] font-bold tracking-[0.14em] mt-0.5">TBD</div>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-[var(--font-display)] text-[15.5px] font-extrabold text-ink truncate">
+                      {nextMeeting.title}
+                    </span>
+                    <Badge tone={nextMeeting.status === "confirmed" ? "success" : "warning"}>
+                      {nextMeeting.status === "confirmed" ? "Confirmed" : "Awaiting responses"}
+                    </Badge>
+                  </div>
+                  {nextMeeting.confirmedTime ? (
+                    <p className="font-[var(--font-serif)] text-[13.5px] text-ink-2 mt-1">
+                      {new Date(nextMeeting.confirmedTime).toLocaleTimeString(undefined, {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                      {nextMeeting.location ? ` · ${nextMeeting.location}` : ""}
+                    </p>
+                  ) : meetingResponseCount != null ? (
+                    <p className="font-[var(--font-serif)] text-[13.5px] text-ink-2 mt-1">
+                      {meetingResponseCount} member{meetingResponseCount === 1 ? "" : "s"} responded
+                    </p>
+                  ) : null}
+                </div>
+              </Link>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="font-[var(--font-serif)] italic text-[15px] text-ink-2">Nothing scheduled</p>
+                <p className="font-[var(--font-display)] text-xs font-semibold text-ink-3">Propose a few times that work.</p>
+                <Link
+                  href={`/clubs/${clubId}/meetings`}
+                  data-testid="nav-meetings"
+                  className="mt-1 inline-flex items-center gap-1.5 font-[var(--font-display)] text-sm font-extrabold text-primary hover:underline"
                 >
-                  {nextMeeting.status === "confirmed" ? "Confirmed" : "Awaiting responses"}
-                </Badge>
+                  Schedule a meeting →
+                </Link>
               </div>
-              <Link
-                href={`/clubs/${clubId}/meetings`}
-                className="mt-auto pt-2 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
-                data-testid="nav-meetings"
-              >
-                View meetings
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 flex-1">
-              <p className="font-[var(--font-display)] text-lg text-ink-2 italic">Nothing scheduled</p>
-              <p className="text-xs text-ink-3">Propose a few times that work.</p>
-              <Link
-                href={`/clubs/${clubId}/meetings`}
-                className="mt-auto pt-2 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
-                data-testid="nav-meetings"
-              >
-                Schedule a meeting
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </Link>
-            </div>
-          )}
-        </Card>
+            )}
+          </Card>
+        </section>
 
-        {/* Recent Discussions */}
-        <Card className="p-5 flex flex-col transition-all hover:border-line-strong hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="flex items-center justify-center w-7 h-7 rounded-[var(--radius-sm)] bg-bg-sunken text-ink-2">
-              <ChatIcon size={14} />
-            </span>
-            <h3 className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.16em]">
-              Recent Discussions
-            </h3>
-          </div>
-          {threads.length > 0 ? (
-            <ul className="space-y-2.5 flex-1">
-              {threads.map((thread: any) => (
-                <li
-                  key={thread.id}
-                  className="flex items-start gap-2 text-sm min-w-0 py-1 border-b border-line/60 last:border-0"
-                >
-                  {thread.chapterTag && (
-                    <span className="shrink-0 mt-0.5">
-                      <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
-                    </span>
-                  )}
-                  <span className="text-ink truncate min-w-0 flex-1 leading-snug">
-                    {thread.body}
-                  </span>
-                  {thread.commentCount != null && (
-                    <span
-                      className="flex items-center gap-0.5 text-[11px] text-ink-3 shrink-0 tabular-nums"
-                      title={`${thread.commentCount} ${thread.commentCount === 1 ? "comment" : "comments"}`}
-                    >
-                      <ChatIcon size={10} />
-                      {thread.commentCount}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="flex flex-col gap-2 flex-1">
-              <p className="font-[var(--font-display)] text-lg text-ink-2 italic">No discussions yet</p>
-              <p className="text-xs text-ink-3">Start the first thread.</p>
-            </div>
-          )}
-          <Link
-            href={`/clubs/${clubId}/discussions`}
-            className="mt-auto pt-3 inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
-            data-testid="nav-discussions"
-          >
-            View all
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </Link>
-        </Card>
+        {/* Margin notes */}
+        <section>
+          <h3 className="font-[var(--font-display)] text-[19px] font-extrabold text-ink mb-2.5 px-0.5">
+            Margin notes
+          </h3>
+          <Card className="py-1 overflow-hidden flex flex-col">
+            {threads.length > 0 ? (
+              <ul>
+                {threads.map((thread: any, i: number) => (
+                  <li
+                    key={thread.id}
+                    className={`flex items-start gap-2.5 px-4 py-2.5 ${i === 0 ? "" : "border-t border-line"}`}
+                  >
+                    {thread.chapterTag && (
+                      <span className="shrink-0 mt-0.5">
+                        <ChapterChip tag={thread.chapterTag} chapter={thread.chapterNumber} />
+                      </span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-[var(--font-serif)] text-[14.5px] leading-snug text-ink line-clamp-2">
+                        {thread.body}
+                      </p>
+                      {thread.author?.displayName && (
+                        <p className="font-[var(--font-display)] text-[11.5px] font-semibold text-ink-3 mt-0.5">
+                          {thread.author.displayName}
+                        </p>
+                      )}
+                    </div>
+                    {thread.commentCount != null && (
+                      <span
+                        className="shrink-0 rounded-full bg-primary-soft px-2.5 py-0.5 font-[var(--font-display)] text-xs font-extrabold text-primary tabular-nums"
+                        title={`${thread.commentCount} ${thread.commentCount === 1 ? "comment" : "comments"}`}
+                      >
+                        {thread.commentCount}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="flex flex-col gap-1.5 px-4 py-3">
+                <p className="font-[var(--font-serif)] italic text-[15px] text-ink-2">No discussions yet</p>
+                <p className="font-[var(--font-display)] text-xs font-semibold text-ink-3">Start the first thread.</p>
+              </div>
+            )}
+            <Link
+              href={`/clubs/${clubId}/discussions`}
+              data-testid="nav-discussions"
+              className="px-4 py-2.5 border-t border-line font-[var(--font-display)] text-sm font-extrabold text-primary hover:underline"
+            >
+              View all →
+            </Link>
+          </Card>
+        </section>
       </div>
 
       {/* Reading Progress — member roll-call */}
-      <Card className="p-5 transition-all hover:border-line-strong">
-        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center justify-center w-7 h-7 rounded-[var(--radius-sm)] bg-bg-sunken text-ink-2">
-              <TrendIcon size={14} />
-            </span>
-            <h3 className="text-[11px] font-medium text-ink-3 uppercase tracking-[0.16em]">
-              Reading Progress
-            </h3>
-          </div>
+      <section>
+        <div className="flex items-baseline justify-between gap-3 mb-2.5 px-0.5">
+          <h3 className="font-[var(--font-display)] text-[19px] font-extrabold text-ink">
+            Where everyone is
+          </h3>
           <Link
             href={`/clubs/${clubId}/progress`}
             data-testid="nav-progress"
-            className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
+            className="font-[var(--font-display)] text-sm font-extrabold text-primary hover:underline"
           >
-            View progress
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
+            View progress →
           </Link>
         </div>
+      <Card className="p-5">
         {progress.length > 0 ? (
           <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-3">
             {[...progress]
@@ -607,11 +516,12 @@ export default async function ClubDashboard({
               })}
           </ul>
         ) : (
-          <p className="text-ink-3 text-sm italic">
-            No one's logged progress yet.
+          <p className="font-[var(--font-serif)] text-ink-3 text-sm italic">
+            No one&apos;s logged progress yet.
           </p>
         )}
       </Card>
+      </section>
     </div>
   );
 }

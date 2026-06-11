@@ -94,7 +94,7 @@ export function NonePhase({ clubId, isAdmin }: NonePhaseProps) {
         loading={createRound.isPending}
         onClick={handleStartNewRound}
         data-testid="start-new-round-btn"
-        className="group shadow-[0_2px_10px_-2px_oklch(0.42_0.06_195/0.35)] hover:shadow-[0_6px_16px_-4px_oklch(0.42_0.06_195/0.5)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_2px_6px_-2px_oklch(0.42_0.06_195/0.4)]"
+        className="group"
         iconRight={
           !createRound.isPending && (
             <svg

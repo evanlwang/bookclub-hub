@@ -8,16 +8,16 @@ import { Card } from "@/components/ui/card";
 
 describe("Card", () => {
   // @spec COMP-CARD-001
-  it("renders a <div> with bg-bg, border-line, rounded-lg, shadow-sm", () => {
+  it("renders a <div> raised paper surface: bg-bg-soft, border-line, rounded-lg, shadow-md", () => {
     render(<Card data-testid="c">x</Card>);
     const el = screen.getByTestId("c");
     expect(el.tagName).toBe("DIV");
     expect(el).toHaveClass(
-      "bg-bg",
+      "bg-bg-soft",
       "border",
       "border-line",
       "rounded-[var(--radius-lg)]",
-      "shadow-sm",
+      "shadow-md",
     );
   });
 

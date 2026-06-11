@@ -264,7 +264,7 @@ export default function ThreadDetailPage() {
               </div>
             ) : (
               <div
-                className="prose-thread font-[var(--font-display)] text-base text-ink"
+                className="prose-thread font-[var(--font-serif)] text-base text-ink"
                 dangerouslySetInnerHTML={{ __html: renderBodyHtml(thread.body) }}
               />
             )}
@@ -316,7 +316,7 @@ export default function ThreadDetailPage() {
 
           {/* Sticky composer — sits below the comments with elevated shadow */}
           <div
-            className="sticky bottom-0 mt-6 pt-3 pb-3"
+            className="sticky bottom-[calc(64px+env(safe-area-inset-bottom))] md:bottom-0 mt-6 pt-3 pb-3"
             style={{
               background:
                 "linear-gradient(to bottom, transparent, var(--color-bg) 24px)",

@@ -176,7 +176,7 @@ export default function Home() {
 
           {/* Book cover */}
           <div className="absolute bottom-[110px] left-[110px]">
-            <BookCover title="Sea of Tranquility" author="Mandel" variant="teal" size="xl" />
+            <BookCover title="Sea of Tranquility" author="Mandel" variant="terracotta" size="xl" />
           </div>
         </div>
       </section>

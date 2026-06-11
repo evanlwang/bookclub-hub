@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, Badge, BookCover } from "@/components/ui";
+import { Button, Card, Badge, EarGlyph } from "@/components/ui";
 import { successMessage } from "@/lib/voting/prior-votes";
 import { trpc } from "@/trpc/react-hooks";
 import {
@@ -10,6 +10,7 @@ import {
   CancelRoundDialog,
   type ClosePreview,
 } from "./close-voting-dialog";
+import { Slip } from "./slip";
 import type { Nomination } from "./vote-round-types";
 
 interface VotingPhaseProps {
@@ -184,91 +185,54 @@ export function VotingPhase({
     <div data-testid="voting-phase" className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
       {/* Main content */}
       <div className="min-w-0">
-        <div className="flex items-end justify-between gap-4 flex-wrap mb-4">
-          <div className="flex flex-col gap-1">
-            <p className="text-sm text-ink-2">
-              Approve up to {maxApprovals} book{maxApprovals !== 1 ? "s" : ""} you&rsquo;d be happy to read
-            </p>
-            {/* @spec VOTE-UI-PRIOR-VOTES-002 */}
-            {initialVotes.length > 0 && !loading && (
-              <span
-                data-testid="prior-vote-hint"
-                className="text-xs text-ink-3 italic"
-              >
-                You voted previously — tap a book to add or remove it, then save your changes.
-              </span>
-            )}
-          </div>
-          {/* Inline approval pill */}
-          <div
-            data-testid="approval-pill"
-            className="flex items-center gap-2.5 px-3 py-1.5 bg-bg-soft border border-line rounded-full shrink-0"
-          >
-            <span className="text-xs text-ink-3">Picks</span>
-            <span className="flex gap-1">
+        {/* Picks indicator card — EarGlyphs fill as slips get dog-eared.
+            @spec VOTE-UI-EARGLYPH-001 */}
+        <Card data-testid="approval-pill" className="p-3.5 mb-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="font-[var(--font-display)] text-xs font-bold uppercase tracking-[0.05em] text-ink-3">
+              Picks
+            </span>
+            <span className="flex gap-1.5">
               {[...Array(maxApprovals)].map((_, i) => (
-                <span
-                  key={i}
-                  className={`w-3 h-3 rounded-full border-[1.5px] transition-all duration-150 ${
-                    i < selected.length
-                      ? "border-primary bg-primary"
-                      : "border-line-strong bg-transparent"
-                  }`}
-                />
+                <EarGlyph key={i} filled={i < selected.length} size={20} />
               ))}
             </span>
-            <span className="font-[var(--font-mono)] text-[11px] text-ink-2 tabular-nums">
-              {selected.length}/{maxApprovals}
+            <span className="font-[var(--font-display)] text-[15px] font-extrabold text-ink tabular-nums">
+              {selected.length}/{maxApprovals} dog-eared
+            </span>
+            <span className="ml-auto font-[var(--font-display)] text-xs font-bold text-ink-3">
+              {voterCount} of {memberCount} have voted
             </span>
           </div>
-        </div>
+          {/* @spec VOTE-UI-PRIOR-VOTES-002 */}
+          {initialVotes.length > 0 && !loading ? (
+            <p
+              data-testid="prior-vote-hint"
+              className="font-[var(--font-serif)] italic text-[13.5px] text-ink-3 mt-2 mb-0"
+            >
+              You voted previously — tap a book to add or remove it, then save your changes.
+            </p>
+          ) : (
+            <p className="font-[var(--font-serif)] italic text-[13.5px] text-ink-3 mt-2 mb-0">
+              Approve up to {maxApprovals} book{maxApprovals !== 1 ? "s" : ""}. Your selections stay private — tallies are revealed when voting closes.
+            </p>
+          )}
+        </Card>
 
-        <div className="space-y-2.5 mb-6">
+        <div className="space-y-3 mb-6">
           {nominations.map((nom) => {
             const isSelected = selected.includes(nom.id);
             const isMaxed = selected.length >= maxApprovals && !isSelected;
             return (
-              <button
+              <Slip
                 key={nom.id}
-                type="button"
-                onClick={() => toggleSelection(nom.id)}
+                nom={nom}
+                selectable
+                selected={isSelected}
                 disabled={isMaxed}
-                data-testid={`nomination-${nom.id}`}
-                className={`w-full text-left p-4 rounded-[var(--radius-lg)] border transition-all duration-150 cursor-pointer ${
-                  isSelected
-                    ? "border-primary bg-primary-soft shadow-[0_0_0_3px_oklch(0.42_0.06_195/0.12)]"
-                    : isMaxed
-                      ? "border-line bg-bg-soft opacity-50 cursor-not-allowed"
-                      : "border-line bg-bg hover:border-line-strong"
-                }`}
-              >
-                <div className="grid grid-cols-[22px_auto_1fr] gap-4 items-center">
-                  {/* Checkbox */}
-                  <span
-                    className={`w-[22px] h-[22px] rounded-md border-[1.5px] flex items-center justify-center shrink-0 ${
-                      isSelected
-                        ? "border-primary bg-primary text-white"
-                        : "border-line-strong bg-bg"
-                    }`}
-                  >
-                    {isSelected && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12.5l4.5 4.5L19 7" />
-                      </svg>
-                    )}
-                  </span>
-                  {/* Book cover */}
-                  <BookCover title={nom.book.title} author={nom.book.author} coverUrl={nom.book.coverUrl} size="md" />
-                  {/* Content */}
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink">{nom.book.title}</p>
-                    <p className="text-xs text-ink-2 italic mb-1">by {nom.book.author} · nom. {nom.nominator.displayName.split(" ")[0]}</p>
-                    {nom.pitch && (
-                      <p className="text-xs text-ink-2 line-clamp-2">&ldquo;{nom.pitch}&rdquo;</p>
-                    )}
-                  </div>
-                </div>
-              </button>
+                onToggle={() => toggleSelection(nom.id)}
+                testId={`nomination-${nom.id}`}
+              />
             );
           })}
         </div>
@@ -427,7 +391,7 @@ export function VotingPhase({
                   data-filled={filled}
                   className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
                     filled
-                      ? "border-primary bg-primary shadow-[0_0_0_3px_oklch(0.42_0.06_195/0.12)]"
+                      ? "border-primary bg-primary shadow-[0_0_0_3px_var(--color-primary-soft)]"
                       : "border-line-strong bg-transparent"
                   }`}
                 >

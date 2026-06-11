@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ProgressBar, Sheet } from "@/components/ui";
 import { clampPage } from "@/lib/progress/clamp-page";
+import { BookmarkSlider } from "./bookmark";
 import { trpc } from "@/trpc/react-hooks";
 
 type ProgressStatus = "not_started" | "reading" | "finished";
@@ -48,6 +49,10 @@ export function UpdateProgressButton(props: UpdateModalProps) {
     setOpen(false);
     setOverrideProgress(null);
     setToast({ savedPage, previous });
+    // Fire the dog-ear fold reward on the summary card (decoupled listener).
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("dogear:saved"));
+    }
   }
 
   async function handleUndo() {
@@ -89,7 +94,7 @@ export function UpdateProgressButton(props: UpdateModalProps) {
         }}
         data-testid="update-progress-btn"
       >
-        Update My Progress
+        Move my bookmark
       </Button>
       {open && (
         <UpdateModal
@@ -213,15 +218,18 @@ function UpdateModal({
           id="update-progress-title"
           className="font-[var(--font-display)] text-xl font-semibold text-ink mb-6"
         >
-          Update Progress
+          Where did you stop?
         </h2>
+        <p className="font-[var(--font-serif)] italic text-sm text-ink-2 mb-5">
+          {knownPages ? `${totalPages} pages` : "Record your page"}
+        </p>
 
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        <div className="grid grid-cols-3 gap-2 mb-5">
           {(
             [
-              { value: "not_started", label: "Not Started" },
+              { value: "not_started", label: "Not started" },
               { value: "reading", label: "Reading" },
-              { value: "finished", label: "Finished" },
+              { value: "finished", label: "Finished", sub: "fills to 100%" },
             ] as const
           ).map((opt) => (
             <button
@@ -229,82 +237,110 @@ function UpdateModal({
               type="button"
               onClick={() => handleStatusChange(opt.value)}
               data-testid={`status-${opt.value}`}
-              className={`p-3 rounded-[var(--radius-md)] border text-sm font-medium text-center transition-all duration-150 cursor-pointer ${
+              className={`rounded-[var(--radius-md)] border-2 px-1.5 py-2.5 text-center transition-all duration-150 cursor-pointer ${
                 status === opt.value
-                  ? "border-primary bg-primary-soft text-primary-ink"
-                  : "border-line bg-bg-soft text-ink-2 hover:border-line-strong"
+                  ? "border-primary bg-primary-soft scale-[1.02]"
+                  : "border-line bg-bg-soft hover:border-line-strong"
               }`}
             >
-              {opt.label}
+              <span
+                className={`block font-[var(--font-display)] font-extrabold text-[13.5px] ${
+                  status === opt.value ? "text-primary-ink" : "text-ink"
+                }`}
+              >
+                {opt.label}
+              </span>
+              {"sub" in opt && opt.sub && (
+                <span className="block text-[9.5px] font-[var(--font-display)] font-semibold text-ink-3 mt-0.5">
+                  {opt.sub}
+                </span>
+              )}
             </button>
           ))}
         </div>
 
-        <div className="mb-4">
-          <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
-            Current Page
-          </label>
-          <input
-            type="number"
-            min={0}
-            {...(knownPages && { max: totalPages as number })}
-            value={page}
-            onChange={(e) => handlePageChange(Number(e.target.value))}
-            disabled={status === "finished"}
-            data-testid="page-input"
-            className="w-full text-lg font-[var(--font-mono)] bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50"
-          />
+        <div className="flex gap-4 mb-4">
           {knownPages && (
-            <input
-              type="range"
-              min={0}
-              max={totalPages as number}
-              value={page}
-              onChange={(e) => handlePageChange(Number(e.target.value))}
-              disabled={status === "finished"}
-              data-testid="page-slider"
-              aria-label="Current page"
-              className="w-full mt-2.5 h-6 accent-primary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-            />
+            <div className="shrink-0 w-[150px]">
+              <BookmarkSlider
+                pct={percentage}
+                disabled={status === "finished"}
+                onChange={(p) =>
+                  handlePageChange(Math.round((p / 100) * (totalPages as number)))
+                }
+              />
+              <p className="text-center mt-1.5 font-[var(--font-display)] font-bold text-[11px] text-ink-3">
+                Drag the bookmark
+              </p>
+            </div>
           )}
-          <p className="text-xs text-ink-3 mt-1.5">
-            {knownPages
-              ? `of ${totalPages} pages`
-              : "Unknown total — record page only"}
-          </p>
+
+          <div className="flex-1 flex flex-col gap-3">
+            <div>
+              <label className="block font-[var(--font-display)] text-xs font-bold text-ink-2 mb-1">
+                Page
+              </label>
+              <input
+                type="number"
+                min={0}
+                {...(knownPages && { max: totalPages as number })}
+                value={page}
+                onChange={(e) => handlePageChange(Number(e.target.value))}
+                disabled={status === "finished"}
+                data-testid="page-input"
+                className="w-full text-lg font-[var(--font-mono)] font-bold bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft disabled:opacity-50"
+              />
+              {/* Visually hidden native range — keeps the control keyboard- and
+                  test-accessible; the bookmark slider is the visible affordance. */}
+              {knownPages && (
+                <input
+                  type="range"
+                  min={0}
+                  max={totalPages as number}
+                  value={page}
+                  onChange={(e) => handlePageChange(Number(e.target.value))}
+                  disabled={status === "finished"}
+                  data-testid="page-slider"
+                  aria-label="Current page"
+                  className="sr-only"
+                />
+              )}
+            </div>
+            <div>
+              <label className="block font-[var(--font-display)] text-xs font-bold text-ink-2 mb-1">
+                Chapter <span className="font-semibold text-ink-3">(optional)</span>
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={chapter || ""}
+                onChange={(e) => setChapter(Number(e.target.value))}
+                data-testid="chapter-input"
+                placeholder="—"
+                className="w-full text-base font-[var(--font-mono)] font-bold bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft"
+              />
+            </div>
+            <p className="font-[var(--font-display)] text-[11px] font-semibold leading-snug text-ink-3">
+              Your chapter sets what discussions you see — notes past it stay tucked away.
+            </p>
+          </div>
         </div>
 
         <div
           data-testid="progress-preview-bar"
           data-percentage={percentage}
           data-status={status}
-          className="mb-4 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line"
+          className="mb-4 flex items-center gap-3"
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-ink-2">Progress</span>
-            <span
-              data-testid="percentage-display"
-              className="text-lg font-semibold text-ink font-[var(--font-mono)]"
-            >
-              {percentage}%
-            </span>
+          <div className="flex-1">
+            <ProgressBar percentage={percentage} status={status as ProgressStatus} />
           </div>
-          <ProgressBar percentage={percentage} status={status as ProgressStatus} />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-[13px] font-medium text-ink-2 mb-1.5">
-            Chapter (optional)
-          </label>
-          <input
-            type="number"
-            min={0}
-            value={chapter || ""}
-            onChange={(e) => setChapter(Number(e.target.value))}
-            data-testid="chapter-input"
-            placeholder="—"
-            className="w-24 text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2 text-ink text-center focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-          />
+          <span
+            data-testid="percentage-display"
+            className="font-[var(--font-display)] font-extrabold text-base text-primary min-w-[42px] text-right"
+          >
+            {percentage}%
+          </span>
         </div>
 
         {currentProgress?.updatedAt && (
@@ -332,8 +368,9 @@ function UpdateModal({
             loading={loading}
             onClick={handleSave}
             data-testid="save-progress-btn"
+            className="flex-1"
           >
-            Save Progress
+            Save my place
           </Button>
         </div>
     </Sheet>
@@ -373,15 +410,16 @@ function SavedToast({
       data-testid="progress-saved-toast"
       role="status"
       // @spec TOUCH-TOAST-001 — lift above the mobile tab bar on phones.
-      className="fixed bottom-[calc(56px+env(safe-area-inset-bottom)+0.75rem)] md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-[var(--radius-lg)] border border-line bg-bg shadow-lg animate-slide-up"
+      // Cozy redesign: dark ink card, paper text, amber Undo, springy pop-in.
+      className="fixed bottom-[calc(64px+env(safe-area-inset-bottom)+0.75rem)] md:bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-4 py-3 rounded-2xl bg-ink text-bg shadow-lg animate-toast-pop"
     >
-      <span className="text-sm text-ink">{message}</span>
+      <span className="font-[var(--font-display)] font-bold text-sm">{message}</span>
       {canUndo && (
         <button
           type="button"
           onClick={onUndo}
           data-testid="progress-undo-btn"
-          className="text-sm font-medium text-primary hover:text-primary-ink transition-colors"
+          className="font-[var(--font-display)] font-extrabold text-sm text-accent hover:text-accent-hover transition-colors"
         >
           Undo
         </button>
@@ -390,7 +428,7 @@ function SavedToast({
         type="button"
         onClick={onDismiss}
         aria-label="Dismiss"
-        className="text-ink-3 hover:text-ink transition-colors text-sm leading-none"
+        className="text-bg/60 hover:text-bg transition-colors text-sm leading-none"
       >
         ×
       </button>

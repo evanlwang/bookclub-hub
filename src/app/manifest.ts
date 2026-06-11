@@ -12,8 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Book club coordination without the group-chat sprawl.",
     start_url: "/",
     display: "standalone",
-    background_color: "#faf8f3",
-    theme_color: "#faf8f3",
+    background_color: "#F7F0E2",
+    theme_color: "#F7F0E2",
     icons: [
       { src: "/icon.svg", type: "image/svg+xml", sizes: "any" },
       { src: "/icons/icon-192.png", type: "image/png", sizes: "192x192", purpose: "any" },
