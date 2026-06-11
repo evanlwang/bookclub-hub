@@ -57,7 +57,7 @@ export function Step3Create({
           value={clubName}
           onChange={(e) => setClubName(e.target.value)}
           placeholder="e.g. Slow Reads, Oakwood Library Society"
-          className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
+          className="w-full text-sm bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft transition-all duration-150"
           autoFocus
         />
       </div>

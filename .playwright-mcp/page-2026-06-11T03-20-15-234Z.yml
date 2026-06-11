@@ -1,0 +1,58 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - button "Wednesday Night Reads 3 clubs" [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e11]:
+            - generic "Wednesday Night Reads" [ref=e12]
+            - generic [ref=e13]: 3 clubs
+          - img [ref=e15]
+        - generic [ref=e17]:
+          - generic [ref=e18]: owner
+          - button "Copy invite code" [ref=e19]:
+            - generic [ref=e20]: WEDREADS
+            - img [ref=e21]
+      - navigation [ref=e24]:
+        - link "Dashboard" [ref=e25] [cursor=pointer]:
+          - /url: /clubs/d17987df-864e-409e-b360-e5f4bf3f6b51
+          - img [ref=e26]
+          - text: Dashboard
+        - link "Voting Live" [ref=e29] [cursor=pointer]:
+          - /url: /clubs/d17987df-864e-409e-b360-e5f4bf3f6b51/vote
+          - img [ref=e30]
+          - text: Voting
+          - generic [ref=e33]: Live
+        - link "Meetings Respond" [ref=e35] [cursor=pointer]:
+          - /url: /clubs/d17987df-864e-409e-b360-e5f4bf3f6b51/meetings
+          - img [ref=e36]
+          - text: Meetings
+          - generic [ref=e40]: Respond
+        - link "Discussions 7" [ref=e42] [cursor=pointer]:
+          - /url: /clubs/d17987df-864e-409e-b360-e5f4bf3f6b51/discussions
+          - img [ref=e43]
+          - text: Discussions
+          - generic [ref=e46]: "7"
+        - link "Progress" [ref=e48] [cursor=pointer]:
+          - /url: /clubs/d17987df-864e-409e-b360-e5f4bf3f6b51/progress
+          - img [ref=e49]
+          - text: Progress
+        - link "Members" [ref=e52] [cursor=pointer]:
+          - /url: /clubs/d17987df-864e-409e-b360-e5f4bf3f6b51/members
+          - img [ref=e53]
+          - text: Members
+        - link "Settings" [ref=e58] [cursor=pointer]:
+          - /url: /clubs/d17987df-864e-409e-b360-e5f4bf3f6b51/settings
+          - img [ref=e59]
+          - text: Settings
+      - generic [ref=e65]:
+        - generic [ref=e66]: AC
+        - generic [ref=e67]: Alice Chen
+        - button "Sign out" [ref=e68]
+    - main [ref=e69]:
+      - generic [ref=e71]: Loading dashboard…
+  - button "Open Next.js Dev Tools" [ref=e101] [cursor=pointer]:
+    - img [ref=e102]
+  - alert [ref=e105]

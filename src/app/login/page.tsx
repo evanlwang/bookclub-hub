@@ -94,11 +94,11 @@ export default function LoginPage() {
 
       <div className="flex-1 flex items-start justify-center px-4 py-10">
         <Card className="w-full max-w-[420px] p-8">
-          <h1 className="font-[var(--font-display)] text-[28px] font-semibold text-ink mb-1.5">
+          <h1 className="font-[var(--font-display)] text-[28px] font-extrabold text-primary mb-1.5">
             Welcome back
           </h1>
-          <p className="text-ink-3 text-[14px] mb-6">
-            Enter your email to jump back into your clubs.
+          <p className="font-[var(--font-serif)] italic text-ink-2 text-[15px] mb-6">
+            No password — just you.
           </p>
 
           <div className="space-y-4">
@@ -118,7 +118,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 aria-invalid={showEmailFormatError || undefined}
                 aria-describedby={showEmailFormatError ? "email-error" : undefined}
-                className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
+                className="w-full text-sm bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft transition-all duration-150"
                 autoFocus
               />
               {showEmailFormatError && (
@@ -146,7 +146,7 @@ export default function LoginPage() {
                 }}
                 placeholder="Shared with the pilot group"
                 autoComplete="current-password"
-                className="w-full text-sm bg-bg border border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/15 transition-all duration-150"
+                className="w-full text-sm bg-bg-soft border-2 border-line-strong rounded-[var(--radius-md)] px-3 py-2.5 text-ink placeholder:text-ink-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-soft transition-all duration-150"
               />
               {/* @spec AUTH-UI-LOGIN-PASSCODE-HINT-001 */}
               <p className="text-xs text-ink-3 mt-1.5">

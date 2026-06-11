@@ -366,6 +366,7 @@ function JoinPageInner() {
               path={path}
               successClubName={successClubName}
               successClubCode={successClubCode}
+              memberName={displayName}
               onCopyCode={copyToClipboard}
             />
           )}

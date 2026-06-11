@@ -28,7 +28,11 @@ test.describe("Multi-Club Switching", () => {
     await page.getByRole("link", { name: /Sci-Fi Explorers/i }).click();
 
     await expect(page).toHaveURL(`/clubs/${sciFi.id}`);
-    await expect(page.getByTestId("club-name")).toContainText("Sci-Fi Explorers");
+    // Rendered-h1 assertion — see ui-interactions.spec.ts note on dev-mode
+    // stale segments briefly duplicating the club-name testid.
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Sci-Fi Explorers" }),
+    ).toBeVisible();
   });
 
   test("club dashboard shows navigation to all sections", async ({ page }) => {

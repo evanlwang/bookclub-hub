@@ -1,0 +1,173 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - button "Open Next.js Dev Tools" [ref=e73] [cursor=pointer]:
+    - img [ref=e74]
+  - alert [ref=e361]: Sci-Fi Explorers · Dogear
+  - generic [ref=e388]:
+    - complementary [ref=e389]:
+      - generic [ref=e390]:
+        - button "Sci-Fi Explorers 3 clubs" [ref=e391]:
+          - img [ref=e392]
+          - generic [ref=e396]:
+            - generic "Sci-Fi Explorers" [ref=e397]
+            - generic [ref=e398]: 3 clubs
+          - img [ref=e400]
+        - generic [ref=e402]:
+          - generic [ref=e403]: member
+          - button "Copy invite code" [ref=e404]:
+            - generic [ref=e405]: SCIFI42
+            - img [ref=e406]
+      - navigation [ref=e409]:
+        - link "Dashboard" [ref=e410] [cursor=pointer]:
+          - /url: /clubs/b39a69fb-f437-49f6-bb64-225bf464536e
+          - img [ref=e411]
+          - text: Dashboard
+        - link "Voting Live" [ref=e414] [cursor=pointer]:
+          - /url: /clubs/b39a69fb-f437-49f6-bb64-225bf464536e/vote
+          - img [ref=e415]
+          - text: Voting
+          - generic [ref=e418]: Live
+        - link "Meetings" [ref=e420] [cursor=pointer]:
+          - /url: /clubs/b39a69fb-f437-49f6-bb64-225bf464536e/meetings
+          - img [ref=e421]
+          - text: Meetings
+        - link "Discussions 2" [ref=e424] [cursor=pointer]:
+          - /url: /clubs/b39a69fb-f437-49f6-bb64-225bf464536e/discussions
+          - img [ref=e425]
+          - text: Discussions
+          - generic [ref=e428]: "2"
+        - link "Progress" [ref=e430] [cursor=pointer]:
+          - /url: /clubs/b39a69fb-f437-49f6-bb64-225bf464536e/progress
+          - img [ref=e431]
+          - text: Progress
+      - generic [ref=e435]:
+        - generic [ref=e436]: AC
+        - generic [ref=e437]: Alice Chen
+        - button "Sign out" [ref=e438]
+    - main [ref=e439]:
+      - generic [ref=e440]:
+        - generic [ref=e441]:
+          - paragraph [ref=e442]: Club Dashboard
+          - heading "Sci-Fi Explorers" [level=1] [ref=e444]
+          - paragraph [ref=e446]:
+            - generic [ref=e447]: "Code: SCIFI42"
+            - button "Copy invite code" [ref=e448]:
+              - img [ref=e449]
+              - text: Copy
+        - generic [ref=e454]:
+          - generic "Project Hail Mary by Andy Weir" [ref=e455]:
+            - generic [ref=e456]:
+              - generic [ref=e460]: Project Hail Mary
+              - generic [ref=e465]: Andy Weir
+          - generic [ref=e469]:
+            - paragraph [ref=e470]: Currently Reading
+            - heading "Project Hail Mary" [level=2] [ref=e472]
+            - paragraph [ref=e473]:
+              - text: by Andy Weir
+              - generic [ref=e474]: · 476 pages
+            - generic [ref=e476]:
+              - generic [ref=e477]:
+                - generic [ref=e478]:
+                  - generic [ref=e479]: 50%
+                  - generic [ref=e480]: Median
+                - generic [ref=e481]:
+                  - generic [ref=e482]: "1"
+                  - generic [ref=e483]: Finished
+                - generic [ref=e484]:
+                  - generic [ref=e485]: "3"
+                  - generic [ref=e486]: Reading
+              - generic [ref=e487]:
+                - generic [ref=e488]:
+                  - progressbar [ref=e489]
+                  - generic:
+                    - button "Bob Martinez — Ch. 30" [ref=e491]
+                    - button "Alice Chen — Ch. 14" [ref=e492]
+                    - button "Dave Singh — Ch. 7" [ref=e493]
+                    - button "Grace Lee — Ch. 3" [ref=e494]
+                - generic [ref=e495]:
+                  - generic "Bob Martinez — Ch. 30" [ref=e496]:
+                    - generic [ref=e497]: BM
+                  - generic "Alice Chen — Ch. 14" [ref=e498]:
+                    - generic [ref=e499]: AC
+                  - generic "Dave Singh — Ch. 7" [ref=e500]:
+                    - generic [ref=e501]: DS
+                  - generic "Grace Lee — Ch. 3" [ref=e502]:
+                    - generic [ref=e503]: GL
+        - generic [ref=e504]:
+          - generic [ref=e505]:
+            - generic [ref=e506]:
+              - img [ref=e508]
+              - heading "Active Vote" [level=3] [ref=e511]
+            - generic [ref=e512]:
+              - generic [ref=e513]:
+                - paragraph [ref=e514]: Nominations open
+                - paragraph [ref=e515]: Suggest a book for the club
+              - generic [ref=e517]: nominating
+              - link "Nominate a book" [ref=e519] [cursor=pointer]:
+                - /url: /clubs/b39a69fb-f437-49f6-bb64-225bf464536e/vote
+                - text: Nominate a book
+                - img [ref=e520]
+          - generic [ref=e522]:
+            - generic [ref=e523]:
+              - img [ref=e525]
+              - heading "Next Meeting" [level=3] [ref=e528]
+            - generic [ref=e529]:
+              - generic [ref=e530]:
+                - paragraph [ref=e531]: Hail Mary — opening discussion
+                - paragraph [ref=e532]: Thursday, Jun 18 · 11:17 PM
+              - generic [ref=e534]: Confirmed
+              - link "View meetings" [ref=e536] [cursor=pointer]:
+                - /url: /clubs/b39a69fb-f437-49f6-bb64-225bf464536e/meetings
+                - text: View meetings
+                - img [ref=e537]
+          - generic [ref=e539]:
+            - generic [ref=e540]:
+              - img [ref=e542]
+              - heading "Recent Discussions" [level=3] [ref=e544]
+            - list [ref=e545]:
+              - listitem [ref=e546]:
+                - generic [ref=e548]: Chapter 12
+                - generic [ref=e549]: I won't spoil but… that scene 😭
+                - generic "0 comments" [ref=e550]:
+                  - img [ref=e551]
+                  - text: "0"
+              - listitem [ref=e553]:
+                - generic [ref=e555]: Chapter 4
+                - generic [ref=e556]: I went back and forth on the structure.
+                - generic "1 comment" [ref=e557]:
+                  - img [ref=e558]
+                  - text: "1"
+            - link "View all" [ref=e560] [cursor=pointer]:
+              - /url: /clubs/b39a69fb-f437-49f6-bb64-225bf464536e/discussions
+              - text: View all
+              - img [ref=e561]
+        - generic [ref=e563]:
+          - generic [ref=e564]:
+            - generic [ref=e565]:
+              - img [ref=e567]
+              - heading "Reading Progress" [level=3] [ref=e570]
+            - link "View progress" [ref=e571] [cursor=pointer]:
+              - /url: /clubs/b39a69fb-f437-49f6-bb64-225bf464536e/progress
+              - text: View progress
+              - img [ref=e572]
+          - list [ref=e574]:
+            - listitem [ref=e575]:
+              - generic [ref=e576]: BM
+              - generic [ref=e578]:
+                - generic [ref=e579]: Bob Martinez
+                - generic "Finished" [ref=e580]:
+                  - img [ref=e581]
+              - generic [ref=e585]: 100%
+            - listitem [ref=e586]:
+              - generic [ref=e587]: AC
+              - generic [ref=e590]: Alice Chen
+              - generic [ref=e593]: 50%
+            - listitem [ref=e594]:
+              - generic [ref=e595]: DS
+              - generic [ref=e598]: Dave Singh
+              - generic [ref=e601]: 25%
+            - listitem [ref=e602]:
+              - generic [ref=e603]: GL
+              - generic [ref=e606]: Grace Lee
+              - generic [ref=e609]: 10%
