@@ -47,6 +47,14 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 - `[x]` **DENSITY-VOTE-001**: The voting results leaderboard SHALL collapse its multi-column grid to a stacked layout below `md`. (`src/app/clubs/[clubId]/vote/decided-phase.tsx`)
 - `[x]` **DENSITY-VOTE-002**: Nomination cards SHALL keep their title legible on the narrowest screens by stacking or shrinking the cover. (`src/app/clubs/[clubId]/vote/nominating-phase.tsx`)
 
+## Cozy redesign (handoff: design_handoff_dogear_redesign/)
+
+- `[x]` **COMP-BADGE-SOLID-001**: Badge SHALL support a `solid` style (terracotta fill, cream text) for the LIVE emphasis. (`src/components/ui/badge.tsx`)
+- `[x]` **COMP-BADGE-INK-001**: Badge SHALL support an `ink` tone (dark fill) for stamps/dark surfaces. (`src/components/ui/badge.tsx`)
+- `[x]` **NAV-MOBILE-HEADER-001**: A mobile-only sticky header SHALL show the Dogear glyph + club name/role and open the club menu (switch/admin/sign-out), with a dashed mono invite-code chip. (`src/app/clubs/[clubId]/mobile-club-header.tsx`)
+- `[x]` **PROG-UI-DOGEAR-001**: Saving progress SHALL trigger a folded-corner "dog-ear" reward animation on the progress summary card. (`src/app/clubs/[clubId]/progress/bookmark.tsx`)
+- `[x]` **PROG-UI-BOOKMARK-SLIDER-001**: The update sheet SHALL present a draggable page-edge bookmark slider, bidirectionally synced with the page input and keyboard-accessible. (`src/app/clubs/[clubId]/progress/bookmark.tsx`)
+
 ## Touch & feel polish
 
 - `[x]` **TOUCH-BTN-001**: On coarse pointers, all button sizes SHALL meet a ≥44px touch-target floor without changing fine-pointer (desktop) density. (`src/components/ui/button.tsx`)

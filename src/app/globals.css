@@ -118,6 +118,18 @@
   to { transform: translateY(0); }
 }
 
+/* Cozy redesign signature motion (Phase 3) */
+@keyframes dogear-fold {
+  0% { transform: scale(0) rotate(-12deg); opacity: 0; }
+  55% { transform: scale(1.25) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes toast-pop {
+  from { transform: translateY(16px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
 .bar-anim {
   transform-origin: left center;
   animation: bar-fill 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -137,6 +149,14 @@
 
 .animate-sheet-up {
   animation: sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-dogear-fold {
+  animation: dogear-fold 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.animate-toast-pop {
+  animation: toast-pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* @spec MOBILE-BASE-002 — safe-area helpers for fixed top/bottom chrome
