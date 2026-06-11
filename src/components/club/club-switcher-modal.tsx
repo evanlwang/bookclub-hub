@@ -1,11 +1,9 @@
 // @spec CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-002, CLUB-NAV-MODAL-003, CLUB-NAV-MODAL-004, CLUB-NAV-MODAL-005, CLUB-NAV-MODAL-006, CLUB-NAV-MODAL-007, CLUB-NAV-MODAL-008
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, CheckIcon } from "@/components/ui";
-import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { Button, CheckIcon, Sheet } from "@/components/ui";
 import { trpc } from "@/trpc/react-hooks";
 
 type Tab = "join" | "create";
@@ -43,9 +41,6 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
 
   // Created success state (shown inside create tab after successful creation)
   const [createdClub, setCreatedClub] = useState<{ id: string; name: string; code: string } | null>(null);
-
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  useFocusTrap(dialogRef, isOpen);
 
   // @spec CLUB-NAV-MODAL-001
   // Debounced lookup driven by `debouncedCode`. `enabled` keeps the query
@@ -112,17 +107,6 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
     reset();
     onClose();
   }
-
-  // Escape to close
-  useEffect(() => {
-    if (!isOpen) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") handleClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, inFlight, createdClub]);
 
   // Debounced join lookup: bump `debouncedCode` 300ms after the user stops
   // typing. `useQuery` keys on this and cancels stale requests automatically.
@@ -254,23 +238,16 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
   }
 
   if (!isOpen) return null;
-  if (typeof document === "undefined") return null;
 
-  return createPortal(
-    <div
-      ref={dialogRef}
-      data-testid="club-switcher-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="club-switcher-modal-title"
-      tabIndex={-1}
-      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
-      onClick={handleClose}
+  return (
+    <Sheet
+      open={isOpen}
+      onClose={handleClose}
+      dismissible={!inFlight}
+      labelledById="club-switcher-modal-title"
+      testId="club-switcher-modal"
+      desktopMaxWidth="md:max-w-[480px]"
     >
-      <Card
-        className="w-full max-w-[480px] bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className="flex items-center justify-between mb-5">
           <h2
             id="club-switcher-modal-title"
@@ -547,8 +524,6 @@ export function ClubSwitcherModal({ isOpen, onClose }: ClubSwitcherModalProps) {
             )}
           </>
         )}
-      </Card>
-    </div>,
-    document.body
+    </Sheet>
   );
 }

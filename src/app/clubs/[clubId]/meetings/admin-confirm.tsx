@@ -36,7 +36,7 @@ interface AdminConfirmSectionProps {
   onUpdated?: (next: MeetingEditableFields) => void;
 }
 
-// @spec MEET-UI-CONFIRM-BTN-001, MEET-UI-CONFIRM-HEATMAP-001, MEET-UI-CONFIRM-BADGE-001, MEET-UI-CANCEL-BTN-001, MEET-UI-EDIT-BTN-001
+// @spec MEET-UI-CONFIRM-BTN-001, MEET-UI-CONFIRM-HEATMAP-001, MEET-UI-CONFIRM-BADGE-001, MEET-UI-CANCEL-BTN-001, MEET-UI-EDIT-BTN-001, DENSITY-MEET-001
 export function AdminConfirmSection({
   clubId,
   meetingId,
@@ -194,12 +194,19 @@ export function AdminConfirmSection({
 
       {responders.length > 0 && (
         <div className="mt-4">
-          <p className="text-xs text-ink-3 mb-2">Per-member availability</p>
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="text-xs text-ink-3">Per-member availability</p>
+            {slots.length > 3 && (
+              <p className="text-[11px] text-ink-3 md:hidden">scroll →</p>
+            )}
+          </div>
+          {/* @spec DENSITY-MEET-001 — matrix stays scroll-contained; the member
+              column is pinned so names stay readable while slots scroll. */}
           <div data-testid="availability-heatmap" className="overflow-x-auto">
             <table className="text-xs">
               <thead>
                 <tr>
-                  <th className="text-left text-ink-3 font-normal pr-3 pb-1.5">
+                  <th className="sticky left-0 z-10 bg-bg text-left text-ink-3 font-normal pr-3 pb-1.5">
                     Member
                   </th>
                   {slots.map((slot, i) => (
@@ -215,7 +222,7 @@ export function AdminConfirmSection({
               <tbody>
                 {responders.map((r) => (
                   <tr key={r.userId}>
-                    <td className="pr-3 py-1 text-ink-2 truncate max-w-[120px]">
+                    <td className="sticky left-0 z-10 bg-bg pr-3 py-1 text-ink-2 truncate max-w-[120px]">
                       {r.displayName}
                     </td>
                     {slots.map((slot) => {

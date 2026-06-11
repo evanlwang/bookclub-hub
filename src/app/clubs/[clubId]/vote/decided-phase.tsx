@@ -21,7 +21,7 @@ interface DecidedPhaseProps {
   isAdmin: boolean;
 }
 
-// @spec VOTE-UI-001, VOTE-UI-005, VOTE-API-002, VOTE-API-003
+// @spec VOTE-UI-001, VOTE-UI-005, VOTE-API-002, VOTE-API-003, DENSITY-VOTE-001
 export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -82,7 +82,7 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
                 <Badge tone="accent" dot>Winner</Badge>
                 <span className="font-[var(--font-mono)] text-[11px] text-accent-ink">Round winner</span>
               </div>
-              <h2 className="font-[var(--font-display)] text-[44px] font-semibold leading-tight tracking-tight mb-1" style={{ color: "oklch(0.25 0.05 60)" }}>
+              <h2 className="font-[var(--font-display)] text-[32px] sm:text-[44px] font-semibold leading-tight tracking-tight mb-1 break-words" style={{ color: "oklch(0.25 0.05 60)" }}>
                 {winner.book.title}
               </h2>
               <p className="text-base italic mb-4" style={{ color: "oklch(0.40 0.04 60)" }}>
@@ -206,7 +206,7 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
         {nominations.map((nom, i) => (
           <div
             key={nom.id}
-            className={`grid grid-cols-[32px_auto_1fr_auto] md:grid-cols-[40px_auto_1fr_180px_auto] gap-3 md:gap-4 items-center px-5 py-3.5 ${i === 0 ? "bg-accent-soft" : ""}`}
+            className={`grid grid-cols-[22px_auto_1fr_auto] md:grid-cols-[40px_auto_1fr_180px_auto] gap-2.5 md:gap-4 items-center px-3 py-3 sm:px-5 sm:py-3.5 ${i === 0 ? "bg-accent-soft" : ""}`}
           >
             <span className={`font-[var(--font-mono)] text-sm font-semibold ${i === 0 ? "text-accent-ink" : "text-ink-3"}`}>
               {i === 0 ? "①" : `0${i + 1}`}
@@ -214,7 +214,7 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
             <BookCover title={nom.book.title} author={nom.book.author} coverUrl={nom.book.coverUrl} size="md" />
             <div className="min-w-0">
               <p className="text-sm font-medium text-ink truncate">{nom.book.title}</p>
-              <p className="text-xs text-ink-3 italic">by {nom.book.author}</p>
+              <p className="text-xs text-ink-3 italic truncate">by {nom.book.author}</p>
             </div>
             <div className="hidden md:block h-1.5 bg-bg-sunken rounded-full overflow-hidden">
               <div
@@ -222,9 +222,9 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
                 style={{ width: `${((nom.voteCount ?? 0) / maxVotes) * 100}%` }}
               />
             </div>
-            <div className="text-right min-w-[70px]">
+            <div className="text-right">
               <span className="font-[var(--font-display)] text-lg font-semibold">{nom.voteCount ?? 0}</span>
-              <span className="text-xs text-ink-3 ml-1">votes</span>
+              <span className="text-xs text-ink-3 ml-1 hidden sm:inline">votes</span>
             </div>
           </div>
         ))}

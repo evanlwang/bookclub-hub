@@ -1,4 +1,4 @@
-// @spec MEET-UI-RESP-SAVE-001, MEET-BE-RESP-EMPTY-001
+// @spec MEET-UI-RESP-SAVE-001, MEET-BE-RESP-EMPTY-001, DENSITY-MEET-002
 "use client";
 
 import { useRef, useState } from "react";
@@ -114,7 +114,7 @@ export function RespondMeeting({
         {slots.map((slot) => (
           <div
             key={slot.id}
-            className="flex items-center justify-between gap-4 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line"
+            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 p-3 bg-bg-soft rounded-[var(--radius-md)] border border-line"
           >
             <div className="text-sm text-ink">
               {new Date(slot.proposedTime).toLocaleString(undefined, {
@@ -126,7 +126,7 @@ export function RespondMeeting({
               })}
               <span className="text-ink-3 ml-1">({slot.durationMinutes}min)</span>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5 w-full sm:w-auto">
               {statusOptions.map((opt) => (
                 <button
                   key={opt.value}
@@ -134,7 +134,7 @@ export function RespondMeeting({
                   onClick={() => setSlotResponse(slot.id, opt.value)}
                   disabled={submitAvailability.isPending}
                   data-testid={`slot-${slot.id}-${opt.value}`}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-[var(--radius-sm)] border transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+                  className={`flex-1 sm:flex-none px-2.5 py-2 sm:py-1 text-xs font-medium rounded-[var(--radius-sm)] border transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
                     responses[slot.id] === opt.value
                       ? opt.color
                       : "border-line bg-bg text-ink-3 hover:border-line-strong"

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Card } from "@/components/ui";
-import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
+import { Sheet } from "@/components/ui";
 import { trpc } from "@/trpc/react-hooks";
 import { type Book, type FormErrors } from "./nominate-modal-types";
 import { NominateSearch } from "./nominate-search";
@@ -39,18 +38,6 @@ export function NominateModal({
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const manualTitleDirty = useRef(false);
-
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  useFocusTrap(dialogRef, isOpen);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, onClose]);
 
   // Debounce the search query: any time `query` changes, schedule a 300ms
   // timer to copy it into `debouncedQuery` (which is what feeds the useQuery
@@ -206,19 +193,11 @@ export function NominateModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      ref={dialogRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="nominate-modal-title"
-      tabIndex={-1}
-      className="fixed inset-0 backdrop-blur-md bg-bg/40 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
+    <Sheet
+      open={isOpen}
+      onClose={onClose}
+      labelledById="nominate-modal-title"
     >
-      <Card
-        className="w-full max-w-md bg-bg p-6 rounded-[var(--radius-lg)] shadow-lg max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className="flex items-center justify-between mb-5">
           <h2
             id="nominate-modal-title"
@@ -270,7 +249,6 @@ export function NominateModal({
           }
           onSubmit={handleCreateAndNominate}
         />
-      </Card>
-    </div>
+    </Sheet>
   );
 }

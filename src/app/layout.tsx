@@ -1,6 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { TRPCProvider } from "@/trpc/react";
 import "./globals.css";
+
+// @spec PWA-VIEWPORT-001 — viewport-fit:cover lets the layout extend under the
+// notch/home indicator so env(safe-area-inset-*) resolves nonzero; themeColor
+// tints the mobile status/URL bar to match the app background.
+export const viewport: Viewport = {
+  themeColor: "#faf8f3",
+  viewportFit: "cover",
+};
 
 // Next.js App Router auto-discovers `app/icon.{svg,png}` and `app/apple-icon.png`
 // and emits the canonical <link rel="icon"> / <link rel="apple-touch-icon">.

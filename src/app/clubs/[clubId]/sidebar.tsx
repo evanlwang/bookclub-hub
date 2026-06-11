@@ -3,31 +3,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  LogoIcon,
-  BookIcon,
-  VoteIcon,
-  CalendarIcon,
-  ChatIcon,
-  TrendIcon,
-  UsersIcon,
-  Avatar,
-  Badge,
-} from "@/components/ui";
+import { usePathname } from "next/navigation";
+import { LogoIcon, Avatar, Badge } from "@/components/ui";
 import { ClubSwitcherModal } from "@/components/club/club-switcher-modal";
-import { trpc } from "@/trpc/react-hooks";
-
-const navItems = [
-  { label: "Dashboard", href: "", icon: BookIcon, adminOnly: false },
-  { label: "Voting", href: "/vote", icon: VoteIcon, adminOnly: false },
-  { label: "Meetings", href: "/meetings", icon: CalendarIcon, adminOnly: false },
-  { label: "Discussions", href: "/discussions", icon: ChatIcon, adminOnly: false },
-  { label: "Progress", href: "/progress", icon: TrendIcon, adminOnly: false },
-  { label: "Members", href: "/members", icon: UsersIcon, adminOnly: true },
-  // @spec CLUB-UI-SETTINGS-001
-  { label: "Settings", href: "/settings", icon: UsersIcon, adminOnly: true },
-];
+import { useSignOut } from "@/lib/hooks/use-sign-out";
+import { navItems, canSeeNavItem } from "./nav-items";
 
 type ClubInfo = { id: string; name: string; code: string; role: string };
 
@@ -50,13 +30,10 @@ export function ClubSidebar({
   unreadDiscussionCounts?: Record<string, number>;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const basePath = `/clubs/${clubId}`;
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [addClubModalOpen, setAddClubModalOpen] = useState(false);
-  const logoutMutation = trpc.auth.logout.useMutation();
-  const signingOut = logoutMutation.isPending;
-  const utils = trpc.useUtils();
+  const { signOut, signingOut } = useSignOut();
 
   const currentClub = clubs.find((c) => c.id === clubId);
   const hasMultipleClubs = clubs.length > 1;
@@ -122,20 +99,6 @@ export function ClubSidebar({
     );
   }
 
-  async function handleSignOut() {
-    if (signingOut) return;
-    try {
-      await logoutMutation.mutateAsync();
-    } catch {
-      // Server emits the clearing Set-Cookie; we still wipe locally as a backup.
-    }
-    document.cookie = "session_id=; Path=/; Max-Age=0; SameSite=Lax";
-    // @spec AUTH-UI-LOGOUT-INVALIDATE-001 — drop every cached query so any
-    // other open tab re-fetches against the now-unauthenticated session
-    // instead of rendering stale, signed-in data.
-    await utils.invalidate();
-    router.push("/");
-  }
 
   return (
     <aside className="w-[clamp(240px,18vw,360px)] shrink-0 border-r border-line bg-bg-soft flex flex-col h-screen sticky top-0 hidden md:flex">
@@ -268,7 +231,7 @@ export function ClubSidebar({
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-0.5">
         {navItems.map((item) => {
-          if (item.adminOnly && currentClub?.role !== "admin" && currentClub?.role !== "owner") {
+          if (!canSeeNavItem(item, currentClub?.role)) {
             return null;
           }
           const href = `${basePath}${item.href}`;
@@ -325,7 +288,7 @@ export function ClubSidebar({
           <span className="flex-1 text-[clamp(14px,0.3vw+10px,16px)] text-ink-2 truncate">{userName}</span>
           <button
             type="button"
-            onClick={handleSignOut}
+            onClick={signOut}
             disabled={signingOut}
             className="text-xs text-ink-3 hover:text-ink transition-colors disabled:opacity-50"
           >

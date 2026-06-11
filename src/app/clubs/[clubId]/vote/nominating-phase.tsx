@@ -92,11 +92,13 @@ export function NominatingPhase({
 
       <div className="space-y-3 mb-6">
         {nominations.map((nom) => (
-          <Card key={nom.id} className="p-5">
-            <div className="grid grid-cols-[auto_1fr] gap-5">
+          <Card key={nom.id} className="p-4 sm:p-5">
+            {/* @spec DENSITY-VOTE-002 — tighten the cover/text gutter and title
+                on phones so the title keeps room beside the large cover. */}
+            <div className="grid grid-cols-[auto_1fr] gap-3.5 sm:gap-5">
               <BookCover title={nom.book.title} author={nom.book.author} coverUrl={nom.book.coverUrl} size="lg" />
-              <div>
-                <p className="font-[var(--font-display)] text-[19px] font-semibold tracking-tight text-ink">{nom.book.title}</p>
+              <div className="min-w-0">
+                <p className="font-[var(--font-display)] text-[17px] sm:text-[19px] font-semibold tracking-tight text-ink break-words">{nom.book.title}</p>
                 <p className="text-sm text-ink-2 italic mb-2.5">by {nom.book.author}</p>
                 {nom.pitch && (
                   <p className="text-sm text-ink-2 leading-relaxed mb-3">

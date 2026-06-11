@@ -69,6 +69,11 @@
     background: var(--color-bg);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* @spec MOBILE-BASE-001 — kill the grey tap flash and lock auto text sizing
+       so touch interactions read as native rather than web. */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   :focus-visible {
@@ -99,6 +104,12 @@
   to { opacity: 1; transform: none; }
 }
 
+/* @spec OVERLAY-SHEET-001 — mobile bottom-sheet entrance */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
 .bar-anim {
   transform-origin: left center;
   animation: bar-fill 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -114,6 +125,28 @@
 
 .animate-slide-down {
   animation: slide-down 200ms ease;
+}
+
+.animate-sheet-up {
+  animation: sheet-up 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* @spec MOBILE-BASE-002 — safe-area helpers for fixed top/bottom chrome
+   (bottom tab bar, bottom sheets). Fall back to 0 on non-notched devices. */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* @spec TOUCH-BTN-001 — on touch (coarse) pointers, lift any control to the
+   44px minimum target without touching fine-pointer (desktop) density. */
+@media (pointer: coarse) {
+  .touch-target {
+    min-height: 44px;
+  }
 }
 
 /* @spec DSYS-MOTION-002 */
