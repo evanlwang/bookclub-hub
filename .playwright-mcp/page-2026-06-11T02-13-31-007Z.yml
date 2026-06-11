@@ -1,0 +1,191 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=e3]:
+    - navigation [ref=e4]:
+      - link "Dogear" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img [ref=e6]
+        - generic [ref=e10]: Dogear
+      - generic [ref=e11]:
+        - link "Log in" [ref=e12] [cursor=pointer]:
+          - /url: /login
+        - link "Sign up" [ref=e13] [cursor=pointer]:
+          - /url: /join
+    - generic [ref=e15]:
+      - generic [ref=e16]: Spoiler-safe by default
+      - heading "Your book club, finally organized." [level=1] [ref=e18]:
+        - text: Your book club,
+        - emphasis [ref=e19]: finally
+        - text: organized.
+      - paragraph [ref=e20]: Vote on books, schedule meetings, discuss without spoilers, and track everyone's progress — all in one place.
+      - generic [ref=e21]:
+        - link "Sign up" [ref=e22] [cursor=pointer]:
+          - /url: /join
+          - text: Sign up
+          - img [ref=e23]
+        - link "Log in" [ref=e25] [cursor=pointer]:
+          - /url: /login
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e29]: AC
+          - generic [ref=e31]: MW
+          - generic [ref=e33]: PK
+        - generic [ref=e34]:
+          - strong [ref=e35]: 2,400+
+          - text: readers ·
+          - strong [ref=e36]: "340"
+          - text: active clubs
+    - region "Privacy guarantees" [ref=e37]:
+      - generic [ref=e39]:
+        - generic [ref=e42]: Our promises
+        - heading "Built for readers, not advertisers." [level=2] [ref=e44]:
+          - text: Built for readers,
+          - emphasis [ref=e45]: not advertisers
+          - text: .
+        - paragraph [ref=e46]: We're a small thing for small groups. Here's what that means for you.
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - img [ref=e50]
+            - heading "No personal data" [level=3] [ref=e53]
+            - paragraph [ref=e54]: Nothing about you is stored or shared. We don't sell, analyze, or hand off anything.
+          - generic [ref=e55]:
+            - img [ref=e57]
+            - heading "Just email and display name" [level=3] [ref=e60]
+            - paragraph [ref=e61]: That's the entire signup. No phone, no birthday, no contacts upload, no friend graph.
+          - generic [ref=e62]:
+            - img [ref=e64]
+            - heading "No ads, ever" [level=3] [ref=e67]
+            - paragraph [ref=e68]: No banners, no sponsored books, no tracking pixels. Just the books and the people.
+    - region "About Dogear" [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e73]: About
+        - heading "Why Dogear?" [level=2] [ref=e75]:
+          - text: Why
+          - emphasis [ref=e76]: Dogear
+          - text: "?"
+        - generic [ref=e77]:
+          - paragraph [ref=e78]: Dogear is book club coordination without the group-chat sprawl — voting, scheduling, spoiler-safe discussion, and reading progress, in one place built for the ritual instead of bolted onto a messenger.
+          - paragraph [ref=e79]:
+            - text: A dog-eared page is the universal “here's where I stopped.” It's the smallest possible bookmark and the first one any reader ever learns — one folded corner that says
+            - emphasis [ref=e80]: come back here
+            - text: .
+          - paragraph [ref=e81]: "A book club is the same idea, scaled to a group: a shared place to return to together. Where are we in the book, when do we meet next, what's safe to say. That's the whole product, and that's the whole name."
+    - region "Features overview" [ref=e82]:
+      - generic [ref=e83]:
+        - generic [ref=e86]: Everything inside
+        - heading "Built for groups that finish the book." [level=2] [ref=e88]:
+          - text: Built for groups that
+          - emphasis [ref=e89]: finish the book
+          - text: .
+        - paragraph [ref=e90]: Every habit a working club needs — refined, and out of the way.
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - img [ref=e94]
+            - heading "Approval voting" [level=3] [ref=e97]
+            - paragraph [ref=e98]: Choose what's next, together.
+            - list [ref=e100]:
+              - listitem [ref=e101]:
+                - img [ref=e102]
+                - generic [ref=e104]: "Three phases: nominate, vote, decide"
+              - listitem [ref=e105]:
+                - img [ref=e106]
+                - generic [ref=e108]: Open Library search built in
+              - listitem [ref=e109]:
+                - img [ref=e110]
+                - generic [ref=e112]: Tie-break and close-voting controls
+              - listitem [ref=e113]:
+                - img [ref=e114]
+                - generic [ref=e116]: Live status badge in the sidebar
+          - generic [ref=e117]:
+            - img [ref=e119]
+            - heading "Meeting scheduling" [level=3] [ref=e122]
+            - paragraph [ref=e123]: Find a time without the back-and-forth.
+            - list [ref=e125]:
+              - listitem [ref=e126]:
+                - img [ref=e127]
+                - generic [ref=e129]: Propose multiple slots at once
+              - listitem [ref=e130]:
+                - img [ref=e131]
+                - generic [ref=e133]: Availability heatmap by responder
+              - listitem [ref=e134]:
+                - img [ref=e135]
+                - generic [ref=e137]: “Most available” recommendation
+              - listitem [ref=e138]:
+                - img [ref=e139]
+                - generic [ref=e141]: Edit or cancel; updates ripple out
+          - generic [ref=e142]:
+            - img [ref=e144]
+            - heading "Spoiler-safe threads" [level=3] [ref=e146]
+            - paragraph [ref=e147]: Talk freely. Nobody spoils anything.
+            - list [ref=e149]:
+              - listitem [ref=e150]:
+                - img [ref=e151]
+                - generic [ref=e153]: Chapter-tagged threads
+              - listitem [ref=e154]:
+                - img [ref=e155]
+                - generic [ref=e157]: Auto-hide threads above your chapter
+              - listitem [ref=e158]:
+                - img [ref=e159]
+                - generic [ref=e161]: Threaded replies, two levels deep
+              - listitem [ref=e162]:
+                - img [ref=e163]
+                - generic [ref=e165]: Pin, edit, delete — admin or your own
+          - generic [ref=e166]:
+            - img [ref=e168]
+            - heading "Reading progress" [level=3] [ref=e171]
+            - paragraph [ref=e172]: See where the group is — really.
+            - list [ref=e174]:
+              - listitem [ref=e175]:
+                - img [ref=e176]
+                - generic [ref=e178]: Per-member page, chapter, percentage
+              - listitem [ref=e179]:
+                - img [ref=e180]
+                - generic [ref=e182]: Group median + distribution chart
+              - listitem [ref=e183]:
+                - img [ref=e184]
+                - generic [ref=e186]: History across past selections
+              - listitem [ref=e187]:
+                - img [ref=e188]
+                - generic [ref=e190]: "States: not started, reading, finished"
+          - generic [ref=e191]:
+            - img [ref=e193]
+            - heading "Run your club" [level=3] [ref=e198]
+            - paragraph [ref=e199]: One person to many; one club to many.
+            - list [ref=e201]:
+              - listitem [ref=e202]:
+                - img [ref=e203]
+                - generic [ref=e205]: "Roles: owner, admin, member"
+              - listitem [ref=e206]:
+                - img [ref=e207]
+                - generic [ref=e209]: Invite codes — custom or auto-derived
+              - listitem [ref=e210]:
+                - img [ref=e211]
+                - generic [ref=e213]: Switch clubs from the sidebar
+              - listitem [ref=e214]:
+                - img [ref=e215]
+                - generic [ref=e217]: Custom theme color per club
+          - generic [ref=e218]:
+            - img [ref=e220]
+            - heading "Quiet by default" [level=3] [ref=e223]
+            - paragraph [ref=e224]: No tracking. No ads. No noise.
+            - list [ref=e226]:
+              - listitem [ref=e227]:
+                - img [ref=e228]
+                - generic [ref=e230]: Email + display name. Nothing else.
+              - listitem [ref=e231]:
+                - img [ref=e232]
+                - generic [ref=e234]: Zero ads, zero tracking pixels
+              - listitem [ref=e235]:
+                - img [ref=e236]
+                - generic [ref=e238]: Soft-delete with a restore window
+              - listitem [ref=e239]:
+                - img [ref=e240]
+                - generic [ref=e242]: Leave any club, anytime
+    - generic [ref=e244]:
+      - img [ref=e245]
+      - generic [ref=e249]: Dogear
+      - generic [ref=e250]: ·
+      - generic [ref=e251]: For people who finish the book.
+  - button "Open Next.js Dev Tools" [ref=e257] [cursor=pointer]:
+    - img [ref=e258]
