@@ -92,7 +92,7 @@ arrows:
       - clubs
       - live-updates
     detail: discussions.md
-    next: implement DISC-UI-LIVE-001 + DISC-UI-LIST-LIVE-001 + DISC-UI-COMMENT-OPTIMISTIC-001 + DISC-UI-FETCH-PARALLEL-001 (live-updates plan Phases 2/4/5)
+    next: implement DISC-UI-LIVE-001 + DISC-UI-LIST-LIVE-001 (live-updates plan Phase 5)
     drift: null
 
   reading-progress:
