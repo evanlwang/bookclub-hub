@@ -28,7 +28,11 @@ export default async function MeetingsPage({
       caller.auth.me(),
       caller.clubs.members.list({ clubId }),
     ]);
-    meetings = meetingsResult;
+    // Deep ISO-stringify dates (slots, responses, book joins): the client
+    // seeds the polled meetings.list query with this as initialData, and
+    // refetched rows carry ISO strings (no superjson transformer) — the
+    // shapes must match (docs/llds/live-updates.md).
+    meetings = JSON.parse(JSON.stringify(meetingsResult));
     viewerId = me.user.id;
     viewerName = me.user.displayName || me.user.email;
     members = membersList.map((m) => ({

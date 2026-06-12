@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button, ProgressBar, Sheet } from "@/components/ui";
 import { clampPage } from "@/lib/progress/clamp-page";
 import { BookmarkSlider } from "./bookmark";
 import { trpc } from "@/trpc/react-hooks";
+import { useViewer } from "@/lib/auth/use-viewer";
 
 type ProgressStatus = "not_started" | "reading" | "finished";
 
@@ -27,17 +27,64 @@ interface UpdateModalProps {
 
 const TOAST_DISMISS_MS = 4000;
 
+// @spec PROG-UI-OPTIMISTIC-001
+// Shared optimistic progress mutation: the viewer's row in the dashboard's
+// `progress.list` cache rewrites in `onMutate` (append when first-time),
+// rolls back on error, and reconciles with the server in `onSettled`.
+// Used by both the modal save and the toast Undo — no router.refresh().
+function useOptimisticProgressUpdate(clubId: string, bookId: string) {
+  const utils = trpc.useUtils();
+  const { viewerId, viewerName } = useViewer();
+  return trpc.progress.update.useMutation({
+    onMutate: async (vars) => {
+      await utils.progress.list.cancel({ clubId, bookId });
+      const snapshot = utils.progress.list.getData({ clubId, bookId });
+      utils.progress.list.setData({ clubId, bookId }, (prev) => {
+        if (!prev) return prev;
+        const optimistic = {
+          userId: viewerId ?? "viewer",
+          user: { displayName: viewerName || "You" },
+          currentPage: vars.currentPage ?? null,
+          totalPages: vars.totalPages ?? null,
+          percentage: vars.percentage ?? 0,
+          currentChapter: vars.currentChapter ?? null,
+          status: vars.status ?? "reading",
+          updatedAt: new Date().toISOString(),
+        } as unknown as (typeof prev)[number];
+        const exists = prev.some((p) => p.userId === viewerId);
+        return exists
+          ? prev.map((p) =>
+              p.userId === viewerId ? { ...p, ...optimistic } : p
+            )
+          : [...prev, optimistic];
+      });
+      return { snapshot };
+    },
+    onError: (_err, _vars, context) => {
+      if (context && context.snapshot !== undefined) {
+        utils.progress.list.setData({ clubId, bookId }, context.snapshot);
+      }
+    },
+    onSettled: () => {
+      void utils.progress.list.invalidate({ clubId, bookId });
+      void utils.progress.me.invalidate({ clubId, bookId });
+    },
+  });
+}
+
 // @spec PROG-UI-MODAL-OPEN-001, PROG-UI-MODAL-TOAST-001, PROG-UI-MODAL-UNDO-001, PROG-UI-MODAL-SLIDER-001, PROG-UI-MODAL-PCT-001, PROG-UI-MODAL-TIMESTAMP-001, PROG-UI-MODAL-PAGE-CLAMP-001, PROG-DASH-UNKNOWN-TOTAL-001
 export function UpdateProgressButton(props: UpdateModalProps) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [overrideProgress, setOverrideProgress] = useState<ProgressSnapshot | null>(null);
+  // The latest values the viewer saved this session — keeps the modal prefill
+  // current without an RSC refresh (the page prop only updates on real loads).
+  const [lastSaved, setLastSaved] = useState<ProgressSnapshot | null>(null);
   const [toast, setToast] = useState<{
     savedPage: number | null;
     previous: ProgressSnapshot | null;
   } | null>(null);
 
-  const undoMutation = trpc.progress.update.useMutation();
+  const undoMutation = useOptimisticProgressUpdate(props.clubId, props.bookId);
 
   useEffect(() => {
     if (!toast) return;
@@ -45,9 +92,14 @@ export function UpdateProgressButton(props: UpdateModalProps) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  function handleSaved(savedPage: number | null, previous: ProgressSnapshot | null) {
+  function handleSaved(
+    savedPage: number | null,
+    previous: ProgressSnapshot | null,
+    saved: ProgressSnapshot
+  ) {
     setOpen(false);
     setOverrideProgress(null);
+    setLastSaved(saved);
     setToast({ savedPage, previous });
     // Fire the dog-ear fold reward on the summary card (decoupled listener).
     if (typeof window !== "undefined") {
@@ -79,8 +131,8 @@ export function UpdateProgressButton(props: UpdateModalProps) {
     }
     setToast(null);
     setOverrideProgress(previous);
+    setLastSaved(previous);
     setOpen(true);
-    router.refresh();
   }
 
   return (
@@ -99,7 +151,9 @@ export function UpdateProgressButton(props: UpdateModalProps) {
       {open && (
         <UpdateModal
           {...props}
-          currentProgress={overrideProgress ?? props.currentProgress}
+          currentProgress={
+            overrideProgress ?? lastSaved ?? props.currentProgress
+          }
           onClose={() => setOpen(false)}
           onSaved={handleSaved}
         />
@@ -125,16 +179,19 @@ function UpdateModal({
   onSaved,
 }: UpdateModalProps & {
   onClose: () => void;
-  onSaved: (savedPage: number | null, previous: ProgressSnapshot | null) => void;
+  onSaved: (
+    savedPage: number | null,
+    previous: ProgressSnapshot | null,
+    saved: ProgressSnapshot
+  ) => void;
 }) {
-  const router = useRouter();
   const [page, setPage] = useState(currentProgress?.currentPage ?? 0);
   const [chapter, setChapter] = useState(currentProgress?.currentChapter ?? 0);
   const [status, setStatus] = useState<string>(
     currentProgress?.status ?? "not_started"
   );
   const [error, setError] = useState("");
-  const updateMutation = trpc.progress.update.useMutation();
+  const updateMutation = useOptimisticProgressUpdate(clubId, bookId);
   const loading = updateMutation.isPending;
 
   const knownPages = totalPages != null && totalPages > 0;
@@ -199,8 +256,16 @@ function UpdateModal({
             status: currentProgress.status,
           }
         : null;
-      router.refresh();
-      onSaved(savedPage, previous);
+      // No router.refresh(): the dashboard renders from the progress.list
+      // cache, which the optimistic mutation already rewrote (and onSettled
+      // reconciles with the server). @spec PROG-UI-OPTIMISTIC-001
+      onSaved(savedPage, previous, {
+        currentPage: page,
+        percentage,
+        currentChapter: chapter || undefined,
+        status: normalizedStatus,
+        updatedAt: new Date(),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     }

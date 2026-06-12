@@ -28,19 +28,26 @@ test.describe("Spoiler-safe filtering by reading progress", () => {
     await expect(page.getByTestId("hidden-count")).toContainText("1");
   });
 
-  // @spec DISC-UI-PROGRESS-AUTOFILTER-002
-  test("discussions page shows all threads when viewer has no progress", async ({ page }) => {
-    // Frank has no progress recorded — no spoiler filter applied.
+  // @spec DISC-UI-PROGRESS-AUTOFILTER-002, DISC-LIB-CUTOFF-FAILSAFE-001
+  test("discussions page fail-safes to chapter 0 when viewer has no progress", async ({ page }) => {
+    // Frank has no progress recorded — the fail-safe filter (maxChapter=0)
+    // hides every chapter-tagged thread instead of leaking spoilers.
+    // (Re-specced from the prior fail-open behavior in DISC-UI-PROGRESS-AUTOFILTER-002.)
     await loginAs(page, "frank@example.com");
     const club = await getClubByCode("WEDREADS");
 
     await page.goto(`/clubs/${club.id}/discussions`);
     await expect(page.getByTestId("threads-list")).toBeVisible();
 
-    // Input remains empty; all 4 threads visible; no hidden-count chip.
-    await expect(page.getByTestId("max-chapter-input")).toHaveValue("");
+    // Input pre-seeded with the fail-safe cutoff; only the untagged thread
+    // is visible; the 3 chapter-tagged threads sit behind the hidden chip.
+    await expect(page.getByTestId("max-chapter-input")).toHaveValue("0");
+    await expect(page.getByTestId("threads-list").locator("li")).toHaveCount(1);
+    await expect(page.getByTestId("hidden-count")).toContainText("3");
+
+    // "Show all anyway" remains the explicit per-session escape hatch.
+    await page.getByTestId("show-all-btn").click();
     await expect(page.getByTestId("threads-list").locator("li")).toHaveCount(4);
-    await expect(page.getByTestId("hidden-count")).toHaveCount(0);
   });
 
   // @spec DISC-UI-DASH-FEED-AUTOFILTER-001

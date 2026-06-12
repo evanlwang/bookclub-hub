@@ -7,6 +7,7 @@ import { Card, ChapterChip, Avatar, Badge } from "@/components/ui";
 import { CreateThreadButton } from "./create-thread";
 import { MarkDiscussionsVisited } from "./mark-visited";
 import { trpc } from "@/trpc/react-hooks";
+import { useLiveQueryOptions } from "@/lib/hooks/use-live-query";
 import "./discussions.css";
 
 function relativeTime(dateStr: string): string {
@@ -43,12 +44,17 @@ export function DiscussionsContent({
   const [showAll, setShowAll] = useState(false);
   const [sort, setSort] = useState<"recent" | "comments">("recent");
 
-  const threadsQuery = trpc.threads.list.useQuery({
-    clubId,
-    bookId: currentBookId,
-    sort,
-    ...(maxChapter !== null && !showAll ? { maxChapter } : {}),
-  });
+  // @spec DISC-UI-LIST-LIVE-001 — new threads and comment counts from other
+  // members surface within the poll interval.
+  const threadsQuery = trpc.threads.list.useQuery(
+    {
+      clubId,
+      bookId: currentBookId,
+      sort,
+      ...(maxChapter !== null && !showAll ? { maxChapter } : {}),
+    },
+    useLiveQueryOptions({ intervalMs: 30_000 }),
+  );
 
   const threads = threadsQuery.data?.threads ?? [];
   const hiddenCount = threadsQuery.data?.hiddenCount ?? 0;

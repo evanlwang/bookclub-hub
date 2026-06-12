@@ -28,12 +28,24 @@ export type LiveQueryOptions = {
  * `refetchIntervalInBackground` is intentionally not set: the React Query
  * default (false) pauses polling while the tab is hidden.
  */
+// Test-only knob: NEXT_PUBLIC_LIVE_INTERVAL_SCALE shrinks every poll interval
+// (e.g. 0.15 in the e2e web server) so two-context live tests don't wait out
+// production cadences. Defaults to 1 — production intervals are the spec'd
+// values in docs/llds/live-updates.md.
+const INTERVAL_SCALE = Number(
+  process.env.NEXT_PUBLIC_LIVE_INTERVAL_SCALE || "1"
+);
+
 export function useLiveQueryOptions({
-  intervalMs,
+  intervalMs: baseIntervalMs,
   enabled = true,
   pauseWhenMutating = true,
 }: LiveQueryOptions) {
   const mutating = useIsMutating();
+  const intervalMs =
+    INTERVAL_SCALE > 0 && Number.isFinite(INTERVAL_SCALE)
+      ? Math.max(250, Math.round(baseIntervalMs * INTERVAL_SCALE))
+      : baseIntervalMs;
   return {
     refetchInterval: () => {
       if (!enabled) return false;
