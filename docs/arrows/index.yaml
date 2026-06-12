@@ -43,7 +43,7 @@ arrows:
     status: OK
     sampled: 2026-05-07
     audited: 2026-06-11
-    audited_sha: b9bfb81
+    audited_sha: ec02705
     blocks:
       - voting
       - meetings
@@ -60,7 +60,7 @@ arrows:
     status: OK
     sampled: 2026-05-07
     audited: 2026-06-11
-    audited_sha: b9bfb81
+    audited_sha: ec02705
     blocks: []
     blockedBy:
       - clubs
@@ -73,7 +73,7 @@ arrows:
     status: OK
     sampled: 2026-05-07
     audited: 2026-06-11
-    audited_sha: b9bfb81
+    audited_sha: ec02705
     blocks: []
     blockedBy:
       - clubs
@@ -86,7 +86,7 @@ arrows:
     status: OK
     sampled: 2026-05-07
     audited: 2026-06-11
-    audited_sha: b9bfb81
+    audited_sha: ec02705
     blocks: []
     blockedBy:
       - clubs
@@ -99,7 +99,7 @@ arrows:
     status: OK
     sampled: 2026-05-07
     audited: 2026-06-11
-    audited_sha: b9bfb81
+    audited_sha: ec02705
     blocks: []
     blockedBy:
       - clubs
@@ -114,7 +114,7 @@ arrows:
     status: OK
     sampled: 2026-06-11
     audited: 2026-06-11
-    audited_sha: b9bfb81
+    audited_sha: ec02705
     blocks:
       - clubs
       - voting
