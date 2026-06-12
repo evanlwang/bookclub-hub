@@ -55,6 +55,8 @@ export function NominatingPhase({
       setCancelConfirmText("");
       void utils.rounds.get.invalidate({ clubId, roundId });
       void utils.rounds.list.invalidate({ clubId });
+      // @spec CLUB-NAV-BADGE-LIVE-001 — cancelling clears the "Live" badge.
+      void utils.clubs.navState.invalidate();
       router.refresh();
     },
     onError: (err) => {

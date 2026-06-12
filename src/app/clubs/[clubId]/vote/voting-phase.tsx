@@ -193,6 +193,8 @@ export function VotingPhase({
       setCloseOpen(false);
       void utils.rounds.get.invalidate({ clubId, roundId });
       void utils.rounds.list.invalidate({ clubId });
+      // @spec CLUB-NAV-BADGE-LIVE-001 — round close clears the "Live" badge.
+      void utils.clubs.navState.invalidate();
       router.refresh();
     },
     onError: (err) => {
@@ -213,6 +215,7 @@ export function VotingPhase({
       setCancelConfirmText("");
       void utils.rounds.get.invalidate({ clubId, roundId });
       void utils.rounds.list.invalidate({ clubId });
+      void utils.clubs.navState.invalidate();
       router.refresh();
     },
     onError: (err) => {

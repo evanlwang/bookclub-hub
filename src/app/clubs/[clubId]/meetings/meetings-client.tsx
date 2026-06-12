@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { trpc } from "@/trpc/react-hooks";
 import { Card, Badge, Button, AvatarStack, DateStamp } from "@/components/ui";
 import { CreateMeetingForm, ProposeMeetingTrigger } from "./create-meeting";
 import { RespondMeeting } from "./respond-meeting";
@@ -57,6 +58,7 @@ export function MeetingsClient({
   const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const utils = trpc.useUtils();
   const [meetings, setMeetings] = useState<any[]>(initialMeetings);
   const [proposing, setProposing] = useState(false);
   const isAdmin = viewerRole === "admin" || viewerRole === "owner";
@@ -76,6 +78,8 @@ export function MeetingsClient({
       }),
     );
     setExpandedId(null);
+    // @spec CLUB-NAV-BADGE-LIVE-001 — confirm/cancel can clear the "Respond" badge.
+    void utils.clubs.navState.invalidate();
     router.refresh();
   }
 
@@ -86,6 +90,7 @@ export function MeetingsClient({
       ),
     );
     setExpandedId(null);
+    void utils.clubs.navState.invalidate();
     router.refresh();
   }
 
@@ -95,6 +100,9 @@ export function MeetingsClient({
   // the local push the new meeting never reaches this list, because useState
   // seeded `meetings` from props on first mount and won't re-read them.
   function applyCreatedMeeting(meeting: any) {
+    // @spec CLUB-NAV-BADGE-LIVE-001 — a new proposed meeting sets the
+    // "Respond" badge (the proposer hasn't answered their own poll yet).
+    void utils.clubs.navState.invalidate();
     if (!meeting) {
       router.refresh();
       return;
@@ -122,9 +130,9 @@ export function MeetingsClient({
   }
 
   // Apply the viewer's freshly saved availability to local state so the responded
-  // count refreshes without a round trip to the server. We also kick the layout
-  // to re-fetch so the sidebar "Respond" notification clears once the viewer
-  // has answered every outstanding meeting.
+  // count refreshes without a round trip to the server. The navState
+  // invalidation below clears the sidebar "Respond" notification once the
+  // viewer has answered every outstanding meeting.
   function applyViewerResponses(
     meetingId: string,
     next: { slotId: string; status: ResponseStatus }[]
@@ -161,6 +169,9 @@ export function MeetingsClient({
         };
       })
     );
+    // @spec CLUB-NAV-BADGE-LIVE-001 — answering the last outstanding poll
+    // clears the sidebar "Respond" badge via the navState query.
+    void utils.clubs.navState.invalidate();
     router.refresh();
   }
 

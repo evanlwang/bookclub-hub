@@ -1,4 +1,4 @@
-// @spec DASH-UI-001, DASH-UI-002, AUTH-UI-LOGOUT-001, AUTH-UI-LOGOUT-INVALIDATE-001, CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-010, CLUB-NAV-MEMBERS-001
+// @spec DASH-UI-001, DASH-UI-002, AUTH-UI-LOGOUT-001, AUTH-UI-LOGOUT-INVALIDATE-001, CLUB-NAV-MODAL-001, CLUB-NAV-MODAL-010, CLUB-NAV-MEMBERS-001, CLUB-NAV-BADGE-LIVE-001
 "use client";
 
 import { useState } from "react";
@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { LogoIcon, Avatar, Badge } from "@/components/ui";
 import { ClubSwitcherModal } from "@/components/club/club-switcher-modal";
 import { useSignOut } from "@/lib/hooks/use-sign-out";
+import { useNavState, type NavState } from "@/lib/hooks/use-nav-state";
 import { navItems, canSeeNavItem } from "./nav-items";
 
 type ClubInfo = { id: string; name: string; code: string; role: string };
@@ -16,20 +17,20 @@ export function ClubSidebar({
   clubName,
   userName,
   clubs = [],
-  hasActiveVote = false,
-  hasUnrespondedMeeting = false,
-  unreadDiscussionCounts = {},
+  initialNavState,
 }: {
   clubId: string;
   clubName: string;
   userName: string;
   clubs?: ClubInfo[];
-  hasActiveVote?: boolean;
-  hasUnrespondedMeeting?: boolean;
-  /** @spec CLUB-NAV-UNREAD-001, DASH-UI-NAV-UNREAD-001 */
-  unreadDiscussionCounts?: Record<string, number>;
+  /** @spec CLUB-NAV-UNREAD-001, DASH-UI-NAV-UNREAD-001, CLUB-NAV-BADGE-LIVE-001 */
+  initialNavState?: NavState;
 }) {
   const pathname = usePathname();
+  // Badge inputs live in a polled client query (60s) so they update via
+  // targeted invalidation — never via full-layout router.refresh().
+  const { hasActiveVote, hasUnrespondedMeeting, unreadDiscussionCounts } =
+    useNavState(clubId, initialNavState);
   const basePath = `/clubs/${clubId}`;
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [addClubModalOpen, setAddClubModalOpen] = useState(false);

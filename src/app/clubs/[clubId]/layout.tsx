@@ -49,29 +49,28 @@ export default async function ClubLayout({
     | null = null;
   let userName = "";
   let clubs: { id: string; name: string; code: string; role: string }[] = [];
-  let hasActiveVote = false;
-  let hasUnrespondedMeeting = false;
-  let unreadDiscussionCounts: Record<string, number> = {};
+  let initialNavState:
+    | {
+        hasActiveVote: boolean;
+        hasUnrespondedMeeting: boolean;
+        unreadDiscussionCounts: Record<string, number>;
+      }
+    | undefined;
 
   try {
     const caller = await getServerCaller();
-    const [clubResult, me, rounds, meetings, unreadCounts] = await Promise.all([
+    // @spec CLUB-API-NAVSTATE-001 — one consolidated badge read seeds the
+    // client-side `useNavState` query (which then polls + gets invalidated
+    // by mutations), replacing the old rounds/meetings/unread trio.
+    const [clubResult, me, navState] = await Promise.all([
       caller.clubs.get({ clubId }),
       caller.auth.me(),
-      caller.rounds.list({ clubId }),
-      caller.meetings.list({ clubId }),
-      caller.clubs.unreadDiscussionCounts(),
+      caller.clubs.navState({ clubId }),
     ]);
     club = clubResult.club;
     userName = me.user.displayName || me.user.email;
     clubs = me.clubs;
-    hasActiveVote = rounds.some(
-      (r: any) => r.status === "nominating" || r.status === "voting"
-    );
-    hasUnrespondedMeeting = meetings.some(
-      (m: any) => m.status === "proposed" && !m.viewerHasResponded
-    );
-    unreadDiscussionCounts = unreadCounts;
+    initialNavState = navState;
   } catch {
     // Will fall through to child which handles errors
   }
@@ -97,9 +96,7 @@ export default async function ClubLayout({
         clubName={club?.name ?? "Club"}
         userName={userName}
         clubs={clubs}
-        hasActiveVote={hasActiveVote}
-        hasUnrespondedMeeting={hasUnrespondedMeeting}
-        unreadDiscussionCounts={unreadDiscussionCounts}
+        initialNavState={initialNavState}
       />
       <main className="flex-1 min-w-0">
         {/* Mobile-only sticky club header (switcher + brand). Hidden on md+. */}
@@ -108,7 +105,7 @@ export default async function ClubLayout({
           clubName={club?.name ?? "Club"}
           userName={userName}
           clubs={clubs}
-          unreadDiscussionCounts={unreadDiscussionCounts}
+          initialNavState={initialNavState}
         />
         {/* @spec NAV-MOBILE-005 — pad the content bottom on phones so nothing
             hides behind the fixed tab bar (~64px bar + home-indicator inset). */}
@@ -116,12 +113,7 @@ export default async function ClubLayout({
           {children}
         </div>
       </main>
-      <MobileTabBar
-        clubId={clubId}
-        hasActiveVote={hasActiveVote}
-        hasUnrespondedMeeting={hasUnrespondedMeeting}
-        unreadDiscussionCounts={unreadDiscussionCounts}
-      />
+      <MobileTabBar clubId={clubId} initialNavState={initialNavState} />
     </div>
   );
 }

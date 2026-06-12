@@ -30,6 +30,8 @@ export function NonePhase({ clubId, isAdmin }: NonePhaseProps) {
       setNominationDeadline("");
       setVotingDeadline("");
       void utils.rounds.list.invalidate({ clubId });
+      // @spec CLUB-NAV-BADGE-LIVE-001 — a new round sets the "Live" badge.
+      void utils.clubs.navState.invalidate();
       router.refresh();
     },
     onError: (err) => {

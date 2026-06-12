@@ -32,6 +32,16 @@ vi.mock("@/components/club/club-switcher-modal", () => ({
   ClubSwitcherModal: () => null,
 }));
 
+// Badge state is covered by nav-state-badges.test.tsx; here it just needs to
+// not require a QueryClientProvider.
+vi.mock("@/lib/hooks/use-nav-state", () => ({
+  useNavState: () => ({
+    hasActiveVote: false,
+    hasUnrespondedMeeting: false,
+    unreadDiscussionCounts: {},
+  }),
+}));
+
 import { ClubSidebar } from "@/app/clubs/[clubId]/sidebar";
 
 describe("ClubSidebar — sign out", () => {

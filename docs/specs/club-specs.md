@@ -4,7 +4,7 @@
 **Implementing artifacts**:
 - API: `src/server/routers/clubs.ts` (membership procedures live under `clubs.members.*` in the same file)
 - UI: `src/app/clubs/[clubId]/sidebar.tsx`, create/join via `src/app/join/page.tsx`, in-place modal `src/components/club/club-switcher-modal.tsx`
-- Tests: `tests/integration/clubs.test.ts`, `tests/integration/clubs-navstate.test.ts`, `tests/e2e/multi-club-switching.spec.ts`, `tests/e2e/switcher-create-join.spec.ts`, `tests/e2e/members-management.spec.ts`, `tests/unit/auth/permissions.test.ts` (club-permissions, currently mislocated under `auth/`), `tests/unit/validation/club-code.test.ts`
+- Tests: `tests/integration/clubs.test.ts`, `tests/integration/clubs-navstate.test.ts`, `tests/unit/app/nav-state-badges.test.tsx`, `tests/e2e/multi-club-switching.spec.ts`, `tests/e2e/switcher-create-join.spec.ts`, `tests/e2e/members-management.spec.ts`, `tests/unit/auth/permissions.test.ts` (club-permissions, currently mislocated under `auth/`), `tests/unit/validation/club-code.test.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
@@ -74,7 +74,7 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 ## Live Nav Badges (mechanism: docs/llds/live-updates.md)
 
 - `[x]` **CLUB-API-NAVSTATE-001**: A member-scoped `clubs.navState` query SHALL return `{ hasActiveVote, hasUnrespondedMeeting, unreadDiscussionCounts }` for the current club in one call — consolidating the three separate reads (`rounds.list`, `meetings.list`, `clubs.unreadDiscussionCounts`) the club layout previously made per render. `unreadDiscussionCounts` remains the cross-club map (it also feeds the switcher dots per CLUB-NAV-UNREAD-001).
-- `[ ]` **CLUB-NAV-BADGE-LIVE-001**: Sidebar and mobile-tab-bar badges (active-vote "Live" dot, unresponded-meeting indicator, unread-discussions count) SHALL render from a `clubs.navState` client query seeded by the layout RSC — updated via targeted invalidation after the viewer's own mutations and via a 60s poll while the tab is visible — NOT via full-layout `router.refresh()`. Visiting the discussions page still clears the unread badge (CLUB-NAV-UNREAD-001), now via `navState` invalidation instead of a layout refresh.
+- `[x]` **CLUB-NAV-BADGE-LIVE-001**: Sidebar and mobile-tab-bar badges (active-vote "Live" dot, unresponded-meeting indicator, unread-discussions count) SHALL render from a `clubs.navState` client query seeded by the layout RSC — updated via targeted invalidation after the viewer's own mutations and via a 60s poll while the tab is visible — NOT via full-layout `router.refresh()`. Visiting the discussions page still clears the unread badge (CLUB-NAV-UNREAD-001), now via `navState` invalidation instead of a layout refresh.
 
 ## Roles and Authorization
 

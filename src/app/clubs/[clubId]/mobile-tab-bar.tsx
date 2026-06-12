@@ -1,8 +1,9 @@
-// @spec NAV-MOBILE-001, NAV-MOBILE-002, NAV-MOBILE-003
+// @spec NAV-MOBILE-001, NAV-MOBILE-002, NAV-MOBILE-003, CLUB-NAV-BADGE-LIVE-001
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useNavState, type NavState } from "@/lib/hooks/use-nav-state";
 import { navItems, PRIMARY_TAB_SLUGS } from "./nav-items";
 
 // Cozy-redesign 2px outline tab icons, keyed by slug. Bookmark fills when active.
@@ -43,17 +44,15 @@ function TabIcon({ slug, active }: { slug: string; active: boolean }) {
  */
 export function MobileTabBar({
   clubId,
-  hasActiveVote = false,
-  hasUnrespondedMeeting = false,
-  unreadDiscussionCounts = {},
+  initialNavState,
 }: {
   clubId: string;
-  hasActiveVote?: boolean;
-  hasUnrespondedMeeting?: boolean;
-  /** @spec CLUB-NAV-UNREAD-001 */
-  unreadDiscussionCounts?: Record<string, number>;
+  /** @spec CLUB-NAV-UNREAD-001, CLUB-NAV-BADGE-LIVE-001 */
+  initialNavState?: NavState;
 }) {
   const pathname = usePathname();
+  const { hasActiveVote, hasUnrespondedMeeting, unreadDiscussionCounts } =
+    useNavState(clubId, initialNavState);
   const basePath = `/clubs/${clubId}`;
   const tabs = PRIMARY_TAB_SLUGS.map(
     (slug) => navItems.find((i) => i.slug === slug)!,

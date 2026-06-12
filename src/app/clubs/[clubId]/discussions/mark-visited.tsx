@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { trpc } from "@/trpc/react-hooks";
 
-// @spec CLUB-NAV-UNREAD-001, DASH-UI-NAV-UNREAD-001
+// @spec CLUB-NAV-UNREAD-001, DASH-UI-NAV-UNREAD-001, CLUB-NAV-BADGE-LIVE-001
 // On mount, marks the viewer's "last visited discussions" timestamp for this
 // club so the unread badge counts threads created after this moment as unread.
-// `router.refresh()` re-runs the layout's RSC fetch so the badge updates in place.
+// Invalidating `clubs.navState` refetches the badge query in place — no
+// full-layout router.refresh() for a counter update.
 export function MarkDiscussionsVisited({ clubId }: { clubId: string }) {
-  const router = useRouter();
+  const utils = trpc.useUtils();
   const mark = trpc.clubs.markDiscussionsVisited.useMutation({
     onSuccess: () => {
-      router.refresh();
+      void utils.clubs.navState.invalidate();
     },
     // Best-effort — never block the user on a failed visit-mark; swallow errors.
     onError: () => {},
