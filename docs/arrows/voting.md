@@ -54,7 +54,7 @@ Book selection — nominations, approval voting, rounds, manual selection, tie-b
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| vote-specs.md | 79 | 75 | 0 | 4 | 0 |
+| vote-specs.md | 92 | 88 | 0 | 4 | 0 |
 
 **Summary:** 100% of non-deferred specs implemented (75/75). 4 deferreds: minor polish.
 

@@ -27,17 +27,9 @@ Button: per-comment "Reply" — `[threadId]/page.tsx:150-161` — handler: toggl
 Button: "Cancel" (reply composer) — `comment-composer.tsx:74-77` — visible: when onCancel prop provided — handler: closes inline composer
 Button: "Post" (composer) — `comment-composer.tsx:79-87` — enabled: body.trim().length > 0 — handler: `comments.create`
 
-## Gaps (older spec described, not implemented)
+## Gaps
 
-Edit/delete icons on thread header (author/admin) — `[ ]` not in UI.
-Admin pin toggle and pinned thread visual — `[ ]` not in UI.
-"[deleted]" placeholder for deleted comments — `[ ]` no delete UI.
-Hover/focus reveal of Reply buttons — `[!]` Reply is always visible.
-Real-time spoiler-mismatch detection in compose — `[ ]` not implemented.
-Warning banner + disabled "Resolve spoiler warning" Post — `[ ]` not implemented.
-"💡 Spoiler-safe by default" info card in compose — `[ ]` not implemented.
-Markdown rendering — `[ ]` bodies render as plain text (whitespace-pre-wrap).
-Thread detail sidebar metadata — `[ ]` metadata is inline in the header instead.
+None currently. The older-spec items previously listed here all resolved: thread edit/delete affordances (DISC-UI-007), admin pin toggle + pinned visuals (DISC-UI-006), "[deleted]" placeholder (DISC-UI-008), compose spoiler-mismatch detection with warning banner and info card (DISC-UI-COMPOSE-MISMATCH-001/-WARN-001, DISC-UI-COMPOSE-INFO-001), and Markdown rendering (DISC-BE-002/003). Always-visible Reply buttons (DISC-UI-010) and inline header metadata (DISC-UI-012) are intentional re-specs, not gaps.
 
 ## Live Updates
 
@@ -104,7 +96,7 @@ Threads with unparseable `chapter_tag` (and therefore null `chapter_number`) are
 | Spoiler mechanism | Chapter-tagged threads with progress-based filtering | Inline spoiler tags; AI detection; no system | Chapter tags are structural and predictable. |
 | Comment nesting | One level | Flat; unlimited | One level gives structure without indentation hell. |
 | Thread ownership | Author can edit/delete own; admin can delete any | Admin only; no deletion | Standard ownership pattern. (UI not yet built.) |
-| Content format | Markdown (CommonMark subset) — *target* | Rich text editor; plain text only | Today: plain text (whitespace-pre-wrap). Markdown rendering is a deferred upgrade. |
+| Content format | Markdown (CommonMark subset) | Rich text editor; plain text only | Rendered via `marked` (GFM) and sanitized with DOMPurify (DISC-BE-002/003). |
 | Chapter tag format | Free-form string + parsed integer | Structured dropdown; page ranges only | Free-form accommodates Prologue, Part I, etc. |
 | Reply button visibility | Always visible (current) | Hover/focus revealed (older spec) | Always visible is mobile-friendly and discoverable. |
 
@@ -118,14 +110,10 @@ Threads with unparseable `chapter_tag` (and therefore null `chapter_number`) are
 
 ### Deferred
 
-1. **Edit/delete UI for threads and comments.**
-2. **Pin toggle and pinned-thread visuals.**
-3. **Markdown rendering.**
-4. **Real-time spoiler-mismatch detection in compose.**
-5. **Notification on reply.**
-6. **Thread reactions (emoji).**
-7. **Thread search.**
-8. **Edit history.**
+1. **Notification on reply.**
+2. **Thread reactions (emoji).**
+3. **Thread search.**
+4. **Edit history.**
 
 ## References
 

@@ -28,7 +28,7 @@ taxonomy:
 # The graph of segments. Each entry is one arrow segment.
 arrows:
   auth:
-    status: OK
+    status: STALE
     sampled: 2026-05-07
     audited: 2026-05-10
     audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
@@ -36,8 +36,8 @@ arrows:
       - clubs
     blockedBy: []
     detail: auth.md
-    next: null
-    drift: null
+    next: re-audit — 17 segment files changed since audited_sha (cozy login/join redesign; auth+home specs grew 96 → 106)
+    drift: coverage tables were stale (regenerated 2026-06-11); spec-to-code verification not redone since aee095b6
 
   clubs:
     status: OK
@@ -243,4 +243,5 @@ arrows:
 unmapped:
   docs:
     llds: []
-    specs: []
+    specs:
+      - mobile-specs.md  # cozy-redesign mobile/touch specs (NAV-MOBILE-*, TOUCH-*, VOTE-UI-SLIP-*); spans clubs/voting/design — needs owner assignment

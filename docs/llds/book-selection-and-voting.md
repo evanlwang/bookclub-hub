@@ -78,12 +78,9 @@ Mechanism owned by `docs/llds/live-updates.md`; this segment's surfaces:
 - **Nominating phase** polls `rounds.get` at 15s so other members' nominations appear without reload (VOTE-UI-NOM-LIVE-001).
 - **Vote submit is optimistic** (VOTE-UI-OPTIMISTIC-001): button saved-state flips in `onMutate`; first vote bumps the turnout cache; rollback on error; `onSettled` invalidates `rounds.turnout` + `rounds.getClosePreview`.
 
-## Gaps (UI not yet built; mutations exist)
+## Gaps
 
-Button: "Set up first meeting" CTA on winner banner — `[!]` listed in older spec, not implemented.
-Button: "View on Open Library" CTA on winner banner — `[!]` listed in older spec, not implemented.
-Pitch textarea in NominateModal — `[ ]` data field exists on Nomination but no UI input.
-Nomination deadline / voting deadline pickers — `[ ]` data fields exist on VotingRound; no UI exposure.
+None currently. Formerly-listed gaps all shipped in Phase E / cozy redesign: winner-banner CTAs (VOTE-UI-DEC-CTA-MEETING-001, VOTE-UI-DEC-CTA-OPENLIB-001), nomination pitch textarea (VOTE-UI-NOMMODAL-PITCH-001), and the nomination/voting deadline pickers (VOTE-UI-DEADLINE-NOM-001, VOTE-UI-DEADLINE-VOTE-001).
 
 ## Data Model
 
@@ -167,7 +164,7 @@ BookSelection {
 - `[x]` Round enters "nominating" → email all members (`rounds.ts:17-66`)
 - `[x]` Round enters "voting" → email all members (`rounds.ts:118-126`)
 - `[x]` Round decided → email all members with winner (`rounds.ts:128-181`)
-- `[ ]` Voting deadline 24h before → email non-voters (gap; needs deadline UI)
+- `[x]` Voting deadline 24h before → email non-voters via cron (`src/app/api/cron/voting-deadline-reminder/route.ts`, VOTE-NOTIFY-003)
 
 ## Decisions & Alternatives
 
@@ -192,7 +189,6 @@ BookSelection {
 1. **Nomination limits per member per round.** Currently unlimited.
 2. **Reading history analytics.** Genre distribution, pace over time, author diversity.
 3. **"I've already read this" flag.** Useful signal but adds UI complexity.
-4. **Pitch text in nominate flow.** Data model supports it; no UI input today.
 
 ## References
 
