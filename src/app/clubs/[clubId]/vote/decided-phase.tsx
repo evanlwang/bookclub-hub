@@ -77,7 +77,7 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
               {winner.book.author} · {winner.voteCount ?? 0} approval vote{(winner.voteCount ?? 0) === 1 ? "" : "s"} · nominated by {winner.nominator.displayName}
             </p>
             <div className="flex justify-center mt-3.5">
-              <BookCover title={winner.book.title} author={winner.book.author} coverUrl={winner.book.coverUrl} size="md" />
+              <BookCover title={winner.book.title} author={winner.book.author} coverUrl={winner.book.coverUrl} isbn={winner.book.isbn} size="md" />
             </div>
             {/* the shelf */}
             <div className="h-3 -mx-4 rounded-t bg-ink shadow-[0_-3px_8px_rgba(96,64,32,0.18)]" />

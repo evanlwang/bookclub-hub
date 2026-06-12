@@ -2,7 +2,7 @@ import type { ClosePreview } from "./close-voting-dialog";
 
 export type Nomination = {
   id: string;
-  book: { id: string; title: string; author: string; openLibraryId?: string | null; coverUrl?: string | null };
+  book: { id: string; title: string; author: string; isbn?: string | null; openLibraryId?: string | null; coverUrl?: string | null };
   nominator: { displayName: string };
   pitch?: string;
   createdAt?: string;

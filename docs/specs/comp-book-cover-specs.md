@@ -39,8 +39,8 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Image Fallback Chain
 
-- `[ ]` **COMP-BOOK-COVER-014**: WHEN `coverUrl` is null/undefined AND `isbn` is provided, the primitive SHALL derive the photo-path URL as `https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg?default=false` (ISBN normalized by stripping non-alphanumerics; `default=false` makes Open Library 404 on missing covers instead of serving a blank image, so the error path triggers). A stored `coverUrl` always wins over derivation.
-- `[ ]` **COMP-BOOK-COVER-011**: WHEN the photo-path `<img>` fires `onError`, the primitive SHALL swap to the typographic cloth-bound fallback (COMP-BOOK-COVER-005). Requires a client boundary (`"use client"` + failed-image state, mirroring the design handoff's `DgBookCover`). *(Un-deferred 2026-06-11 alongside COMP-BOOK-COVER-014 — derivation without an error fallback would render broken images for ISBN-less or uncovered books.)*
+- `[x]` **COMP-BOOK-COVER-014**: WHEN `coverUrl` is null/undefined AND `isbn` is provided, the primitive SHALL derive the photo-path URL as `https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg?default=false` (ISBN normalized by stripping non-alphanumerics; `default=false` makes Open Library 404 on missing covers instead of serving a blank image, so the error path triggers). A stored `coverUrl` always wins over derivation.
+- `[x]` **COMP-BOOK-COVER-011**: WHEN the photo-path `<img>` fires `onError`, the primitive SHALL swap to the typographic cloth-bound fallback (COMP-BOOK-COVER-005). Requires a client boundary (`"use client"` + failed-image state, mirroring the design handoff's `DgBookCover`). *(Un-deferred 2026-06-11 alongside COMP-BOOK-COVER-014 — derivation without an error fallback would render broken images for ISBN-less or uncovered books.)*
 
 ## Deferred
 - `[D]` **COMP-BOOK-COVER-012**: Spine text for `lg`/`xl` variants (title rendered vertically on the spine).

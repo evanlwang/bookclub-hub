@@ -82,7 +82,7 @@ Photo path skips layers 2-3, 5-6 and replaces them with the `<img>`, but keeps t
 3. ✅ Component-private inline literals are an intentional exception.
 
 ### Deferred / Active gaps
-1. **`<img>` error fallback + ISBN derivation** — in progress (COMP-BOOK-COVER-011/-014, un-deferred 2026-06-11).
+1. ~~`<img>` error fallback + ISBN derivation~~ — shipped 2026-06-11 (COMP-BOOK-COVER-011/-014).
 2. **Spine text** for `lg`/`xl` (title rendered vertically on the spine). Visual prototype shows it; not in the implementation.
 3. **Lazy-loaded image performance** for grids of covers (e.g., nomination lists with 20+ books). `loading="lazy"` is set but no priority hints.
 4. **Variant pre-warming** so a `lg` and a `sm` of the same book always pick the same variant — currently handled by the hash; document the invariant.

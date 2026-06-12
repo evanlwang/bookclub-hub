@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// @spec COMP-BOOK-COVER-001 through COMP-BOOK-COVER-010
+// @spec COMP-BOOK-COVER-001 through COMP-BOOK-COVER-011, COMP-BOOK-COVER-014
 // LLD: docs/llds/components-book-cover.md
 
 import { describe, expect, it } from "vitest";
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { BookCover } from "@/components/ui/book-cover";
 
 describe("BookCover — render paths", () => {
@@ -104,5 +104,47 @@ describe("BookCover — token exemption (COMP-BOOK-COVER-010)", () => {
     // This test exists to anchor the spec to a test file. The exemption is
     // structural — there is no token-application assertion to make.
     expect(true).toBe(true);
+  });
+});
+
+describe("BookCover — image fallback chain", () => {
+  // @spec COMP-BOOK-COVER-014
+  it("derives the Open Library cover URL from isbn when coverUrl is absent", () => {
+    const { container } = render(
+      <BookCover title="Dune" author="Herbert" isbn="978-0441172719" />,
+    );
+    const img = container.querySelector("img");
+    expect(img).not.toBeNull();
+    expect(img!.getAttribute("src")).toBe(
+      "https://covers.openlibrary.org/b/isbn/9780441172719-M.jpg?default=false",
+    );
+  });
+
+  // @spec COMP-BOOK-COVER-014 — stored coverUrl always wins
+  it("prefers a stored coverUrl over isbn derivation", () => {
+    const { container } = render(
+      <BookCover
+        title="Dune"
+        author="Herbert"
+        coverUrl="https://example.com/real.jpg"
+        isbn="978-0441172719"
+      />,
+    );
+    expect(container.querySelector("img")!.getAttribute("src")).toBe(
+      "https://example.com/real.jpg",
+    );
+  });
+
+  // @spec COMP-BOOK-COVER-011
+  it("swaps to the typographic fallback when the image errors", () => {
+    const { container } = render(
+      <BookCover title="Obscure Tome" author="Nobody" isbn="0000000000" />,
+    );
+    const img = container.querySelector("img");
+    expect(img).not.toBeNull();
+    fireEvent.error(img!);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.textContent).toContain("Obscure Tome");
+    expect(container.textContent).toContain("Nobody");
   });
 });

@@ -436,26 +436,22 @@ export function VotingPhase({
           <p className="font-[var(--font-display)] text-[28px] font-semibold tracking-tight">
             {selected.length}<span className="text-ink-3 text-lg"> / {maxApprovals}</span>
           </p>
+          {/* @spec VOTE-UI-005 — one dog-ear idiom everywhere: the sidebar
+              slots are the same EarGlyph folds as the header tracker, at 28px.
+              (Re-specced from the earlier circles-with-checkmarks adaptation.) */}
           <div data-testid="approval-dots" className="flex gap-2 mt-3 mb-4 items-center">
             {[...Array(maxApprovals)].map((_, i) => {
               const filled = i < selected.length;
               return (
-                <div
+                <span
                   key={i}
                   data-testid="approval-dot"
                   data-filled={filled}
-                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${
-                    filled
-                      ? "border-primary bg-primary shadow-[0_0_0_3px_var(--color-primary-soft)]"
-                      : "border-line-strong bg-transparent"
-                  }`}
+                  data-glyph="ear"
+                  className="inline-flex"
                 >
-                  {filled && (
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12.5l4.5 4.5L19 7" />
-                    </svg>
-                  )}
-                </div>
+                  <EarGlyph filled={filled} size={28} />
+                </span>
               );
             })}
             <span className="text-[11px] text-ink-3 ml-auto">

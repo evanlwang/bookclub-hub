@@ -139,6 +139,7 @@ export default async function ProgressPage({
               title={book.title}
               author={book.author}
               coverUrl={book.coverUrl}
+              isbn={book.isbn}
               size="md"
             />
             <div className="min-w-0">

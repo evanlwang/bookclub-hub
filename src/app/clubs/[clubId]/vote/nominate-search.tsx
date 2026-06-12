@@ -71,6 +71,7 @@ export function NominateSearch({
                 title={book.title}
                 author={book.author}
                 coverUrl={book.coverUrl}
+                isbn={book.isbn}
                 size="sm"
               />
               <div className="flex-1 min-w-0">

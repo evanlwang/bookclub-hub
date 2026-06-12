@@ -1,5 +1,10 @@
-// @spec COMP-BOOK-COVER-001..010
+// @spec COMP-BOOK-COVER-001..011, COMP-BOOK-COVER-014
 /* eslint-disable no-restricted-syntax -- COMP-BOOK-COVER-010: cloth-bound metaphor is the documented exemption from DSYS-TOKEN-003 */
+// Client component: the photo path tracks an onError state so failed covers
+// swap to the typographic fallback (COMP-BOOK-COVER-011).
+"use client";
+
+import { useState } from "react";
 // Cozy redesign: six warm cloth-bound variants (no cool tones). Each is a
 // palette: deep cloth, lifted highlight, cream foil ink, mid rule.
 type CoverVariant =
@@ -87,19 +92,35 @@ interface BookCoverProps {
   title: string;
   author: string;
   coverUrl?: string | null;
+  /** Fallback image source when no coverUrl is stored (COMP-BOOK-COVER-014). */
+  isbn?: string | null;
   variant?: CoverVariant;
   size?: CoverSize;
+}
+
+// @spec COMP-BOOK-COVER-014
+// `default=false` makes Open Library 404 on unknown ISBNs instead of serving
+// a blank 1×1 image — the 404 fires the <img> onError, which flips to the
+// cloth fallback. Mirrors the design handoff's DgBookCover.
+function olCoverUrl(isbn: string): string | null {
+  const normalized = isbn.replace(/[^0-9Xx]/g, "");
+  if (!normalized) return null;
+  return `https://covers.openlibrary.org/b/isbn/${normalized}-M.jpg?default=false`;
 }
 
 export function BookCover({
   title,
   author,
   coverUrl,
+  isbn,
   variant,
   size = "md",
 }: BookCoverProps) {
+  // @spec COMP-BOOK-COVER-011 — failed photo loads fall back to cloth.
+  const [imageFailed, setImageFailed] = useState(false);
   const v = variants[variant ?? pickVariant(title)];
   const d = dims[size];
+  const imageUrl = coverUrl ?? (isbn ? olCoverUrl(isbn) : null);
 
   // Outer envelope shared by image + typographic paths so both feel like the
   // same physical object: same proportions, same drop, same edge highlight.
@@ -118,7 +139,7 @@ export function BookCover({
     ].join(", "),
   };
 
-  if (coverUrl) {
+  if (imageUrl && !imageFailed) {
     return (
       <div
         className="relative rounded-[2px] overflow-hidden shrink-0 bg-[oklch(0.22_0.01_60)]"
@@ -126,10 +147,11 @@ export function BookCover({
         aria-label={`${title} by ${author}`}
       >
         <img
-          src={coverUrl}
+          src={imageUrl}
           alt=""
           className="w-full h-full object-cover"
           loading="lazy"
+          onError={() => setImageFailed(true)}
         />
         {/* Spine sliver — a faint vertical band on the left edge keeps the
             bound-book feel even when the artwork is photographic. */}
