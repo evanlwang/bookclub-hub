@@ -3,7 +3,7 @@
 **LLD**: docs/llds/components-book-cover.md
 **Implementing artifacts**:
 - Component: `src/components/ui/book-cover.tsx`
-- Tests: forthcoming (`tests/unit/components/book-cover.test.tsx`)
+- Tests: `tests/unit/components/book-cover.test.tsx`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
@@ -11,7 +11,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## API
 
-- `[x]` **COMP-BOOK-COVER-001**: The BookCover primitive SHALL accept `title` (required), `author` (required), `coverUrl` (optional string | null), `variant ∈ {teal, rust, sage, mauve, amber, ink}` (optional), and `size ∈ {sm, md, lg, xl}` (default `md`).
+- `[x]` **COMP-BOOK-COVER-001**: The BookCover primitive SHALL accept `title` (required), `author` (required), `coverUrl` (optional string | null), `isbn` (optional string | null — fallback image source, see COMP-BOOK-COVER-014), `variant ∈ {teal, rust, sage, mauve, amber, ink}` (optional), and `size ∈ {sm, md, lg, xl}` (default `md`).
 
 ## Variant Pick
 
@@ -21,7 +21,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 ## Render Paths
 
 - `[x]` **COMP-BOOK-COVER-004**: When `coverUrl` is provided, the primitive SHALL render an `<img>` inside a hardcover envelope with drop shadow, left-edge spine sliver, and inset ring border.
-- `[x]` **COMP-BOOK-COVER-005**: When `coverUrl` is not provided, the primitive SHALL render a typographic cloth-bound fallback using the variant's `{base, lift, foil, rule}` palette with title (foil-stamped), author (small-caps italic), top and bottom double rules, and an optional central ornament.
+- `[x]` **COMP-BOOK-COVER-005**: When no image URL is resolvable (no `coverUrl`, no `isbn` — see COMP-BOOK-COVER-014) or the image failed to load (COMP-BOOK-COVER-011), the primitive SHALL render a typographic cloth-bound fallback using the variant's `{base, lift, foil, rule}` palette with title (foil-stamped), author (small-caps italic), top and bottom double rules, and an optional central ornament.
 
 ## Size Geometry
 
@@ -37,8 +37,11 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 - `[x]` **COMP-BOOK-COVER-010**: BookCover SHALL be exempt from `DSYS-TOKEN-003` for **all inline-style values that render the cloth-bound book metaphor**: the six variant palettes (`{base, lift, foil, rule}`), layered radial and linear gradients, envelope drop shadows, edge highlights, spine raised-band rules, weave overlay, and foil-stamped title/author `text-shadow` values. These values are component-private and SHALL NOT be promoted to the global token set. Non-cover styling (layout utilities, positioning, generic radii like `rounded-[2px]`) SHALL go through tokens.
 
-## Deferred
+## Image Fallback Chain
 
-- `[D]` **COMP-BOOK-COVER-011**: `<img>` `onError` fallback to the typographic path.
+- `[ ]` **COMP-BOOK-COVER-014**: WHEN `coverUrl` is null/undefined AND `isbn` is provided, the primitive SHALL derive the photo-path URL as `https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg?default=false` (ISBN normalized by stripping non-alphanumerics; `default=false` makes Open Library 404 on missing covers instead of serving a blank image, so the error path triggers). A stored `coverUrl` always wins over derivation.
+- `[ ]` **COMP-BOOK-COVER-011**: WHEN the photo-path `<img>` fires `onError`, the primitive SHALL swap to the typographic cloth-bound fallback (COMP-BOOK-COVER-005). Requires a client boundary (`"use client"` + failed-image state, mirroring the design handoff's `DgBookCover`). *(Un-deferred 2026-06-11 alongside COMP-BOOK-COVER-014 — derivation without an error fallback would render broken images for ISBN-less or uncovered books.)*
+
+## Deferred
 - `[D]` **COMP-BOOK-COVER-012**: Spine text for `lg`/`xl` variants (title rendered vertically on the spine).
 - `[D]` **COMP-BOOK-COVER-013**: Image priority/preload hints for cover grids (e.g., nomination lists).

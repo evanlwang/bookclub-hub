@@ -57,7 +57,7 @@ arrows:
     drift: null
 
   voting:
-    status: OK
+    status: PARTIAL
     sampled: 2026-05-07
     audited: 2026-06-11
     audited_sha: ec02705
@@ -66,7 +66,7 @@ arrows:
       - clubs
       - live-updates
     detail: voting.md
-    next: null
+    next: implement re-specced VOTE-UI-005 (sidebar approval EarGlyphs; voting polish plan)
     drift: null
 
   meetings:
@@ -190,13 +190,13 @@ arrows:
     drift: null
 
   components-book-cover:
-    status: OK
+    status: PARTIAL
     sampled: 2026-05-18
     audited: 2026-05-18
     blocks: []
     blockedBy: []
     detail: ../llds/components-book-cover.md
-    next: null
+    next: implement COMP-BOOK-COVER-011 + -014 (ISBN-derived cover URL + onError cloth fallback; voting polish plan)
     drift: null
 
   components-chapter-chip:
