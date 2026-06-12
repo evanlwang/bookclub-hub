@@ -51,6 +51,8 @@ Surfaces that were server-rendered props become client queries seeded by the RSC
 | Progress dashboard | `progress.list` | 60s |
 | Nav badges | `clubs.navState` | 60s |
 
+**Test-time scaling:** `NEXT_PUBLIC_LIVE_INTERVAL_SCALE` (default 1) multiplies every interval; the Playwright web server sets 0.15 so the cross-member e2e suite (`tests/e2e/live-updates.spec.ts`) observes polls in seconds instead of minutes. Production always runs at scale 1 — the table above is the spec'd cadence.
+
 Budget math (Vercel Hobby ≈ 1M invocations/month): the worst-case single user parked on a thread page generates ~6/min (thread) + 1/min (nav) ≈ 420/hour. A 10-member club with heavy use (~10 user-hours/day on the hottest pages) ≈ 4–5k/day ≈ 150k/month — comfortably inside budget. `httpBatchLink` coalesces same-tick refetches (nav + page query firing together) into one invocation. This math is the argument for never polling below 10s. Mitigation levers if usage grows: lengthen intervals, or gate polling on activity conditions (e.g. `enabled: round.status === "voting"`).
 
 ## Optimistic Mutation Convention

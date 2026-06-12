@@ -4,7 +4,7 @@ Cross-cutting liveness mechanism — opt-in polling hook, optimistic-mutation co
 
 ## Status
 
-**MAPPED** — segment created 2026-06-11 with the live-updates plan (`docs/plans/live-updates-plan.md`). Specs authored; implementation pending (Phase 1 of the plan). All LIVE-* specs are active gaps by design — tests-then-code follows.
+**OK** — implemented and audited 2026-06-11 (git SHA `b9bfb81`). All 6 LIVE-* specs `[x]`; all consumer-side live/optimistic specs `[x]` across the five feature segments. Verified by 13 unit tests (hook contract, optimistic cache behavior per surface), 10 integration tests (`rounds.turnout`, `clubs.navState`), and 7 cross-member e2e scenarios (`tests/e2e/live-updates.spec.ts`).
 
 ## References
 
@@ -18,12 +18,15 @@ Cross-cutting liveness mechanism — opt-in polling hook, optimistic-mutation co
 - `docs/specs/live-specs.md` (LIVE-HOOK-001, LIVE-HOOK-PAUSE-HIDDEN-001, LIVE-HOOK-PAUSE-MUTATING-001, LIVE-HOOK-STALETIME-001, LIVE-HOOK-ENABLED-001, LIVE-UX-GENTLE-001)
 - Consumer-side specs live in the consuming segments: `vote-specs.md` (VOTE-API-TURNOUT-001, VOTE-UI-LIVE-POLL-001, VOTE-UI-NOM-LIVE-001, VOTE-UI-OPTIMISTIC-001), `disc-specs.md` (DISC-UI-LIVE-001, DISC-UI-LIST-LIVE-001, DISC-UI-COMMENT-OPTIMISTIC-001, DISC-UI-FETCH-PARALLEL-001), `prog-specs.md` (PROG-DASH-LIVE-001, PROG-UI-OPTIMISTIC-001), `meet-specs.md` (MEET-UI-LIVE-001, MEET-UI-CACHE-SOT-001, MEET-UI-RESPOND-OPTIMISTIC-001), `club-specs.md` (CLUB-API-NAVSTATE-001, CLUB-NAV-BADGE-LIVE-001)
 
-### Tests (planned)
-- `tests/unit/hooks/use-live-query.test.tsx` — hook contract (interval firing, pause-while-mutating, enabled gating, staleTime parity)
-- Consumer e2e: `tests/e2e/live-*.spec.ts`, `tests/e2e/nav-badge-live.spec.ts` (two-browser-context specs in consuming segments)
+### Tests
+- `tests/unit/hooks/use-live-query.test.tsx` — hook contract (interval firing, pause-while-mutating, enabled gating, staleTime parity, background-pause default pinned)
+- `tests/e2e/live-updates.spec.ts` — 7 cross-member scenarios (vote turnout, nominations, thread comments, discussions list, progress rows, meeting responses, nav badge), run with `NEXT_PUBLIC_LIVE_INTERVAL_SCALE=0.15`
+- Consumer-side optimistic tests live in their segments: `tests/unit/app/voting-optimistic.test.tsx`, `comment-composer-optimistic.test.tsx`, `progress-optimistic.test.tsx`, `nav-state-badges.test.tsx`, `discussions-no-waterfall.test.tsx`
 
-### Code (planned)
-- `src/lib/hooks/use-live-query.ts` — the shared hook (sole code artifact owned by this segment; consuming surfaces are owned by their feature segments)
+### Code
+- `src/lib/hooks/use-live-query.ts` — the shared hook (owned by this segment)
+- `src/lib/hooks/use-nav-state.ts` — nav-badge query wrapper (shared with the clubs segment)
+- Consuming surfaces (owned by their feature segments): voting-phase/nominating-phase, thread detail + discussions-content, progress-dashboard + update-modal, meetings-client + respond-meeting, sidebar/mobile nav
 
 ## Architecture
 
@@ -40,12 +43,12 @@ Cross-cutting liveness mechanism — opt-in polling hook, optimistic-mutation co
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| live-specs.md | 6 | 0 | 6 | 0 | 0 |
+| live-specs.md | 6 | 6 | 0 | 0 | 0 |
 
-**Summary:** new segment; all specs are pre-implementation gaps per the plan's tests-first sequencing.
+**Summary:** 100% implemented. Consumer-side IDs (16 across vote/disc/prog/meet/club spec files) also all `[x]`.
 
 ## Work Required
 
-### Now (per docs/plans/live-updates-plan.md)
-1. Phase 1: hook + `rounds.turnout` + `clubs.navState` procedures, tests first.
-2. Phases 2–5: optimistic mutations, nav badges, discussions waterfall, per-surface polling — tracked in the consuming segments' `next` fields.
+### Nice to Have
+1. After a pilot period, compare actual Vercel invocation counts against the LLD budget table; lengthen intervals or add `enabled` activity gating if usage runs hot.
+2. WebSockets/SSE upgrade remains HLD-deferred; the hook call sites are the swap points.

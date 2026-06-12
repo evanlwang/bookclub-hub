@@ -87,8 +87,8 @@ State: create thread — buttons shown: title input, body textarea, chapter tag 
 
 ## Live Updates (mechanism: docs/llds/live-updates.md)
 
-- `[ ]` **DISC-UI-LIVE-001**: WHILE a member is viewing a thread detail page, new comments and edits from other members SHALL appear within 10s via a polled `threads.get` query, preserving the viewer's scroll position (stable comment keys; arrivals append in place).
-- `[ ]` **DISC-UI-LIST-LIVE-001**: WHILE a member is viewing the discussions list, new threads and updated comment counts SHALL appear within 30s via a polled `threads.list` query.
+- `[x]` **DISC-UI-LIVE-001**: WHILE a member is viewing a thread detail page, new comments and edits from other members SHALL appear within 10s via a polled `threads.get` query, preserving the viewer's scroll position (stable comment keys; arrivals append in place).
+- `[x]` **DISC-UI-LIST-LIVE-001**: WHILE a member is viewing the discussions list, new threads and updated comment counts SHALL appear within 30s via a polled `threads.list` query.
 - `[x]` **DISC-UI-COMMENT-OPTIMISTIC-001**: WHEN the viewer posts a comment, it SHALL append to the thread immediately with a pending visual treatment (reduced opacity) before the server responds. IF the mutation fails, the pending comment SHALL be removed and the draft preserved in the composer (extends DISC-UI-COMPOSER-DRAFT-PRESERVE-001 — draft clears only on success). On settle, the thread query SHALL be invalidated so the temp comment is replaced by the server row.
 - `[x]` **DISC-UI-FETCH-PARALLEL-001**: The discussions page SHALL resolve the current book and the viewer's spoiler cutoff server-side (RSC, parallel fetches) and pass them as initial values to the client — eliminating the client-side selections → progress → threads request waterfall. Fail-safe cutoff semantics per DISC-LIB-CUTOFF-FAILSAFE-001 are unchanged.
 

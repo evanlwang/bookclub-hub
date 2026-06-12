@@ -3,8 +3,8 @@
 **LLD**: docs/llds/reading-progress.md
 **Implementing artifacts**:
 - API: `src/server/routers/progress.ts`, `src/server/routers/books.ts` (`listForClub`)
-- UI: `src/app/clubs/[clubId]/progress/page.tsx`, `update-modal.tsx`
-- Tests: `tests/integration/progress.test.ts`, `tests/e2e/progress-*.spec.ts`
+- UI: `src/app/clubs/[clubId]/progress/page.tsx` (RSC), `progress-dashboard.tsx`, `update-modal.tsx`
+- Tests: `tests/integration/progress.test.ts`, `tests/e2e/progress-*.spec.ts`, `tests/unit/app/progress-optimistic.test.tsx`, `tests/e2e/live-updates.spec.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
@@ -99,8 +99,8 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 
 ## Live Updates (mechanism: docs/llds/live-updates.md)
 
-- `[ ]` **PROG-DASH-LIVE-001**: WHILE a member is viewing the progress dashboard, other members' progress rows and the aggregate summary SHALL refresh within 60s via a polled `progress.list` query — without a reload. Row animations SHALL NOT replay on background refetches (stable keys, in-place swaps).
-- `[ ]` **PROG-UI-OPTIMISTIC-001**: WHEN the viewer saves progress from the update modal, their own dashboard row and the `progress.me` cache SHALL reflect the new values immediately (`onMutate` cache write). IF the mutation fails, the prior values SHALL be restored and the modal's existing inline error shown (PROG-ERR-001). The undo-toast contract (PROG-UI-MODAL-UNDO-001) is unchanged.
+- `[x]` **PROG-DASH-LIVE-001**: WHILE a member is viewing the progress dashboard, other members' progress rows and the aggregate summary SHALL refresh within 60s via a polled `progress.list` query — without a reload. Row animations SHALL NOT replay on background refetches (stable keys, in-place swaps).
+- `[x]` **PROG-UI-OPTIMISTIC-001**: WHEN the viewer saves progress from the update modal, their own dashboard row and the `progress.me` cache SHALL reflect the new values immediately (`onMutate` cache write). IF the mutation fails, the prior values SHALL be restored and the modal's existing inline error shown (PROG-ERR-001). The undo-toast contract (PROG-UI-MODAL-UNDO-001) is unchanged.
 
 ## Error Handling
 

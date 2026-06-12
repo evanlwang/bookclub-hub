@@ -40,10 +40,10 @@ arrows:
     drift: null
 
   clubs:
-    status: PARTIAL
+    status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: b9bfb81
     blocks:
       - voting
       - meetings
@@ -57,64 +57,64 @@ arrows:
     drift: null
 
   voting:
-    status: PARTIAL
+    status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: b9bfb81
     blocks: []
     blockedBy:
       - clubs
       - live-updates
     detail: voting.md
-    next: implement VOTE-API-TURNOUT-001 + VOTE-UI-LIVE-POLL/NOM-LIVE/OPTIMISTIC-001 (live-updates plan Phases 1/2/5)
+    next: null
     drift: null
 
   meetings:
-    status: PARTIAL
+    status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: b9bfb81
     blocks: []
     blockedBy:
       - clubs
       - live-updates
     detail: meetings.md
-    next: implement MEET-UI-LIVE-001 + MEET-UI-CACHE-SOT-001 + MEET-UI-RESPOND-OPTIMISTIC-001 (live-updates plan Phase 5)
+    next: null
     drift: null
 
   discussions:
-    status: PARTIAL
+    status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: b9bfb81
     blocks: []
     blockedBy:
       - clubs
       - live-updates
     detail: discussions.md
-    next: implement DISC-UI-LIVE-001 + DISC-UI-LIST-LIVE-001 (live-updates plan Phase 5)
+    next: null
     drift: null
 
   reading-progress:
-    status: PARTIAL
+    status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: b9bfb81
     blocks: []
     blockedBy:
       - clubs
       - live-updates
     detail: reading-progress.md
-    next: implement PROG-DASH-LIVE-001 + PROG-UI-OPTIMISTIC-001 (live-updates plan Phases 2/5)
+    next: null
     drift: null
 
   # Cross-cutting liveness mechanism (polling hook + optimistic conventions).
   # Blocks the feature segments that consume its behavioral contract.
   live-updates:
-    status: PARTIAL
+    status: OK
     sampled: 2026-06-11
-    audited: null
-    audited_sha: null
+    audited: 2026-06-11
+    audited_sha: b9bfb81
     blocks:
       - clubs
       - voting
@@ -123,7 +123,7 @@ arrows:
       - reading-progress
     blockedBy: []
     detail: live-updates.md
-    next: LIVE-HOOK-* implemented; LIVE-UX-GENTLE-001 lands with the Phase 5 surface conversions
+    next: null
     drift: null
 
   # Design overlay — parallel to the feature arrows. No feature segment declares

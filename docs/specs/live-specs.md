@@ -2,8 +2,8 @@
 
 **LLD**: docs/llds/live-updates.md
 **Implementing artifacts**:
-- Hook: `src/lib/hooks/use-live-query.ts`
-- Tests: `tests/unit/hooks/use-live-query.test.tsx`
+- Hooks: `src/lib/hooks/use-live-query.ts`, `src/lib/hooks/use-nav-state.ts`
+- Tests: `tests/unit/hooks/use-live-query.test.tsx`, `tests/e2e/live-updates.spec.ts` (cross-member polling, all surfaces; runs with `NEXT_PUBLIC_LIVE_INTERVAL_SCALE=0.15` per playwright.config.ts)
 
 Status markers: `[x]` implemented · `[ ]` gap (not yet built) · `[D]` deferred · `[!]` divergence
 
@@ -21,4 +21,4 @@ Surface-specific live/optimistic specs live in each consuming segment's spec fil
 
 ## Freshness UX
 
-- `[ ]` **LIVE-UX-GENTLE-001**: Background interval refetches SHALL NOT render loading skeletons, spinners, or cause layout shift on any live surface — components branch on `isPending` (no data yet), never on `isFetching`; arriving data swaps in place under stable React keys.
+- `[x]` **LIVE-UX-GENTLE-001**: Background interval refetches SHALL NOT render loading skeletons, spinners, or cause layout shift on any live surface — components branch on `isPending` (no data yet), never on `isFetching`; arriving data swaps in place under stable React keys.

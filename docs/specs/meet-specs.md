@@ -4,7 +4,7 @@
 **Implementing artifacts**:
 - API: `src/server/routers/meetings.ts`
 - UI: `src/app/clubs/[clubId]/meetings/page.tsx`, `meetings-client.tsx`, `create-meeting.tsx`, `respond-meeting.tsx`
-- Tests: `tests/integration/meetings.test.ts`, `tests/integration/meetings-security.test.ts`, `tests/e2e/meeting-confirm.spec.ts`, `tests/e2e/meeting-create-respond.spec.ts`, `tests/e2e/meeting-filters.spec.ts`, `tests/e2e/meeting-scheduling.spec.ts`, `tests/unit/meetings-availability.test.ts`
+- Tests: `tests/integration/meetings.test.ts`, `tests/integration/meetings-security.test.ts`, `tests/e2e/meeting-confirm.spec.ts`, `tests/e2e/meeting-create-respond.spec.ts`, `tests/e2e/meeting-filters.spec.ts`, `tests/e2e/meeting-scheduling.spec.ts`, `tests/e2e/live-updates.spec.ts`, `tests/unit/meetings-availability.test.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
@@ -101,9 +101,9 @@ These specs document invariants enforced inside the `meetings` router and exerci
 
 ## Live Updates (mechanism: docs/llds/live-updates.md)
 
-- `[ ]` **MEET-UI-LIVE-001**: WHILE a member is viewing the meetings page, other members' availability responses (response counts, progress bar fill per MEET-UI-PROP-PROGRESS-001, heatmap cells, attendee stacks) and meeting state changes SHALL appear within 30s via a polled `meetings.list` query — without a reload.
-- `[ ]` **MEET-UI-CACHE-SOT-001**: The meetings client SHALL render from the `meetings.list` query cache (seeded with RSC `initialData`) rather than a one-time `useState` copy of initial props, so polled refetches and `setData` writes are the single source of truth. The existing optimistic `apply*` helpers become cache transforms with unchanged reshaping semantics.
-- `[ ]` **MEET-UI-RESPOND-OPTIMISTIC-001**: WHEN the viewer saves availability, the response counts and their own per-slot selections SHALL update immediately via a cache write. IF the mutation fails, the prior cache state SHALL be restored and the existing inline error shown. On settle, `meetings.list` SHALL be invalidated for server reconciliation.
+- `[x]` **MEET-UI-LIVE-001**: WHILE a member is viewing the meetings page, other members' availability responses (response counts, progress bar fill per MEET-UI-PROP-PROGRESS-001, heatmap cells, attendee stacks) and meeting state changes SHALL appear within 30s via a polled `meetings.list` query — without a reload.
+- `[x]` **MEET-UI-CACHE-SOT-001**: The meetings client SHALL render from the `meetings.list` query cache (seeded with RSC `initialData`) rather than a one-time `useState` copy of initial props, so polled refetches and `setData` writes are the single source of truth. The existing optimistic `apply*` helpers become cache transforms with unchanged reshaping semantics.
+- `[x]` **MEET-UI-RESPOND-OPTIMISTIC-001**: WHEN the viewer saves availability, the response counts and their own per-slot selections SHALL update immediately via a cache write. IF the mutation fails, the prior cache state SHALL be restored and the existing inline error shown. On settle, `meetings.list` SHALL be invalidated for server reconciliation.
 
 ## Meeting Creation UI
 
