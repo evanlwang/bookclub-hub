@@ -70,12 +70,17 @@ admin → "Close voting & reveal winner" button (voting phase)
 
 The Close button is disabled with helper text "No votes cast yet" when zero approvals exist across nominations (CLOSE-007). Tie-break behavior is the existing `VOTE-BE-001` rule — surfaced in copy rather than overridable. Manual tie override is deferred (`VOTE-BE-TIE-MANUAL-001`).
 
-## Gaps (UI not yet built; mutations exist)
+## Live Updates
 
-Button: "Set up first meeting" CTA on winner banner — `[!]` listed in older spec, not implemented.
-Button: "View on Open Library" CTA on winner banner — `[!]` listed in older spec, not implemented.
-Pitch textarea in NominateModal — `[ ]` data field exists on Nomination but no UI input.
-Nomination deadline / voting deadline pickers — `[ ]` data fields exist on VotingRound; no UI exposure.
+Mechanism owned by `docs/llds/live-updates.md`; this segment's surfaces:
+
+- **Voter turnout card** renders from a polled `rounds.turnout` client query (`{ voterCount, memberCount, status }`, 15s interval, RSC-seeded `initialData`) instead of server-component props + `router.refresh()` (VOTE-API-TURNOUT-001, VOTE-UI-LIVE-POLL-001). When the polled status leaves "voting" (another admin closed/cancelled), the page makes one ref-guarded `router.refresh()` to render the new phase — the structural-transition carve-out in the live-updates `router.refresh()` policy.
+- **Nominating phase** polls `rounds.get` at 15s so other members' nominations appear without reload (VOTE-UI-NOM-LIVE-001).
+- **Vote submit is optimistic** (VOTE-UI-OPTIMISTIC-001): button saved-state flips in `onMutate`; first vote bumps the turnout cache; rollback on error; `onSettled` invalidates `rounds.turnout` + `rounds.getClosePreview`.
+
+## Gaps
+
+None currently. Formerly-listed gaps all shipped in Phase E / cozy redesign: winner-banner CTAs (VOTE-UI-DEC-CTA-MEETING-001, VOTE-UI-DEC-CTA-OPENLIB-001), nomination pitch textarea (VOTE-UI-NOMMODAL-PITCH-001), and the nomination/voting deadline pickers (VOTE-UI-DEADLINE-NOM-001, VOTE-UI-DEADLINE-VOTE-001).
 
 ## Data Model
 
@@ -144,6 +149,7 @@ BookSelection {
 | `rounds.get` | member | `{ clubId, roundId }` | `{ round, nominations, votes? }` | hides tallies pre-decided |
 | `rounds.advance` | admin+ | `{ clubId, roundId }` | `{ newStatus, winner? }` | nominating→voting OR voting→decided; throws BAD_REQUEST if decided/cancelled |
 | `rounds.cancel` | admin+ | `{ clubId, roundId }` | `{ success: true }` | throws BAD_REQUEST if decided/cancelled |
+| `rounds.turnout` | member | `{ clubId, roundId }` | `{ voterCount, memberCount, status }` | cheap poll target for the turnout card (VOTE-API-TURNOUT-001) |
 | `nominations.create` | member | `{ clubId, roundId, bookId, pitch? }` | `{ nomination }` | requires status="nominating"; CONFLICT on duplicate |
 | `nominations.delete` | nominator OR admin+ | `{ clubId, nominationId }` | `{ success: true }` | NOT_FOUND if the loaded nomination's `round.clubId` differs from `input.clubId` — cross-club guard (VOTE-API-NOMDELETE-XCLUB-001) |
 | `votes.submit` | member | `{ clubId, roundId, nominationIds }` | `{ success, voteCount }` | requires status="voting"; replaces all prior votes |
@@ -158,7 +164,7 @@ BookSelection {
 - `[x]` Round enters "nominating" → email all members (`rounds.ts:17-66`)
 - `[x]` Round enters "voting" → email all members (`rounds.ts:118-126`)
 - `[x]` Round decided → email all members with winner (`rounds.ts:128-181`)
-- `[ ]` Voting deadline 24h before → email non-voters (gap; needs deadline UI)
+- `[x]` Voting deadline 24h before → email non-voters via cron (`src/app/api/cron/voting-deadline-reminder/route.ts`, VOTE-NOTIFY-003)
 
 ## Decisions & Alternatives
 
@@ -183,7 +189,6 @@ BookSelection {
 1. **Nomination limits per member per round.** Currently unlimited.
 2. **Reading history analytics.** Genre distribution, pace over time, author diversity.
 3. **"I've already read this" flag.** Useful signal but adds UI complexity.
-4. **Pitch text in nominate flow.** Data model supports it; no UI input today.
 
 ## References
 

@@ -49,7 +49,7 @@ Lightweight meeting scheduling — proposed slots, member availability, organize
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| meet-specs.md | 45 | 44 | 0 | 1 | 0 |
+| meet-specs.md | 51 | 50 | 0 | 1 | 0 |
 
 **Summary:** 100% of non-deferred specs implemented (44/44). 1 deferred (`MEET-UI-CONFIRM-RECOMMEND-001` — superseded by the "Most available" badge).
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui";
 import { trpc } from "@/trpc/react-hooks";
+import { useViewer } from "@/lib/auth/use-viewer";
 
 interface CommentComposerProps {
   clubId: string;
@@ -24,24 +25,59 @@ export function CommentComposer({
   const [body, setBody] = useState("");
   const [error, setError] = useState("");
   const utils = trpc.useUtils();
+  const { viewerId, viewerName } = useViewer();
 
-  // @spec DISC-UI-COMPOSER-DRAFT-PRESERVE-001
+  // @spec DISC-UI-COMMENT-OPTIMISTIC-001, DISC-UI-COMPOSER-DRAFT-PRESERVE-001
+  // Optimistic append: the comment shows up in the thread (pending style)
+  // before the server responds; rollback removes it on error.
   // CONTRACT: clear the draft body ONLY in `onSuccess`. On error, leave the
   // textarea untouched so the user doesn't lose their unsent comment to a
-  // transient network failure. The inline `setError` message is the only
-  // visible side effect of a failed submit.
+  // transient network failure — the rollback restores the comment list and
+  // the inline `setError` message is the only other visible side effect.
   const createComment = trpc.comments.create.useMutation({
+    onMutate: async (vars) => {
+      // Kill in-flight fetches (incl. polls) for this key so a stale response
+      // can't overwrite the optimistic comment.
+      await utils.threads.get.cancel({ clubId, threadId });
+      const snapshot = utils.threads.get.getData({ clubId, threadId });
+      utils.threads.get.setData({ clubId, threadId }, (prev) => {
+        if (!prev) return prev;
+        const tempComment = {
+          id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          threadId,
+          body: vars.body,
+          authorId: viewerId ?? "viewer",
+          author: { displayName: viewerName || "You" },
+          parentCommentId: vars.parentCommentId ?? null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          pending: true,
+        } as unknown as (typeof prev.thread.comments)[number];
+        return {
+          ...prev,
+          thread: {
+            ...prev.thread,
+            comments: [...prev.thread.comments, tempComment],
+          },
+        };
+      });
+      return { snapshot };
+    },
     onSuccess: () => {
       setBody("");
-      // Refresh the parent thread's cached comments. The page also calls
-      // `loadThread` via the `onPosted` callback, but invalidating here keeps
-      // any other mount of `threads.get` in sync too.
-      void utils.threads.get.invalidate({ clubId, threadId });
       onPosted();
     },
-    onError: (err) => {
-      // Draft preserved — see DISC-UI-COMPOSER-DRAFT-PRESERVE-001.
+    onError: (err, _vars, context) => {
+      // Rollback the optimistic append; draft preserved.
+      if (context && context.snapshot !== undefined) {
+        utils.threads.get.setData({ clubId, threadId }, context.snapshot);
+      }
       setError(err.message || "Failed to post comment");
+    },
+    onSettled: () => {
+      // Server reconciliation: replaces the temp comment with the real row
+      // (and keeps any other mount of `threads.get` in sync too).
+      void utils.threads.get.invalidate({ clubId, threadId });
     },
   });
 

@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: 2026-05-10
+last_updated: 2026-06-11
 
 # Taxonomy groups segments by domain cluster. Purely organizational.
 taxonomy:
@@ -11,6 +11,7 @@ taxonomy:
     - meetings
     - discussions
     - reading-progress
+    - live-updates
   design-system:
     - design-system
     - components-button
@@ -27,7 +28,7 @@ taxonomy:
 # The graph of segments. Each entry is one arrow segment.
 arrows:
   auth:
-    status: OK
+    status: STALE
     sampled: 2026-05-07
     audited: 2026-05-10
     audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
@@ -35,14 +36,14 @@ arrows:
       - clubs
     blockedBy: []
     detail: auth.md
-    next: null
-    drift: null
+    next: re-audit — 17 segment files changed since audited_sha (cozy login/join redesign; auth+home specs grew 96 → 106)
+    drift: coverage tables were stale (regenerated 2026-06-11); spec-to-code verification not redone since aee095b6
 
   clubs:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: ec02705
     blocks:
       - voting
       - meetings
@@ -50,6 +51,7 @@ arrows:
       - reading-progress
     blockedBy:
       - auth
+      - live-updates
     detail: clubs.md
     next: null
     drift: null
@@ -57,11 +59,12 @@ arrows:
   voting:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: ec02705
     blocks: []
     blockedBy:
       - clubs
+      - live-updates
     detail: voting.md
     next: null
     drift: null
@@ -69,11 +72,12 @@ arrows:
   meetings:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: ec02705
     blocks: []
     blockedBy:
       - clubs
+      - live-updates
     detail: meetings.md
     next: null
     drift: null
@@ -81,11 +85,12 @@ arrows:
   discussions:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: ec02705
     blocks: []
     blockedBy:
       - clubs
+      - live-updates
     detail: discussions.md
     next: null
     drift: null
@@ -93,12 +98,31 @@ arrows:
   reading-progress:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-11
+    audited_sha: ec02705
     blocks: []
     blockedBy:
       - clubs
+      - live-updates
     detail: reading-progress.md
+    next: null
+    drift: null
+
+  # Cross-cutting liveness mechanism (polling hook + optimistic conventions).
+  # Blocks the feature segments that consume its behavioral contract.
+  live-updates:
+    status: OK
+    sampled: 2026-06-11
+    audited: 2026-06-11
+    audited_sha: ec02705
+    blocks:
+      - clubs
+      - voting
+      - meetings
+      - discussions
+      - reading-progress
+    blockedBy: []
+    detail: live-updates.md
     next: null
     drift: null
 
@@ -219,4 +243,5 @@ arrows:
 unmapped:
   docs:
     llds: []
-    specs: []
+    specs:
+      - mobile-specs.md  # cozy-redesign mobile/touch specs (NAV-MOBILE-*, TOUCH-*, VOTE-UI-SLIP-*); spans clubs/voting/design — needs owner assignment

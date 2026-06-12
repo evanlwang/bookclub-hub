@@ -10,6 +10,7 @@ import { CommentItem, type CommentLike } from "./comment-item";
 import { renderBodyHtml } from "@/lib/discussions/markdown";
 import { trpc } from "@/trpc/react-hooks";
 import { useViewer } from "@/lib/auth/use-viewer";
+import { useLiveQueryOptions } from "@/lib/hooks/use-live-query";
 import "../discussions.css";
 
 type Comment = CommentLike & {
@@ -48,7 +49,12 @@ export default function ThreadDetailPage() {
 
   const { viewerId, isAdmin } = useViewer(clubId);
 
-  const threadQuery = trpc.threads.get.useQuery({ clubId, threadId });
+  // @spec DISC-UI-LIVE-001 — other members' comments and edits arrive within
+  // the poll interval; stable comment keys keep scroll position intact.
+  const threadQuery = trpc.threads.get.useQuery(
+    { clubId, threadId },
+    useLiveQueryOptions({ intervalMs: 10_000 }),
+  );
   // The shape mirrors `ThreadDetail` (including author + comments with author),
   // but we cast for the helper render code below — Prisma's Date columns come
   // through as Date objects which `relativeTime` accepts via String().

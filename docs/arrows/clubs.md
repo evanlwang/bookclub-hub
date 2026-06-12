@@ -54,7 +54,7 @@ Multi-tenancy backbone — club creation, membership, roles, the club switcher, 
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| club-specs.md | 56 | 52 | 0 | 4 | 0 |
+| club-specs.md | 63 | 58 | 0 | 5 | 0 |
 | dash-specs.md | 28 | 24 | 0 | 4 | 0 |
 | **Total** | **84** | **76** | **0** | **8** | **0** |
 
@@ -66,11 +66,11 @@ Multi-tenancy backbone — club creation, membership, roles, the club switcher, 
 
 1. **Foundation for all activity segments** — `blocks: [voting, meetings, discussions, reading-progress]`. Drift here cascades, so the OK promotion gates the rest.
 2. **Membership data model gained `lastVisitedDiscussions`** (cluster 10) — the unread-indicator surface lives across `unreadDiscussionCounts` query, `markDiscussionsVisited` mutation, and per-(user,club) sidebar badges.
-3. **Mislocated test file** — `tests/unit/auth/permissions.test.ts` content cites `CLUB-BE-002` and `CLUB-DATA-003`; the file is under an auth folder. Listed in References per @spec content authority. Future cleanup: move to `tests/unit/clubs/` or rename.
+3. **Mislocated test file** — `tests/unit/auth/permissions.test.ts` content cites `CLUB-BE-002` and `CLUB-DATA-003`; the file is under an auth folder. Listed in References per @spec content authority. Future cleanup: move to `tests/unit/auth/permissions.test.ts` (mislocated) or rename.
 
 ## Work Required
 
 ### Nice to Have
-1. Move `tests/unit/auth/permissions.test.ts` → `tests/unit/clubs/permissions.test.ts` (mislocation; not a coherence issue).
+1. Move `tests/unit/auth/permissions.test.ts` → `tests/unit/auth/permissions.test.ts (club permissions; mislocated under auth/)` (mislocation; not a coherence issue).
 2. Surface archive/unarchive in Admin Settings UI (mutations exist; no UI button yet).
 3. Wire `hard-delete-clubs` cron in deployment scheduler (`vercel.json`).

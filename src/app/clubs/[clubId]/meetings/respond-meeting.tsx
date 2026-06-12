@@ -38,12 +38,27 @@ export function RespondMeeting({
   );
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [error, setError] = useState("");
+  const utils = trpc.useUtils();
   // Race-guard: rapid clicks fire overlapping mutations. We only honor the
   // most recent fire by tagging it with a token and comparing in the callback.
   const requestToken = useRef(0);
   const latestPayload = useRef<{ slotId: string; status: ResponseStatus }[]>([]);
+  // Pre-mutation cache snapshot for rollback (MEET-UI-RESPOND-OPTIMISTIC-001).
+  const cacheSnapshot = useRef<unknown>(undefined);
 
+  // @spec MEET-UI-RESPOND-OPTIMISTIC-001
+  // The cache write happens in `onMutate` (via the parent's
+  // `applyViewerResponses` transform) so responded counts and the progress
+  // bar update immediately; errors restore the snapshot; settle reconciles
+  // with the server and refreshes the nav "Respond" badge.
   const submitAvailability = trpc.meetings.submitAvailability.useMutation({
+    onMutate: async (variables) => {
+      await utils.meetings.list.cancel({ clubId });
+      cacheSnapshot.current = utils.meetings.list.getData({ clubId });
+      onResponsesUpdated?.(
+        variables.responses as { slotId: string; status: ResponseStatus }[]
+      );
+    },
     onSuccess: (_data, variables) => {
       const responsesArr = variables.responses as {
         slotId: string;
@@ -51,9 +66,16 @@ export function RespondMeeting({
       }[];
       if (responsesArr !== latestPayload.current) return;
       setSaveStatus("saved");
-      onResponsesUpdated?.(responsesArr);
     },
     onError: (err, variables) => {
+      if (cacheSnapshot.current !== undefined) {
+        utils.meetings.list.setData(
+          { clubId },
+          cacheSnapshot.current as Parameters<
+            typeof utils.meetings.list.setData
+          >[1]
+        );
+      }
       const responsesArr = variables.responses as {
         slotId: string;
         status: ResponseStatus;
@@ -61,6 +83,12 @@ export function RespondMeeting({
       if (responsesArr !== latestPayload.current) return;
       setSaveStatus("error");
       setError(err.message || "Failed to save");
+    },
+    onSettled: () => {
+      void utils.meetings.list.invalidate({ clubId });
+      // @spec CLUB-NAV-BADGE-LIVE-001 — answering the last outstanding poll
+      // clears the sidebar "Respond" badge via the navState query.
+      void utils.clubs.navState.invalidate();
     },
   });
 

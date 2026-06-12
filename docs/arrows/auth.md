@@ -52,8 +52,8 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| auth-specs.md | 45 | 42 | 0 | 3 | 0 |
-| home-specs.md | 51 | 48 | 0 | 3 | 0 |
+| auth-specs.md | 53 | 50 | 0 | 3 | 0 |
+| home-specs.md | 53 | 50 | 0 | 3 | 0 |
 | **Total** | **96** | **90** | **0** | **6** | **0** |
 
 **Summary:** 100% of non-deferred specs implemented (90/90). 6 deliberately-deferred items (smart-detection edge polish + landing copy variants).

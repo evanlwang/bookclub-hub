@@ -251,6 +251,54 @@ export const clubsRouter = router({
       return { success: true };
     }),
 
+  // @spec CLUB-API-NAVSTATE-001
+  // Consolidated nav-badge state for the club layout: one poll-friendly call
+  // instead of three RSC reads (rounds.list + meetings.list + unread counts).
+  // `unreadDiscussionCounts` stays cross-club because the switcher dots
+  // (CLUB-NAV-UNREAD-001) consume the full map.
+  navState: memberProcedure.query(async ({ ctx, input }) => {
+    const [activeRound, proposedMeetings, memberships] = await Promise.all([
+      ctx.db.votingRound.findFirst({
+        where: {
+          clubId: input.clubId,
+          status: { in: ["nominating", "voting"] },
+        },
+        select: { id: true },
+      }),
+      ctx.db.meeting.findMany({
+        where: { clubId: input.clubId, status: "proposed" },
+        select: {
+          slots: { select: { responses: { select: { userId: true } } } },
+        },
+      }),
+      ctx.db.membership.findMany({
+        where: { userId: ctx.user.id },
+        select: { clubId: true, lastVisitedDiscussions: true, joinedAt: true },
+      }),
+    ]);
+
+    const hasUnrespondedMeeting = proposedMeetings.some(
+      (m) =>
+        !m.slots.some((s) =>
+          s.responses.some((r) => r.userId === ctx.user.id)
+        )
+    );
+
+    const unreadDiscussionCounts: Record<string, number> = {};
+    for (const m of memberships) {
+      const since = m.lastVisitedDiscussions ?? m.joinedAt;
+      unreadDiscussionCounts[m.clubId] = await ctx.db.discussionThread.count({
+        where: { clubId: m.clubId, createdAt: { gt: since } },
+      });
+    }
+
+    return {
+      hasActiveVote: Boolean(activeRound),
+      hasUnrespondedMeeting,
+      unreadDiscussionCounts,
+    };
+  }),
+
   // @spec CLUB-NAV-UNREAD-001, DASH-UI-NAV-UNREAD-001
   unreadDiscussionCounts: protectedProcedure.query(async ({ ctx }) => {
     const memberships = await ctx.db.membership.findMany({

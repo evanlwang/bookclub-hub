@@ -1,9 +1,10 @@
-// @spec NAV-MOBILE-HEADER-001, NAV-MOBILE-004
+// @spec NAV-MOBILE-HEADER-001, NAV-MOBILE-004, CLUB-NAV-BADGE-LIVE-001
 "use client";
 
 import { useState } from "react";
 import { LogoIcon, Badge, ChevronDownIcon } from "@/components/ui";
 import { ClubSwitcherModal } from "@/components/club/club-switcher-modal";
+import { useNavState, type NavState } from "@/lib/hooks/use-nav-state";
 import { MoreSheet } from "./more-sheet";
 
 type ClubInfo = { id: string; name: string; code: string; role: string };
@@ -19,14 +20,16 @@ export function MobileClubHeader({
   clubName,
   userName,
   clubs = [],
-  unreadDiscussionCounts = {},
+  initialNavState,
 }: {
   clubId: string;
   clubName: string;
   userName: string;
   clubs?: ClubInfo[];
-  unreadDiscussionCounts?: Record<string, number>;
+  /** @spec CLUB-NAV-UNREAD-001, CLUB-NAV-BADGE-LIVE-001 */
+  initialNavState?: NavState;
 }) {
+  const { unreadDiscussionCounts } = useNavState(clubId, initialNavState);
   const [menuOpen, setMenuOpen] = useState(false);
   const [addClubOpen, setAddClubOpen] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);

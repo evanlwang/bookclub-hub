@@ -4,7 +4,7 @@
 **Implementing artifacts**:
 - API: `src/server/routers/meetings.ts`
 - UI: `src/app/clubs/[clubId]/meetings/page.tsx`, `meetings-client.tsx`, `create-meeting.tsx`, `respond-meeting.tsx`
-- Tests: `tests/integration/meetings.test.ts`, `tests/integration/meetings-security.test.ts`, `tests/e2e/meeting-confirm.spec.ts`, `tests/e2e/meeting-create-respond.spec.ts`, `tests/e2e/meeting-filters.spec.ts`, `tests/e2e/meeting-scheduling.spec.ts`, `tests/unit/meetings-availability.test.ts`
+- Tests: `tests/integration/meetings.test.ts`, `tests/integration/meetings-security.test.ts`, `tests/e2e/meeting-confirm.spec.ts`, `tests/e2e/meeting-create-respond.spec.ts`, `tests/e2e/meeting-filters.spec.ts`, `tests/e2e/meeting-scheduling.spec.ts`, `tests/e2e/live-updates.spec.ts`, `tests/unit/meetings-availability.test.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
@@ -51,7 +51,7 @@ These specs document invariants enforced inside the `meetings` router and exerci
 ## Confirmation UI Gaps (mutations exist, UI does not call them)
 
 - `[x]` **MEET-UI-CONFIRM-001**: Implemented via the three sub-IDs below. `meetings.confirm` is now wired to an admin-only section inside the proposed-meeting expanded panel.
-  - `[x]` **MEET-UI-CONFIRM-BTN-001**: When the viewer's role for the club is `owner` or `admin`, the proposed-meeting expanded panel SHALL render an admin section (`data-testid="admin-confirm-section"`) listing every slot with a "Confirm time" button (`data-testid="confirm-slot-{slotId}"`). Clicking calls `meetings.confirm({clubId, meetingId, slotId})` and refreshes the route. Plain members SHALL NOT see this section.
+  - `[x]` **MEET-UI-CONFIRM-BTN-001**: When the viewer's role for the club is `owner` or `admin`, the proposed-meeting expanded panel SHALL render an admin section (`data-testid="admin-confirm-section"`) listing every slot with a "Confirm time" button (`data-testid="confirm-slot-{slotId}"`). Clicking calls `meetings.confirm({clubId, meetingId, slotId})`; the meetings cache updates optimistically and reconciles via invalidation (MEET-UI-CACHE-SOT-001). Plain members SHALL NOT see this section.
   - `[x]` **MEET-UI-CONFIRM-HEATMAP-001**: The admin section SHALL render a heatmap with one row per responder (any member who has submitted at least one availability response for this meeting) and one column per slot. Each cell SHALL render a colored dot — `available`=success, `maybe`=warning, `unavailable`=danger, no-response=neutral. `data-testid="heatmap-cell-{userId}-{slotId}"` carries `data-status="available|maybe|unavailable|none"`.
   - `[D]` **MEET-UI-CONFIRM-RECOMMEND-001**: Deferred — superseded by `MEET-UI-CONFIRM-BADGE-001`. The "Most available" badge IS the recommendation. Reintroduce only if a richer recommendation surface is required.
   - `[x]` **MEET-UI-CONFIRM-BADGE-001**: The slot with the highest `available` response count SHALL display a "Most available" Badge (`data-testid="most-available-badge"`). Ties broken by `available + maybe` count, then by `proposedTime ASC`. If no slot has any responses, no badge SHALL be shown. Ranking computed by `src/lib/meetings/availability.ts#pickMostAvailableSlot` (unit tested).
@@ -99,6 +99,12 @@ These specs document invariants enforced inside the `meetings` router and exerci
 
 - `[x]` **MEET-UI-009**: Past meetings (`status="completed"` or `status="cancelled"`) SHALL render with `opacity-70`, a calendar icon block, "Past" neutral badge, the date, title, location, and attended count. (`meetings-client.tsx:241-267`)
 
+## Live Updates (mechanism: docs/llds/live-updates.md)
+
+- `[x]` **MEET-UI-LIVE-001**: WHILE a member is viewing the meetings page, other members' availability responses (response counts, progress bar fill per MEET-UI-PROP-PROGRESS-001, heatmap cells, attendee stacks) and meeting state changes SHALL appear within 30s via a polled `meetings.list` query — without a reload.
+- `[x]` **MEET-UI-CACHE-SOT-001**: The meetings client SHALL render from the `meetings.list` query cache (seeded with RSC `initialData`) rather than a one-time `useState` copy of initial props, so polled refetches and `setData` writes are the single source of truth. The existing optimistic `apply*` helpers become cache transforms with unchanged reshaping semantics.
+- `[x]` **MEET-UI-RESPOND-OPTIMISTIC-001**: WHEN the viewer saves availability, the response counts and their own per-slot selections SHALL update immediately via a cache write. IF the mutation fails, the prior cache state SHALL be restored and the existing inline error shown. On settle, `meetings.list` SHALL be invalidated for server reconciliation.
+
 ## Meeting Creation UI
 
 - `[x]` **MEET-UI-CREATE-001**: Button: "Propose Meeting" (`create-meeting.tsx:17-24`) is rendered in the meetings page header (admin only via membership check upstream). When clicked it switches the area to the create form.
@@ -111,4 +117,4 @@ These specs document invariants enforced inside the `meetings` router and exerci
   - Button: "Cancel" (`create-meeting.tsx:210-211`) closes the form
   - Button: "Send to Members" (`create-meeting.tsx:213-221`) submits via `meetings.create`; reloads page on success
 - `[x]` **MEET-UI-CREATE-VAL-001**: Submit validation requires at least 2 slots with a non-empty `time`; otherwise inline error "At least 2 time slots are required". (`create-meeting.tsx:83-87`)
-- `[x]` **MEET-UI-CREATE-003**: When `meetings.create` succeeds, the meetings list SHALL reflect the newly created meeting immediately on the proposer's screen without requiring a manual page reload. Implemented by optimistic append to local state in `MeetingsClient` plus `router.refresh()` for server-authoritative backfill, mirroring the pattern used by confirm/cancel/edit/respond. (`create-meeting.tsx` `onCreated`, `meetings-client.tsx` `applyCreatedMeeting`)
+- `[x]` **MEET-UI-CREATE-003**: When `meetings.create` succeeds, the meetings list SHALL reflect the newly created meeting immediately on the proposer's screen without requiring a manual page reload. Implemented by optimistic prepend to the `meetings.list` query cache in `MeetingsClient` plus invalidation for server-authoritative backfill, mirroring the pattern used by confirm/cancel/edit/respond (MEET-UI-CACHE-SOT-001). (`create-meeting.tsx` `onCreated`, `meetings-client.tsx` `applyCreatedMeeting`)

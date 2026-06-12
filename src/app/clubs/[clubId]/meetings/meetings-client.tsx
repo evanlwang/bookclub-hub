@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { trpc } from "@/trpc/react-hooks";
+import { useLiveQueryOptions } from "@/lib/hooks/use-live-query";
 import { Card, Badge, Button, AvatarStack, DateStamp } from "@/components/ui";
 import { CreateMeetingForm, ProposeMeetingTrigger } from "./create-meeting";
 import { RespondMeeting } from "./respond-meeting";
@@ -54,17 +55,43 @@ export function MeetingsClient({
   viewerRole,
   members,
 }: MeetingsClientProps) {
-  const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
-  const [meetings, setMeetings] = useState<any[]>(initialMeetings);
+  const utils = trpc.useUtils();
+  // @spec MEET-UI-CACHE-SOT-001, MEET-UI-LIVE-001
+  // The meetings.list query cache (seeded by the page RSC, polled at 30s) is
+  // the single client source of truth — replacing the old one-shot
+  // `useState(initialMeetings)` copy that never saw later changes. Other
+  // members' availability responses and meeting state changes arrive with
+  // each poll; the viewer's own actions apply as cache transforms below.
+  const meetingsQuery = trpc.meetings.list.useQuery(
+    { clubId },
+    {
+      initialData: initialMeetings,
+      ...useLiveQueryOptions({ intervalMs: 30_000 }),
+    },
+  );
+  const meetings: any[] = meetingsQuery.data ?? initialMeetings;
   const [proposing, setProposing] = useState(false);
   const isAdmin = viewerRole === "admin" || viewerRole === "owner";
 
+  function setMeetingsCache(transform: (prev: any[]) => any[]) {
+    utils.meetings.list.setData({ clubId }, (prev) =>
+      transform((prev as any[]) ?? []) as typeof prev,
+    );
+  }
+
+  // Server reconciliation after an own-action cache transform: the refetch
+  // backfills fields the mutation doesn't return (book join, populated
+  // responses) — this replaces the old full-page router.refresh().
+  function reconcile() {
+    void utils.meetings.list.invalidate({ clubId });
+  }
+
   // After confirm, optimistically flip the meeting to "confirmed" so it moves
-  // to the Confirmed list without waiting for the route refresh.
+  // to the Confirmed list without waiting for the server round trip.
   function applyConfirmedSlot(meetingId: string, slotId: string) {
-    setMeetings((prev) =>
+    setMeetingsCache((prev) =>
       prev.map((m) => {
         if (m.id !== meetingId) return m;
         const slot = m.slots?.find((s: any) => s.id === slotId);
@@ -76,37 +103,39 @@ export function MeetingsClient({
       }),
     );
     setExpandedId(null);
-    router.refresh();
+    // @spec CLUB-NAV-BADGE-LIVE-001 — confirm/cancel can clear the "Respond" badge.
+    void utils.clubs.navState.invalidate();
+    reconcile();
   }
 
   function applyCancelledMeeting(meetingId: string) {
-    setMeetings((prev) =>
+    setMeetingsCache((prev) =>
       prev.map((m) =>
         m.id === meetingId ? { ...m, status: "cancelled" } : m,
       ),
     );
     setExpandedId(null);
-    router.refresh();
+    void utils.clubs.navState.invalidate();
+    reconcile();
   }
 
-  // Append the freshly created meeting to local state so it surfaces on the
-  // proposer's screen immediately. router.refresh() backfills any fields the
-  // mutation doesn't return (e.g. book join, member responses) — but without
-  // the local push the new meeting never reaches this list, because useState
-  // seeded `meetings` from props on first mount and won't re-read them.
+  // Prepend the freshly created meeting so it surfaces on the proposer's
+  // screen immediately; reconcile() backfills any fields the mutation doesn't
+  // return (e.g. book join, member responses).
   function applyCreatedMeeting(meeting: any) {
-    if (!meeting) {
-      router.refresh();
-      return;
+    // @spec CLUB-NAV-BADGE-LIVE-001 — a new proposed meeting sets the
+    // "Respond" badge (the proposer hasn't answered their own poll yet).
+    void utils.clubs.navState.invalidate();
+    if (meeting) {
+      setMeetingsCache((prev) =>
+        prev.some((m) => m.id === meeting.id) ? prev : [meeting, ...prev],
+      );
     }
-    setMeetings((prev) =>
-      prev.some((m) => m.id === meeting.id) ? prev : [meeting, ...prev],
-    );
-    router.refresh();
+    reconcile();
   }
 
   function applyMeetingUpdate(meetingId: string, next: MeetingEditableFields) {
-    setMeetings((prev) =>
+    setMeetingsCache((prev) =>
       prev.map((m) =>
         m.id === meetingId
           ? {
@@ -118,18 +147,19 @@ export function MeetingsClient({
           : m,
       ),
     );
-    router.refresh();
+    reconcile();
   }
 
-  // Apply the viewer's freshly saved availability to local state so the responded
-  // count refreshes without a round trip to the server. We also kick the layout
-  // to re-fetch so the sidebar "Respond" notification clears once the viewer
-  // has answered every outstanding meeting.
+  // @spec MEET-UI-RESPOND-OPTIMISTIC-001
+  // Pure cache transform: rewrites the viewer's responses on the meeting so
+  // the responded count and progress bar update immediately. Called from
+  // RespondMeeting's onMutate (optimistic) — rollback and reconciliation
+  // live there with the mutation.
   function applyViewerResponses(
     meetingId: string,
     next: { slotId: string; status: ResponseStatus }[]
   ) {
-    setMeetings((prev) =>
+    setMeetingsCache((prev) =>
       prev.map((m) => {
         if (m.id !== meetingId) return m;
         const byId = new Map(next.map((r) => [r.slotId, r.status]));
@@ -151,7 +181,7 @@ export function MeetingsClient({
                       status: mine,
                       // Mirror the server-rendered shape (includes a populated
                       // user object) so AvatarStack/getAttendeeNames don't fall
-                      // back to a UUID prefix while we wait for router.refresh.
+                      // back to a UUID prefix while we wait for reconciliation.
                       user: { displayName: viewerName },
                     },
                   ]
@@ -161,7 +191,6 @@ export function MeetingsClient({
         };
       })
     );
-    router.refresh();
   }
 
   // Active states surface first; completed/cancelled drop to the bottom so a

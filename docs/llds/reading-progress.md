@@ -21,17 +21,20 @@ Button: status radio cards "Not Started" / "Reading" / "Finished" — `update-mo
 Button: page number input — `update-modal.tsx:146-160` — disabled: status="finished"
 Button: chapter number input (optional) — `update-modal.tsx:182-190`
 Button: "Cancel" — `update-modal.tsx:201-203` — handler: onClose
-Button: "Save Progress" — `update-modal.tsx:204-212` — handler: `progress.update` then router.refresh + onClose
+Button: "Save my place" — `update-modal.tsx` — handler: optimistic `progress.update` (cache write + rollback, PROG-UI-OPTIMISTIC-001), then toast + onClose
 Button: book selector card (per book) — `progress/page.tsx:51-76` — handler: navigates to `/clubs/[clubId]/progress?bookId={bookId}`
 Button: "All books" back link — `progress/page.tsx:120-126` — handler: navigates back to `/clubs/[clubId]/progress`
 
-## Gaps (described in older spec, not implemented)
+## Gaps
 
-Range slider input bidirectionally synced with page input — `[ ]` not implemented; only number input.
-Editable percentage input (0–100) — `[ ]` not implemented; percentage shown as read-only "Progress: {N}%".
-Live preview progress bar in modal — `[ ]` not implemented.
-Toast notification with Undo (4s auto-dismiss) — `[ ]` not implemented; modal closes silently on save.
-"Last updated" timestamp in modal — `[ ]` not implemented.
+Editable percentage input (0–100) — `[D]` deferred; percentage is a read-only computed display (PROG-UI-MODAL-PCT-001). Formerly-listed gaps now shipped: bookmark/range slider (PROG-UI-MODAL-SLIDER-001), live preview bar (PROG-UI-MODAL-PREVIEW-001), save toast with Undo (PROG-UI-MODAL-TOAST-001/-UNDO-001), and the "Last updated" timestamp (PROG-UI-MODAL-TIMESTAMP-001).
+
+## Live Updates
+
+Mechanism owned by `docs/llds/live-updates.md`; this segment's surfaces:
+
+- **Dashboard member list + summary** render from a polled `progress.list` client query (60s interval, RSC-seeded `initialData` with ISO-stringified dates) so other members' updates appear without reload (PROG-DASH-LIVE-001). Row stagger animations run on first paint only — background refetches swap data in place under stable keys.
+- **Progress save is optimistic** (PROG-UI-OPTIMISTIC-001): the viewer's row and `progress.me` cache rewrite in `onMutate`; rollback on error; `onSettled` invalidates. The undo toast (PROG-UI-MODAL-UNDO-001) keeps its pre-save snapshot semantics; its revert path uses invalidation instead of `router.refresh()`.
 
 ## Progress Model
 
@@ -97,13 +100,10 @@ The dashboard at `/clubs/[clubId]/progress?bookId={bookId}` shows:
 
 ### Deferred
 
-1. **Range slider in modal.**
-2. **Editable percentage input.**
-3. **Live preview bar in modal.**
-4. **Toast / Undo on save.**
-5. **Audiobook progress (hours:minutes).**
-6. **Progress reminders.**
-7. **Historical reading pace.**
+1. **Editable percentage input.**
+2. **Audiobook progress (hours:minutes).**
+3. **Progress reminders.**
+4. **Historical reading pace.**
 
 ## References
 

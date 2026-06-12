@@ -51,7 +51,7 @@ Self-reported reading progress — page/chapter/percentage/status. Drives the sp
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| prog-specs.md | 53 | 53 | 0 | 0 | 0 |
+| prog-specs.md | 61 | 61 | 0 | 0 | 0 |
 
 **Summary:** 100% of specs implemented (53/53). User gap-pass cleaned up the deferred-but-superseded rows from prior audit (8 `[D]` removed when the inline history picker fully replaced the old book-grid surface).
 

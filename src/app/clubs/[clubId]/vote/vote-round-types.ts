@@ -9,6 +9,13 @@ export type Nomination = {
   voteCount?: number;
 };
 
+/** Shape of `rounds.turnout` — RSC seed + polled client query (VOTE-API-TURNOUT-001). */
+export type Turnout = {
+  voterCount: number;
+  memberCount: number;
+  status: "nominating" | "voting" | "decided" | "cancelled";
+};
+
 export interface VoteRoundProps {
   clubId: string;
   roundId: string;
@@ -17,8 +24,8 @@ export interface VoteRoundProps {
   maxApprovals: number;
   myVotes: string[];
   isAdmin: boolean;
-  memberCount?: number;
-  voterCount?: number;
+  /** Seed for the voting phase's polled turnout query. */
+  initialTurnout?: Turnout;
   closePreview?: ClosePreview | null;
   /** @spec VOTE-UI-VOTE-DEADLINE-001 */
   activeVotingDeadline?: string | null;

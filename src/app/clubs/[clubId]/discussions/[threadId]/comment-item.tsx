@@ -19,6 +19,12 @@ export interface CommentLike {
   parentCommentId: string | null;
   createdAt: string;
   updatedAt?: string;
+  /**
+   * @spec DISC-UI-COMMENT-OPTIMISTIC-001 — true for an optimistically
+   * appended comment awaiting server confirmation. Rendered dimmed with
+   * affordances suppressed (its temp id can't be edited/replied to yet).
+   */
+  pending?: boolean;
 }
 
 interface CommentItemProps {
@@ -63,9 +69,10 @@ export function CommentItem({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const isDeletedPlaceholder = comment.body === "[deleted]";
+  const isPending = comment.pending === true;
   const isAuthor = viewerId !== null && viewerId === comment.authorId;
-  const canEdit = !isDeletedPlaceholder && isAuthor;
-  const canDelete = !isDeletedPlaceholder && (isAuthor || isAdmin);
+  const canEdit = !isDeletedPlaceholder && !isPending && isAuthor;
+  const canDelete = !isDeletedPlaceholder && !isPending && (isAuthor || isAdmin);
 
   const authorName = comment.author?.displayName || comment.authorName || "Unknown";
 
@@ -196,7 +203,7 @@ export function CommentItem({
     </div>
   ) : (
     <div className="mt-2 flex items-center gap-3 text-xs">
-      {canReply && (
+      {canReply && !isPending && (
         <button
           type="button"
           onClick={() => setMode(mode === "reply" ? "view" : "reply")}
@@ -244,11 +251,17 @@ export function CommentItem({
     </div>
   );
 
+  // @spec DISC-UI-COMMENT-OPTIMISTIC-001 — pending (optimistic) comments
+  // render dimmed until the server confirms; the onSettled invalidation in
+  // the composer swaps in the real row.
+  const pendingClass = isPending ? " opacity-60" : "";
+
   if (layout === "reply") {
     return (
       <div
         data-testid={`reply-${comment.id}`}
-        className="ml-6 pl-4 border-l-2 border-line"
+        data-pending={isPending ? "true" : undefined}
+        className={`ml-6 pl-4 border-l-2 border-line${pendingClass}`}
       >
         {header}
         {bodyContent}
@@ -258,7 +271,11 @@ export function CommentItem({
   }
 
   return (
-    <div data-testid={`comment-${comment.id}`} className="space-y-3">
+    <div
+      data-testid={`comment-${comment.id}`}
+      data-pending={isPending ? "true" : undefined}
+      className={`space-y-3${pendingClass}`}
+    >
       <Card className="p-4">
         {header}
         {bodyContent}

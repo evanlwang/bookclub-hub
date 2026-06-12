@@ -56,7 +56,7 @@ Threaded book discussions, chapter-tagged for spoiler filtering. Members filter 
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| disc-specs.md | 66 | 62 | 0 | 4 | 0 |
+| disc-specs.md | 76 | 71 | 0 | 5 | 0 |
 
 **Summary:** 100% of non-deferred specs implemented (62/62). 4 deferreds: minor polish.
 

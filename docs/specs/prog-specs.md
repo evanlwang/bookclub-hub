@@ -3,8 +3,8 @@
 **LLD**: docs/llds/reading-progress.md
 **Implementing artifacts**:
 - API: `src/server/routers/progress.ts`, `src/server/routers/books.ts` (`listForClub`)
-- UI: `src/app/clubs/[clubId]/progress/page.tsx`, `update-modal.tsx`
-- Tests: `tests/integration/progress.test.ts`, `tests/e2e/progress-*.spec.ts`
+- UI: `src/app/clubs/[clubId]/progress/page.tsx` (RSC), `progress-dashboard.tsx`, `update-modal.tsx`
+- Tests: `tests/integration/progress.test.ts`, `tests/e2e/progress-*.spec.ts`, `tests/unit/app/progress-optimistic.test.tsx`, `tests/e2e/live-updates.spec.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
 
@@ -64,7 +64,7 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-UI-004**: When status="not_started", the page input resets to 0. Chapter input is not auto-cleared. (`update-modal.tsx:64-66`)
 - `[x]` **PROG-UI-MODAL-PCT-001**: The modal SHALL render the percentage as a read-only visual: a "Progress: {N}%" header and a `<ProgressBar>` filled to that percentage, inside a `data-testid="progress-preview-bar"` container that exposes `data-percentage` and `data-status` attributes for tests. The percentage is derived live from `page / totalPages` (or 100 when status="finished") and is not directly editable — users adjust the page input or the slider, and the bar follows.
 - `[x]` **PROG-UI-006**: The modal SHALL include an optional numeric "Chapter (optional)" input (`update-modal.tsx:178-191`), placeholder "—".
-- `[x]` **PROG-UI-007**: Buttons: "Cancel" (`update-modal.tsx:201-203`) and "Save Progress" (`update-modal.tsx:204-212`) at the bottom. Save calls `progress.update` and refreshes the route on success.
+- `[x]` **PROG-UI-007**: Buttons: "Cancel" (`update-modal.tsx:201-203`) and "Save Progress" (`update-modal.tsx:204-212`) at the bottom. Save calls `progress.update` optimistically (cache write + rollback, PROG-UI-OPTIMISTIC-001); no route refresh.
 
 ## Progress Update UI — Gaps
 
@@ -96,6 +96,11 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-UI-DASH-014**: A compact dashboard card variant (360px width, small ring, mini distribution bar) is used as a read-only preview on the main club dashboard.
 - `[x]` **PROG-DASH-MEDIAN-001**: The dashboard median percentage SHALL be computed over members whose `status !== "not_started"` only. The summary line SHALL read "median {N}% across {K} reading" and append "· {M} not started" and "· {F} finished" when those counts are positive. When zero members have started, the line SHALL read "No one has started yet". Excluding zeros for not-started members prevents the median from being dragged down mid-cycle. (`progress/page.tsx`, `median.ts`)
 - `[x]` **PROG-DASH-UPDATED-001**: Each member row in "Where everyone is" SHALL render a `<time>` element showing "Updated Xd ago" (m/h/d/w resolution; "just now" under a minute) using `ReadingProgress.updatedAt`. Hidden for `status="not_started"` members (no meaningful update). `dateTime` attribute is the ISO timestamp; the `title` attribute shows the absolute date for hover. `data-testid="progress-updated-{userId}"`. (`progress/page.tsx`, `relative-time.ts`)
+
+## Live Updates (mechanism: docs/llds/live-updates.md)
+
+- `[x]` **PROG-DASH-LIVE-001**: WHILE a member is viewing the progress dashboard, other members' progress rows and the aggregate summary SHALL refresh within 60s via a polled `progress.list` query — without a reload. Row animations SHALL NOT replay on background refetches (stable keys, in-place swaps).
+- `[x]` **PROG-UI-OPTIMISTIC-001**: WHEN the viewer saves progress from the update modal, their own dashboard row and the `progress.me` cache SHALL reflect the new values immediately (`onMutate` cache write). IF the mutation fails, the prior values SHALL be restored and the modal's existing inline error shown (PROG-ERR-001). The undo-toast contract (PROG-UI-MODAL-UNDO-001) is unchanged.
 
 ## Error Handling
 

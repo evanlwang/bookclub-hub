@@ -16,8 +16,7 @@ export function VoteRound({
   maxApprovals,
   myVotes,
   isAdmin,
-  memberCount = 0,
-  voterCount = 0,
+  initialTurnout,
   closePreview = null,
   activeVotingDeadline = null,
 }: VoteRoundProps) {
@@ -34,8 +33,9 @@ export function VoteRound({
         maxApprovals={maxApprovals}
         myVotes={myVotes}
         isAdmin={isAdmin}
-        memberCount={memberCount}
-        voterCount={voterCount}
+        initialTurnout={
+          initialTurnout ?? { voterCount: 0, memberCount: 0, status: "voting" }
+        }
         closePreview={closePreview ?? null}
         activeVotingDeadline={activeVotingDeadline ?? null}
       />

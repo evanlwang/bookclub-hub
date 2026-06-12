@@ -102,3 +102,4 @@ This project does not currently declare a coherence-check script — audits run 
 | `meetings` | `meeting-scheduling.md` | `meet-specs.md` | OK |
 | `discussions` | `discussion-threads.md` | `disc-specs.md` | OK |
 | `reading-progress` | `reading-progress.md` | `prog-specs.md` | OK |
+| `live-updates` | `live-updates.md` | `live-specs.md` (+ consumer-side IDs in the five segments above) | OK |
