@@ -29,6 +29,12 @@ export default defineConfig({
       DATABASE_URL:
         process.env.DATABASE_URL ||
         "postgresql://evanwang@localhost:5432/bookclub_hub_test",
+      // Shrink live-poll intervals (use-live-query.ts) so the live-updates
+      // specs observe cross-member polling without waiting out production
+      // cadences (60s -> 9s etc.). NOTE: with reuseExistingServer, a server
+      // started without this var makes live-updates.spec.ts time out --
+      // kill the stale server first.
+      NEXT_PUBLIC_LIVE_INTERVAL_SCALE: "0.15",
     },
   },
 });

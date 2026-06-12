@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
 import { NominateModal } from "./nominate-modal";
@@ -8,6 +8,7 @@ import { CancelRoundDialog } from "./close-voting-dialog";
 import { Slip } from "./slip";
 import { type Nomination } from "./vote-round-types";
 import { trpc } from "@/trpc/react-hooks";
+import { useLiveQueryOptions } from "@/lib/hooks/use-live-query";
 
 interface NominatingPhaseProps {
   clubId: string;
@@ -20,7 +21,7 @@ interface NominatingPhaseProps {
 export function NominatingPhase({
   clubId,
   roundId,
-  nominations,
+  nominations: initialNominations,
   isAdmin,
 }: NominatingPhaseProps) {
   const router = useRouter();
@@ -28,6 +29,42 @@ export function NominatingPhase({
   const [error, setError] = useState("");
   const [isNominateModalOpen, setIsNominateModalOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+
+  // @spec VOTE-UI-NOM-LIVE-001 — other members' slips appear within the poll
+  // interval. RSC props are the first paint; once the query resolves it is
+  // the source of truth (also re-fetched via the NominateModal invalidation,
+  // VOTE-UI-NOMMODAL-INVALIDATE-001).
+  const roundQuery = trpc.rounds.get.useQuery(
+    { clubId, roundId },
+    useLiveQueryOptions({ intervalMs: 15_000 }),
+  );
+  const nominations: Nomination[] = roundQuery.data
+    ? roundQuery.data.round.nominations.map((n) => ({
+        id: n.id,
+        book: n.book,
+        nominator: n.nominator,
+        pitch: n.pitch ?? undefined,
+        createdAt:
+          typeof n.createdAt === "string"
+            ? n.createdAt
+            : new Date(n.createdAt).toISOString(),
+      }))
+    : initialNominations;
+
+  // Structural transition carve-out: another admin advanced or cancelled the
+  // round — re-render the page once so the new phase view takes over.
+  const refreshedOnPhaseChange = useRef(false);
+  const polledStatus = roundQuery.data?.round.status;
+  useEffect(() => {
+    if (
+      polledStatus &&
+      polledStatus !== "nominating" &&
+      !refreshedOnPhaseChange.current
+    ) {
+      refreshedOnPhaseChange.current = true;
+      router.refresh();
+    }
+  }, [polledStatus, router]);
   const [adminActionError, setAdminActionError] = useState("");
   const [cancelConfirmText, setCancelConfirmText] = useState("");
 
