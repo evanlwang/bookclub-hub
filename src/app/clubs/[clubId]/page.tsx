@@ -215,6 +215,7 @@ export default async function ClubDashboard({
               title={currentBook.book.title}
               author={currentBook.book.author}
               coverUrl={currentBook.book.coverUrl}
+              isbn={currentBook.book.isbn}
               size="md"
             />
             <div className="flex-1 min-w-0">

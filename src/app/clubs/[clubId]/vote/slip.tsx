@@ -66,6 +66,7 @@ export function Slip({
         title={nom.book.title}
         author={nom.book.author}
         coverUrl={nom.book.coverUrl}
+        isbn={nom.book.isbn}
         size="sm"
       />
       <div className="min-w-0 flex-1">

@@ -4,8 +4,10 @@
 
 BookCover renders a book at one of four sizes (`sm`/`md`/`lg`/`xl`) with one of two paths:
 
-1. **Photo path** — when `coverUrl` is provided, the URL is rendered into a `<img>` inside a hardcover-shaped envelope with a faint spine sliver and ring border.
-2. **Typographic fallback** — when `coverUrl` is missing, a procedural "cloth-bound" cover is generated from the title using one of six color variants (`teal`/`rust`/`sage`/`mauve`/`amber`/`ink`). Variant is picked deterministically by hashing the title — same book always renders in the same color.
+1. **Photo path** — when an image URL is resolvable, it renders into a `<img>` inside a hardcover-shaped envelope with a faint spine sliver and ring border. URL resolution chain: stored `coverUrl` → Open Library URL derived from `isbn` (`https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg?default=false`, COMP-BOOK-COVER-014) — mirroring the design handoff's `DgBookCover`.
+2. **Typographic fallback** — when no URL resolves, *or the image fails to load* (`onError` state, COMP-BOOK-COVER-011), a procedural "cloth-bound" cover is generated from the title using one of six color variants (`teal`/`rust`/`sage`/`mauve`/`amber`/`ink`). Variant is picked deterministically by hashing the title — same book always renders in the same color.
+
+The error fallback makes BookCover a client component (`"use client"` + failed-image state) — the same client-boundary decision flagged as open drift on `components-avatar` (COMP-AVATAR-IMG-001), resolved here for covers only.
 
 The whole component is **the documented exception** to the design-system inline-literal ban. The cloth/foil aesthetic depends on multi-stop oklch gradients and per-variant ink colors that don't generalize to the system token palette. These values are *component-private* by design — they describe one specific physical-object metaphor and should not be shared with anything else. See `docs/llds/design-system.md § Naming conventions` ("Component-private tokens are forbidden... unless the value is genuinely unique to the component, e.g., book-cover gradients").
 
@@ -18,6 +20,7 @@ interface BookCoverProps {
   title: string;
   author: string;
   coverUrl?: string | null;
+  isbn?: string | null;     // fallback image source when coverUrl is absent
   variant?: "teal" | "rust" | "sage" | "mauve" | "amber" | "ink";  // overrides hash-pick
   size?: "sm" | "md" | "lg" | "xl";                                // default: "md"
 }
@@ -69,6 +72,7 @@ Photo path skips layers 2-3, 5-6 and replaces them with the `<img>`, but keeps t
 | Aspect ratio | ~0.68 (real hardcover proportion) | Square; golden ratio | Reads as "book"; flexes per size. [inferred] |
 | Image alt text | Empty string (`alt=""`) with outer `aria-label` | `alt={title}` | Avoids the screen reader announcing the title twice (once for `aria-label`, once for `<img alt>`). [inferred] |
 | Ornament | Hidden at `sm` | Always shown; never shown | Ornament is illegible below ~80px wide. [inferred] |
+| Missing-cover detection | `?default=false` on derived OL URLs + `onError` swap | Probe with HEAD request; accept OL's blank 1×1 placeholder | OL serves a blank image for unknown ISBNs unless `default=false` forces a 404; the 404 fires `onError`, which flips to the cloth fallback. No extra round trips. |
 
 ## Open Questions
 
@@ -78,7 +82,7 @@ Photo path skips layers 2-3, 5-6 and replaces them with the `<img>`, but keeps t
 3. ✅ Component-private inline literals are an intentional exception.
 
 ### Deferred / Active gaps
-1. **`<img>` error fallback.** When `coverUrl` fails to load, browser renders a broken-image glyph; no automatic fallback to the typographic path.
+1. ~~`<img>` error fallback + ISBN derivation~~ — shipped 2026-06-11 (COMP-BOOK-COVER-011/-014).
 2. **Spine text** for `lg`/`xl` (title rendered vertically on the spine). Visual prototype shows it; not in the implementation.
 3. **Lazy-loaded image performance** for grids of covers (e.g., nomination lists with 20+ books). `loading="lazy"` is set but no priority hints.
 4. **Variant pre-warming** so a `lg` and a `sm` of the same book always pick the same variant — currently handled by the hash; document the invariant.
@@ -87,4 +91,4 @@ Photo path skips layers 2-3, 5-6 and replaces them with the `<img>`, but keeps t
 
 - `src/components/ui/book-cover.tsx` — implementation.
 - `docs/llds/design-system.md` — explains the component-private exception.
-- `docs/specs/comp-book-cover-specs.md` — forthcoming.
+- `docs/specs/comp-book-cover-specs.md`
