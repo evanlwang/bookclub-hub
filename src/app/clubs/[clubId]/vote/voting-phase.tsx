@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Badge, EarGlyph } from "@/components/ui";
 import { successMessage } from "@/lib/voting/prior-votes";
 import { trpc } from "@/trpc/react-hooks";
+import { useLiveQueryOptions } from "@/lib/hooks/use-live-query";
 import {
   CloseVotingDialog,
   CancelRoundDialog,
   type ClosePreview,
 } from "./close-voting-dialog";
 import { Slip } from "./slip";
-import type { Nomination } from "./vote-round-types";
+import type { Nomination, Turnout } from "./vote-round-types";
 
 interface VotingPhaseProps {
   clubId: string;
@@ -20,8 +21,8 @@ interface VotingPhaseProps {
   maxApprovals: number;
   myVotes: string[];
   isAdmin: boolean;
-  memberCount: number;
-  voterCount: number;
+  /** RSC-fetched seed for the polled `rounds.turnout` query. */
+  initialTurnout: Turnout;
   closePreview: ClosePreview | null;
   /** @spec VOTE-UI-VOTE-DEADLINE-001 */
   activeVotingDeadline: string | null;
@@ -35,8 +36,7 @@ export function VotingPhase({
   maxApprovals,
   myVotes: initialVotes,
   isAdmin,
-  memberCount,
-  voterCount,
+  initialTurnout,
   closePreview,
   activeVotingDeadline,
 }: VotingPhaseProps) {
@@ -44,6 +44,34 @@ export function VotingPhase({
   const utils = trpc.useUtils();
   const [selected, setSelected] = useState<string[]>(initialVotes);
   const [hasVoted, setHasVoted] = useState(initialVotes.length > 0);
+  // What the server currently has persisted for this user. Tracked locally
+  // (rather than read from the prop) because a successful submit no longer
+  // triggers a router.refresh() — the prop only changes on real RSC renders.
+  const [persistedVotes, setPersistedVotes] = useState<string[]>(initialVotes);
+
+  // @spec VOTE-UI-TURNOUT-LIVE-001, VOTE-UI-LIVE-POLL-001
+  // The turnout card renders from this polled query (seeded by the RSC) so
+  // other members' votes — and a close/cancel by another admin — surface
+  // within the poll interval without a reload.
+  const turnoutQuery = trpc.rounds.turnout.useQuery(
+    { clubId, roundId },
+    {
+      initialData: initialTurnout,
+      ...useLiveQueryOptions({ intervalMs: 15_000 }),
+    }
+  );
+  const turnout = turnoutQuery.data ?? initialTurnout;
+
+  // @spec VOTE-UI-LIVE-POLL-001 — structural transition carve-out: when the
+  // polled status says the round left "voting", re-render the page once via
+  // router.refresh() so the decided/cancelled phase view takes over.
+  const refreshedOnPhaseChange = useRef(false);
+  useEffect(() => {
+    if (turnout.status !== "voting" && !refreshedOnPhaseChange.current) {
+      refreshedOnPhaseChange.current = true;
+      router.refresh();
+    }
+  }, [turnout.status, router]);
 
   // @spec VOTE-UI-CLOSE-LIVE-001
   // Source of truth for the close-voting preview. The server-rendered
@@ -74,14 +102,14 @@ export function VotingPhase({
   const [lastSubmitWasUpdate, setLastSubmitWasUpdate] = useState(false);
   const [error, setError] = useState("");
 
-  // @spec VOTE-UI-PRIOR-VOTES-001, VOTE-UI-TURNOUT-LIVE-001
-  // After router.refresh() the parent server component re-renders with fresh
-  // `myVotes`. Sync local `selected` state with the new prop so the picks UI
-  // reflects what's now persisted. Safe because we only call router.refresh()
-  // after a successful submit, where the server state matches local intent.
+  // @spec VOTE-UI-PRIOR-VOTES-001
+  // When the parent server component genuinely re-renders (phase change,
+  // reload), sync local state with the fresh `myVotes` prop so the picks UI
+  // reflects what's persisted.
   const initialVotesKey = initialVotes.join(",");
   useEffect(() => {
     setSelected(initialVotes);
+    setPersistedVotes(initialVotes);
     // initialVotes identity changes per render; the join string is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialVotesKey]);
@@ -92,7 +120,7 @@ export function VotingPhase({
   // Drives the submit button's enabled/label state so a voted user with no
   // pending edits sees "Votes saved" rather than the actionable "Save changes".
   const selectedKey = [...selected].sort().join(",");
-  const persistedKey = [...initialVotes].sort().join(",");
+  const persistedKey = [...persistedVotes].sort().join(",");
   const hasPendingChanges = selectedKey !== persistedKey;
 
   // @spec VOTE-BE-003
@@ -108,31 +136,55 @@ export function VotingPhase({
     });
   }
 
-  // @spec VOTE-API-008, VOTE-UI-TURNOUT-LIVE-001, VOTE-UI-UPDATE-CONFIRM-001
+  // @spec VOTE-API-008, VOTE-UI-OPTIMISTIC-001, VOTE-UI-TURNOUT-LIVE-001, VOTE-UI-UPDATE-CONFIRM-001
+  // Optimistic submit: the button flips to its saved state and (on a first
+  // vote only — VOTE-UI-TURNOUT-CHANGE-COUNT-001) the turnout count bumps in
+  // `onMutate`; `onError` rolls everything back; `onSettled` reconciles with
+  // the server. No router.refresh() — counters live in client queries now.
   const submitVotes = trpc.votes.submit.useMutation({
-    onError: (err) => {
-      setError(err.message || "Failed to submit votes");
-    },
-  });
-
-  async function handleSubmitVotes() {
-    setError("");
-    const wasUpdate = hasVoted;
-    try {
-      await submitVotes.mutateAsync({ clubId, roundId, nominationIds: selected });
+    onMutate: async (vars) => {
+      setError("");
+      await utils.rounds.turnout.cancel({ clubId, roundId });
+      const snapshot = {
+        turnout: utils.rounds.turnout.getData({ clubId, roundId }),
+        hasVoted,
+        persistedVotes,
+        justSubmitted,
+        lastSubmitWasUpdate,
+      };
+      const wasUpdate = hasVoted;
       setHasVoted(true);
       setJustSubmitted(true);
       setLastSubmitWasUpdate(wasUpdate);
+      setPersistedVotes(vars.nominationIds);
+      if (!wasUpdate) {
+        utils.rounds.turnout.setData({ clubId, roundId }, (prev) =>
+          prev ? { ...prev, voterCount: prev.voterCount + 1 } : prev
+        );
+      }
+      return snapshot;
+    },
+    onError: (err, _vars, snapshot) => {
+      if (snapshot) {
+        setHasVoted(snapshot.hasVoted);
+        setPersistedVotes(snapshot.persistedVotes);
+        setJustSubmitted(snapshot.justSubmitted);
+        setLastSubmitWasUpdate(snapshot.lastSubmitWasUpdate);
+        utils.rounds.turnout.setData({ clubId, roundId }, snapshot.turnout);
+      }
+      setError(err.message || "Failed to submit votes");
+    },
+    onSettled: () => {
+      void utils.rounds.turnout.invalidate({ clubId, roundId });
       void utils.rounds.get.invalidate({ clubId, roundId });
       // @spec VOTE-UI-CLOSE-LIVE-001 — own vote bumps the standings the
       // admin will see when they next open the close dialog.
       void utils.rounds.getClosePreview.invalidate({ clubId, roundId });
-      // Re-fetch the server component so the voter-turnout card reflects
-      // the new count. @spec VOTE-UI-TURNOUT-LIVE-001
-      router.refresh();
-    } catch {
-      // onError handler already set the error message.
-    }
+    },
+  });
+
+  function handleSubmitVotes() {
+    submitVotes.mutate({ clubId, roundId, nominationIds: selected });
   }
 
   // @spec VOTE-UI-CLOSE-004, VOTE-UI-CLOSE-006, VOTE-API-003
@@ -201,11 +253,11 @@ export function VotingPhase({
               {selected.length}/{maxApprovals} dog-eared
             </span>
             <span className="ml-auto font-[var(--font-display)] text-xs font-bold text-ink-3">
-              {voterCount} of {memberCount} have voted
+              {turnout.voterCount} of {turnout.memberCount} have voted
             </span>
           </div>
           {/* @spec VOTE-UI-PRIOR-VOTES-002 */}
-          {initialVotes.length > 0 && !loading ? (
+          {persistedVotes.length > 0 && !loading ? (
             <p
               data-testid="prior-vote-hint"
               className="font-[var(--font-serif)] italic text-[13.5px] text-ink-3 mt-2 mb-0"
@@ -420,7 +472,7 @@ export function VotingPhase({
             <span className="text-xs text-ink-3">Voter turnout</span>
           </div>
           <p className="font-[var(--font-display)] text-2xl font-semibold">
-            {voterCount}<span className="text-ink-3 text-sm ml-1">of {memberCount} have voted</span>
+            {turnout.voterCount}<span className="text-ink-3 text-sm ml-1">of {turnout.memberCount} have voted</span>
           </p>
           <p className="text-[11px] text-ink-3 mt-1.5">Tallies hidden until close</p>
         </Card>

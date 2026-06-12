@@ -4,7 +4,7 @@
 **Implementing artifacts**:
 - API: `src/server/routers/rounds.ts`, `votes.ts`, `nominations.ts`, `books.ts`, `selections.ts`
 - UI: `src/app/clubs/[clubId]/vote/page.tsx`, `vote-round.tsx`, `nominate-modal.tsx`
-- Tests: `tests/integration/voting-lifecycle.test.ts`, `tests/integration/vote-persistence.test.ts`, `tests/integration/rounds-turnout.test.ts`, `tests/integration/books.test.ts`, `tests/integration/books-manual.test.ts`, `tests/integration/cron-deadline-reminder.test.ts`, `tests/e2e/vote-persistence.spec.ts`, `tests/e2e/vote-submission.spec.ts`, `tests/e2e/voting-close.spec.ts`, `tests/e2e/voting-phases.spec.ts`, `tests/e2e/voting-round.spec.ts`, `tests/e2e/voting-sidebar.spec.ts`, `tests/unit/voting/tally.test.ts`, `tests/unit/voting-persistence.test.ts`
+- Tests: `tests/integration/voting-lifecycle.test.ts`, `tests/integration/vote-persistence.test.ts`, `tests/integration/rounds-turnout.test.ts`, `tests/integration/books.test.ts`, `tests/integration/books-manual.test.ts`, `tests/integration/cron-deadline-reminder.test.ts`, `tests/e2e/vote-persistence.spec.ts`, `tests/e2e/vote-submission.spec.ts`, `tests/e2e/voting-close.spec.ts`, `tests/e2e/voting-phases.spec.ts`, `tests/e2e/voting-round.spec.ts`, `tests/e2e/voting-sidebar.spec.ts`, `tests/unit/voting/tally.test.ts`, `tests/unit/voting-persistence.test.ts`, `tests/unit/app/voting-optimistic.test.tsx`
 
 Status markers: `[x]` implemented · `[ ]` gap (not yet built) · `[D]` deferred · `[!]` divergence (built but differs from prior spec text)
 
@@ -100,9 +100,9 @@ These specs cover what happens when a member revisits the voting page after they
 ## Live Updates (mechanism: docs/llds/live-updates.md)
 
 - `[x]` **VOTE-API-TURNOUT-001**: A member-scoped `rounds.turnout` query SHALL return `{ voterCount, memberCount, status }` for a round — voterCount as the distinct-userId vote count, memberCount as the club's membership count, and the round's current status. Cross-club access SHALL throw NOT_FOUND. This is the cheap poll target backing the turnout card (moves the raw-Prisma turnout logic out of `vote/page.tsx`).
-- `[ ]` **VOTE-UI-LIVE-POLL-001**: WHILE a round is in "voting" status and the voting page is visible, the turnout card and round status SHALL refresh within 15s of another member's action (vote, close, cancel) via a polled `rounds.turnout` query — without a reload or `router.refresh()`. WHEN the polled status leaves "voting", the page SHALL transition to the new phase view (one ref-guarded `router.refresh()` is permitted for this structural transition).
+- `[x]` **VOTE-UI-LIVE-POLL-001**: WHILE a round is in "voting" status and the voting page is visible, the turnout card and round status SHALL refresh within 15s of another member's action (vote, close, cancel) via a polled `rounds.turnout` query — without a reload or `router.refresh()`. WHEN the polled status leaves "voting", the page SHALL transition to the new phase view (one ref-guarded `router.refresh()` is permitted for this structural transition).
 - `[ ]` **VOTE-UI-NOM-LIVE-001**: WHILE a round is in "nominating" status and the page is visible, new nominations from other members SHALL appear within 15s via a polled `rounds.get` query.
-- `[ ]` **VOTE-UI-OPTIMISTIC-001**: WHEN the viewer submits votes, the submit button's saved state SHALL update immediately (`onMutate`), and — on a first vote only — the turnout count SHALL increment optimistically (preserving VOTE-UI-TURNOUT-CHANGE-COUNT-001). IF the mutation fails, the prior button state and turnout count SHALL be restored and the existing error message shown.
+- `[x]` **VOTE-UI-OPTIMISTIC-001**: WHEN the viewer submits votes, the submit button's saved state SHALL update immediately (`onMutate`), and — on a first vote only — the turnout count SHALL increment optimistically (preserving VOTE-UI-TURNOUT-CHANGE-COUNT-001). IF the mutation fails, the prior button state and turnout count SHALL be restored and the existing error message shown.
 
 ## Voting UI — Decided Phase
 

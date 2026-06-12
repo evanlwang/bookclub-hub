@@ -137,8 +137,11 @@ export default async function VotePage({
               maxApprovals={activeRoundDetail.maxApprovalsPerMember ?? 3}
               myVotes={myVotes}
               isAdmin={isAdmin}
-              memberCount={memberCount}
-              voterCount={voterCount}
+              initialTurnout={{
+                voterCount,
+                memberCount,
+                status: activeRoundDetail.status,
+              }}
               activeVotingDeadline={
                 activeRoundDetail.votingDeadline
                   ? new Date(activeRoundDetail.votingDeadline).toISOString()
