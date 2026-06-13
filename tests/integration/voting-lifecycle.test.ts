@@ -162,6 +162,76 @@ describe("voting lifecycle", () => {
     expect(newCurrent.finishedAt).toBeNull();
   });
 
+  // @spec VOTE-API-VISIBILITY-002, VOTE-UI-DEC-002
+  it("rounds.get returns decided nominations ranked by vote count, not nomination order", async () => {
+    const adminCaller = await createAuthenticatedCaller(db, alice);
+    const memberCaller = await createAuthenticatedCaller(db, carol);
+
+    const { round } = await adminCaller.rounds.create({ clubId: wedReads.id });
+
+    // Nominate Left Hand FIRST, then Kindred, then Dune — so the eventual
+    // winner (Dune) is the LAST nomination. A get that preserves insertion
+    // order would surface Left Hand as nominations[0]/the winner banner.
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: leftHand.id,
+    });
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: kindred.id,
+    });
+    await memberCaller.nominations.create({
+      clubId: wedReads.id,
+      roundId: round.id,
+      bookId: dune.id,
+    });
+
+    await adminCaller.rounds.advance({ clubId: wedReads.id, roundId: round.id });
+
+    const noms = await db.nomination.findMany({ where: { roundId: round.id } });
+    const nomDune = noms.find((n) => n.bookId === dune.id)!;
+    const nomKindred = noms.find((n) => n.bookId === kindred.id)!;
+    const nomLeftHand = noms.find((n) => n.bookId === leftHand.id)!;
+
+    // Dune 3, Kindred 2, Left Hand 1.
+    const aliceCaller = await createAuthenticatedCaller(db, alice);
+    const bobCaller = await createAuthenticatedCaller(db, bob);
+    const daveCaller = await createAuthenticatedCaller(db, dave);
+    await aliceCaller.votes.submit({
+      clubId: wedReads.id,
+      roundId: round.id,
+      nominationIds: [nomDune.id, nomKindred.id],
+    });
+    await bobCaller.votes.submit({
+      clubId: wedReads.id,
+      roundId: round.id,
+      nominationIds: [nomDune.id, nomLeftHand.id],
+    });
+    await memberCaller.votes.submit({
+      clubId: wedReads.id,
+      roundId: round.id,
+      nominationIds: [nomDune.id, nomKindred.id],
+    });
+    void daveCaller; // dave abstains
+
+    await adminCaller.rounds.advance({ clubId: wedReads.id, roundId: round.id });
+
+    const { round: detail } = await adminCaller.rounds.get({
+      clubId: wedReads.id,
+      roundId: round.id,
+    });
+
+    // Ranked by vote count desc — winner first, regardless of nomination order.
+    expect(detail.nominations.map((n) => n.bookId)).toEqual([
+      dune.id,
+      kindred.id,
+      leftHand.id,
+    ]);
+    expect(detail.nominations[0].voteCount).toBe(3);
+  });
+
   // @spec VOTE-API-DECIDED-FINISHED-001
   it("preserves an already-stamped finishedAt on the prior selection", async () => {
     const adminCaller = await createAuthenticatedCaller(db, alice);

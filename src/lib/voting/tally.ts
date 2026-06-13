@@ -13,6 +13,24 @@ export interface TallyResult {
 }
 
 /**
+ * Canonical ranking order for tallied nominations: highest vote count first,
+ * ties broken by earliest nomination (createdAt). Shared so every surface that
+ * displays decided standings ranks identically to the winner tallyVotes picks —
+ * see rounds.get (VOTE-API-VISIBILITY-002) and the decided-phase UI.
+ */
+export function compareByTally(
+  a: { voteCount?: number | null; createdAt: Date },
+  b: { voteCount?: number | null; createdAt: Date }
+): number {
+  const aVotes = a.voteCount ?? 0;
+  const bVotes = b.voteCount ?? 0;
+  // Primary: highest vote count
+  if (bVotes !== aVotes) return bVotes - aVotes;
+  // Tiebreak: earliest nomination
+  return a.createdAt.getTime() - b.createdAt.getTime();
+}
+
+/**
  * Tally approval votes and determine the winner.
  * Winner = highest vote count. Ties broken by earliest nomination (createdAt).
  */
@@ -21,12 +39,7 @@ export function tallyVotes(nominations: NominationWithVotes[]): TallyResult {
     return { winner: null, rankings: [] };
   }
 
-  const sorted = [...nominations].sort((a, b) => {
-    // Primary: highest vote count
-    if (b.voteCount !== a.voteCount) return b.voteCount - a.voteCount;
-    // Tiebreak: earliest nomination
-    return a.createdAt.getTime() - b.createdAt.getTime();
-  });
+  const sorted = [...nominations].sort(compareByTally);
 
   return {
     winner: sorted[0],
