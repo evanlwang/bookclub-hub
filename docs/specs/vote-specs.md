@@ -48,7 +48,7 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 ## Vote Visibility
 
 - `[x]` **VOTE-API-VISIBILITY-001**: `rounds.get` SHALL hide vote counts and other members' votes while the round is in "nominating" or "voting" status; only the calling user's own votes are returned. (`rounds.ts:68-96`)
-- `[x]` **VOTE-API-VISIBILITY-002**: `rounds.get` SHALL return all votes and full per-nomination vote counts when the round is in "decided" status. (`rounds.ts:68-96`)
+- `[x]` **VOTE-API-VISIBILITY-002**: `rounds.get` SHALL return all votes and full per-nomination vote counts when the round is in "decided" status, with nominations ordered by canonical tally rank (vote count desc, earliest nomination breaking ties via `compareByTally`) so `nominations[0]` is the winner and downstream surfaces (VOTE-UI-DEC-002) render ranked order without re-sorting. (`rounds.ts:68-103`)
 - `[x]` **VOTE-UI-001**: While a round is in "voting" status, the UI SHALL hide vote tallies from all members. The voter-turnout sidebar shows only "X of N have voted" with a "Tallies hidden until close" hint. (`vote-round.tsx:263-277`)
 - `[x]` **VOTE-UI-002**: When a round reaches "decided" status, the UI SHALL display the full vote tallies and winner to all members. (`vote-round.tsx:283-369`)
 

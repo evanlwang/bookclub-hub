@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, memberProcedure, adminProcedure } from "../trpc";
-import { tallyVotes } from "@/lib/voting/tally";
+import { tallyVotes, compareByTally } from "@/lib/voting/tally";
 import { canAdvanceFromNominating } from "@/lib/voting/advance-guard";
 import { computeClosePreview } from "@/lib/voting/close-preview";
 import { emailService } from "../services/email";
@@ -93,6 +93,14 @@ export const roundsRouter = router({
             : nom.votes.filter((v) => v.userId === ctx.user.id),
         voteCount: round.status === "decided" ? nom.votes.length : undefined,
       }));
+
+      // @spec VOTE-API-VISIBILITY-002, VOTE-UI-DEC-002 — for a decided round,
+      // return nominations in canonical tally order (votes desc, earliest
+      // nomination breaks ties) so the winner banner and ranked tallies match
+      // the stored winner instead of insertion order.
+      if (round.status === "decided") {
+        nominations.sort(compareByTally);
+      }
 
       return { round: { ...round, nominations } };
     }),
