@@ -1,0 +1,78 @@
+/* ============================================================
+   Dogear cozy redesign — drop-in token values
+   Target: src/app/globals.css  (Tailwind v4 @theme block)
+
+   Hex values are authoritative (they are what the approved
+   prototype renders). oklch conversions are close approximations
+   — if you convert, verify against the prototype visually.
+
+   Naming follows the existing token taxonomy
+   (docs/llds/design-system.md). New tokens are marked NEW.
+   ============================================================ */
+
+@theme {
+  /* ---- neutrals: warm paper + warm ink (no pure white anywhere) ---- */
+  --color-bg: oklch(0.955 0.018 90);          /* #F7F0E2  page background ("paper") */
+  --color-bg-soft: oklch(0.985 0.012 95);     /* #FFFBF1  raised cards ("paper-card") */
+  --color-bg-sunken: oklch(0.90 0.03 90);     /* #EADFC9  wells, progress tracks, page edges */
+  --color-ink: oklch(0.32 0.025 60);          /* #3D2F24  primary text */
+  --color-ink-2: oklch(0.47 0.03 60);         /* #6B5A4A  secondary text */
+  --color-ink-3: oklch(0.63 0.035 70);        /* #9A8772  muted text, timestamps */
+  --color-ink-4: oklch(0.72 0.03 80);         /* #B5A48E  disabled, not-started fills */
+  --color-line: oklch(0.90 0.03 90);          /* #EADFC9  hairlines */
+  --color-line-strong: oklch(0.84 0.035 85);  /* #D9C9AC  input borders */
+
+  /* ---- primary: terracotta (replaces deep teal entirely) ---- */
+  --color-primary: oklch(0.58 0.13 40);        /* #C75B39 */
+  --color-primary-hover: oklch(0.50 0.12 38);  /* #A84A2C */
+  --color-primary-soft: oklch(0.92 0.025 45);  /* #F4DFD4 */
+  --color-primary-ink: oklch(0.47 0.11 40);    /* #9C4528  text on -soft */
+  --color-primary-line: oklch(0.85 0.045 45);  /* #E8C8B9 */
+
+  /* ---- accent: golden amber (celebration, finished states) ---- */
+  --color-accent: oklch(0.73 0.13 80);         /* #DD9A33 */
+  --color-accent-hover: oklch(0.62 0.12 78);   /* #B97B1F  NEW (closes Button hover asymmetry gap) */
+  --color-accent-soft: oklch(0.94 0.035 90);   /* #F8E9C9 */
+  --color-accent-ink: oklch(0.50 0.10 80);     /* #8A5C12 */
+
+  /* ---- semantics: re-derived warm-leaning, sit comfortably on cream ---- */
+  --color-success: oklch(0.60 0.10 125);       /* #6F8B43  olive green */
+  --color-success-soft: oklch(0.93 0.03 115);  /* #E9EDD6 */
+  --color-warning: oklch(0.62 0.12 78);        /* #B97B1F  shares amber family */
+  --color-warning-soft: oklch(0.94 0.035 90);  /* #F8E9C9 */
+  --color-warning-ink: oklch(0.50 0.10 80);    /* #8A5C12  NEW (closes Badge literal-value gap) */
+  --color-danger: oklch(0.50 0.14 32);         /* #B23B2A  warm brick, not cool red */
+  --color-danger-hover: oklch(0.45 0.13 30);   /* #9C3022  NEW */
+  --color-danger-soft: oklch(0.91 0.025 35);   /* #F4DCD4 */
+  --color-danger-line: oklch(0.83 0.05 35);    /* #E5BDB2 */
+
+  /* ---- chapter-chip palette: five warm rotations (Avatar reuses these) ---- */
+  --color-chip-1: oklch(0.92 0.025 45);  --color-chip-1-ink: oklch(0.50 0.12 38);  /* #F4DFD4 / #A84A2C */
+  --color-chip-2: oklch(0.94 0.035 90);  --color-chip-2-ink: oklch(0.62 0.12 78);  /* #F8E9C9 / #B97B1F */
+  --color-chip-3: oklch(0.93 0.03 115);  --color-chip-3-ink: oklch(0.60 0.10 125); /* #E9EDD6 / #6F8B43 */
+  --color-chip-4: oklch(0.92 0.02 40);   --color-chip-4-ink: oklch(0.49 0.09 35);  /* #F1DFD9 / #9C5240 */
+  --color-chip-5: oklch(0.92 0.025 90);  --color-chip-5-ink: oklch(0.53 0.07 85);  /* #EFE3CF / #8A6A35 */
+
+  /* ---- type: chunky friendly display, literary serif prose, typewriter mono ---- */
+  --font-display: "Nunito", system-ui, sans-serif;   /* WAS Newsreader. Headlines + UI labels. Weights 600-900; 800/900 for headlines */
+  --font-ui: "Nunito", system-ui, sans-serif;        /* WAS Geist. One sans for everything chunky */
+  --font-serif: "Newsreader", Georgia, serif;        /* NEW. Prose: discussion bodies, pitches, descriptive lines */
+  --font-mono: "Courier Prime", "JetBrains Mono", monospace;  /* typewriter warmth for codes + stamps */
+
+  /* ---- radius: rounder everywhere; CTAs are full pills ---- */
+  --radius-sm: 8px;    /* was 6  — chips, small tags */
+  --radius-md: 14px;   /* was 10 — inputs, slot cells */
+  --radius-lg: 22px;   /* was 14 — cards */
+  --radius-xl: 28px;   /* was 20 — bottom sheets (top corners) */
+  /* buttons use rounded-full (pill), not a radius token */
+
+  /* ---- shadows: warm-toned, layered ("liftable" cards) ---- */
+  --shadow-sm: 0 1px 2px oklch(0.45 0.05 60 / 0.05);
+  --shadow-md: 0 1px 2px oklch(0.45 0.05 60 / 0.05), 0 6px 18px oklch(0.45 0.05 60 / 0.07);
+  --shadow-lg: 0 2px 4px oklch(0.45 0.05 60 / 0.07), 0 14px 32px oklch(0.45 0.05 60 / 0.13);
+}
+
+/* ---- motion additions (see README § Motion) ----
+   springy pop:  cubic-bezier(0.34, 1.56, 0.64, 1)   150-320ms — dog-ear folds, selections, tooltips, stamps
+   smooth exit:  cubic-bezier(0.22, 1, 0.36, 1)       300-700ms — sheets, bar fills, ring sweep
+   plus a global prefers-reduced-motion suppression rule (closes DSYS-MOTION-002). */

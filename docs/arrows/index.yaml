@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: 2026-06-11
+last_updated: 2026-06-12
 
 # Taxonomy groups segments by domain cluster. Purely organizational.
 taxonomy:
@@ -36,8 +36,8 @@ arrows:
       - clubs
     blockedBy: []
     detail: auth.md
-    next: re-audit — 17 segment files changed since audited_sha (cozy login/join redesign; auth+home specs grew 96 → 106)
-    drift: coverage tables were stale (regenerated 2026-06-11); spec-to-code verification not redone since aee095b6
+    next: re-audit the /join wizard slice (still unverified since aee095b6); the landing slice was re-specced + verified 2026-06-12 (editorial borrower's-card rebuild)
+    drift: join-wizard spec-to-code verification not redone since aee095b6. Landing (home-specs HOME-UI-*) is current as of b31e1b9.
 
   clubs:
     status: OK
@@ -132,7 +132,8 @@ arrows:
   design-system:
     status: OK
     sampled: 2026-05-18
-    audited: 2026-05-18
+    audited: 2026-06-12
+    audited_sha: b31e1b9
     blocks: []
     blockedBy: []
     detail: ../llds/design-system.md
@@ -232,7 +233,8 @@ arrows:
   components-icons:
     status: OK
     sampled: 2026-05-18
-    audited: 2026-05-18
+    audited: 2026-06-12
+    audited_sha: b31e1b9
     blocks: []
     blockedBy: []
     detail: ../llds/components-icons.md

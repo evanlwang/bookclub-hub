@@ -20,7 +20,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 
 ## Landing Page CTAs
 
-- `[x]` **LANDING-UI-001**: The marketing landing page (`/`) SHALL expose two distinct primary actions: "Log in" → `/login` (returning users) and "Sign up" → `/join` (new users). Both must be visible in the top nav AND in the hero CTA row. (`src/app/page.tsx:33-44, 76-89`)
+- `[x]` **LANDING-UI-001**: The marketing landing page (`/`) SHALL expose two distinct actions: "Get your library card" → `/join` (new users) and "Log in" → `/login` (returning users), identified by `data-testid="hero-signup"` and `data-testid="hero-login"`. (The editorial redesign has no top nav — both actions live in the CTA block; see `HOME-UI-CTA-PRIMARY-001` / `-SECONDARY-001`.) (`src/app/page.tsx`)
 
 ## Login Route (Returning Users)
 

@@ -39,7 +39,7 @@ Currently does not honor `prefers-reduced-motion`. Both the entrance animation (
 
 ## Visual reference
 
-`docs/bookclub-hub-designs/project/artboards/progress.jsx` (the canonical row-of-bars view) and `dashboard.jsx` (hero overlay with ticks).
+`design_handoff_dogear_redesign/dogear-progress.jsx` (the canonical row-of-bars view) and `dashboard.jsx` (hero overlay with ticks).
 
 ## Decisions & Alternatives
 

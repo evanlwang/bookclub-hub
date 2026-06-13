@@ -29,7 +29,7 @@ Both background and foreground come from the global chip-palette tokens (`--colo
 
 ## Visual reference
 
-`docs/bookclub-hub-designs/project/artboards/discussions.jsx` (every thread carries a chapter chip in the header).
+`design_handoff_dogear_redesign/dogear-notes.jsx` (every thread carries a chapter chip in the header).
 
 ## Spec linkage (already present)
 

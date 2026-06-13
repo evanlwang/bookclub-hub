@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dogear Icon — sizes</title>
+<style>
+  :root { --paper: #F7F0E2; --paper-card: #FFFBF1; --ink: #3D2F24; --ink-faint: #9A8772; --edge: #EADFC9; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: ui-rounded, "Nunito", system-ui, sans-serif; padding: 48px 32px; }
+  h1 { font-size: 22px; font-weight: 900; letter-spacing: -.02em; margin: 0 0 4px; }
+  p { color: var(--ink-faint); font-size: 13px; margin: 0 0 36px; }
+  .row { display: flex; align-items: flex-end; gap: 36px; flex-wrap: wrap; margin-bottom: 44px; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .cell img { display: block; }
+  .lab { font-family: "Courier Prime", monospace; font-size: 11px; letter-spacing: .08em; color: var(--ink-faint); }
+  .swatches { display: flex; gap: 14px; flex-wrap: wrap; }
+  .sw { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .chip { width: 72px; height: 48px; border-radius: 10px; border: 1px solid rgba(96,64,32,.1); }
+  .sw .lab { font-size: 10px; }
+  .ondark { background: var(--ink); padding: 20px 28px; border-radius: 16px; }
+  section { margin-bottom: 8px; }
+  .kicker { font-family: "Courier Prime", monospace; font-size: 11px; letter-spacing: .18em; color: var(--ink-faint); margin: 40px 0 14px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+  <h1>Dogear icon</h1>
+  <p>A clothbound spine with a dog-eared corner — the page peeking through. Terracotta on cream.</p>
+
+  <div class="kicker">App / favicon sizes</div>
+  <div class="row">
+    <div class="cell"><img src="dogear-mark.svg" width="128" height="128" alt="128" /><span class="lab">128</span></div>
+    <div class="cell"><img src="dogear-mark.svg" width="64" height="64" alt="64" /><span class="lab">64</span></div>
+    <div class="cell"><img src="dogear-mark.svg" width="48" height="48" alt="48" /><span class="lab">48</span></div>
+    <div class="cell"><img src="dogear-mark.svg" width="32" height="32" alt="32" /><span class="lab">32</span></div>
+    <div class="cell"><img src="dogear-mark.svg" width="20" height="20" alt="20" /><span class="lab">20</span></div>
+  </div>
+
+  <div class="kicker">On dark · maskable (PWA)</div>
+  <div class="row">
+    <div class="ondark"><img src="dogear-mark.svg" width="72" height="72" alt="on dark" /></div>
+    <div class="cell"><img src="dogear-icon-maskable.svg" width="120" height="120" style="border-radius:26px" alt="maskable" /><span class="lab">maskable 512</span></div>
+  </div>
+
+  <div class="kicker">Palette</div>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#C75B39"></div><span class="lab">#C75B39 spine</span></div>
+    <div class="sw"><div class="chip" style="background:#A84A2C"></div><span class="lab">#A84A2C crease</span></div>
+    <div class="sw"><div class="chip" style="background:#F7EFDF"></div><span class="lab">#F7EFDF page</span></div>
+    <div class="sw"><div class="chip" style="background:#F7F0E2"></div><span class="lab">#F7F0E2 cream</span></div>
+  </div>
+</body>
+</html>

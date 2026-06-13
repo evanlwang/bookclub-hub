@@ -203,27 +203,34 @@ export function MenuIcon(p: IconProps) {
   );
 }
 
-// @spec COMP-ICONS-LOGO-001 (token-bridged colors, no inline oklch literals)
+// @spec COMP-ICONS-LOGO-001, COMP-ICONS-LOGO-002
+// The Dogear brand mark: a terracotta rounded square with a folded top-right
+// corner (the namesake gesture). Token-bridged colors via var() in fill/stroke
+// (no literals); drawn as plain paths with no <clipPath>, so multiple instances
+// on one page share no duplicate id. Geometry mirrors the handoff dogear-mark.svg.
 export function LogoIcon({ size = 22 }: { size?: number }) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 28 28"
+      viewBox="0 0 64 64"
       fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
       aria-hidden="true"
     >
+      {/* terracotta cloth base */}
+      <rect x="2" y="2" width="60" height="60" rx="15" fill="var(--color-primary)" />
+      {/* crease underside (darker terracotta), lower-left half of the fold */}
+      <path d="M40 2 L62 24 L40 24 Z" fill="var(--color-primary-hover)" />
+      {/* folded page (paper), upper-right half — top-right corner rounded to
+          follow the card edge so no sharp nub pokes past the radius */}
+      <path d="M40 2 L47 2 A15 15 0 0 1 62 17 L62 24 Z" fill="var(--color-bg)" />
+      {/* crease line */}
       <path
-        d="M5 5.5A2.5 2.5 0 0 1 7.5 3H22v20H7.5A2.5 2.5 0 0 0 5 25.5V5.5z"
-        fill="var(--color-primary)"
-        stroke="var(--color-primary-ink)"
+        d="M40 2 L62 24"
+        stroke="var(--color-primary-hover)"
+        strokeWidth={1.5}
+        strokeLinecap="round"
       />
-      <path d="M5 22A2.5 2.5 0 0 1 7.5 19.5H22" stroke="var(--color-bg)" />
-      <path d="M11 8l3 4 3-4" stroke="var(--color-accent)" strokeWidth={2} />
     </svg>
   );
 }

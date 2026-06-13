@@ -62,7 +62,7 @@ Visual: `opacity: 0.5`, `cursor: not-allowed`. Programmatic: native `disabled` a
 
 ## Visual reference
 
-The canonical visual rendering of all variant/size/state combinations is in `docs/bookclub-hub-designs/project/artboards/design-system.jsx` (Buttons section). The implementation in `src/components/ui/button.tsx` is the runtime reference; the artboard is the visual reference. When they disagree, file a spec ticket — don't drift either side silently.
+The canonical visual rendering of all variant/size/state combinations is in `design_handoff_dogear_redesign/dogear-components.jsx` (Buttons section). The implementation in `src/components/ui/button.tsx` is the runtime reference; the artboard is the visual reference. When they disagree, file a spec ticket — don't drift either side silently.
 
 ## Decisions & Alternatives
 
@@ -97,5 +97,5 @@ The canonical visual rendering of all variant/size/state combinations is in `doc
 
 - `src/components/ui/button.tsx` — implementation.
 - `docs/llds/design-system.md` — system-wide token, focus, motion contracts.
-- `docs/bookclub-hub-designs/project/primitives.jsx` — visual reference.
+- `design_handoff_dogear_redesign/dogear-components.jsx` — visual reference.
 - `docs/specs/comp-button-specs.md` — EARS specs (forthcoming).

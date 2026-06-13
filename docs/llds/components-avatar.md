@@ -55,7 +55,7 @@ When `src` is provided, an `<img>` fills the circle (`object-cover`, `rounded-fu
 
 ## Visual reference
 
-`docs/bookclub-hub-designs/project/artboards/design-system.jsx` (Avatars section) and `progress.jsx` (avatars at scale).
+`design_handoff_dogear_redesign/dogear-components.jsx` (Avatars section) and `progress.jsx` (avatars at scale).
 
 ## Decisions & Alternatives
 

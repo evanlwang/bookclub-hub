@@ -1,33 +1,21 @@
-// @spec HOME-UI-001 through HOME-UI-011, HOME-A11Y-001 through HOME-A11Y-004
+// @spec HOME-UI-015, HOME-UI-016, HOME-UI-005, HOME-UI-006, HOME-UI-CTA-PRIMARY-001,
+//        HOME-UI-CTA-SECONDARY-001, HOME-UI-CARD-001, HOME-UI-CARD-002, HOME-UI-CARD-003,
+//        HOME-UI-CARD-004, HOME-UI-ANNOT-001, HOME-UI-TERMS-001, HOME-UI-PLATE-001,
+//        HOME-UI-018, HOME-A11Y-001, HOME-A11Y-002, HOME-A11Y-004, LANDING-UI-001
 import { test, expect } from "@playwright/test";
 
-test.describe("Landing Page — Navigation", () => {
-  test("renders top nav with logo wordmark and primary actions", async ({ page }) => {
+test.describe("Landing Page — Masthead & a11y", () => {
+  // @spec HOME-UI-015
+  test("renders the masthead with the DOGEAR wordmark and EST. 2026", async ({ page }) => {
     await page.goto("/");
-
-    await expect(page.locator("nav").getByText("Dogear")).toBeVisible();
-    await expect(page.locator("nav").getByRole("link", { name: /^log in$/i })).toBeVisible();
-    await expect(page.locator("nav").getByRole("link", { name: /^sign up$/i })).toBeVisible();
+    await expect(page.getByText(/^Dogear$/i)).toBeVisible();
+    await expect(page.getByText("EST. 2026")).toBeVisible();
   });
 
-  test("nav 'Sign up' navigates to /join", async ({ page }) => {
-    await page.goto("/");
-    await page.locator("nav").getByRole("link", { name: /^sign up$/i }).click();
-    await expect(page).toHaveURL("/join");
-  });
-
-  test("nav 'Log in' navigates to /login", async ({ page }) => {
-    await page.goto("/");
-    await page.locator("nav").getByRole("link", { name: /^log in$/i }).click();
-    await expect(page).toHaveURL("/login");
-  });
-
-  test("skip-nav link is first focusable and points to #main-content", async ({
-    page,
-  }) => {
+  // @spec HOME-A11Y-001, HOME-A11Y-002
+  test("skip-nav link is first focusable and points to #main-content", async ({ page }) => {
     await page.goto("/");
     await page.keyboard.press("Tab");
-
     const focused = page.locator(":focus");
     await expect(focused).toHaveText("Skip to content");
     await expect(focused).toHaveAttribute("href", "#main-content");
@@ -35,104 +23,119 @@ test.describe("Landing Page — Navigation", () => {
   });
 });
 
-test.describe("Landing Page — Hero", () => {
-  test("renders hero heading with 'finally' emphasized", async ({ page }) => {
+test.describe("Landing Page — Hero & CTAs", () => {
+  // @spec HOME-UI-016
+  test("renders the serif hero with the italic emphasis phrase", async ({ page }) => {
     await page.goto("/");
-
     const h1 = page.locator("h1");
-    await expect(h1).toContainText("Your book club");
-    await expect(h1.locator("em")).toContainText("finally");
+    await expect(h1).toContainText("A small, private library for");
+    await expect(h1.locator("em")).toContainText("the people you read with.");
   });
 
-  test("renders eyebrow pill 'Spoiler-safe by default'", async ({ page }) => {
+  // @spec HOME-UI-016
+  test("renders the subhead", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("Spoiler-safe by default")).toBeVisible();
+    await expect(page.getByText(/Choose the next book together/i)).toBeVisible();
   });
 
-  test("renders social proof with reader and club counts", async ({ page }) => {
+  // @spec HOME-UI-005, HOME-UI-CTA-PRIMARY-001, LANDING-UI-001
+  test("primary CTA 'Get your library card' navigates to /join", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText(/2,400\+/)).toBeVisible();
-    await expect(page.getByText(/340/)).toBeVisible();
-  });
-
-  test("hero CTA 'Sign up' navigates to /join", async ({ page }) => {
-    await page.goto("/");
-    await page.getByTestId("hero-signup").click();
+    const cta = page.getByTestId("hero-signup");
+    await expect(cta).toContainText(/get your library card/i);
+    await expect(cta).toHaveAttribute("href", "/join");
+    await cta.click();
     await expect(page).toHaveURL("/join");
   });
 
-  test("hero CTA 'Log in' navigates to /login", async ({ page }) => {
+  // @spec HOME-UI-006, HOME-UI-CTA-SECONDARY-001, LANDING-UI-001
+  test("'Log in' link navigates to /login", async ({ page }) => {
     await page.goto("/");
-    await page.getByTestId("hero-login").click();
+    await expect(page.getByText(/already a member\?/i)).toBeVisible();
+    const login = page.getByTestId("hero-login");
+    await expect(login).toContainText(/^log in$/i);
+    await expect(login).toHaveAttribute("href", "/login");
+    await login.click();
     await expect(page).toHaveURL("/login");
   });
+});
 
-  test("decorative collage has aria-hidden", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 720 });
+test.describe("Landing Page — Borrower's card", () => {
+  // @spec HOME-UI-CARD-001
+  test("renders the card header trio", async ({ page }) => {
     await page.goto("/");
-    // The collage div contains BookCover and cards — check it exists with aria-hidden
-    const collage = page.locator('section div[aria-hidden="true"].relative');
-    await expect(collage).toBeAttached();
+    await expect(page.getByText("DOGEAR LENDING LIBRARY")).toBeVisible();
+    await expect(page.getByText("Borrower's Card")).toBeVisible();
+    await expect(page.getByText("CAT. 813.54")).toBeVisible();
+  });
+
+  // @spec HOME-UI-CARD-002
+  test("renders the three checkout rows", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText("Choose the next read")).toBeVisible();
+    await expect(page.getByText("Stay a chapter ahead")).toBeVisible();
+    await expect(page.getByText("Meet without the maybe")).toBeVisible();
+    // gloss spot-check
+    await expect(page.getByText(/Tallies stay sealed until the reveal/i)).toBeVisible();
+  });
+
+  // @spec HOME-UI-CARD-003
+  test("renders the three rotated due-date stamps", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText("APR 02")).toBeVisible();
+    await expect(page.getByText("APR 16")).toBeVisible();
+    await expect(page.getByText("MAY 07")).toBeVisible();
+  });
+
+  // @spec HOME-UI-CARD-004, HOME-A11Y-004
+  test("dog-ear corner fold is decorative (aria-hidden)", async ({ page }) => {
+    await page.goto("/");
+    const fold = page.getByTestId("card-dogear");
+    await expect(fold).toBeAttached();
+    await expect(fold).toHaveAttribute("aria-hidden", "true");
+  });
+
+  // @spec HOME-UI-ANNOT-001
+  test("renders the dog-ear metaphor annotation", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText(/here'?s where I stopped/i)).toBeVisible();
   });
 });
 
-test.describe("Landing Page — Features", () => {
-  test("renders three feature cards", async ({ page }) => {
+test.describe("Landing Page — Conditions & bookplate", () => {
+  // @spec HOME-UI-TERMS-001
+  test("conditions of membership lists the three numbered promises", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("Approval voting")).toBeVisible();
-    await expect(page.getByText("Meeting scheduling")).toBeVisible();
-    await expect(page.getByText("Spoiler-safe threads")).toBeVisible();
+    const terms = page.getByTestId("privacy-banner");
+    await expect(terms).toBeVisible();
+    await expect(terms).toHaveAttribute("aria-label", "Conditions of membership");
+    await expect(terms).toContainText("01");
+    await expect(terms).toContainText("02");
+    await expect(terms).toContainText("03");
+    await expect(terms).toContainText(/email and a name/i);
+    await expect(terms).toContainText(/no passwords/i);
+    await expect(terms).toContainText(/no ads/i);
+  });
+
+  // @spec HOME-UI-PLATE-001
+  test("ends with the Ex Libris bookplate", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText(/EX LIBRIS/i)).toBeVisible();
+    await expect(page.getByText("For people who finish the book.")).toBeVisible();
   });
 });
 
-// @spec HOME-UI-ABOUT-001
-test.describe("Landing Page — About", () => {
-  test("about section is visible, anchorable, and explains the name", async ({
-    page,
-  }) => {
+test.describe("Landing Page — Layout", () => {
+  // @spec HOME-UI-018
+  test("renders a centered editorial column constrained on desktop", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
-    const about = page.getByTestId("about-section");
-    await expect(about).toBeVisible();
-    await expect(about).toHaveAttribute("aria-label", "About Dogear");
-    await expect(about).toHaveAttribute("id", "about");
-    await expect(about.locator("h2")).toContainText(/why/i);
-    await expect(about.locator("h2 em")).toContainText("Dogear");
-    await expect(about).toContainText(/dog-eared/i);
-    await expect(about).toContainText(/here'?s where I stopped/i);
-  });
-});
-
-// @spec HOME-UI-PRIVACY-CALLOUT-001
-test.describe("Landing Page — Privacy callout", () => {
-  test("privacy banner is visible with all three claims and an aria-label", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    const banner = page.getByTestId("privacy-banner");
-    await expect(banner).toBeVisible();
-    await expect(banner).toHaveAttribute("aria-label", "Privacy guarantees");
-    await expect(banner).toContainText(/no personal data/i);
-    await expect(banner).toContainText(/email and display name/i);
-    await expect(banner).toContainText(/no ads/i);
-  });
-});
-
-test.describe("Landing Page — Footer", () => {
-  test("renders footer with tagline", async ({ page }) => {
-    await page.goto("/");
-
-    const footer = page.locator("footer");
-    await expect(footer).toContainText("For people who finish the book.");
-    // Privacy/Terms/Changelog links removed until they have real destinations.
-  });
-});
-
-test.describe("Landing Page — Visual", () => {
-  test("main element has paper background gradient", async ({ page }) => {
-    await page.goto("/");
-    const bg = await page
-      .locator("main#main-content")
-      .evaluate((el) => getComputedStyle(el).backgroundImage);
-    expect(bg).toContain("radial-gradient");
+    const column = page.getByTestId("landing-column");
+    await expect(column).toBeVisible();
+    const box = (await column.boundingBox())!;
+    expect(box.width).toBeLessThanOrEqual(640);
+    // horizontally centered within the 1280px viewport (±2px)
+    const center = box.x + box.width / 2;
+    expect(Math.abs(center - 640)).toBeLessThanOrEqual(2);
   });
 });

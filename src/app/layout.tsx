@@ -1,6 +1,33 @@
 import type { Metadata, Viewport } from "next";
+import { Nunito, Newsreader, Courier_Prime } from "next/font/google";
 import { TRPCProvider } from "@/trpc/react";
 import "./globals.css";
+
+// @spec DSYS-FONT-001, DSYS-FONT-002 — self-hosted via next/font (no external
+// <link>). Variable class names go on <html> so the --font-* token stacks in
+// globals.css resolve (Nunito display/UI · Newsreader prose · Courier Prime mono).
+const nunito = Nunito({
+  subsets: ["latin"],
+  weight: ["600", "700", "800", "900"],
+  variable: "--font-nunito",
+  display: "swap",
+});
+// Newsreader is a variable font; specifying `axes` (opsz) requires using the
+// variable weight axis, so we don't pin `weight` here — the full 400–700 range
+// (plus italics) is available.
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+  variable: "--font-newsreader",
+  display: "swap",
+});
+const courierPrime = Courier_Prime({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-courier-prime",
+  display: "swap",
+});
 
 // @spec PWA-VIEWPORT-001 — viewport-fit:cover lets the layout extend under the
 // notch/home indicator so env(safe-area-inset-*) resolves nonzero; themeColor
@@ -40,19 +67,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="en"
+      className={`${nunito.variable} ${newsreader.variable} ${courierPrime.variable}`}
+    >
       <body>
         <a
           href="#main-content"

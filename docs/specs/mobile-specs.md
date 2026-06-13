@@ -14,7 +14,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 ## Install & Standalone (PWA, manifest-only tier)
 
 - `[x]` **PWA-MANIFEST-001**: The system SHALL serve a web app manifest declaring `name` "Dogear", a `short_name`, `display: "standalone"`, `start_url: "/"`, and theme/background colors drawn from the app palette, so the app is installable to the home screen and launches without browser chrome. (`src/app/manifest.ts`)
-- `[x]` **PWA-MANIFEST-002**: The manifest SHALL reference the existing icon assets at 192px and 512px (`public/icons/`) plus the SVG icon, so the installed app shows a correct home-screen icon. (`src/app/manifest.ts`)
+- `[x]` **PWA-MANIFEST-002**: The manifest SHALL reference the dog-ear icon assets at 192px and 512px (`public/icons/`) plus the SVG icon, and SHALL additionally declare a `purpose: "maskable"` 512px entry (the art is the pre-padded maskable cream variant, so the same file serves both `any` and `maskable`), so the installed app shows a correct, safe-zone-padded home-screen icon. (`src/app/manifest.ts`)
 - `[x]` **PWA-VIEWPORT-001**: The root document SHALL set `viewport-fit: cover` and a `themeColor`, so the layout can extend under the notch/home indicator and `env(safe-area-inset-*)` resolves to nonzero on notched devices. (`src/app/layout.tsx`)
 - `[D]` **PWA-OFFLINE-001**: Offline app-shell caching via service worker — deferred (out of responsive-polish tier).
 - `[D]` **PWA-PUSH-001**: Web push notifications — deferred.

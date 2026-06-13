@@ -1,539 +1,216 @@
-// @spec HOME-UI-001 through HOME-UI-011, HOME-UI-PRIVACY-CALLOUT-001, HOME-UI-ABOUT-001, HOME-A11Y-002, HOME-A11Y-004
-/* eslint-disable no-restricted-syntax --
- * The landing page's "cream-to-primary backdrop" gradient (~191-193) is a
- * page-private aesthetic — a subtle tonal wash distinct from the hero. The
- * gradient stops use alpha variants that don't map to global tokens, and the
- * pattern isn't reused elsewhere. DSYS-TOKEN-003 exemption per HOME-UI intent.
- */
+// @spec HOME-UI-015, HOME-UI-016, HOME-UI-005, HOME-UI-006, HOME-UI-CTA-PRIMARY-001,
+//        HOME-UI-CTA-SECONDARY-001, HOME-UI-CARD-001, HOME-UI-CARD-002, HOME-UI-CARD-003,
+//        HOME-UI-CARD-004, HOME-UI-ANNOT-001, HOME-UI-TERMS-001, HOME-UI-PLATE-001,
+//        HOME-UI-018, HOME-A11Y-002, HOME-A11Y-004, LANDING-UI-001
+//
+// Editorial landing — a library borrower's card, not a SaaS hero+grid. Server
+// component (links only). Single centered column at every width; the 390px
+// handoff scales up by centering. See docs/llds/auth-and-accounts.md.
 import Link from "next/link";
-import {
-  LogoIcon,
-  VoteIcon,
-  CalendarIcon,
-  ChatIcon,
-  ChevronRightIcon,
-  TrendIcon,
-  UsersIcon,
-} from "@/components/ui/icons";
-import { AvatarStack, Badge, Card, BookCover, ChapterChip } from "@/components/ui";
+import { LogoIcon } from "@/components/ui/icons";
 
-const paperBg =
-  "radial-gradient(circle at 20% 10%, oklch(0.97 0.012 75) 0, transparent 50%), radial-gradient(circle at 80% 90%, oklch(0.96 0.018 30) 0, transparent 55%), var(--color-bg)";
+const checkout: [string, string, string, number][] = [
+  [
+    "Choose the next read",
+    "Nominate books, then dog-ear your three favourites. Tallies stay sealed until the reveal.",
+    "APR 02",
+    -5,
+  ],
+  [
+    "Stay a chapter ahead",
+    "Notes are tagged by chapter — anything past your bookmark stays tucked away.",
+    "APR 16",
+    3,
+  ],
+  [
+    "Meet without the maybe",
+    "RSVP postcards land on the one night that works for everyone.",
+    "MAY 07",
+    -5,
+  ],
+];
+
+const terms = [
+  "We only ever ask for an email and a name. Nothing else, ever.",
+  "No passwords — so there is nothing to forget, and nothing to steal.",
+  "No ads, no algorithm, no strangers. Only the people you invite.",
+];
 
 export default function Home() {
   return (
-    <main id="main-content" className="min-h-screen" style={{ background: paperBg }}>
-      {/* Top Nav */}
-      <nav className="flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 lg:px-14 py-5">
-        <Link href="/" className="flex items-center gap-2.5">
-          <LogoIcon size={26} />
-          <span className="font-[var(--font-display)] text-xl font-semibold text-ink">
-            Dogear
+    <main id="main-content" className="min-h-screen bg-bg">
+      <div
+        data-testid="landing-column"
+        className="mx-auto w-full max-w-[620px] px-[22px] pb-12"
+      >
+        {/* @spec HOME-UI-015 — masthead */}
+        <header className="flex items-center justify-between pt-6">
+          <div className="flex items-center gap-2.5">
+            <LogoIcon size={28} />
+            <span className="font-[family-name:var(--font-display)] text-sm font-black uppercase tracking-[0.16em] text-ink">
+              Dogear
+            </span>
+          </div>
+          <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.16em] text-ink-3 whitespace-nowrap">
+            EST. 2026
           </span>
-        </Link>
-        <div className="flex items-center gap-1">
-          <Link
-            href="/login"
-            className="text-ink-2 text-sm px-3 py-1.5 hover:text-ink transition-colors ml-2"
-          >
-            Log in
-          </Link>
+        </header>
+        <div className="mt-3.5 h-px bg-line" />
+
+        {/* @spec HOME-UI-016 — editorial hero */}
+        <section className="pt-8">
+          <h1 className="font-[family-name:var(--font-serif)] text-[32px] font-semibold leading-[1.2] tracking-[-0.01em] text-ink">
+            A small, private library for{" "}
+            <em className="italic text-primary">the people you read with.</em>
+          </h1>
+          <p className="mt-6 max-w-[32ch] font-[family-name:var(--font-serif)] text-base leading-[1.5] text-ink-2">
+            Choose the next book together, settle on a night that works, and talk
+            it through — without spoiling the ending for anyone still reading.
+          </p>
+        </section>
+
+        {/* @spec HOME-UI-CTA-PRIMARY-001, HOME-UI-CTA-SECONDARY-001 — asymmetric */}
+        <section className="pt-6">
           <Link
             href="/join"
-            className="inline-flex items-center justify-center font-medium rounded-[var(--radius-md)] bg-primary text-bg px-3 py-1.5 text-[13px] hover:bg-primary-hover transition-colors"
+            data-testid="hero-signup"
+            className="flex min-h-[52px] w-full items-center justify-center rounded-full bg-primary px-7 font-[family-name:var(--font-display)] text-[17px] font-extrabold text-bg shadow-md transition-colors hover:bg-primary-hover active:scale-[0.99]"
           >
-            Sign up
+            Get your library card
           </Link>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center px-4 md:px-8 lg:px-14 py-12 md:py-16 lg:pt-14 lg:pb-[72px]">
-        {/* Left column */}
-        <div>
-          {/* Eyebrow pill */}
-          <div className="inline-flex items-center gap-1.5 px-[11px] py-[5px] rounded-full bg-accent-soft text-accent-ink text-xs font-medium mb-5">
-            <span className="w-[5px] h-[5px] rounded-full bg-accent-ink" />
-            Spoiler-safe by default
-          </div>
-
-          <h1 className="font-[var(--font-display)] text-5xl md:text-6xl lg:text-[72px] font-semibold leading-[1.05] lg:leading-none tracking-[-0.03em] mb-5 text-ink">
-            Your book club,
-            <br />
-            <em className="italic" style={{ color: "var(--color-primary)" }}>
-              finally
-            </em>{" "}
-            organized.
-          </h1>
-
-          <p className="text-[18px] text-ink-2 max-w-[480px] leading-[1.55] mb-7">
-            Vote on books, schedule meetings, discuss without spoilers, and track
-            everyone&apos;s progress — all in one place.
-          </p>
-
-          {/* CTA row — two clear actions: returning users sign in, new users sign up */}
-          <div className="flex gap-2.5">
-            <Link
-              href="/join"
-              data-testid="hero-signup"
-              className="inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] bg-primary text-bg px-5 py-2.5 text-[15px] hover:bg-primary-hover transition-colors h-[46px]"
-            >
-              Sign up
-              <ChevronRightIcon size={14} />
-            </Link>
+          <p className="mt-3.5 flex items-center justify-center gap-1.5 font-[family-name:var(--font-display)] text-sm font-bold text-ink-2">
+            Already a member?
             <Link
               href="/login"
               data-testid="hero-login"
-              className="inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] border border-line-strong text-ink px-5 py-2.5 text-[15px] hover:bg-bg-sunken transition-colors h-[46px]"
+              className="font-extrabold text-primary underline underline-offset-[3px]"
             >
               Log in
             </Link>
-          </div>
+          </p>
+        </section>
 
-          {/* Social proof */}
-          <div className="mt-8 flex items-center gap-3">
-            <AvatarStack names={["Alice Chen", "Marcus Webb", "Priya K"]} max={3} size="sm" />
-            <span className="text-[13px] text-ink-3">
-              <strong className="text-ink-2">2,400+</strong> readers ·{" "}
-              <strong className="text-ink-2">340</strong> active clubs
-            </span>
-          </div>
-        </div>
+        {/* @spec HOME-UI-CARD-001..004 — the borrower's card */}
+        <section className="pt-9">
+          <div className="relative -rotate-[1.3deg] overflow-hidden rounded-[var(--radius-lg)] bg-bg-soft shadow-lg">
+            {/* @spec HOME-UI-CARD-004 — decorative dog-ear corner */}
+            <svg
+              data-testid="card-dogear"
+              aria-hidden="true"
+              viewBox="0 0 34 34"
+              className="absolute right-0 top-0 z-10 h-[34px] w-[34px]"
+            >
+              <path d="M0 0 L34 34 L0 34 Z" fill="var(--color-primary)" />
+              <path d="M0 0 L34 0 L34 34 Z" fill="var(--color-bg)" />
+              <path
+                d="M0 0 L34 34"
+                stroke="var(--color-primary-hover)"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+              />
+            </svg>
 
-        {/* Right column — decorative collage */}
-        <div className="hidden lg:block relative h-[460px]" aria-hidden="true">
-          {/* Voting card */}
-          <Card
-            className="absolute top-0 right-[30px] w-[280px] p-4"
-            style={{ transform: "rotate(-2deg)", boxShadow: "var(--shadow-lg)" }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Badge tone="accent" dot>Voting</Badge>
+            {/* @spec HOME-UI-CARD-001 — header */}
+            <div className="px-[18px] pb-2.5 pt-4">
+              <div className="font-[family-name:var(--font-mono)] text-[9.5px] font-bold tracking-[0.22em] text-ink-3">
+                DOGEAR LENDING LIBRARY
+              </div>
+              <div className="mt-1.5 flex items-baseline justify-between">
+                <span className="font-[family-name:var(--font-display)] text-lg font-extrabold text-ink">
+                  Borrower&rsquo;s Card
+                </span>
+                <span className="font-[family-name:var(--font-mono)] text-[10.5px] text-ink-3 whitespace-nowrap">
+                  CAT. 813.54
+                </span>
+              </div>
             </div>
-            <p className="text-xs text-ink-2 mb-3">Round 4 · Pick up to 3</p>
-            <div className="space-y-2">
-              {["Dune", "Piranesi", "Klara and the Sun"].map((title, i) => (
-                <div key={title} className="flex items-center gap-2.5">
-                  <div
-                    className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 ${
-                      i === 0
-                        ? "border-primary bg-primary"
-                        : "border-line-strong bg-bg"
-                    }`}
-                  >
-                    {i === 0 && (
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-                        <path d="M5 12.5l4.5 4.5L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <span className="text-xs text-ink">{title}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
+            <div className="h-px bg-line" />
 
-          {/* Meeting card */}
-          <Card
-            className="absolute top-[90px] left-0 w-[260px] p-4"
-            style={{ transform: "rotate(1.5deg)", boxShadow: "var(--shadow-lg)" }}
-          >
-            <p className="text-sm font-medium text-ink mb-2.5">Thursday potluck?</p>
-            <div className="space-y-1.5">
-              {[
-                { time: "Thu 6:30 PM", hot: true },
-                { time: "Fri 7:00 PM", hot: false },
-                { time: "Sat 2:00 PM", hot: false },
-              ].map((slot) => (
+            {/* column heads */}
+            <div className="flex justify-between px-[18px] pt-2.5">
+              <span className="font-[family-name:var(--font-mono)] text-[8.5px] tracking-[0.16em] text-ink-3">
+                THE CLUB CAN &mdash;
+              </span>
+              <span className="font-[family-name:var(--font-mono)] text-[8.5px] tracking-[0.16em] text-ink-3">
+                DATE DUE
+              </span>
+            </div>
+
+            {/* @spec HOME-UI-CARD-002, HOME-UI-CARD-003 — checkout rows + stamps */}
+            <div className="px-[18px] pb-2">
+              {checkout.map(([title, body, date, deg], i) => (
                 <div
-                  key={slot.time}
-                  className={`text-xs px-2.5 py-2 rounded-[var(--radius-sm)] ${
-                    slot.hot
-                      ? "bg-success-soft text-ink font-semibold"
-                      : "bg-bg-soft text-ink-2"
+                  key={title}
+                  className={`flex items-center gap-3 py-3.5 ${
+                    i < checkout.length - 1 ? "border-b border-dashed border-line" : ""
                   }`}
                 >
-                  {slot.time}
+                  <div className="flex-1">
+                    <div className="font-[family-name:var(--font-display)] text-[14.5px] font-bold text-ink">
+                      {title}
+                    </div>
+                    <div className="mt-0.5 font-[family-name:var(--font-serif)] text-[12.5px] italic leading-[1.4] text-ink-2">
+                      {body}
+                    </div>
+                  </div>
+                  <div
+                    className="shrink-0 rounded border-[1.5px] border-primary px-1.5 py-1 text-center font-[family-name:var(--font-mono)] text-[9px] font-bold tracking-[0.08em] text-primary opacity-90"
+                    style={{ transform: `rotate(${deg}deg)` }}
+                  >
+                    {date}
+                  </div>
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
 
-          {/* Discussion card */}
-          <Card
-            className="absolute bottom-[10px] right-[60px] w-[290px] p-4"
-            style={{ transform: "rotate(2deg)", boxShadow: "var(--shadow-lg)" }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <ChapterChip tag="Ch. 12" chapter={12} />
-              <span className="text-[11px] text-ink-3">4 comments</span>
+          {/* @spec HOME-UI-ANNOT-001 — dog-ear metaphor annotation */}
+          <p className="mx-2 mt-5 font-[family-name:var(--font-serif)] text-[13px] italic leading-[1.5] text-ink-2">
+            A dog-eared page is the universal{" "}
+            <span className="text-ink">&ldquo;here&rsquo;s where I stopped.&rdquo;</span>{" "}
+            That little fold is the whole idea — mark your place, see where your
+            friends are, and never spoil what&rsquo;s ahead.
+          </p>
+        </section>
+
+        {/* @spec HOME-UI-TERMS-001 — conditions of membership */}
+        <section
+          data-testid="privacy-banner"
+          aria-label="Conditions of membership"
+          className="pt-8"
+        >
+          <div className="font-[family-name:var(--font-mono)] text-[9.5px] tracking-[0.2em] text-ink-3">
+            CONDITIONS OF MEMBERSHIP
+          </div>
+          <div className="mt-1">
+            {terms.map((t, i) => (
+              <div
+                key={i}
+                className="flex items-baseline gap-3 border-t border-line py-3"
+              >
+                <span className="shrink-0 font-[family-name:var(--font-mono)] text-xs font-bold text-primary">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="font-[family-name:var(--font-serif)] text-[14.5px] leading-[1.45] text-ink">
+                  {t}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* @spec HOME-UI-PLATE-001 — Ex Libris bookplate */}
+        <section className="pt-8">
+          <div className="rounded-2xl border-[1.5px] border-line bg-bg-soft px-[18px] py-5 text-center">
+            <div className="font-[family-name:var(--font-mono)] text-[9px] tracking-[0.26em] text-ink-3">
+              &middot; EX LIBRIS &middot;
             </div>
-            <p className="text-sm font-medium text-ink mb-1">
-              The lighthouse metaphor — anyone else?
-            </p>
-            <p className="text-xs text-ink-3">Started by Marisol · 2h ago</p>
-          </Card>
-
-          {/* Book cover */}
-          <div className="absolute bottom-[110px] left-[110px]">
-            <BookCover title="Sea of Tranquility" author="Mandel" variant="terracotta" size="xl" />
+            <div className="mt-2 font-[family-name:var(--font-serif)] text-[19px] italic leading-[1.3] text-primary">
+              For people who finish the book.
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* Privacy callout */}
-      {/* @spec HOME-UI-PRIVACY-CALLOUT-001 */}
-      <section
-        data-testid="privacy-banner"
-        aria-label="Privacy guarantees"
-        className="relative px-4 md:px-8 lg:px-14 py-14 lg:py-20 mb-6"
-      >
-        {/* Soft cream-to-primary backdrop, tonally distinct from hero but not loud */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10"
-          style={{
-            background:
-              "linear-gradient(180deg, oklch(0.97 0.012 195 / 0.45) 0%, oklch(0.96 0.022 75 / 0.35) 100%)",
-            borderTop: "1px solid oklch(0.91 0.008 70)",
-            borderBottom: "1px solid oklch(0.91 0.008 70)",
-          }}
-        />
-
-        <div className="max-w-[1100px] mx-auto">
-          {/* Eyebrow with hairline flanks */}
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
-            <span className="text-[11px] uppercase tracking-[0.22em] text-primary-ink font-medium">
-              Our promises
-            </span>
-            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
-          </div>
-
-          {/* Display headline echoing hero "finally" italic */}
-          <h2 className="font-[var(--font-display)] text-[34px] md:text-[42px] font-semibold text-ink text-center mb-3 tracking-[-0.02em] leading-[1.1]">
-            Built for readers,{" "}
-            <em className="italic" style={{ color: "var(--color-primary)" }}>
-              not advertisers
-            </em>
-            .
-          </h2>
-          <p className="text-[14px] text-ink-3 text-center mb-10 max-w-[520px] mx-auto leading-relaxed">
-            We&apos;re a small thing for small groups. Here&apos;s what that means
-            for you.
-          </p>
-
-          {/* Three-up promise cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <PromiseCard
-              icon={
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M12 2L4 6v6c0 5 3.5 9.4 8 10 4.5-.6 8-5 8-10V6l-8-4z" />
-                  <path d="M9 12.5l2 2 4-4" />
-                </svg>
-              }
-              title="No personal data"
-              body="Nothing about you is stored or shared. We don't sell, analyze, or hand off anything."
-            />
-            <PromiseCard
-              icon={
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <rect x="3" y="5.5" width="18" height="13" rx="2" />
-                  <path d="M3.5 7l8.5 6 8.5-6" />
-                </svg>
-              }
-              title="Just email and display name"
-              body="That's the entire signup. No phone, no birthday, no contacts upload, no friend graph."
-            />
-            <PromiseCard
-              icon={
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M3 11l11-6v14L3 13z" />
-                  <path d="M14 9.5v5" />
-                  <path d="M4 18l16-12" />
-                </svg>
-              }
-              title="No ads, ever"
-              body="No banners, no sponsored books, no tracking pixels. Just the books and the people."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* About — name origin + product elevator */}
-      {/* @spec HOME-UI-ABOUT-001 */}
-      <section
-        id="about"
-        data-testid="about-section"
-        aria-label="About Dogear"
-        className="px-4 md:px-8 lg:px-14 py-14 lg:py-20"
-      >
-        <div className="max-w-[680px] mx-auto">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
-            <span className="text-[11px] uppercase tracking-[0.22em] text-primary-ink font-medium">
-              About
-            </span>
-            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
-          </div>
-
-          <h2 className="font-[var(--font-display)] text-[34px] md:text-[42px] font-semibold text-ink text-center mb-8 tracking-[-0.02em] leading-[1.1]">
-            Why{" "}
-            <em className="italic" style={{ color: "var(--color-primary)" }}>
-              Dogear
-            </em>
-            ?
-          </h2>
-
-          <div className="space-y-5 text-[16px] md:text-[17px] text-ink-2 leading-[1.65]">
-            <p>
-              Dogear is book club coordination without the group-chat sprawl —
-              voting, scheduling, spoiler-safe discussion, and reading progress,
-              in one place built for the ritual instead of bolted onto a
-              messenger.
-            </p>
-            <p>
-              A dog-eared page is the universal &ldquo;here&apos;s where I
-              stopped.&rdquo; It&apos;s the smallest possible bookmark and the
-              first one any reader ever learns — one folded corner that says
-              <em> come back here</em>.
-            </p>
-            <p>
-              A book club is the same idea, scaled to a group: a shared place to
-              return to together. Where are we in the book, when do we meet
-              next, what&apos;s safe to say. That&apos;s the whole product, and
-              that&apos;s the whole name.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* All-features deep dive */}
-      {/* @spec HOME-UI-007 */}
-      <section
-        data-testid="features-overview"
-        aria-label="Features overview"
-        className="px-4 md:px-8 lg:px-14 pt-2 pb-16 lg:pb-[80px]"
-      >
-        <div className="max-w-[1300px] mx-auto">
-          {/* Eyebrow */}
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
-            <span className="text-[11px] uppercase tracking-[0.22em] text-primary-ink font-medium">
-              Everything inside
-            </span>
-            <span aria-hidden="true" className="h-px w-10 bg-primary/30" />
-          </div>
-
-          <h2 className="font-[var(--font-display)] text-[34px] md:text-[42px] font-semibold text-ink text-center mb-3 tracking-[-0.02em] leading-[1.1]">
-            Built for groups that{" "}
-            <em className="italic" style={{ color: "var(--color-primary)" }}>
-              finish the book
-            </em>
-            .
-          </h2>
-          <p className="text-[14px] text-ink-3 text-center mb-12 max-w-[560px] mx-auto leading-relaxed">
-            Every habit a working club needs — refined, and out of the way.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-            <CategoryCard
-              icon={<VoteIcon size={20} />}
-              title="Approval voting"
-              tagline="Choose what's next, together."
-              points={[
-                "Three phases: nominate, vote, decide",
-                "Open Library search built in",
-                "Tie-break and close-voting controls",
-                "Live status badge in the sidebar",
-              ]}
-            />
-            <CategoryCard
-              icon={<CalendarIcon size={20} />}
-              title="Meeting scheduling"
-              tagline="Find a time without the back-and-forth."
-              points={[
-                "Propose multiple slots at once",
-                "Availability heatmap by responder",
-                "“Most available” recommendation",
-                "Edit or cancel; updates ripple out",
-              ]}
-            />
-            <CategoryCard
-              icon={<ChatIcon size={20} />}
-              title="Spoiler-safe threads"
-              tagline="Talk freely. Nobody spoils anything."
-              points={[
-                "Chapter-tagged threads",
-                "Auto-hide threads above your chapter",
-                "Threaded replies, two levels deep",
-                "Pin, edit, delete — admin or your own",
-              ]}
-            />
-            <CategoryCard
-              icon={<TrendIcon size={20} />}
-              title="Reading progress"
-              tagline="See where the group is — really."
-              points={[
-                "Per-member page, chapter, percentage",
-                "Group median + distribution chart",
-                "History across past selections",
-                "States: not started, reading, finished",
-              ]}
-            />
-            <CategoryCard
-              icon={<UsersIcon size={20} />}
-              title="Run your club"
-              tagline="One person to many; one club to many."
-              points={[
-                "Roles: owner, admin, member",
-                "Invite codes — custom or auto-derived",
-                "Switch clubs from the sidebar",
-                "Custom theme color per club",
-              ]}
-            />
-            <CategoryCard
-              icon={
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M12 2L4 6v6c0 5 3.5 9.4 8 10 4.5-.6 8-5 8-10V6l-8-4z" />
-                  <path d="M9 12.5l2 2 4-4" />
-                </svg>
-              }
-              title="Quiet by default"
-              tagline="No tracking. No ads. No noise."
-              points={[
-                "Email + display name. Nothing else.",
-                "Zero ads, zero tracking pixels",
-                "Soft-delete with a restore window",
-                "Leave any club, anytime",
-              ]}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-line text-[13px] text-ink-3 flex items-center px-4 md:px-8 lg:px-14 py-7">
-        <div className="flex flex-wrap items-center gap-2">
-          <LogoIcon size={18} />
-          <span>Dogear</span>
-          <span>·</span>
-          <span>For people who finish the book.</span>
-        </div>
-      </footer>
+        </section>
+      </div>
     </main>
-  );
-}
-
-// @spec HOME-UI-007
-function CategoryCard({
-  icon,
-  title,
-  tagline,
-  points,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  tagline: string;
-  points: string[];
-}) {
-  return (
-    <div className="group bg-bg border border-line rounded-[var(--radius-lg)] p-6 shadow-sm transition-all duration-200 hover:border-primary/35 hover:-translate-y-0.5 hover:shadow-md">
-      <div className="w-10 h-10 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink flex items-center justify-center mb-4 transition-transform duration-200 group-hover:-rotate-3">
-        {icon}
-      </div>
-      <h3 className="font-[var(--font-display)] text-[19px] font-semibold text-ink mb-1 tracking-[-0.01em]">
-        {title}
-      </h3>
-      <p className="text-[13px] text-ink-3 leading-relaxed mb-4">{tagline}</p>
-      <div className="h-px bg-line mb-3.5" />
-      <ul className="space-y-2">
-        {points.map((point) => (
-          <li
-            key={point}
-            className="flex items-start gap-2 text-[13px] text-ink-2 leading-relaxed"
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="text-primary mt-[3px] shrink-0"
-            >
-              <path d="M5 12.5l4.5 4.5L19 7" />
-            </svg>
-            <span>{point}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-// @spec HOME-UI-PRIVACY-CALLOUT-001
-function PromiseCard({
-  icon,
-  title,
-  body,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="group relative bg-bg/85 backdrop-blur-[2px] border border-line rounded-[var(--radius-lg)] p-5 transition-all duration-200 hover:border-primary/35 hover:shadow-sm">
-      <div className="w-9 h-9 rounded-[var(--radius-md)] bg-primary-soft text-primary-ink flex items-center justify-center mb-3 transition-transform duration-200 group-hover:-rotate-3">
-        {icon}
-      </div>
-      <h3 className="font-[var(--font-display)] text-[17px] font-semibold text-ink mb-1 tracking-[-0.01em]">
-        {title}
-      </h3>
-      <p className="text-[13px] text-ink-2 leading-relaxed">{body}</p>
-    </div>
   );
 }
