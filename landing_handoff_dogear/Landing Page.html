@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Dogear — Landing Page</title>
+<meta name="theme-color" content="#F7F0E2" />
+<link rel="icon" type="image/svg+xml" href="assets/dogear-mark.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="dogear.css" />
+<style>
+  html, body { margin: 0; }
+  body {
+    background: var(--paper-deep);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  /* 390px mobile column — the design's target width */
+  #frame {
+    width: 390px;
+    max-width: 100%;
+    min-height: 100vh;
+    background: var(--paper);
+    box-shadow: 0 0 80px rgba(96, 64, 32, .12);
+    overflow-x: hidden;
+  }
+  @media (max-width: 420px) { #frame { box-shadow: none; } }
+</style>
+</head>
+<body>
+  <div id="frame"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="dogear-components.jsx"></script>
+  <script type="text/babel" src="dogear-join.jsx"></script>
+  <script type="text/babel">
+    const { useState } = React;
+    function LandingDemo() {
+      const [route, setRoute] = useState('landing');
+      // The real app routes these to /join and /login. Here we render the
+      // wizard/login in-place so the whole entry experience is browsable.
+      if (route === 'login') return <LoginScreen onBack={() => setRoute('landing')} onDone={() => setRoute('landing')} />;
+      if (route === 'join')  return <JoinWizard onBack={() => setRoute('landing')} onDone={() => setRoute('landing')} />;
+      return <LandingScreen onJoin={() => setRoute('join')} onLogin={() => setRoute('login')} />;
+    }
+    ReactDOM.createRoot(document.getElementById('frame')).render(<LandingDemo />);
+  </script>
+</body>
+</html>

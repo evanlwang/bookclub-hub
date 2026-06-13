@@ -42,7 +42,7 @@ Every icon (except `LogoIcon`) accepts `IconProps` and forwards extras to the `<
 | `MenuIcon` | hamburger | Menu, navigation |
 | `LogoIcon` | branded mark | App logo |
 
-Compared with `docs/design-system.md`, the previously-listed icons `Pin`, `Pin2`, `Bell`, `Spark`, `Copy` are not present in the implementation. Either the list was aspirational or those have been retired. The new LLD reflects what exists; if any are needed, they're a forward gap.
+An earlier (since-deleted) design-system doc listed `Pin`, `Pin2`, `Bell`, `Spark`, `Copy`; those icons are not present in the implementation. Either the list was aspirational or those were retired. This LLD reflects what exists; if any are needed, they're a forward gap.
 
 ## Default styling (IconBase)
 
@@ -61,7 +61,7 @@ The shipped static icon assets (favicon, apple-touch, PWA 16/192/512) all derive
 
 ## Visual reference
 
-`docs/bookclub-hub-designs/project/primitives.jsx` shows the icon grid.
+`design_handoff_dogear_redesign/dogear-components.jsx` shows the icon grid.
 
 ## Decisions & Alternatives
 
@@ -82,7 +82,7 @@ The shipped static icon assets (favicon, apple-touch, PWA 16/192/512) all derive
 2. ✅ `currentColor` for coloring, `aria-hidden` by default.
 
 ### Deferred / Active gaps
-1. **Missing icons from old design-system.md list** (Pin, Pin2, Bell, Spark, Copy). If used, add; if not, the design-system doc was stale.
+1. **Missing icons from the earlier (deleted) design-system doc** (Pin, Pin2, Bell, Spark, Copy). If used, add; if not, that list was stale.
 3. **`Icon` wrapper for arbitrary SVG path data.** Today every icon is a named component. A generic `<Icon path="..." />` is intentionally not provided to discourage ad-hoc additions.
 4. **Loading-spinner icon** is currently inlined in Button. Could be promoted to a shared `SpinnerIcon` for reuse.
 

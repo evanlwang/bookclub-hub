@@ -27,7 +27,7 @@ No hover, focus, or pressed state. Card is a surface, not an interactive element
 
 ## Visual reference
 
-`docs/bookclub-hub-designs/project/artboards/dashboard.jsx` and `voting.jsx` show Card in heavy use (three-column grid, hero card, empty states).
+`design_handoff_dogear_redesign/dogear-dashboard.jsx` and `voting.jsx` show Card in heavy use (three-column grid, hero card, empty states).
 
 ## Decisions & Alternatives
 

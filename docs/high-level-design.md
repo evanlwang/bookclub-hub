@@ -211,7 +211,7 @@ The UI is built from a small set of reusable primitives (Button, Badge, Card, Av
 
 **Behavior (intent).** When and how a token is applied — default state, hover, focus, disabled, motion preferences, dark-mode swap (when added) — is captured as EARS specs against the design-system arrow. A `COMP-BUTTON-003` spec, for example, says "WHILE the primary button is hovered, the system SHALL transition `--color-primary` to `--color-primary-hover` over 150ms"; the literal colors live in `globals.css` and can drift freely.
 
-Visual judgment — whether a page *feels* right, whether the type scale is coherent, whether the cover gradients harmonize — is not encoded in specs. It lives in `docs/bookclub-hub-designs/` (interactive prototypes) and any future Figma artifacts, and is referenced from the design LLDs but never round-tripped through EARS.
+Visual judgment — whether a page *feels* right, whether the type scale is coherent, whether the cover gradients harmonize — is not encoded in specs. It lives in the dogear redesign handoff packages (`design_handoff_dogear_redesign/`, `landing_handoff_dogear/` — interactive prototypes) and any future Figma artifacts, and is referenced from the design LLDs but never round-tripped through EARS.
 
 ### Arrow placement
 

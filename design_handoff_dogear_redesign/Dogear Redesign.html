@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dogear — Cozy Redesign · Pass 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Courier+Prime:wght@400;700&family=Baloo+2:wght@600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dogear.css">
+<style>
+  body {
+    margin: 0;
+    background: var(--paper-deep);
+    min-height: 100vh;
+    font-family: var(--font-display);
+  }
+  .stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 56px;
+    flex-wrap: wrap;
+    padding: 48px 32px 64px;
+    min-height: calc(100vh - 112px);
+    box-sizing: border-box;
+  }
+  .aside {
+    max-width: 320px;
+    color: var(--ink);
+  }
+  .aside h1 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    font-size: 40px;
+    line-height: 1.02;
+    color: var(--terracotta);
+    margin: 0 0 14px;
+  }
+  .aside p {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 0 0 14px;
+  }
+  .aside ul {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    padding-left: 18px;
+    margin: 0 0 18px;
+  }
+  .aside li { margin-bottom: 7px; }
+  .aside li strong { color: var(--ink); font-weight: 800; }
+  .aside .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--terracotta-deep);
+    border: 1.5px dashed var(--terracotta);
+    border-radius: 6px;
+    padding: 3px 8px;
+    margin-bottom: 16px;
+  }
+  .aside .next {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    border-top: 1px solid rgba(96,64,32,.14);
+    padding-top: 14px;
+    line-height: 1.55;
+  }
+  @media (max-width: 900px) {
+    .stage { gap: 32px; padding: 28px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="aside">
+    <div class="tag">PASS 3 · FULL COVERAGE</div>
+    <h1>Dogear, but cozy</h1>
+    <p>Same flows, new skin: paper cream, one confident terracotta, chunky Nunito headlines over Newsreader prose. Every surface borrows a physical library object.</p>
+    <ul>
+      <li><strong>Progress</strong> — drag the bookmark down the page edge; saving dog-ears the card.</li>
+      <li><strong>Nook</strong> — every member is a bookmark in the hero’s page edge; tap one.</li>
+      <li><strong>Voting</strong> — tap a slip to dog-ear it (3 picks). Switch phase in Tweaks: nominating / voting / decided.</li>
+      <li><strong>Notes</strong> — spoiler filter set by your chapter; try “+ New note” and type “chapter 14” to trip the mismatch warning.</li>
+      <li><strong>Meetings</strong> — RSVP postcard respond view; admin view adds the availability heatmap.</li>
+      <li><strong>Entry flow</strong> — set Surface to “entry” in Tweaks: landing page, login, and the 4-step join wizard ending in the stamped library card.</li>
+    </ul>
+    <div class="next">Verified against the repo docs (token taxonomy, component LLDs). Handoff package for Claude Code is in <strong>design_handoff_dogear_redesign/</strong>.</div>
+  </div>
+
+  <div id="root"></div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="dogear-data.js"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="dogear-components.jsx"></script>
+<script type="text/babel" src="dogear-progress.jsx"></script>
+<script type="text/babel" src="dogear-dashboard.jsx"></script>
+<script type="text/babel" src="dogear-voting.jsx"></script>
+<script type="text/babel" src="dogear-notes.jsx"></script>
+<script type="text/babel" src="dogear-meetings.jsx"></script>
+<script type="text/babel" src="dogear-join.jsx"></script>
+<script type="text/babel" src="dogear-app.jsx"></script>
+
+<script type="text/babel">
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(
+    <IOSDevice width={390} height={844}>
+      <DogearApp />
+    </IOSDevice>
+  );
+</script>
+
+</body>
+</html>

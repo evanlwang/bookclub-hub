@@ -28,7 +28,7 @@ Only `sm` and `md` — `lg`/`xl` avatars are too large to overlap legibly. Docum
 
 ## Visual reference
 
-`docs/bookclub-hub-designs/project/artboards/meetings.jsx` (availability row stacks).
+`design_handoff_dogear_redesign/dogear-meetings.jsx` (availability row stacks).
 
 ## Decisions & Alternatives
 

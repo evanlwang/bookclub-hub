@@ -7,7 +7,7 @@ The UI is composed from a small palette of CSS custom properties (the *tokens*) 
 - **Values** live in `src/app/globals.css` inside a Tailwind v4 `@theme` block. They are data — colors, fonts, radii, shadows. A designer can edit them without touching specs.
 - **Behavior** lives in EARS specs (`docs/specs/dsys-specs.md`, `docs/specs/comp-*-specs.md`). Specs reference token *names*, never values. A spec says "the primary button applies `--color-primary`," not "the primary button is `oklch(0.42 0.06 195)`."
 
-Visual judgment (does it *feel* right) is not encoded here. The interactive prototypes in `docs/bookclub-hub-designs/` are the source of visual truth; LLDs point at them but do not try to reconstruct them.
+Visual judgment (does it *feel* right) is not encoded here. The interactive prototypes in the dogear redesign handoff packages (`design_handoff_dogear_redesign/`, `landing_handoff_dogear/`) are the source of visual truth; LLDs point at them but do not try to reconstruct them.
 
 This LLD owns the **system-wide** rules: token taxonomy, naming conventions, theming approach, focus, motion, and the accessibility baseline that every primitive inherits. Per-primitive contracts live in sibling `components-{name}.md` LLDs.
 
@@ -96,7 +96,7 @@ Every primitive has a `(variant, size, state)` matrix:
 
 ## Where visual judgment lives
 
-`docs/bookclub-hub-designs/` (interactive prototypes) is the source of visual truth. Specs assert "the right token gets applied"; they do not try to assert "the result looks good." When a prototype and a primitive diverge visually, the prototype wins by default — open a spec ticket to bring the primitive back into line, don't drift the spec.
+The dogear redesign handoff packages (`design_handoff_dogear_redesign/`, `landing_handoff_dogear/` — interactive prototypes) are the source of visual truth. Specs assert "the right token gets applied"; they do not try to assert "the result looks good." When a prototype and a primitive diverge visually, the prototype wins by default — open a spec ticket to bring the primitive back into line, don't drift the spec.
 
 ## Test pattern
 
@@ -137,7 +137,7 @@ Every primitive has a `(variant, size, state)` matrix:
 ## References
 
 - `src/app/globals.css` — the runtime artifact (token values).
-- `docs/bookclub-hub-designs/project/primitives.jsx` — visual reference for all primitives.
+- `design_handoff_dogear_redesign/dogear-components.jsx` — visual reference for all primitives.
 - `docs/llds/components-button.md` — first per-primitive LLD; uses this LLD's contracts.
 - `docs/specs/dsys-specs.md` — system-wide EARS specs (forthcoming).
 - `docs/high-level-design.md` — Design System section.
