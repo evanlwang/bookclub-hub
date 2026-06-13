@@ -55,7 +55,9 @@ Compared with `docs/design-system.md`, the previously-listed icons `Pin`, `Pin2`
 | `stroke-linecap` / `stroke-linejoin` | round |
 | `aria-hidden` | true |
 
-`LogoIcon` is the **exception**: it's the only icon with hard-coded oklch fill/stroke values (the brand palette). This is a documented gap — the logo should reference design tokens (`--color-primary`, `--color-bg`, `--color-accent`) instead of inlining oklch literals. Same inline-literal ban applies; the logo is harder to fix because SVG attributes accept colors, not CSS custom properties, requiring either a CSS-variable bridge or a CSS-driven `fill` via the parent's `color`/`fill` properties.
+`LogoIcon` is the **exception** to IconBase: it's the Dogear brand mark (`COMP-ICONS-LOGO-002`), not a stroke glyph. `viewBox="0 0 64 64"`, `size` prop default 22, `aria-hidden="true"`. It draws a rounded square (rx ~15) filled `var(--color-primary)` with a dog-eared top-right corner — a paper triangle (`var(--color-bg)`, its outer corner rounded to follow the card edge) over a crease triangle (`var(--color-primary-hover)`) plus a crease stroke. Colors bridge through design tokens via `var(--token-name)` in the SVG `fill`/`stroke` attributes (`COMP-ICONS-LOGO-001`) — no oklch literals. Drawn as plain `<rect>` + `<path>` elements with **no `clipPath`**, so multiple instances on one page introduce no duplicate `id`. Geometry mirrors `landing_handoff_dogear/assets/dogear-mark.svg`.
+
+The shipped static icon assets (favicon, apple-touch, PWA 16/192/512) all derive from this mark (`COMP-ICONS-ASSET-001`): `src/app/icon.svg` is a copy of the transparent mark; the PNGs are rasterized from the mark (16/32) and the pre-padded maskable cream variant (180/192/512). Regenerate with `npx --yes sharp-cli` against `landing_handoff_dogear/assets/dogear-mark.svg` / `dogear-icon-maskable.svg` (commands in the plan); files are committed so CI never runs the tool.
 
 ## Visual reference
 
@@ -70,7 +72,8 @@ Compared with `docs/design-system.md`, the previously-listed icons `Pin`, `Pin2`
 | Stroke width | 1.6 | 2 (Lucide default); 1.5 | Slightly lighter than Lucide; matches the warm-paper aesthetic without thin-line fragility. [inferred] |
 | Default size | 16px | 20px; 24px | 16px is the size most icons render at in the UI; callers up-size as needed. [inferred] |
 | Accessibility default | `aria-hidden="true"` | Per-icon `role="img"` + `aria-label` | Most icons are decorative; the few that aren't need a parent `aria-label` anyway (icon-only buttons). [inferred] |
-| `LogoIcon` inline literals | Hard-coded oklch values *(gap)* | Reference tokens via CSS-bridged fill | Closing the gap requires routing colors through `currentColor` plus child `<g>` overrides; non-trivial. |
+| `LogoIcon` mark | Dog-ear fold (terracotta square, folded corner) | Teal book glyph (retired); wordmark only | The dog-ear IS the product's namesake gesture; one brand mark app-wide. Colors token-bridged via `var(--token)` SVG attrs. |
+| `LogoIcon` corner clip | Plain paths, rounded-corner page triangle | `<clipPath>` element | A `clipPath` needs a unique `id`; multiple `LogoIcon`s on a page would collide. Precomputed paths avoid `id`s entirely. |
 
 ## Open Questions
 
@@ -79,8 +82,7 @@ Compared with `docs/design-system.md`, the previously-listed icons `Pin`, `Pin2`
 2. ✅ `currentColor` for coloring, `aria-hidden` by default.
 
 ### Deferred / Active gaps
-1. **`LogoIcon` token migration.** Replace inline oklch literals with token references via CSS bridging.
-2. **Missing icons from old design-system.md list** (Pin, Pin2, Bell, Spark, Copy). If used, add; if not, the design-system doc was stale.
+1. **Missing icons from old design-system.md list** (Pin, Pin2, Bell, Spark, Copy). If used, add; if not, the design-system doc was stale.
 3. **`Icon` wrapper for arbitrary SVG path data.** Today every icon is a named component. A generic `<Icon path="..." />` is intentionally not provided to discourage ad-hoc additions.
 4. **Loading-spinner icon** is currently inlined in Button. Could be promoted to a shared `SpinnerIcon` for reuse.
 

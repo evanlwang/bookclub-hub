@@ -22,12 +22,22 @@ All tokens are defined in `src/app/globals.css`. Categories:
 | Color — accent | `--color-accent*` | `accent`, `accent-hover`, `accent-soft`, `accent-ink` |
 | Color — semantic | `--color-{success,warning,danger}*` | success: base + `-soft`; warning: base + `-soft` + `-ink`; danger: base + `-hover` + `-soft` + `-ink`(via danger) + `-line` |
 | Color — chip palette | `--color-chip-{1..5}`, `--color-chip-{1..5}-ink` | five rotating tones for chapter tagging |
-| Type — font stacks | `--font-{display,ui,mono}` | Newsreader serif, Geist sans, JetBrains Mono |
+| Type — font stacks | `--font-{display,ui,serif,mono}` | Nunito display/UI, Newsreader serif (prose), Courier Prime mono |
 | Radius | `--radius-{sm,md,lg,xl}` | 6px / 10px / 14px / 20px |
 | Shadow | `--shadow-{sm,md,lg}` | flat / standard card / modal overlay |
 | Motion | (animation names + durations) | `bar-fill` 0.5s, `toast-in` 150ms, `fade-in` 150ms, `slide-down` 200ms; default interactive transition is 150ms ease |
 
 No formal spacing scale today — components rely on Tailwind's default spacing utilities (`p-3`, `gap-2`, etc.). A future `--space-*` token family is an open question.
+
+## Font loading
+
+Fonts load through `next/font/google` in `src/app/layout.tsx` (`DSYS-FONT-001/002`), not an external `<link>`:
+
+- **Nunito** (display + UI) — weights 600/700/800/900 — `variable: "--font-nunito"`.
+- **Newsreader** (prose serif) — weights 400–700, normal + italic, `opsz` axis — `variable: "--font-newsreader"`.
+- **Courier Prime** (mono) — weights 400/700 — `variable: "--font-courier-prime"`.
+
+Each is `display: "swap"`; the three `variable` class names are applied to `<html>` so the `--font-{display,ui,serif,mono}` stacks in `globals.css` resolve (they reference `var(--font-nunito)` etc., with `system-ui`/`Georgia`/`"JetBrains Mono"` as bare fallbacks only). Self-hosting via `next/font` avoids the FOUT the previous Google-Fonts `<link>` caused on the serif hero. Geist is removed (was never wired to a token variable, so display text had silently fallen back to `system-ui`).
 
 ## Naming conventions
 

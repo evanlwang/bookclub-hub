@@ -18,7 +18,9 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 ## Coloring
 
 - `[x]` **COMP-ICONS-004**: Icons SHALL inherit color from the surrounding text color via `currentColor`; callers control color via standard text-color utility classes (`text-primary`, `text-danger`, etc.).
-- `[x]` **COMP-ICONS-LOGO-001**: The `LogoIcon` SHALL reference design tokens (`--color-primary`, `--color-primary-ink`, `--color-bg`, `--color-accent`) via direct `var(--token-name)` values in the SVG `fill`/`stroke` attributes (CSS Custom Properties are supported by every modern browser for SVG presentation attributes).
+- `[x]` **COMP-ICONS-LOGO-001**: The `LogoIcon` SHALL reference design tokens (`--color-primary`, `--color-primary-hover`, `--color-bg`) via direct `var(--token-name)` values in the SVG `fill`/`stroke` attributes (CSS Custom Properties are supported by every modern browser for SVG presentation attributes).
+- `[x]` **COMP-ICONS-LOGO-002**: The `LogoIcon` SHALL render the Dogear brand mark — a rounded square (`viewBox="0 0 64 64"`, rx ~15) filled `var(--color-primary)`, with a dog-eared top-right corner: a paper triangle (`var(--color-bg)`, rounded to follow the card corner) over a crease triangle (`var(--color-primary-hover)`) plus a crease stroke. Drawn as plain SVG paths (no `clipPath` element, so multiple instances on a page carry no duplicate `id`). Keeps the `size` prop (default 22) and `aria-hidden="true"`. Mirrors `landing_handoff_dogear/assets/dogear-mark.svg`. (`src/components/ui/icons.tsx`)
+- `[x]` **COMP-ICONS-ASSET-001**: The shipped favicon / touch / PWA icon assets — `src/app/icon.svg`, `src/app/icon.png` (32), `src/app/apple-icon.png` (180, on cream), `public/icons/icon-16.png`, `icon-192.png`, `icon-512.png` — SHALL all derive from the dog-ear mark artwork (16/32/favicon from the transparent mark; 180/192/512 from the pre-padded maskable cream variant). (`src/app/icon.svg`, `public/icons/`)
 
 ## Accessibility
 

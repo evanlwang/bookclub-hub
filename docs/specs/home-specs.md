@@ -11,44 +11,43 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Landing Page State
 
-State: top nav — buttons shown: logo home link, "Log in", "Sign up" — transitions: → /login (Log in), → /join (Sign up)
-State: hero — buttons shown: "Sign up" (primary), "Log in" (secondary) — transitions: → /join (Sign up), → /login (Log in)
-State: feature row — display only (no buttons)
-State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred — see `HOME-UI-013`)
+The landing (`/`) is an editorial composition built around a library borrower's card — display-only except two links. Top to bottom: masthead → serif hero → asymmetric CTAs → borrower's card → dog-ear annotation → conditions of membership → Ex Libris bookplate.
+
+State: masthead — display + nothing actionable (DogEarMark + "DOGEAR" wordmark left, "EST. 2026" right, hairline rule under)
+State: hero — display only (serif headline + subhead)
+State: CTAs — buttons shown: "Get your library card" (primary pill), "Log in" (quiet underlined link) — transitions: → /join (primary), → /login (Log in)
+State: borrower's card — display only (header + three checkout rows with due-date stamps + dog-ear corner)
+State: conditions / bookplate — display only
 
 ## Join Page State
 
 (See auth-specs.md for full state breakdown across step 1 / 2 / 3a / 3b / 4.)
 
-## Landing Page — Navigation
+## Landing Page — Masthead & Hero
 
-- `[x]` **HOME-UI-001**: Top nav SHALL contain: logo, "Dogear" wordmark, "Log in" ghost-style link → `/login`, "Sign up" primary button → `/join`. ("Pricing" and "About" links removed — see `HOME-UI-012`.) (`page.tsx:19-40`)
-- `[x]` **HOME-UI-005**: "Sign up" links/buttons SHALL navigate to `/join`. (`page.tsx:33-40, 71-79`)
-- `[x]` **HOME-UI-006**: "Log in" link SHALL navigate to `/login`. (`page.tsx:27-32`)
+- `[x]` **HOME-UI-015**: The landing SHALL open with a masthead — the `LogoIcon` dog-ear mark (~28px) + "DOGEAR" wordmark (display font, weight 900, uppercase, letter-spacing ~0.16em) on the left, "EST. 2026" (mono) on the right — above a full-width hairline rule. (`page.tsx`)
+- `[x]` **HOME-UI-016**: The hero SHALL render a Newsreader serif `h1` (~32px, line-height ~1.2) reading "A small, private library for" followed by an `<em>` "the people you read with." in italic primary color, and a serif subhead constrained to ~32ch ("Choose the next book together…"). (`page.tsx`)
+- `[x]` **HOME-UI-005**: The primary CTA SHALL navigate to `/join`. (`page.tsx`)
+- `[x]` **HOME-UI-006**: The log-in link SHALL navigate to `/login`. (`page.tsx`)
+- `[x]` **HOME-UI-CTA-PRIMARY-001**: The primary CTA SHALL be a full-width terracotta pill reading "Get your library card", linking to `/join`, identified by `data-testid="hero-signup"`. (`page.tsx`)
+- `[x]` **HOME-UI-CTA-SECONDARY-001**: Below the primary CTA, a centered "Already a member?" line SHALL render "Log in" as a quiet underlined primary-colored link to `/login`, identified by `data-testid="hero-login"`. (`page.tsx`)
 
-## Landing Page — Hero
+## Landing Page — Borrower's Card
 
-- `[x]` **HOME-UI-002**: Two-column hero with text/CTA on left and decorative collage on right (collage `aria-hidden="true"`). (`page.tsx:49-181`)
-- `[x]` **HOME-UI-003**: Below the `lg` breakpoint, the collage column SHALL be hidden (`hidden lg:block` on `page.tsx:103`).
-- `[x]` **HOME-UI-004**: Hero h1 SHALL use display font at 72px, letter-spacing -0.03em, line-height 1.0, with "finally" rendered in italic primary color. (`page.tsx:61-68`)
-- `[x]` **HOME-UI-009**: Main element SHALL apply a paper radial-gradient background using oklch colors. (`page.tsx:12-17`)
-- `[x]` **HOME-UI-010**: Hero SHALL render a social-proof row with AvatarStack and "2,400+ readers · 340 active clubs". (`page.tsx:93-99`)
-- `[x]` **HOME-UI-011**: Hero eyebrow pill SHALL contain a dot + "Spoiler-safe by default" with accent-soft background and accent-ink text. (`page.tsx:55-59`)
-- `[x]` **HOME-UI-CTA-PRIMARY-001**: Hero CTA: "Sign up" with right chevron icon, primary variant, links to `/join`. Identified by `data-testid="hero-signup"`. (`page.tsx:71-79`)
-- `[x]` **HOME-UI-CTA-SECONDARY-001**: Hero CTA: "Log in", secondary border variant, links to `/login`. Identified by `data-testid="hero-login"`. (`page.tsx:80-86`)
+- `[x]` **HOME-UI-CARD-001**: The page SHALL render a borrower's card (rotated ~−1.3°) whose header shows "DOGEAR LENDING LIBRARY" (mono, wide tracking), "Borrower's Card" (display font), and "CAT. 813.54" (mono) on a shared baseline, followed by column heads "THE CLUB CAN —" / "DATE DUE". (`page.tsx`)
+- `[x]` **HOME-UI-CARD-002**: The card SHALL list exactly three checkout rows separated by dashed hairlines, each a display-font title + serif-italic gloss: "Choose the next read" (tallies sealed until reveal), "Stay a chapter ahead" (notes tagged by chapter), "Meet without the maybe" (RSVP postcards). (`page.tsx`)
+- `[x]` **HOME-UI-CARD-003**: Each checkout row SHALL carry a mono due-date stamp with a 1.5px terracotta border, rotated −5° / +3° / −5° respectively, reading "APR 02" / "APR 16" / "MAY 07". The stamp dates are content (visible text), not decoration. (`page.tsx`)
+- `[x]` **HOME-UI-CARD-004**: The card's top-right corner SHALL render a 34px two-triangle dog-ear fold (paper triangle over a terracotta crease). The fold is purely decorative and SHALL be `aria-hidden="true"` (`data-testid="card-dogear"`). (`page.tsx`)
+- `[x]` **HOME-UI-ANNOT-001**: Below the card, a serif-italic annotation SHALL explain the dog-ear metaphor and include the phrase "here's where I stopped". (`page.tsx`)
 
-## Landing Page — Privacy Callout
+## Landing Page — Conditions & Bookplate
 
-- `[x]` **HOME-UI-PRIVACY-CALLOUT-001**: A full-width "promises" section (`data-testid="privacy-banner"`, `aria-label="Privacy guarantees"`) SHALL render between the hero and the feature row. It SHALL include a centered eyebrow ("Our promises") flanked by short horizontal rules, a display-font headline with an italicized primary-colored emphasis word, a muted subhead, and a three-up grid of promise cards. Each card SHALL render an icon well (primary-soft background, primary-ink icon) plus a display-font title and a one-line body. The three claims SHALL communicate, in this order: (a) no personal data ("No personal data"), (b) only email and display name are required ("Just email and display name"), (c) no ads, ever ("No ads, ever"). Cards SHALL use the same FeatureCard visual rhythm as the row below (radius, icon well, typography) but at smaller scale. (`page.tsx`)
+- `[x]` **HOME-UI-TERMS-001**: The page SHALL render a "CONDITIONS OF MEMBERSHIP" mono eyebrow over three ruled rows numbered 01/02/03 (terracotta mono numerals) communicating, in order: (a) only email and a name are asked, (b) no passwords, (c) no ads / no algorithm / no strangers. Identified by `data-testid="privacy-banner"`, `aria-label="Conditions of membership"`. (`page.tsx`)
+- `[x]` **HOME-UI-PLATE-001**: The page SHALL end with a bordered Ex Libris bookplate — "· EX LIBRIS ·" (mono eyebrow) over "For people who finish the book." in serif-italic primary color. (`page.tsx`)
 
-## Landing Page — About
+## Landing Page — Layout
 
-- `[x]` **HOME-UI-ABOUT-001**: Between the privacy callout and the features overview, the page SHALL render an About section (`data-testid="about-section"`, `id="about"`, `aria-label="About Dogear"`) explaining the product and the origin of the name. It SHALL include a centered eyebrow ("About") flanked by short horizontal rules matching the privacy callout pattern, a display-font headline of the form "Why {italicized primary-colored 'Dogear'}?", and at least three prose paragraphs that (a) describe what the product is in one sentence ("book club coordination without the group-chat sprawl" or equivalent), (b) explain the dog-ear bookmark metaphor (a dog-eared page = the universal "here's where I stopped"), and (c) connect the metaphor to the product (a shared place a club returns to together). The section SHALL use a `max-w-[680px]` reading column for the prose. (`page.tsx`)
-
-## Landing Page — Features & Footer
-
-- `[x]` **HOME-UI-007**: Below the privacy callout, the page SHALL render a deep-dive features section (`data-testid="features-overview"`, `aria-label="Features overview"`) with a centered eyebrow ("Everything inside") flanked by horizontal rules, a display-font headline with an italicized primary-colored emphasis word, a muted subhead, and a responsive grid of category cards (1 col mobile / 2 cols md / 3 cols lg). Each card SHALL render a 40×40 primary-soft icon well, a 19px display-font title, a 13px ink-3 tagline, a hairline divider, and a bullet list of 4 feature points each prefixed with a primary checkmark. The category set SHALL cover: Approval voting, Meeting scheduling, Spoiler-safe threads, Reading progress, Run your club, Quiet by default. Hover state SHALL lift the card slightly (`-translate-y-0.5`) and tint the border toward primary. (`page.tsx`)
-- `[x]` **HOME-UI-008**: Footer SHALL contain logo, wordmark, and tagline "For people who finish the book." (Privacy/Terms/Changelog links removed — see `HOME-UI-013`.) (`page.tsx:201-208`)
+- `[x]` **HOME-UI-018**: At every width the composition SHALL render in a single centered editorial column (`data-testid="landing-column"`, max-width ~620px) on the flat paper background (`bg-bg`); section order is identical on mobile and desktop. (`page.tsx`)
 
 ## Join Page — Layout
 
@@ -114,7 +113,7 @@ State: footer — display only (logo + tagline; Privacy/Terms/Changelog deferred
 - `[x]` **HOME-A11Y-001**: The root layout SHALL render a "Skip to content" link as the first focusable element pointing to `#main-content`, visible only on keyboard focus. (`layout.tsx:30-33`)
 - `[x]` **HOME-A11Y-002**: The landing page main element SHALL have `id="main-content"`. (`page.tsx:17`)
 - `[x]` **HOME-A11Y-003**: The join page main element SHALL have `id="main-content"`. (`join/page.tsx:431`)
-- `[x]` **HOME-A11Y-004**: The decorative hero collage SHALL have `aria-hidden="true"`. (`page.tsx:103`)
+- `[x]` **HOME-A11Y-004**: Purely decorative landing chrome SHALL be hidden from assistive tech — specifically the borrower's-card dog-ear corner fold (`data-testid="card-dogear"`, `aria-hidden="true"`). The due-date stamps are content (visible dates) and are NOT hidden. (`page.tsx`)
 
 ## Deferred
 

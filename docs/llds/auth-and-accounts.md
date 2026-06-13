@@ -8,9 +8,21 @@ The email serves as a cross-device, cross-club identity anchor. If a user opens 
 
 Status markers: `[x]` implemented · `[ ]` gap · `[!]` divergence · `[D]` deferred
 
+## Editorial Landing Composition
+
+The marketing landing (`/`) is a **server component** (links only, no client JS) styled as a library borrower's card rather than a SaaS hero+feature-grid. It renders as a single **centered editorial column** (`data-testid="landing-column"`, max-width ~620px) on the flat paper background at every width — the 390px handoff scales up by centering, not by re-spreading into multiple columns. Section order (identical mobile/desktop), per `home-specs.md`:
+
+1. **Masthead** (`HOME-UI-015`) — `LogoIcon` dog-ear mark + "DOGEAR" wordmark left, "EST. 2026" mono right, hairline rule under.
+2. **Serif hero** (`HOME-UI-016`) — Newsreader `h1` with italic-primary emphasis + ≤32ch subhead.
+3. **Asymmetric CTAs** (`HOME-UI-CTA-PRIMARY-001` / `-SECONDARY-001`) — full-width terracotta pill "Get your library card" → `/join` (`hero-signup`), then a quiet underlined "Log in" → `/login` (`hero-login`). No top nav.
+4. **Borrower's card** (`HOME-UI-CARD-001..004`) — rotated −1.3° card: header + three checkout rows (features) with rotated due-date stamps and a decorative dog-ear corner (token-bridged inline SVG, `aria-hidden`).
+5. **Dog-ear annotation** (`HOME-UI-ANNOT-001`) — serif-italic metaphor gloss.
+6. **Conditions of Membership** (`HOME-UI-TERMS-001`) — numbered fine print carrying the privacy promises (keeps `data-testid="privacy-banner"`).
+7. **Ex Libris bookplate** (`HOME-UI-PLATE-001`) — bordered plate, "For people who finish the book."
+
 ## Two-Path Entry Architecture
 
-The marketing landing page (`/`) presents two clear actions:
+The two CTA destinations and the smart-detection safety net:
 
 - **Log in** → `/login` (dedicated, email-only). For returning users.
 - **Sign up** → `/join` (4-step wizard with smart detection). For new users + create/join branching.
