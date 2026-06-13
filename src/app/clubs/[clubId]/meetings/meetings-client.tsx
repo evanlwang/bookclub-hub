@@ -473,40 +473,40 @@ function ProposedMeetingRow({
 
   return (
     <div>
-      <div className="grid grid-cols-[auto_1fr_auto] gap-5 items-center cursor-pointer" onClick={onToggle} data-testid={`meeting-toggle-${meeting.id}`}>
-        <div
-          className={`w-16 h-16 rounded-[10px] flex items-center justify-center ${
-            viewerHasResponded
-              ? "bg-success-soft text-success"
-              : "bg-warning-soft text-warning-ink"
-          }`}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4.5" width="18" height="17" rx="2" />
-            <path d="M16 2.5v4M8 2.5v4M3 10h18" />
-          </svg>
+      {/* @spec MEET-UI-PROP-001, MEET-UI-PROP-002 — flat card: title + viewer-aware
+          badge, serif-italic slot count, progress bar with responder count, and a
+          full-width Respond/Update toggle affordance. */}
+      <div className="cursor-pointer" onClick={onToggle} data-testid={`meeting-toggle-${meeting.id}`}>
+        <div className="flex items-center gap-2">
+          <span className="font-[var(--font-display)] text-base font-semibold text-ink flex-1 min-w-0 truncate">
+            {meeting.title}
+          </span>
+          {viewerHasResponded ? (
+            <Badge tone="success" dot>You responded</Badge>
+          ) : (
+            <Badge tone="primary" dot>Awaiting your response</Badge>
+          )}
         </div>
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            {viewerHasResponded ? (
-              <Badge tone="success" dot>You responded</Badge>
-            ) : (
-              <Badge tone="warning" dot>Awaiting your response</Badge>
-            )}
-            {meeting.book && <span className="text-xs text-ink-3">· {meeting.book.title}</span>}
-          </div>
-          <p className="text-sm font-medium text-ink mb-1">{meeting.title}</p>
-          <div className="flex items-center gap-3 text-xs text-ink-2">
-            <span>{totalSlots} time slot{totalSlots !== 1 ? "s" : ""} proposed</span>
-            <span className="text-ink-3">·</span>
-            <span>{responded} responded</span>
-          </div>
+        {meeting.book && (
+          <p className="text-xs text-ink-3 mt-1 mb-0">{meeting.book.title}</p>
+        )}
+        <p className="font-[var(--font-serif)] italic text-sm text-ink-2 mt-1.5 mb-0">
+          {totalSlots} time slot{totalSlots !== 1 ? "s" : ""} proposed
+        </p>
+        <div className="flex items-center gap-2.5 mt-2.5">
           {/* @spec MEET-UI-PROP-PROGRESS-001 */}
-          <ResponseProgress meetingId={meeting.id} responded={responded} total={members.length} />
+          <div className="flex-1">
+            <ResponseProgress meetingId={meeting.id} responded={responded} total={members.length} />
+          </div>
+          <span className="font-[var(--font-display)] text-xs font-bold text-ink-3 whitespace-nowrap">
+            {responded} of {members.length} responded
+          </span>
         </div>
-        <Button variant={viewerHasResponded ? "ghost" : "primary"} size="sm">
-          {viewerHasResponded ? "Update" : "Respond"}
-        </Button>
+        <div className="mt-3">
+          <Button variant={viewerHasResponded ? "ghost" : "primary"} size="sm" className="w-full">
+            {viewerHasResponded ? "Update" : "Respond"}
+          </Button>
+        </div>
       </div>
 
       {/* Respond UI */}
@@ -592,7 +592,7 @@ function ResponseProgress({
       data-testid={`response-progress-${meetingId}`}
       data-percentage={pct}
       data-tone={tone}
-      className="mt-1.5 h-1.5 bg-bg-sunken rounded-full overflow-hidden"
+      className="h-1.5 bg-bg-sunken rounded-full overflow-hidden"
       aria-label={`${responded} of ${total} members responded`}
       role="progressbar"
       aria-valuenow={pct}

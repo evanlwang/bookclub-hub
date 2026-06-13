@@ -33,8 +33,8 @@ Phase descriptions:
 
 Button: "Propose Meeting" — `create-meeting.tsx:17-24` — visible: meetings page header (admin only) — handler: opens CreateMeetingForm
 Button: filter tabs "All" / "Proposed" / "Confirmed" / "Past" — `meetings-client.tsx:74-94` — visible: always — handler: setFilter (client state)
-Button: meeting row toggle (proposed) — `meetings-client.tsx:197-219` — visible: status="proposed" — handler: expand/collapse RespondMeeting
-Button: "Respond" — `meetings-client.tsx:216-218` — visible: status="proposed" — handler: same toggle as row click
+Button: meeting row toggle (proposed) — `meetings-client.tsx` `ProposedMeetingRow` — visible: status="proposed" — handler: expand/collapse RespondMeeting. Flat card (no icon-box column): title + viewer-aware badge (primary "Awaiting your response" / success "You responded") on the top row, serif-italic slot-count subtitle, then the progress bar with the responder count.
+Button: "Respond" / "Update" — `meetings-client.tsx` `ProposedMeetingRow` — visible: status="proposed" — handler: same toggle as row click. Full-width button at the bottom of the card (primary when awaiting, ghost "Update" once the viewer has responded).
 Button: "Available" / "Maybe" / "Can't" (per slot) — `respond-meeting.tsx:97-113` — visible: respond UI expanded — handler: setSlotResponse (client state)
 Button: "Save Availability" — `respond-meeting.tsx:121-129` — visible: respond UI expanded — enabled: ≥1 slot has a response — handler: `meetings.submitAvailability`
 Button: "Notes" — `meetings-client.tsx:264` — visible: status="completed" or "cancelled" — **handler: NO-OP (no onClick wired)**
