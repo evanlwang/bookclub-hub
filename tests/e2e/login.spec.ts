@@ -118,13 +118,9 @@ test.describe("Landing Page — Two CTA buttons", () => {
   });
 
   // @spec LANDING-UI-001
-  test("top nav exposes Log in and Sign up links", async ({ page }) => {
+  test("landing exposes both actions (no top nav in the editorial redesign)", async ({ page }) => {
     await page.goto("/");
-    await expect(
-      page.locator("nav").getByRole("link", { name: /^log in$/i })
-    ).toBeVisible();
-    await expect(
-      page.locator("nav").getByRole("link", { name: /^sign up$/i })
-    ).toBeVisible();
+    await expect(page.getByTestId("hero-signup")).toContainText(/get your library card/i);
+    await expect(page.getByTestId("hero-login")).toContainText(/^log in$/i);
   });
 });

@@ -97,14 +97,31 @@ describe("Icons — accessibility (COMP-ICONS-005)", () => {
 });
 
 describe("LogoIcon — token bridging (COMP-ICONS-LOGO-001)", () => {
-  // @spec COMP-ICONS-LOGO-001 — active gap
-  it("does not inline oklch literals (should bridge through tokens)", () => {
+  // @spec COMP-ICONS-LOGO-001
+  it("does not inline oklch or hex literals (bridges through tokens)", () => {
     const { container } = render(<LogoIcon />);
-    const svg = container.querySelector("svg")!;
-    const html = svg.outerHTML;
-    // Active gap: LogoIcon currently hard-codes oklch values in fill/stroke.
-    // After Phase 6 the literals should be replaced with currentColor + CSS-bridged tokens.
+    const html = container.querySelector("svg")!.outerHTML;
     expect(html).not.toMatch(/fill="oklch/);
     expect(html).not.toMatch(/stroke="oklch/);
+    expect(html).not.toMatch(/fill="#/);
+    expect(html).not.toMatch(/stroke="#/);
+  });
+});
+
+describe("LogoIcon — dog-ear mark (COMP-ICONS-LOGO-002)", () => {
+  // @spec COMP-ICONS-LOGO-002
+  it("renders the dog-ear mark as token-bridged paths with no clipPath", () => {
+    const { container } = render(<LogoIcon />);
+    const svg = container.querySelector("svg")!;
+    expect(svg.getAttribute("viewBox")).toBe("0 0 64 64");
+    expect(svg.getAttribute("aria-hidden")).toBe("true");
+    const rect = svg.querySelector("rect");
+    expect(rect).not.toBeNull();
+    expect(rect!.getAttribute("fill")).toBe("var(--color-primary)");
+    const html = svg.outerHTML;
+    expect(html).toContain("var(--color-bg)");
+    expect(html).toContain("var(--color-primary-hover)");
+    // no clipPath element (avoids duplicate ids across instances)
+    expect(svg.querySelector("clipPath")).toBeNull();
   });
 });

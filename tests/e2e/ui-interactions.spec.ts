@@ -4,16 +4,16 @@ import { loginAs, getClubByCode, getDb } from "./helpers";
 
 test.describe("Landing Page Interactions", () => {
   // @spec HOME-UI-005
-  test("Sign up link navigates to join page", async ({ page }) => {
+  test("primary CTA navigates to join page", async ({ page }) => {
     await page.goto("/");
-    await page.locator("nav").getByRole("link", { name: "Sign up" }).click();
+    await page.getByTestId("hero-signup").click();
     await expect(page).toHaveURL("/join");
   });
 
   // @spec HOME-UI-006
   test("Log in link navigates to login page", async ({ page }) => {
     await page.goto("/");
-    await page.locator("nav").getByRole("link", { name: "Log in" }).click();
+    await page.getByTestId("hero-login").click();
     await expect(page).toHaveURL("/login");
   });
 });

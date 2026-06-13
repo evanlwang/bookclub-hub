@@ -22,4 +22,13 @@ describe("web app manifest", () => {
     expect(sizes).toContain("192x192");
     expect(sizes).toContain("512x512");
   });
+
+  // @spec PWA-MANIFEST-002 — a maskable icon for safe-zone-padded home screens
+  it("declares a maskable 512px icon entry", () => {
+    const maskable = (m.icons ?? []).filter((i) =>
+      (i.purpose ?? "").split(/\s+/).includes("maskable"),
+    );
+    expect(maskable.length).toBeGreaterThanOrEqual(1);
+    expect(maskable.some((i) => i.sizes === "512x512")).toBe(true);
+  });
 });
