@@ -47,7 +47,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 - `[x]` **DENSITY-VOTE-001**: The voting results leaderboard SHALL collapse its multi-column grid to a stacked layout below `md`. (`src/app/clubs/[clubId]/vote/decided-phase.tsx`)
 - `[x]` **DENSITY-VOTE-002**: Nomination cards SHALL keep their title legible on the narrowest screens by stacking or shrinking the cover. (`src/app/clubs/[clubId]/vote/nominating-phase.tsx`)
 
-## Cozy redesign (handoff: design_handoff_dogear_redesign/)
+## Cozy redesign (handoff: design_handoff_dogear/app-redesign/)
 
 - `[x]` **COMP-BADGE-SOLID-001**: Badge SHALL support a `solid` style (terracotta fill, cream text) for the LIVE emphasis. (`src/components/ui/badge.tsx`)
 - `[x]` **COMP-BADGE-INK-001**: Badge SHALL support an `ink` tone (dark fill) for stamps/dark surfaces. (`src/components/ui/badge.tsx`)

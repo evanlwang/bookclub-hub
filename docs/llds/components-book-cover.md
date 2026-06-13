@@ -60,7 +60,7 @@ Photo path skips layers 2-3, 5-6 and replaces them with the `<img>`, but keeps t
 
 ## Visual reference
 
-`design_handoff_dogear_redesign/dogear-voting.jsx` and `dashboard.jsx` (nominations and hero card use covers heavily).
+`design_handoff_dogear/app-redesign/dogear-voting.jsx` and `dashboard.jsx` (nominations and hero card use covers heavily).
 
 ## Decisions & Alternatives
 
