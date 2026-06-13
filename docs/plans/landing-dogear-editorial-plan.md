@@ -1,0 +1,47 @@
+# Editorial Landing Page + Dog-Ear App Icon (landing_handoff_dogear)
+
+## Context
+
+The `landing_handoff_dogear/` package redesigns the marketing landing (`/`) and the app icon — visual-only; routes (`/`, `/join`, `/login`) and auth flow unchanged. The current SaaS-style landing (two-column hero + collage, privacy cards, about section, 6-card feature grid) is replaced by an editorial composition built around a library borrower's card: left masthead (DogEarMark + DOGEAR wordmark + "EST. 2026"), Newsreader serif hero ("A small, private library for *the people you read with.*"), asymmetric CTAs ("Get your library card" pill → /join; quiet underlined "Log in" → /login), a −1.3°-tilted borrower's card with three stamped checkout rows (due-date stamps APR 02/−5°, APR 16/+3°, MAY 07/−5°) and a 34px dog-eared corner, a serif-italic metaphor annotation, numbered "Conditions of Membership," and an Ex Libris bookplate. Exact copy/sizes/rotations: `landing_handoff_dogear/dogear-join.jsx:19-142` + `README.md`.
+
+**User decisions:** desktop = centered editorial column (max ~620px); the new DogEarMark replaces `LogoIcon` **app-wide** (6 call sites) — implemented by rewriting `LogoIcon`'s internals (same export name, SVG, token-bridged colors; zero call-site churn, existing icon unit tests keep passing).
+
+**Bundled fix (latent bug):** `globals.css` font tokens reference `--font-nunito` / `--font-courier-prime` that nothing defines — the whole app has been rendering display text as `system-ui` since the cozy redesign (layout.tsx loads Newsreader/Geist/JetBrains Mono via `<link>`, no next/font). Fix via `next/font/google` (Nunito 600–900, Newsreader 400–700+italic+opsz, Courier Prime 400/700) exposing the expected CSS variables; remove the `<link>` + Geist. App-wide visual change — intended design finally rendering. No e2e screenshot assertions exist (verified), so test-safe.
+
+**Branch:** `feature/landing-dogear-editorial`, stacked on `feature/voting-cover-glyph-polish` (PR train: #8 → #9 → this). LID full workflow; owning segment is `auth` (owns home-specs + page.tsx), with mechanical cross-segment touches in design-system (fonts, icons) and mobile (manifest) — noted at the boundary per cascade discipline.
+
+## Phase 0 — LID docs cascade
+
+- **LLDs:** `auth-and-accounts.md` — new "Editorial Landing Composition" subsection (section order, server-component/links-only, centered ≤620px column). `design-system.md` — fix stale font table (line ~25 says Geist/JetBrains) + new "Font loading" subsection (next/font variables). `components-icons.md` — LogoIcon entry rewritten to the dog-ear mark (geometry from `assets/dogear-mark.svg`: rounded square rx≈23% viewBox, fold from x=40; token bridge: primary / primary-hover crease / bg page) + record the PNG regeneration commands.
+- **EARS mapping (home-specs.md):** Delete composition-dead specs: HOME-UI-001 (nav), -002/-003 (two-col hero/collage), -004 (72px h1), -007 (feature grid), -009 (gradient bg), -010 (social proof), -011 (eyebrow pill). Keep: HOME-UI-005/006 (CTA destinations, reworded), HOME-A11Y-001/002/003, HOME-UI-012/013/014 (`[D]`). Mutate: HOME-UI-CTA-PRIMARY/SECONDARY-001 (new labels/forms, testids `hero-signup`/`hero-login` retained), HOME-UI-PRIVACY-CALLOUT-001 → HOME-UI-TERMS-001 (same three claims as fine print; keeps `data-testid="privacy-banner"`), HOME-UI-ABOUT-001 → HOME-UI-ANNOT-001 (metaphor copy as card annotation; `id="about"` dropped — grep inbound `#about` links first), HOME-UI-008 → HOME-UI-PLATE-001 (tagline inside bookplate), HOME-A11Y-004 (decorative = corner fold triangles only; stamp dates are content).
+- **New EARS (home-specs.md):** HOME-UI-015 masthead, HOME-UI-016 serif hero + ≤32ch subhead, HOME-UI-CARD-001 card header ("DOGEAR LENDING LIBRARY" / "Borrower's Card" / "CAT. 813.54"), -CARD-002 three checkout rows + dashed rules, -CARD-003 rotated mono due-date stamps, -CARD-004 34px dog-ear corner (`aria-hidden`, `data-testid="card-dogear"`), HOME-UI-ANNOT-001, HOME-UI-TERMS-001, HOME-UI-PLATE-001, HOME-UI-018 centered desktop column (`data-testid="landing-column"`, max-w ~620px).
+- **Cross-segment EARS:** dsys-specs.md — new DSYS-FONT-001 (next/font loading + variables) and DSYS-FONT-002 (no external font `<link>`); mutate DSYS-TOOL-001 (drop the `app/page.tsx` gradient exemption — gradient is gone). comp-icons-specs.md — new COMP-ICONS-LOGO-002 (dog-ear mark geometry as LogoIcon), COMP-ICONS-ASSET-001 (all shipped icon assets derive from the mark); COMP-ICONS-LOGO-001 (token bridging) carries over. mobile-specs.md — mutate the manifest spec: 512 icon also declared `purpose: "maskable"`. auth-specs.md LANDING-UI-001 — mutate (no top nav; both actions live as the testid'd CTAs).
+- Arrow overlay: auth/design-system/mobile-affected entries get PARTIAL+next during the change, restored at closeout.
+
+## Phase 1 — Tests first
+
+- **Rewrite `tests/e2e/landing-page.spec.ts` (~14 tests):** masthead (DOGEAR + EST. 2026); skip-nav kept verbatim; serif hero h1 + `<em>` "the people you read with."; subhead; primary CTA testid/label/href/click→/join; log-in link testid/label/href/click→/login + "Already a member?"; card header trio; three checkout-row titles + one gloss spot-check; three stamps visible; `card-dogear` has `aria-hidden`; annotation contains "here's where I stopped"; `privacy-banner` aria-label "Conditions of membership" + 01/02/03 + the three claims; bookplate ("EX LIBRIS" + "For people who finish the book."); desktop column ≤640 wide and centered at 1280×800.
+- **Update overlapping tests:** `login.spec.ts` — testid-based hero tests pass as-is; rewrite the one nav-role test to assert the two testid'd actions. `ui-interactions.spec.ts:5-19` — nav-locator clicks → testid clicks (lines 21+ stay untouched; broken on main for join-wizard reasons). `icons.test.tsx` — keep both LogoIcon tests; add a COMP-ICONS-LOGO-002 geometry assertion. `manifest.test.ts` — add `purpose: "maskable"` assertion.
+- Confirm new tests fail red before code.
+
+## Phase 2 — Code
+
+1. **Fonts** (`src/app/layout.tsx`): `next/font/google` Nunito/Newsreader/Courier_Prime with `variable:` names matching globals.css; `className` on `<html>`; delete preconnects + Google Fonts `<link>` (drops Geist + JetBrains Mono link; "JetBrains Mono" stays only as a CSS fallback name). Update the stale comment in `discussions.css:12`. `@spec DSYS-FONT-001/002`. Watch the Newsreader `opsz` axis config (`axes: ["opsz"]`) — likeliest build-error spot.
+2. **Landing** (`src/app/page.tsx`): full rewrite, server component, `next/link` + `LogoIcon` only. `<main id="main-content" class="min-h-screen bg-bg">` → `data-testid="landing-column"` wrapper (`mx-auto max-w-[620px] px-[22px]`) → sections in handoff order. Token map: paper→`bg-bg`, paper-card→`bg-bg-soft`, paper-edge→`line`, ink/soft/faint→`ink/ink-2/ink-3`, terracotta/deep→`primary/primary-hover`, dg-display/serif/mono→`var(--font-display/serif/mono)`, card 22px→`var(--radius-lg)`, shadow-lift→`shadow-lg`. Rotations + fold-triangle geometry as inline `style` with token vars (DSYS-TOOL-001(a) transform/geometry carve-out; if lint flags, declare page-private exemption with the new spec ID). Remove the old eslint-disable banner. Exact copy transcribed from the handoff.
+3. **LogoIcon** (`src/components/ui/icons.tsx`): replace internals with the dog-ear mark as plain SVG paths (precompute the fold-clipped rounded-square path — no clipPath, avoids duplicate-id issues across instances); keep `{ size = 22 }` + `aria-hidden`. All 6 call sites untouched. `@spec COMP-ICONS-LOGO-001/-002`.
+4. **Icon assets:** `src/app/icon.svg` ← `assets/dogear-mark.svg`; rasterize committed PNGs via one-off `npx --yes sharp-cli` (no new deps; verified no sharp/canvas in devDeps): icon.png 32 + icon-16 from the mark; apple-icon 180 + icon-192/512 from the pre-padded maskable cream variant. Fallback if sharp-cli misrenders: Playwright screenshot script (existing devDep). `manifest.ts`: add the 512 `purpose: "maskable"` entry. Record commands in components-icons.md.
+
+## Verification
+
+1. `npm run typecheck`; lint the changed files (confirms the no-restricted-syntax rule accepts the new page).
+2. `npx vitest run tests/unit/components/icons.test.tsx tests/unit/app/manifest.test.ts` + full `npm run test:unit`.
+3. E2E (kill any stale :3000 server first): `npx playwright test tests/e2e/landing-page.spec.ts tests/e2e/login.spec.ts`; `ui-interactions` scoped with `-g "Landing Page"`.
+4. Manual `make dev`: 390px + 1280px — card tilt/fold/stamps, centered column, no horizontal overflow; devtools computed font-family shows Nunito/Newsreader/Courier Prime on `/` AND an app page (font fix is app-wide); favicon hard-refresh + `/manifest.webmanifest` entries.
+5. LID closeout: new specs `[x]`, `@spec` annotations grep-clean, arrow entries (auth, design-system segments, mobile) restored with notes; auth segment stays STALE for the join-wizard re-audit (out of scope) but its landing slice is now current.
+
+## Risks
+
+- App-wide font swap is the biggest visual blast radius (every page goes system-ui → Nunito); no screenshot tests, manual spot-check several app pages.
+- `ui-interactions.spec.ts` lines 21+ remain broken on main — scope runs so this change's CI signal is clean; note in PR.
+- Stamp dates pinned as content text in specs/tests — fine for a static marketing page.
+- PNG legibility at 16px — eyeball; Playwright fallback documented.
