@@ -65,6 +65,7 @@ test.describe("Voting Close & Cancel", () => {
   let clubId = "";
   let bobId = "";
   let aliceId = "";
+  let daveId = "";
 
   test.beforeAll(async () => {
     const db = getDb();
@@ -73,6 +74,7 @@ test.describe("Voting Close & Cancel", () => {
     const dave = await db.user.findUniqueOrThrow({ where: { email: "dave@example.com" } });
     bobId = bob.id;
     aliceId = alice.id;
+    daveId = dave.id;
 
     const club = await db.club.create({
       data: {
@@ -213,6 +215,56 @@ test.describe("Voting Close & Cancel", () => {
       // Manual entries without an Open Library ID SHALL hide the CTA.
       await expect(page.getByTestId("winner-cta-openlib")).toHaveCount(0);
     }
+  });
+
+  // @spec VOTE-UI-DEC-002, VOTE-API-VISIBILITY-002
+  test("decided phase ranks the winner first even when nominated last", async ({ page }) => {
+    const db = getDb();
+    // Nominate books[0], books[1], books[2] in createdAt order, so the eventual
+    // winner (books[2]) is the LAST nomination. Pre-fix, rounds.get preserved
+    // insertion order and the banner/tallies surfaced books[0].
+    const { round, nominations, books } = await seedVotingRound({
+      clubId,
+      ownerId: bobId,
+      voterIds: [],
+      approvalsPerVoter: 0,
+    });
+
+    // books[2]: 3 votes, books[1]: 2 votes, books[0]: 1 vote.
+    const tally: Array<[number, string[]]> = [
+      [2, [bobId, aliceId, daveId]],
+      [1, [bobId, aliceId]],
+      [0, [bobId]],
+    ];
+    for (const [nomIdx, userIds] of tally) {
+      for (const userId of userIds) {
+        await db.vote.create({
+          data: { roundId: round.id, nominationId: nominations[nomIdx].id, userId },
+        });
+      }
+    }
+
+    await db.votingRound.update({
+      where: { id: round.id },
+      data: { status: "decided", winningBookId: books[2].id },
+    });
+    await db.bookSelection.create({
+      data: { clubId, bookId: books[2].id, isCurrent: true },
+    });
+
+    await loginAs(page, "bob@example.com");
+    await page.goto(`/clubs/${clubId}/vote`);
+    await expect(page.getByTestId("decided-phase")).toBeVisible({ timeout: 10000 });
+
+    // "Now reading" banner shows the actual winner, not the first nomination.
+    await expect(page.getByTestId("decided-phase").locator("h2")).toHaveText(
+      books[2].title
+    );
+
+    // Final tallies ranked by vote count desc — winner first.
+    await expect(page.getByTestId("tally-row-0")).toContainText(books[2].title);
+    await expect(page.getByTestId("tally-row-1")).toContainText(books[1].title);
+    await expect(page.getByTestId("tally-row-2")).toContainText(books[0].title);
   });
 
   // @spec VOTE-UI-CLOSE-005

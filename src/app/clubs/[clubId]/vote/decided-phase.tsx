@@ -191,6 +191,7 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
             rank={i + 1}
             votes={nom.voteCount ?? 0}
             maxVotes={maxVotes}
+            testId={`tally-row-${i}`}
           />
         ))}
       </div>
