@@ -159,16 +159,37 @@ test.describe("Meeting Create and Respond", () => {
     await page.goto(`/clubs/${club.id}/meetings`);
 
     const meetingCard = page.locator("[data-testid^='meeting-toggle-']").first();
-    const responseLabel = meetingCard.locator("text=/\\d+ responded/");
+    const responseLabel = meetingCard.locator("text=/\\d+ of \\d+ responded/");
     const before = (await responseLabel.textContent()) ?? "";
-    const beforeCount = Number(before.match(/(\d+) responded/)?.[1] ?? "0");
+    const beforeCount = Number(before.match(/(\d+) of \d+ responded/)?.[1] ?? "0");
 
     await meetingCard.click();
     await page.locator("[data-testid$='-available']").first().click();
     await expect(page.getByTestId("availability-saved")).toBeVisible({ timeout: 10000 });
 
     await expect(responseLabel).toHaveText(
-      new RegExp(`${beforeCount + 1} responded`)
+      new RegExp(`${beforeCount + 1} of \\d+ responded`)
     );
+  });
+
+  // @spec MEET-UI-PROP-001, MEET-UI-PROP-002
+  test("proposed meeting card shows a primary awaiting badge and a full-width respond button", async ({ page }) => {
+    // Eve has not yet responded to any meeting in seed data.
+    await loginAs(page, "eve@example.com");
+    const club = await getClubByCode("WEDREADS");
+
+    await page.goto(`/clubs/${club.id}/meetings`);
+
+    const card = page.locator("[data-testid^='meeting-toggle-']").first();
+    await expect(card).toBeVisible();
+
+    // Viewer-aware badge in the primary tone (not the old warning tone).
+    const badge = card.getByText("Awaiting your response");
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveClass(/bg-primary-soft/);
+
+    // Respond affordance is a full-width button at the bottom of the card.
+    const respondBtn = card.getByRole("button", { name: "Respond" });
+    await expect(respondBtn).toHaveClass(/w-full/);
   });
 });
