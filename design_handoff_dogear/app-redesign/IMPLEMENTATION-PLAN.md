@@ -38,7 +38,7 @@ Landing, login, join wizard (lookup states, cadence cards), LibraryCard success 
 
 ## Suggested kickoff prompt for Claude Code
 
-> Read `design_handoff_dogear_redesign/README.md` in full, then `tokens.css`. This is a visual + interaction redesign of the existing app: keep all features, flows, and data contracts; replace the skin and interaction patterns. The HTML/JSX files in the folder are high-fidelity design references — recreate them with our existing stack and conventions, but where the redesign diverges from current implementation (bottom tab bar, bottom sheets, pill buttons, font roles — see README § Intentional divergences), the redesign wins. Work through IMPLEMENTATION-PLAN.md phase by phase, starting with Phase 0. After each phase, show me the result before continuing.
+> Read `design_handoff_dogear/app-redesign/README.md` in full, then `tokens.css`. This is a visual + interaction redesign of the existing app: keep all features, flows, and data contracts; replace the skin and interaction patterns. The HTML/JSX files in the folder are high-fidelity design references — recreate them with our existing stack and conventions, but where the redesign diverges from current implementation (bottom tab bar, bottom sheets, pill buttons, font roles — see README § Intentional divergences), the redesign wins. Work through IMPLEMENTATION-PLAN.md phase by phase, starting with Phase 0. After each phase, show me the result before continuing.
 
 ## Testing notes (Vitest + Playwright)
 - Token application tests per the existing pattern (`getComputedStyle` → token resolution) still apply — update expected values.

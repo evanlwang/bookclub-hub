@@ -2,7 +2,7 @@
 
 ## Context
 
-An external visual comparison of the voting page against the Dogear redesign claimed five gaps. Verification against the design handoff source (`design_handoff_dogear_redesign/dogear-voting.jsx`, `dogear-components.jsx`, `tokens.css`) showed **three of the five claims are wrong** — the current build already matches the handoff exactly on those points:
+An external visual comparison of the voting page against the Dogear redesign claimed five gaps. Verification against the design handoff source (`design_handoff_dogear/app-redesign/dogear-voting.jsx`, `dogear-components.jsx`, `tokens.css`) showed **three of the five claims are wrong** — the current build already matches the handoff exactly on those points:
 
 - Slips fold a dog-ear **only when picked** (`<SlipFold folded={selected} />` in the handoff; same in `slip.tsx:113-136`); unpicked slips have a transparent border by design. **Do not add resting-state folds/borders** — that would diverge from the handoff.
 - The header "N/M dog-eared" tracker's empty state **is** a plain square in the handoff (`DgEarGlyph`: paper-edge bg, 3px radius, triangle only when filled); `src/components/ui/ear-glyph.tsx` is a faithful port. **No change.**
