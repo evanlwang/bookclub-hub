@@ -65,7 +65,15 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
 // Side effect at module load: validate the current env. Throws on missing
 // production-required keys so a misconfigured deploy fails fast instead of
 // at first request.
-parseEnv();
+//
+// Skip during the Next.js production *build* phase: `next build` executes
+// route modules to collect page data with NODE_ENV=production, but runtime
+// secrets (DIRECT_URL, CRON_SECRET) are not — and need not be — present at
+// build time. Validating there is a false positive that breaks the build;
+// the real fail-fast still happens at runtime on the first request.
+if (process.env.NEXT_PHASE !== "phase-production-build") {
+  parseEnv();
+}
 
 // Live getters so test code that mutates process.env (or uses vi.stubEnv)
 // is observed by callers. The schema's defaults are inlined per-getter.
