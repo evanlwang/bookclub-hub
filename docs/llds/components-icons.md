@@ -55,13 +55,13 @@ An earlier (since-deleted) design-system doc listed `Pin`, `Pin2`, `Bell`, `Spar
 | `stroke-linecap` / `stroke-linejoin` | round |
 | `aria-hidden` | true |
 
-`LogoIcon` is the **exception** to IconBase: it's the Dogear brand mark (`COMP-ICONS-LOGO-002`), not a stroke glyph. `viewBox="0 0 64 64"`, `size` prop default 22, `aria-hidden="true"`. It draws a rounded square (rx ~15) filled `var(--color-primary)` with a dog-eared top-right corner — a paper triangle (`var(--color-bg)`, its outer corner rounded to follow the card edge) over a crease triangle (`var(--color-primary-hover)`) plus a crease stroke. Colors bridge through design tokens via `var(--token-name)` in the SVG `fill`/`stroke` attributes (`COMP-ICONS-LOGO-001`) — no oklch literals. Drawn as plain `<rect>` + `<path>` elements with **no `clipPath`**, so multiple instances on one page introduce no duplicate `id`. Geometry mirrors `landing_handoff_dogear/assets/dogear-mark.svg`.
+`LogoIcon` is the **exception** to IconBase: it's the Dogear brand mark (`COMP-ICONS-LOGO-002`), not a stroke glyph. `viewBox="0 0 64 64"`, `size` prop default 22, `aria-hidden="true"`. It draws a rounded square (rx ~15) filled `var(--color-primary)` with a dog-eared top-right corner — a paper triangle (`var(--color-bg)`, its outer corner rounded to follow the card edge) over a crease triangle (`var(--color-primary-hover)`) plus a crease stroke. Colors bridge through design tokens via `var(--token-name)` in the SVG `fill`/`stroke` attributes (`COMP-ICONS-LOGO-001`) — no oklch literals. Drawn as plain `<rect>` + `<path>` elements with **no `clipPath`**, so multiple instances on one page introduce no duplicate `id`. Geometry mirrors `design_handoff_dogear/landing/assets/dogear-mark.svg`.
 
-The shipped static icon assets (favicon, apple-touch, PWA 16/192/512) all derive from this mark (`COMP-ICONS-ASSET-001`): `src/app/icon.svg` is a copy of the transparent mark; the PNGs are rasterized from the mark (16/32) and the pre-padded maskable cream variant (180/192/512). Regenerate with `npx --yes sharp-cli` against `landing_handoff_dogear/assets/dogear-mark.svg` / `dogear-icon-maskable.svg` (commands in the plan); files are committed so CI never runs the tool.
+The shipped static icon assets (favicon, apple-touch, PWA 16/192/512) all derive from this mark (`COMP-ICONS-ASSET-001`): `src/app/icon.svg` is a copy of the transparent mark; the PNGs are rasterized from the mark (16/32) and the pre-padded maskable cream variant (180/192/512). Regenerate with `npx --yes sharp-cli` against `design_handoff_dogear/landing/assets/dogear-mark.svg` / `dogear-icon-maskable.svg` (commands in the plan); files are committed so CI never runs the tool.
 
 ## Visual reference
 
-`design_handoff_dogear_redesign/dogear-components.jsx` shows the icon grid.
+`design_handoff_dogear/app-redesign/dogear-components.jsx` shows the icon grid.
 
 ## Decisions & Alternatives
 

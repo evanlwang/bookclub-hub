@@ -58,7 +58,7 @@ The trigger button, hour input, minute select, and AM/PM toggle each apply per-c
 
 ## Visual reference
 
-`design_handoff_dogear_redesign/dogear-meetings.jsx` (the create-meeting modal hosts the picker).
+`design_handoff_dogear/app-redesign/dogear-meetings.jsx` (the create-meeting modal hosts the picker).
 
 ## Decisions & Alternatives
 

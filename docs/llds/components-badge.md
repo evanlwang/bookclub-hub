@@ -33,7 +33,7 @@ Shape: `text-xs font-medium px-2 py-0.5 rounded-full inline-flex items-center ga
 
 ## Visual reference
 
-`design_handoff_dogear_redesign/dogear-components.jsx` (Badges section).
+`design_handoff_dogear/app-redesign/dogear-components.jsx` (Badges section).
 
 ## Decisions & Alternatives
 
