@@ -9,7 +9,7 @@
  */
 
 .prose-thread {
-  /* Inherit base font (Geist/UI) — Tailwind's font-[var(--font-display)] on
+  /* Inherit base UI font (Nunito) — Tailwind's font-[var(--font-display)] on
      the wrapper picks the serif when desired. */
   font-size: inherit;
   line-height: 1.65;

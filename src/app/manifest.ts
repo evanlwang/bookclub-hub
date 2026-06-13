@@ -2,9 +2,10 @@ import type { MetadataRoute } from "next";
 
 // @spec PWA-MANIFEST-001, PWA-MANIFEST-002
 // Next.js serves this at /manifest.webmanifest. Colors mirror the warm literary
-// palette in globals.css (--color-bg / --color-ink) as static hex so the install
-// prompt and standalone status bar match the app. Icons reuse the existing
-// assets in public/icons/ plus the root SVG (no new art needed).
+// palette in globals.css (--color-bg) as static hex so the install prompt and
+// standalone status bar match the app. Icons are the dog-ear mark assets in
+// public/icons/ plus the root SVG; the 512px maskable entry reuses the pre-
+// padded cream art so Android can mask it without clipping the fold.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Dogear",
@@ -18,6 +19,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon.svg", type: "image/svg+xml", sizes: "any" },
       { src: "/icons/icon-192.png", type: "image/png", sizes: "192x192", purpose: "any" },
       { src: "/icons/icon-512.png", type: "image/png", sizes: "512x512", purpose: "any" },
+      { src: "/icons/icon-512.png", type: "image/png", sizes: "512x512", purpose: "maskable" },
     ],
   };
 }
