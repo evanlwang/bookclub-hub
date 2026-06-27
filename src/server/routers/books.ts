@@ -1,4 +1,4 @@
-// @spec VOTE-API-009, VOTE-API-009-DEDUP, VOTE-BE-004, VOTE-API-009-MANUAL, PROG-UI-BOOK-001
+// @spec VOTE-API-009, VOTE-API-009-DEDUP, VOTE-BE-004, VOTE-API-MANUAL-001, PROG-UI-BOOK-001
 import { z } from "zod";
 import { router, protectedProcedure, memberProcedure } from "../trpc";
 import { searchBooks as searchOpenLibrary } from "../services/open-library";
@@ -68,7 +68,7 @@ export const booksRouter = router({
       return dedupeSearchResults([...local, ...remote]).slice(0, 10);
     }),
 
-  // @spec VOTE-API-009-MANUAL
+  // @spec VOTE-API-MANUAL-001
   createManual: protectedProcedure
     .input(
       z.object({

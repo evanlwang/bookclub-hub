@@ -16,7 +16,7 @@ interface NominateModalProps {
   onNominationSuccess?: () => void;
 }
 
-// @spec VOTE-API-009-MANUAL, VOTE-API-005-MANUAL, VOTE-UI-NOMMODAL-PITCH-001
+// @spec VOTE-API-MANUAL-001, VOTE-API-005, VOTE-UI-NOMMODAL-PITCH-001
 export function NominateModal({
   isOpen,
   onClose,
