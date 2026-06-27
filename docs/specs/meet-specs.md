@@ -41,11 +41,13 @@ State: cancelled — buttons shown: none (rendered as "Past") — transitions: t
 These specs document invariants enforced inside the `meetings` router and exercised by `tests/integration/meetings-security.test.ts`. They prevent cross-club ID smuggling, malformed time inputs, and out-of-order state transitions.
 
 - `[x]` **MEET-BE-TIME-001**: `meetings.create` SHALL reject any proposed slot whose `time` is not strictly in the future (relative to `Date.now()` at request time), returning `BAD_REQUEST` "Meeting times must be in the future". (`meetings.ts:62-69`)
+- `[x]` **MEET-BE-CREATE-DEDUP-001**: `meetings.create` SHALL reject a proposal in which two proposed slots share the same instant (`assertUniqueSlotTimes`), so a meeting never carries duplicate slots; slots differing in duration but sharing a start instant still count as duplicates. The create-meeting form mirrors this as a pre-flight inline warning ("Two time slots have the same date and time") before the server rejects. (`meetings.ts:75-77`, `create-meeting.tsx`)
 - `[x]` **MEET-BE-CROSS-001**: `meetings.submitAvailability` SHALL verify the supplied `meetingId` belongs to the supplied `clubId`; mismatched pairs return `NOT_FOUND` (no information leak about the other club's meeting). (`meetings.ts:179-187`)
 - `[x]` **MEET-BE-CROSS-002**: `meetings.confirm` SHALL verify the supplied `meetingId` belongs to the supplied `clubId`; mismatched pairs return `NOT_FOUND`. (`meetings.ts:147-154`)
 - `[x]` **MEET-BE-CROSS-003**: `meetings.cancel` SHALL verify the supplied `meetingId` belongs to the supplied `clubId`; mismatched pairs return `NOT_FOUND`. (`meetings.ts:237-244`)
 - `[x]` **MEET-BE-CROSS-004**: `meetings.update` SHALL verify the supplied `meetingId` belongs to the supplied `clubId`, AND every supplied `slotId` belongs to that meeting (rejecting cross-meeting slot smuggling). (`meetings.ts:289-296`)
 - `[x]` **MEET-BE-STATE-001**: `meetings.submitAvailability` SHALL reject the call when the meeting's status is not "proposed" — availability cannot be edited on confirmed/cancelled/completed meetings. (`meetings.ts:179-195`)
+- `[x]` **MEET-BE-RESP-EMPTY-001**: `meetings.submitAvailability` SHALL reject a response payload containing zero slot responses (`assertNonEmptyResponses`), mirroring the client-side guard so direct API calls cannot record an empty availability submission. (`meetings.ts:297-299`, `respond-meeting.tsx`)
 - `[x]` **MEET-BE-STATE-002**: `meetings.cancel` SHALL reject the call when the meeting is already in status "cancelled" (no double-cancel). (`meetings.ts:237-252`)
 
 ## Confirmation UI Gaps (mutations exist, UI does not call them)
