@@ -12,13 +12,13 @@ The timing is straightforward: book clubs surged during and after the pandemic, 
 
 ## Approach
 
-Dogear eliminates the organizer's coordination burden so that running a book club takes less effort than participating in one. One app replaces the group chat polls, shared spreadsheets, and scheduling threads. A member types a club code, enters their email, and they're in — no sign-up, no password, no OAuth consent screen.
+Dogear eliminates the organizer's coordination burden so that running a book club takes less effort than participating in one. One app replaces the group chat polls, shared spreadsheets, and scheduling threads. A member enters their email, confirms a one-time code, and sets up a passkey — after that, signing in is one FaceID/Touch ID tap. No password, no OAuth consent screen.
 
 The app is organized around five capabilities, each designed to reduce a specific friction point:
 
 ### Club Management (multi-tenancy)
 
-Each club is an isolated space with its own members, books, meetings, and discussions. Users who belong to multiple clubs switch between them via a persistent sidebar. Joining requires only a club code and an email address.
+Each club is an isolated space with its own members, books, meetings, and discussions. Users who belong to multiple clubs switch between them via a persistent sidebar. Joining requires a club code plus an email-verified identity (one-time code, then a passkey).
 
 ### Book Selection and Voting
 
@@ -59,8 +59,9 @@ Members report their page or chapter. A club dashboard shows where everyone is, 
 v1 ships a complete, usable product for the core loop: join/create → vote → schedule → read → discuss. Everything below is in. Anything not listed is out.
 
 **In v1:**
-- Email-only identity with long-lived sessions (no password, no OAuth)
-- 4-step entry flow: identity → path choice (join | create) → branch (join-by-code | create-with-code-derivation) → success
+- Email-verified identity with passkey (WebAuthn / FaceID / Touch ID) login and long-lived sessions; no passwords, no OAuth
+- Email one-time-code (OTP) to prove email ownership on first sign-up and on a new device, doubling as the account-recovery and permanent fallback path
+- 4-step entry flow: identity (email → OTP → optional passkey setup) → path choice (join | create) → branch (join-by-code | create-with-code-derivation) → success
 - Club creation with auto-derived codes, joining by code, club switcher
 - Three-tier roles (owner, admin, member)
 - Book nomination + approval voting (N approvals per member, configurable) with external metadata lookup
@@ -76,7 +77,6 @@ v1 ships a complete, usable product for the core loop: join/create → vote → 
 - Responsive web (mobile-friendly, not native)
 
 **Post-v1 (explicitly deferred):**
-- Email verification / magic link upgrade
 - Push notifications
 - Calendar export (.ics) and external calendar integration
 - Recurring meeting templates
@@ -135,6 +135,8 @@ flowchart TB
 ```mermaid
 erDiagram
     USER ||--o{ SESSION : "has many"
+    USER ||--o{ CREDENTIAL : "has many passkeys"
+    USER ||--o{ WEBAUTHN_CHALLENGE : "issued"
     USER ||--o{ MEMBERSHIP : "has many"
     CLUB ||--o{ MEMBERSHIP : "has many"
     CLUB ||--o{ VOTING_ROUND : "has many"
@@ -164,6 +166,30 @@ erDiagram
         string id PK
         uuid user_id FK
         timestamp expires_at
+    }
+    CREDENTIAL {
+        uuid id PK
+        uuid user_id FK
+        string credential_id UK
+        bytes public_key
+        int counter
+        string device_name
+    }
+    EMAIL_OTP {
+        uuid id PK
+        string email
+        string code_hash
+        timestamp expires_at
+        timestamp consumed_at
+        int attempts
+    }
+    WEBAUTHN_CHALLENGE {
+        uuid id PK
+        uuid user_id FK
+        string challenge
+        enum type
+        timestamp expires_at
+        timestamp consumed_at
     }
     CLUB {
         uuid id PK
@@ -197,7 +223,7 @@ erDiagram
 - **Backend**: Next.js Route Handlers + tRPC for type-safe API calls
 - **Database**: PostgreSQL on Neon (serverless Postgres, generous free tier, branching for dev/preview)
 - **ORM**: Prisma (type-safe queries, migration management)
-- **Auth**: Custom email-based sessions (HttpOnly cookie, server-side session store)
+- **Auth**: Custom auth — email one-time-code verification + WebAuthn passkeys (`@simplewebauthn`), server-side sessions (HttpOnly cookie, session store)
 - **Email**: Resend (transactional email API — notifications, reminders)
 - **Deployment**: Vercel (zero-config Next.js hosting, serverless functions, edge network)
 
@@ -232,7 +258,7 @@ A single light theme using `oklch()` notation for perceptual uniformity across m
 | Discussion spoiler handling | Chapter/section tags on threads; filter by user's self-reported progress | No spoiler system; global spoiler toggle; AI-based spoiler detection | Tag-based filtering is deterministic and user-controlled. AI detection is unreliable. Global toggle is too coarse. |
 | Notification delivery | Email (v1); push notifications deferred | Push-first; in-app only; SMS | Email works without app installation and reaches all users. Push requires service workers and platform setup. In-app only misses casual members. |
 | Tech stack | Next.js + PostgreSQL + Prisma on Vercel | SvelteKit + Drizzle; Rails + Hotwire | Single language (TypeScript), fastest to ship, largest ecosystem, zero-config deployment. Trade-off: tight frontend/backend coupling acceptable for this project's scale. |
-| Identity | Email + display name, no password or OAuth | OAuth; username/password; magic links; anonymous/cookie-only | Email is the minimum identity that works across devices and clubs. No password means zero credential management. No OAuth means no third-party dependency and no consent screens. |
+| Identity | Email verified by one-time code (OTP), then WebAuthn passkey for login | Shared pilot passcode; OAuth; username/password; magic links; anonymous/cookie-only | OTP proves email ownership once and closes the impersonation hole (you can no longer claim an email you don't control). Passkeys give phishing-resistant one-tap FaceID/Touch ID login with no shared secret on the wire. OTP remains the recovery + fallback path so no one is locked out on WebAuthn-incapable browsers. Magic links break the same-tab handoff into the WebAuthn ceremony on mobile; a 6-digit code keeps the user in one browser context. The earlier shared pilot passcode was a coarse URL gate, not real auth — removed. |
 | Club joining | Club code (short alphanumeric string shared out-of-band) | Invitation links with tokens; email-sent invites; QR codes | A code is the simplest thing to share verbally or in a group chat. No link formatting, no expiration tokens. |
 | Real-time updates | Polling with SWR/stale-while-revalidate (v1) — implemented via opt-in client polling (`use-live-query`, see `docs/llds/live-updates.md`) plus optimistic mutation updates | WebSockets; SSE | Polling is simpler to deploy. Real-time is nice-to-have for discussions but not critical for v1. WebSockets can be added later without data model changes. Polling is opt-in per query (never a global default) to bound serverless invocation cost on the Hobby plan. |
 | Email provider | Resend | SendGrid; AWS SES; Postmark | Resend has the simplest API, generous free tier (3k emails/month), and first-class Next.js/Vercel integration. Sufficient for v1 notification volume. |
@@ -249,7 +275,7 @@ A single light theme using `oklch()` notation for perceptual uniformity across m
 | Voting completion rate | > 70% of members vote before deadline | `COUNT(votes) / COUNT(memberships)` per round, filtered to rounds with reminders enabled. Measured per-club, averaged across clubs. |
 | Club data isolation | Zero cross-club leakage | Automated security test: create 2 clubs, 2 users (each in one club). Assert every API endpoint returns 403 for the non-member. Run in CI on every deploy. |
 | Page load (P95) | < 2s on 4G | Lighthouse CI against the club dashboard page with 50 members and 20 books seeded. Run on every deploy. |
-| Entry-to-in-club time | < 15 seconds (join), < 30 seconds (create) | Timed E2E tests: (1) join path — unauthenticated user enters email + name + code → lands in club; (2) create path — enters email + name + club name + cadence → lands in new club. Measures the zero-friction identity + multi-path model. |
+| Entry-to-in-club time | < 15 seconds (join), < 30 seconds (create) — clock excludes the email-delivery wait for the OTP | Timed E2E tests: (1) join path — user enters email, verifies OTP, enters name + code → lands in club; (2) create path — verifies OTP, enters name + club name + cadence → lands in new club. The OTP delivery latency is outside the user's control, so the timed window starts when the code is entered; passkey setup is offered but optional and not on the critical path. Measures the in-app friction of the verified-identity + multi-path model. |
 
 ## Core User Journey
 
@@ -262,11 +288,18 @@ sequenceDiagram
 
     Note over User,Email: Paths below are logical contracts.<br/>tRPC implements them as typed procedures.
 
-    Note over User,Email: Entry Flow — Join or Create
-    User->>App: auth.enter({email, displayName})
-    App->>DB: Find or create User by email
-    App->>DB: Create Session (30-day TTL)
+    Note over User,Email: Entry Flow — Verify email, then Join or Create
+    User->>App: auth.requestOtp({email})
+    App->>DB: Store hashed OTP (10-min TTL)
+    Email->>User: 6-digit code
+    User->>App: auth.verifyOtp({email, code, displayName?})
+    App->>DB: Find or create User; create Session (30-day TTL)
     App-->>User: Set session cookie
+    opt Set up passkey for next time
+        User->>App: auth.startPasskeyRegistration / finishPasskeyRegistration
+        App->>DB: Store Credential (public key, counter)
+        App-->>User: Passkey bound (returning logins use FaceID)
+    end
 
     alt Join Branch
         User->>App: clubs.lookup({code}) [debounced]
@@ -312,11 +345,12 @@ sequenceDiagram
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
 | **Email deliverability** — notifications land in spam, members miss votes and meetings | Medium | High | Use Resend (dedicated transactional email with DKIM/SPF). Keep email volume low (only actionable notifications). Add "check spam" guidance on first join. Monitor bounce rates. |
-| **Auth abuse** — anyone who knows an email can impersonate a member | Low | Medium | Acceptable for v1 (trusted friend groups). The data is book opinions, not sensitive. Add magic-link verification as a post-v1 upgrade if the user base widens. |
+| **Auth abuse** — impersonating a member | Low | Low | Closed in auth v2: email ownership is proven by a one-time code before any session is created, so an email can't be claimed by someone who doesn't control the inbox. Passkey assertions are challenge-bound and phishing-resistant; OTPs are single-use, short-lived, and hashed at rest. Residual risk is inbox compromise (out of scope for v1). |
+| **Passkey loss / device change** — user loses the device holding their passkey | Medium | Low | The email OTP path is a permanent recovery route: verify the code, register a new passkey, and revoke old ones from the "Your devices" view. Multiple passkeys per user (phone + laptop) reduce single-device dependence. |
 | **Club code squatting** — someone claims common codes (BOOK, READ, CLUB) | Low | Low | Codes are only unique among active clubs. No public directory means no incentive to squat. If it becomes a problem, add a minimum-length requirement or reserved word list. |
 | **External book API downtime** — Open Library or Google Books unavailable | Medium | Low | Manual entry fallback is already designed. Cache all lookups locally so repeat searches work offline. The API is a convenience, not a dependency. |
 | **Organizer churn** — the one person running the club stops using the app | Medium | High | Design every feature to minimize organizer effort (one-tap meeting confirmation, automated reminders, progress-based scheduling hints). Allow ownership transfer so another member can take over. |
-| **Session cookie loss** — user clears cookies or switches browser, loses access | Medium | Medium | Re-entering email restores access to all clubs. No data is lost — only the session. Make the "welcome back" re-entry flow as frictionless as the initial join. |
+| **Session cookie loss** — user clears cookies or switches browser, loses access | Medium | Medium | A passkey re-authenticates with one FaceID/Touch ID tap; absent a passkey, an email OTP restores access to all clubs. No data is lost — only the session. Keep the "welcome back" re-entry flow as frictionless as the initial join. |
 | **Prisma query limitations** — complex aggregations (progress summaries, vote tallies) hit ORM limits | Low | Medium | Use Prisma's `$queryRaw` for complex SQL when needed. The data model is straightforward CRUD; most queries are simple. Monitor query performance early. |
 
 ## Testing Coverage Plan
@@ -330,7 +364,7 @@ sequenceDiagram
 - Role permission checks (owner > admin > member)
 
 ### Integration Tests (API layer)
-- Auth flow: `/auth/enter` creates user + session; same email returns existing user; expired session returns 401
+- Auth flow: `auth.requestOtp` + `auth.verifyOtp` creates user + session on first contact and returns the existing user on repeat; OTP is single-use, expires, and rejects after an attempt cap; passkey register→login roundtrip succeeds and a regressed signature counter is rejected; expired session returns 401
 - Club join flow: valid code → membership created; invalid code → 404; already member → idempotent 200
 - Voting lifecycle: create round → nominate → advance to voting → submit votes → advance to decided → winner is correct
 - Meeting lifecycle: propose → submit availability → confirm → auto-complete after time passes
@@ -340,7 +374,7 @@ sequenceDiagram
 ### E2E Tests (critical user journeys)
 | Journey | What It Covers |
 |---------|----------------|
-| New user joins club | Enter code + email + name → lands in club → sees current book and members |
+| New user joins club | Enter email → verify OTP → enter name + club code → lands in club → sees current book and members |
 | Voting round | Admin creates round → member nominates → admin advances → member votes → admin decides → winner displayed |
 | Meeting scheduling | Admin proposes slots → member submits availability → admin confirms → reminder email sent (mock) |
 | Spoiler-safe discussion | Member at Ch. 5 sees only Ch. 1–5 threads → updates progress to Ch. 10 → sees Ch. 6–10 threads appear |

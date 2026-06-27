@@ -2,9 +2,18 @@
 
 ## Context and Design Philosophy
 
-Identity in Dogear is designed for maximum frictionlessness. There is no account creation flow, no passwords, no OAuth, and no third-party authentication. A user's identity is their email address. They enter it once when they first join a club, along with a display name. The system creates a long-lived session and the user is done.
+Identity in Dogear is an **email address, proven by a one-time code, and thereafter unlocked by a passkey**. There are no passwords, no OAuth, and no third-party authentication.
 
-The email serves as a cross-device, cross-club identity anchor. If a user opens the app on a new device, they enter their email and are recognized — all their clubs appear. No verification step, no magic link, no password. The threat model is "people who know each other," not "adversarial strangers."
+The two halves solve two distinct problems:
+
+- **Bootstrap (who are you the first time?)** — A user enters their email and receives a 6-digit one-time code (OTP). Entering the code proves they control the inbox. Only then is a `User` created or matched and a session opened. This closes the impersonation hole of the earlier shared-passcode design, where anyone who knew one shared string could claim *any* email.
+- **Returning login (it's you again, prove it cheaply)** — After verifying once, the user is offered a **passkey** (WebAuthn / FaceID / Touch ID). Returning logins are then a single biometric tap with no shared secret on the wire — phishing-resistant and frictionless.
+
+The OTP path never goes away: it is the **permanent recovery and fallback** route. A user who loses their device, switches browsers, or is on a WebAuthn-incapable browser can always re-verify by email and (re)register a passkey. Nobody gets locked out.
+
+The email remains the cross-device, cross-club identity anchor. The threat model widens from the prior "people who know each other" to "email ownership is the trust boundary" — the data is still book opinions, not banking, so inbox compromise is the accepted residual risk.
+
+> **Migration note (auth v2):** This LLD previously described unverified email-only identity (`auth.enter` / `auth.signIn`), and the shipped code additionally carried a shared **pilot passcode** that was never reflected here — a pre-existing HLD/LLD divergence. Auth v2 removes the passcode entirely and replaces `enter`/`signIn` with the OTP + passkey procedures below. No passcode artifacts remain.
 
 Status markers: `[x]` implemented · `[ ]` gap · `[!]` divergence · `[D]` deferred
 
@@ -24,34 +33,51 @@ The marketing landing (`/`) is a **server component** (links only, no client JS)
 
 The two CTA destinations and the smart-detection safety net:
 
-- **Log in** → `/login` (dedicated, email-only). For returning users.
-- **Sign up** → `/join` (4-step wizard with smart detection). For new users + create/join branching.
+- **Log in** → `/login`. For returning users. Passkey-first (conditional UI / autofill); the page also offers "email me a code instead" as the fallback to the OTP flow.
+- **Sign up** → `/join` (multi-step wizard with smart detection). For new users + create/join branching. Step 1 runs the email → OTP → optional passkey setup sub-flow.
 
 These are distinct routes with distinct intents, but they meet at the same destination (`/clubs`) for users with memberships. The `/join` smart detection acts as a safety net for users who pick the wrong door.
 
 ```
 Landing (/)
-  ├─ "Log in"  → /login → auth.signIn → /clubs (has clubs)
-  │                                  └─ /join?welcome=1 (no clubs OR not found)
-  └─ "Sign up" → /join → auth.enter → smart detection
+  ├─ "Log in"  → /login → passkey (FaceID)         → /clubs (has clubs)
+  │                     └ "email me a code" → OTP   → /clubs (has clubs)
+  │                                              └─ /join?welcome=1 (no clubs)
+  └─ "Sign up" → /join → email → OTP → (optional passkey) → smart detection
                                   ├─ /clubs (has clubs)
                                   └─ Step 2 → 3a/3b → Step 4 → /clubs/{id}
 ```
 
-## Entry Flow State
+## Identity Sub-Flow (Step 1)
 
-ASCII state diagram:
+Step 1 of `/join` (and the whole of `/login`) is itself a small state machine that establishes a session before any club action:
 
 ```
-step 1 → step 2 → step 3a → step 4
-step 1 → step 2 → step 3b → step 4
-step 1 → /clubs (smart detection: clubs.length > 0)
-step 1 → step 3a (?path=join)
-step 1 → step 3b (?path=create)
+email-entry → otp-entry → [verified: session created]
+                                   ├─ offer passkey → register → continue
+                                   └─ skip passkey → continue
+email-entry → passkey-prompt (login route, if the browser has a discoverable credential)
+```
+
+State: **email-entry** — input: email; button "Send code" → calls `auth.requestOtp`; on success advances to otp-entry.
+State: **otp-entry** — input: 6-digit code (+ display name on the join route); buttons "Verify" → `auth.verifyOtp`, "Resend code", "Use a different email" (back). On success a session cookie is set.
+State: **passkey-offer** (post-verify, when `window.PublicKeyCredential` is available and the user has no passkey yet) — buttons "Set up FaceID" → `auth.startPasskeyRegistration` + browser ceremony + `auth.finishPasskeyRegistration`; "Not now" → skip. Skipping is always allowed; passkeys are strongly encouraged, never required.
+
+On the login route, when the browser can offer a discoverable passkey, the FaceID prompt is presented first (conditional UI) and a successful assertion logs the user in via `auth.finishPasskeyLogin` without ever entering the OTP branch.
+
+## Entry Flow State (club steps, unchanged)
+
+After Step 1 establishes a session, the club-join/create wizard is unchanged:
+
+```
+step 1 (identity) → step 2 → step 3a → step 4
+step 1 (identity) → step 2 → step 3b → step 4
+step 1 (identity) → /clubs (smart detection: clubs.length > 0)
+step 1 (identity) → step 3a (?path=join)
+step 1 (identity) → step 3b (?path=create)
 step 4 → /clubs/{id}  (auto-redirect after 1500ms)
 ```
 
-State: step 1 (Identity) — buttons: email, display name, "Continue" — transitions: → step 2; → /clubs (smart); → step 3 (?path)
 State: step 2 (Path) — buttons: "Join an existing club", "Create a new club", "Back" — transitions: → step 3a / step 3b / step 1
 State: step 3a (Join) — buttons: code input, "Back", "Join the club" — transitions: → step 4 / step 2
 State: step 3b (Create) — buttons: name, code, cadence radios, "Back", "Create club" — transitions: → step 4 / step 2
@@ -59,67 +85,51 @@ State: step 4 (Success) — buttons: "Copy" (create branch only) — transitions
 
 ## Button Inventory
 
-Button: email input — `join/page.tsx:472-480` — required, type=email
-Button: display name input — `join/page.tsx:487-495` — required
-Button: "Continue" — `join/page.tsx:503-512` — enabled: identityValid (email contains @ AND displayName.trim() ≥ 1) — handler: `auth.enter` then smart detection or step 2
-Button: "Join an existing club" PathCard — `join/page.tsx:532-537` — handler: setPath("join"), step 3
-Button: "Create a new club" PathCard — `join/page.tsx:539-544` — handler: setPath("create"), step 3
-Button: "Back" (step 2 → 1) — `join/page.tsx:546-550`
-Button: club code input (join) — `join/page.tsx:563-572` — debounced, normalized to uppercase, calls `clubs.lookup` after 4 chars
-Button: "Back" (step 3a → 2) — `join/page.tsx:586-593`
-Button: "Join {clubName}" / "Join the club" — `join/page.tsx:595-604` — enabled: joinReady AND !joiningClub — handler: `clubs.join`
-Button: club name input (create) — `join/page.tsx:616-624` — required, min 3 chars
-Button: invite code input (create) — `join/page.tsx:631-638` — defaulted from derivedCode; auto-uppercases
-Button: voting cadence radio "Monthly" / "Six Weeks" / "Flexible" — `join/page.tsx:646-666` — values: monthly / six_weeks / flexible
-Button: "Back" (step 3b → 2) — `join/page.tsx:676-682`
-Button: "Create club" — `join/page.tsx:685-694` — enabled: createReady (name.trim() ≥ 3) AND !creatingClub — handler: `validateClubCode` then `clubs.create`
-Button: "Copy" (step 4, create branch) — `join/page.tsx:723-730` — handler: `navigator.clipboard.writeText(successClubCode)`
-Button: "Sign out" (club sidebar footer) — `src/app/clubs/[clubId]/sidebar.tsx` — handler: POST `/api/trpc/auth.logout` → clear `session_id` cookie → `router.push("/")` — the only sign-out surface (the legacy `/clubs` page header variant was removed when the standalone `/clubs` index went away)
+Step 1 (identity sub-flow):
+- Button: email input — `/join` Step 1 / `/login` — required, type=email, `autoComplete="email webauthn"`.
+- Button: "Send code" — handler: `auth.requestOtp`; disabled until email shape valid; advances to otp-entry.
+- Button: 6-digit OTP input — `inputMode="numeric"`, `autoComplete="one-time-code"`, 6 chars.
+- Button: display name input (join route only) — required, captured alongside the code so `verifyOtp` can create the user.
+- Button: "Verify" — handler: `auth.verifyOtp`; disabled until code is 6 digits (and, on join, displayName present).
+- Button: "Resend code" — re-calls `auth.requestOtp` (rate-limited; shows a cooldown).
+- Button: "Use a different email" / "Back" — returns to email-entry.
+- Button: "Set up FaceID" (passkey-offer) — handler: `auth.startPasskeyRegistration` → `@simplewebauthn/browser` `startRegistration` → `auth.finishPasskeyRegistration`.
+- Button: "Not now" (passkey-offer) — skip; proceeds to smart detection / Step 2.
+- Button: "Email me a code instead" (`/login`) — falls back from passkey prompt to the OTP flow.
+
+Club steps (unchanged from prior LLD; line anchors re-established after the Step 1 rewrite):
+- Buttons for Step 2/3a/3b/4 (path cards, club code input + debounced `clubs.lookup`, join/create submit, cadence radios, copy) are as specified in `auth-specs.md` (`AUTH-UI-STEP2-*`, `-STEP3A-*`, `-STEP3B-*`, `-STEP4-*`).
+- Button: "Sign out" (club sidebar footer) — `src/app/clubs/[clubId]/sidebar.tsx` — handler: `auth.logout` → clear `session_id` cookie → `router.push("/")`. The only sign-out surface.
+
+Device management:
+- "Your devices" view (account/settings) — lists the user's passkeys (`auth.listCredentials`: device name, created, last used) each with a "Remove" button → `auth.revokeCredential`. Revoking the last passkey is allowed; the user can still log in via OTP.
 
 ## Smart Detection
 
-After Step 1 succeeds (`auth.enter` returns sessionId, cookie is set), the client immediately calls `auth.me` to fetch the user's clubs. The flow then branches:
+After Step 1 establishes a session (`auth.verifyOtp` set the cookie), the client immediately calls `auth.me` to fetch the user's clubs. The flow then branches:
 
-- If `clubs.length > 0` AND no `?path=` override → `router.push("/clubs/{firstClubId}")` (the user is dropped straight into their first club). This is the invisible "login" path.
+- If `clubs.length > 0` AND no `?path=` override → `router.push("/clubs/{firstClubId}")`. This is the invisible "login" path.
 - If `clubs.length === 0` → continue to Step 2 (path choice).
 - If the URL had `?path=join` or `?path=create` → skip detection, advance to Step 3 with branch pre-selected.
 - If `auth.me` fails (network error) → fall through to Step 2 (graceful degradation).
 
 ## Login Route (`/login`)
 
-A dedicated minimal page for returning users. Unlike `/join`, it:
+A dedicated minimal page for returning users:
 
-- Asks only for email (no display name).
-- Calls `auth.signIn` (a strict-find variant of `auth.enter`).
-- Refuses to create new User records — unknown emails get a NOT_FOUND error.
+1. On load, if `window.PublicKeyCredential` and conditional-mediation are available, the page requests a passkey assertion (`auth.startPasskeyLogin` → browser → `auth.finishPasskeyLogin`). A successful assertion creates a session and routes by `auth.me` (`/clubs/{firstClubId}` if any club, else `/join?welcome=1`).
+2. The page always also offers "email me a code": email input → `auth.requestOtp` → OTP entry → `auth.verifyOtp`. This is the fallback when no passkey exists or the platform can't run WebAuthn.
+3. Unknown email on the OTP path is **not** an error surface that reveals account existence — `requestOtp` responds the same whether or not the email maps to a user (anti-enumeration); a brand-new email that verifies is routed to `/join?welcome=1` to pick a club.
 
-Flow:
-
-1. User enters email → "Log in" button.
-2. Client POSTs `auth.signIn({ email })`.
-   - **Success** (user exists): cookie is set with the new sessionId. Client then calls `auth.me`.
-     - `clubs.length > 0` → `router.push("/clubs/{firstClubId}")` (the user lands straight inside a club).
-     - `clubs.length === 0` → `router.push("/join?welcome=1")`. The /join page displays a welcome banner so the user understands why they were bounced.
-   - **NOT_FOUND** (no User record): `router.push("/join?welcome=1&email=…")`. The email is carried through and pre-filled on /join's Step 1.
-   - **BAD_REQUEST** (malformed email): inline error on /login.
-
-Why a separate route:
-
-- Returning users get a 1-field form; no friction.
-- The semantic separation (login vs sign-up) lets the landing page advertise both with clarity.
-- `auth.signIn`'s strict-find behavior prevents typo-induced ghost user records.
+Why a separate route: returning users get a one-tap (passkey) or one-field (email) form; the login-vs-signup separation lets the landing advertise both clearly.
 
 ## Return Visit (Same Device)
 
-Session cookie present and valid → user goes straight to dashboard. No login step.
+Valid session cookie present → straight to dashboard, no login step.
 
 ## Return Visit (New Device)
 
-No session cookie → `/join` → Step 1 → smart detection finds existing memberships → auto-redirect to `/clubs`.
-
-## Existing User Creating Second Club
-
-Already logged in. Navigate to `/join?path=create` → skip Steps 1–2 (smart detection bypassed by override) → land on Step 3b. (Note: with a valid session cookie, Step 1 is still rendered — `?path=` is read after Step 1 completes. A future improvement could skip Step 1 when a valid session is already present.)
+No session cookie → `/login` offers the passkey if one is synced to the device (e.g. iCloud Keychain) → FaceID → in. Otherwise email → OTP → in, then optionally register a device-local passkey.
 
 ## Data Model
 
@@ -138,51 +148,107 @@ Session {
   expires_at: timestamp
   created_at: timestamp
 }
+
+Credential {                         // a registered passkey
+  id: UUID (PK)
+  user_id: UUID (FK -> User, cascade delete)
+  credential_id: string (unique, base64url)   // the authenticator's credential ID
+  public_key: bytes                            // COSE public key
+  counter: int                                 // signature counter, monotonic
+  transports: string[]                         // e.g. ["internal","hybrid"]
+  device_name: string                          // user-facing label
+  created_at: timestamp
+  last_used_at: timestamp (nullable)
+  // index on user_id
+}
+
+EmailOtp {                           // a pending one-time code (not tied to a User row)
+  id: UUID (PK)
+  email: string (indexed, lowercase-normalized)
+  code_hash: string                  // hash of the 6-digit code; raw code never stored
+  expires_at: timestamp              // ~10 min TTL
+  consumed_at: timestamp (nullable)  // single-use
+  attempts: int                      // verification attempts, capped
+  created_at: timestamp
+}
+
+WebAuthnChallenge {                  // server-issued, single-use ceremony challenge
+  id: UUID (PK)
+  user_id: UUID (FK -> User, nullable)   // null for discoverable-credential login
+  challenge: string                       // base64url random
+  type: enum (register | login)
+  expires_at: timestamp                   // short TTL (~5 min)
+  consumed_at: timestamp (nullable)
+  created_at: timestamp
+}
 ```
 
-No OAuthConnection table, no MagicLinkToken table, no password hash.
+No OAuthConnection table, no password hash. The shared-passcode gate (`PILOT_PASSCODE`, `src/lib/auth/passcode.ts`) is removed.
+
+### Why a `WebAuthnChallenge` table (not a cookie)
+
+WebAuthn registration and authentication each require a server-issued, single-use, short-lived challenge that the server later verifies against the authenticator's signed response. A dedicated table makes consumption auditable and atomic (mark `consumed_at` in the same transaction that verifies), and naturally supports the discoverable-credential login case where no user is known when the challenge is issued. A signed httpOnly cookie was considered (no extra table) but rejected: it complicates the discoverable-login case and makes single-use enforcement across concurrent tabs harder. Revisit only if the table proves to be a hotspot.
 
 ## API Contracts
 
-| Procedure | Input | Output |
-|-----------|-------|--------|
-| `auth.enter` | `{ email, displayName }` | `{ user, sessionId }` (sets cookie). Idempotent: creates user if new, updates displayName if changed. |
-| `auth.signIn` | `{ email }` | `{ user, sessionId }` if user exists. Throws NOT_FOUND otherwise — never creates a User record. |
-| `auth.me` | - | `{ user, clubs }` or 401 |
-| `auth.logout` | - | `{ success: true }`. Deletes the server session row (if present) and emits a `Set-Cookie: session_id=; Path=/; Max-Age=0` response header. Idempotent — safe to call without an active session (publicProcedure). |
+| Procedure | Input | Output / Behavior |
+|-----------|-------|-------------------|
+| `auth.requestOtp` | `{ email }` | `{ ok: true }` always (anti-enumeration). Generates a 6-digit code, stores its hash with a ~10-min TTL, emails it via `emailService.sendOtpCode`. Rate-limited per IP and per email. |
+| `auth.verifyOtp` | `{ email, code, displayName? }` | `{ user, sessionId }` (sets cookie) on a valid, unexpired, unconsumed code within the attempt cap. Creates the user if new (using `displayName`, required when the email is unknown), matches existing otherwise. Marks the OTP consumed. Throws `UNAUTHORIZED` on wrong/expired/exhausted code. |
+| `auth.startPasskeyRegistration` | — (protected) | `{ options }` — WebAuthn `PublicKeyCredentialCreationOptions` with a fresh stored challenge, `excludeCredentials` = the user's existing passkeys. |
+| `auth.finishPasskeyRegistration` | `{ attestation, deviceName? }` (protected) | `{ credential }` — verifies attestation against the stored challenge, persists a `Credential`, consumes the challenge. |
+| `auth.startPasskeyLogin` | `{ email? }` | `{ options }` — WebAuthn `PublicKeyCredentialRequestOptions` with a fresh challenge; `allowCredentials` scoped to the email's passkeys when provided, empty for discoverable-credential (usernameless) login. |
+| `auth.finishPasskeyLogin` | `{ assertion }` | `{ user, sessionId }` (sets cookie). Verifies the assertion against the stored challenge and the matching `Credential`'s public key, **rejects a non-increasing signature counter** (cloned-authenticator guard), updates `counter` + `last_used_at`, creates a session. |
+| `auth.listCredentials` | — (protected) | `{ credentials: [{ id, deviceName, createdAt, lastUsedAt }] }`. |
+| `auth.revokeCredential` | `{ id }` (protected) | `{ ok: true }`. Deletes one of the caller's passkeys. Allowed even if it is the last one (OTP remains a login path). |
+| `auth.me` | — | `{ user, clubs }` or 401. |
+| `auth.logout` | — | `{ success: true }`. Deletes the server session row (if present) and emits a clearing `Set-Cookie`. Idempotent (publicProcedure). |
 
-## Voting Cadence Field (gap)
+`auth.enter` and `auth.signIn` are **removed**.
 
-The voting cadence radios in Step 3b store the chosen value (`monthly`/`six_weeks`/`flexible`) and pass it as `description: "Voting cadence: {cadence}"` to `clubs.create` (`join/page.tsx:369`). There is **no structured field** on Club for cadence today. Recommendation: add `voting_cadence` enum to Club and stop overloading description.
+## Sessions
 
-## Session Management
+Sessions are server-side, stored in PostgreSQL (Neon). The session ID is a cryptographically random string (`generateSessionId`, 32 random bytes hex) in an HttpOnly cookie. Set on `auth.verifyOtp` and `auth.finishPasskeyLogin` success via `sessionSetCookieHeader` (`src/lib/auth/session.ts`) with `HttpOnly; Path=/; SameSite=Lax; Max-Age=2592000` and `Secure` in production. Sliding expiration refreshes `expires_at` on every authenticated request (route handler + RSC caller). The clearing cookie in `auth.logout` mirrors the same attributes. (Unchanged from auth v1 — `AUTH-BE-001`, `AUTH-BE-002`, `AUTH-BE-SESSION-001`.)
 
-Sessions are server-side, stored in PostgreSQL (Neon). Session ID is a cryptographically random string stored in a cookie. The cookie is set on `auth.enter` success with `max-age=30 days` (`join/page.tsx:224`). Cookie hardening flags (HttpOnly/Secure/SameSite) need verification against the actual cookie write path on the server side.
+## WebAuthn Relying-Party Configuration
+
+`src/lib/auth/webauthn.ts` wraps `@simplewebauthn/server` and reads:
+- `WEBAUTHN_RP_ID` — registrable domain (e.g. `localhost` in dev, the Vercel domain in prod). The browser enforces that the page origin matches; a mismatch fails the ceremony.
+- `WEBAUTHN_ORIGIN` — full origin (`http://localhost:3000` / `https://<domain>`) used as `expectedOrigin` during verification.
+- `WEBAUTHN_RP_NAME` — display name ("Dogear").
+
+Both env vars are added to the `src/env` validation schema. Mismatched RP config is surfaced as a clear server error rather than a silent ceremony failure.
+
+## Rate Limiting
+
+`auth.requestOtp` and `auth.verifyOtp` reuse the in-process limiter (`src/lib/auth/rate-limit.ts`): per-IP and per-email windows on requests, plus a per-OTP attempt cap enforced via `EmailOtp.attempts`. `clubs.join` (unauthenticated branch) retains its limit. The passkey ceremonies are challenge-gated and additionally IP-limited. (Carries forward `AUTH-API-RATELIMIT-001`, retargeted from `signIn`/`enter` to the OTP procedures.)
 
 ## Decisions & Alternatives
 
 | Decision | Chosen | Alternatives Considered | Rationale |
 |----------|--------|------------------------|-----------|
-| Identity mechanism | Email address (unverified) | OAuth; email + password; magic link | Email is the minimum cross-device identity. No password = zero friction. |
-| Display name | Entered with email, updatable | Fixed at creation; per-club names | Updatable is simplest. |
-| Session duration | 30 days, sliding (target) | 7 days; permanent; session-only | Weekly users never re-authenticate. |
-| User creation | Implicit on first `auth.enter` | Explicit registration | Removes the concept of "signing up." |
-| Smart detection | Branch on existing memberships | Always show step 2 | Returning users get a true zero-step login. |
+| Identity bootstrap | Email OTP (6-digit, hashed, single-use, ~10-min TTL) | Shared pilot passcode; magic link; trust-on-first-use | Proves email ownership, closing impersonation. Code (not link) keeps the user in one browser tab for the WebAuthn ceremony. |
+| Returning login | WebAuthn passkey (FaceID/Touch ID), OTP fallback | OTP every time; password; OAuth | Passkeys are phishing-resistant and one-tap; OTP fallback means no lockout on incapable browsers. |
+| Passkey requirement | Strongly encouraged, not required | Mandatory passkey; purely optional | Maximizes adoption without locking anyone out; OTP stays a first-class path. |
+| Multiple passkeys | Allowed (phone + laptop) | One per user | Reduces single-device dependence; standard WebAuthn affordance. |
+| WebAuthn challenge store | Dedicated `WebAuthnChallenge` table, single-use | Signed httpOnly cookie | Auditable, atomic consumption, supports discoverable-credential login cleanly. |
+| WebAuthn library | `@simplewebauthn/server` + `/browser` | Hand-rolled CBOR/COSE verification | Avoids re-implementing attestation/assertion crypto and the encoding minefield. |
+| Anti-enumeration | `requestOtp` returns `{ ok: true }` regardless of account existence | Distinguish known/unknown email | Prevents probing which emails have accounts. |
+| Session duration | 30 days, sliding | 7 days; permanent | Weekly users rarely re-authenticate. Unchanged. |
 
 ## Open Questions
 
 ### Resolved
-
-1. ✅ Email-only identity, no password or OAuth.
-2. ✅ Implicit user creation.
-3. ✅ Smart detection branching after Step 1.
+1. ✅ Email ownership verified via OTP (was deferred "magic-link verification").
+2. ✅ Passwordless returning login via passkeys.
+3. ✅ Shared pilot passcode removed.
+4. ✅ Smart detection branching after Step 1 (unchanged).
 
 ### Deferred
-
-1. **Magic-link email verification.**
-2. **Display name per club.**
-3. **Account deletion.**
-4. **Persist voting cadence as a structured Club field.**
+1. **Display name per club.**
+2. **Account deletion** (cascade memberships, votes, comments).
+3. **Cross-device passkey UX beyond platform sync** (iCloud Keychain / Google Password Manager handle the common case).
+4. **Redis-backed rate limiting** for multi-instance correctness (still in-process; pre-existing).
 5. **Skip Step 1 when a valid session cookie is already present** (existing-user-creates-second-club flow).
 
 ## References
@@ -190,3 +256,4 @@ Sessions are server-side, stored in PostgreSQL (Neon). Session ID is a cryptogra
 - `docs/specs/auth-specs.md`
 - `docs/llds/club-management.md`
 - `docs/high-level-design.md`
+- `@simplewebauthn` — https://simplewebauthn.dev
