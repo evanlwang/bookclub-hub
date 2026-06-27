@@ -41,12 +41,10 @@ Button: "Close voting & reveal winner" — visible: status="voting" AND isAdmin 
 Button: "Cancel round" — visible: (status="nominating" OR "voting") AND isAdmin — enabled: always — handler: opens typed-confirmation dialog → calls `rounds.cancel` (CANCEL-002)
 Button: "Start new round" — `decided-phase.tsx:113-140` — visible: status="decided" AND isAdmin — enabled: always — handler: `rounds.create`
 Button: "Start your first round" (NonePhase) — `none-phase.tsx:93-120` — visible: isAdmin AND no round in club is `nominating`, `voting`, or `decided` (i.e., zero rounds OR all prior rounds cancelled) — enabled: always — handler: `rounds.create` (VOTE-UI-NONE-001)
-Button: search input (debounced) — `nominate-modal.tsx:230-247` — visible: modal open, search tab — handler: `books.search` after 300ms debounce
-Button: "Nominate" (per result row) — `nominate-modal.tsx:272-283` — visible: search results present — handler: `nominations.create`
-Button: "Enter manually" — `nominate-modal.tsx:290-305` — visible: search ran, zero results — handler: switches to manual tab
-Button: "Create & Nominate" — `nominate-modal.tsx:398-406` — visible: manual tab — enabled: title and author non-empty — handler: `books.createManual` then `nominations.create`
-Button: "Back" — `nominate-modal.tsx:383-394` — visible: manual tab — handler: returns to search tab, resets manual fields
-Button: "Cancel" — `nominate-modal.tsx:311-318` — visible: search tab — handler: closes modal
+Button: search input (debounced) — `nominate-search.tsx:39-56` (debounce + `books.search` in `nominate-modal.tsx:50-58`) — visible: modal open — handler: `books.search` after 300ms debounce
+Button: "Nominate" (per result row) — `nominate-search.tsx:84-95` — visible: search results present — handler: `nominations.create` (`handleNominate`)
+Button: "Add & Nominate" — `nominate-manual-form.tsx:128-136` — visible: manual-entry section (always shown below search) — enabled: always; validates on click (title/author required, page count a positive integer) — handler: `books.createManual` then `nominations.create` (`handleCreateAndNominate`)
+Button: close (X icon) — `nominate-modal.tsx:208-216` — visible: modal open — handler: `onClose` (backdrop click / Escape handled by the `Sheet` wrapper)
 
 ## Close-Voting Flow
 
