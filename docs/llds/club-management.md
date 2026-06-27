@@ -116,6 +116,15 @@ No Invitation table. The club code on the Club record is the only join mechanism
 
 Sidebar dropdown on every club-scoped page. Lists all clubs the user is in. Each row links to `/clubs/{id}` (full route load). Bottom row is "Create or join a club" → opens the Switcher Modal in place. The Voting nav link displays a "Live" Badge (accent dot) when an active round exists for the current club.
 
+## Club Route Access Guard
+
+The per-club layout (`src/app/clubs/[clubId]/layout.tsx`) is the common ancestor of every club-scoped route (dashboard, vote, meetings, progress, discussions, settings), so it owns the access decision once for the whole subtree. Its seed fetch (`clubs.get` + `auth.me` + `clubs.navState`) runs through `memberProcedure`, which surfaces two failures we treat as "not allowed to view this club":
+
+- **`UNAUTHORIZED`** — no valid session. The viewer isn't logged in. The layout server-side `redirect()`s to `/login` so a returning user lands on the one-field sign-in form (`CLUB-UI-ACCESS-GUARD-001`).
+- **`FORBIDDEN`** (also a `NOT_FOUND` club id, which `memberProcedure` reports as `FORBIDDEN` since the membership lookup misses) — the viewer is logged in but isn't a member. The layout `redirect()`s to `/` (home) rather than leaking the club shell (`CLUB-UI-ACCESS-GUARD-002`).
+
+Both follow the same `redirect()`-from-RSC pattern the settings page uses for its admin gate: the redirect's `NEXT_REDIRECT` digest is allowed to propagate, while any other (unexpected) error falls through to the route's `error.tsx` boundary. Because the guard sits in the layout, child pages never render for a disallowed viewer — the dashboard's own `club-error` fallback now only covers genuinely unexpected load failures, not the auth/membership cases. This supersedes the old behavior where a logged-out or non-member viewer saw the inline `club-error` text (the prior reading of `AUTH-UI-LOGOUT-003`).
+
 ## Live Nav Badges
 
 Mechanism owned by `docs/llds/live-updates.md`. The three badge inputs the club layout previously computed from separate RSC fetches (`rounds.list`, `meetings.list`, `clubs.unreadDiscussionCounts`) consolidate into one member-scoped `clubs.navState` query returning `{ hasActiveVote, hasUnrespondedMeeting, unreadDiscussionCounts }` (CLUB-API-NAVSTATE-001) — `unreadDiscussionCounts` stays the cross-club map because the switcher dots (CLUB-NAV-UNREAD-001) consume it. The layout RSC seeds a `useNavState(clubId, initial)` client hook (60s poll); `ClubSidebar`, `MobileTabBar`, and `MobileClubHeader` read the hook instead of props. Feature mutations that affect badges call `utils.clubs.navState.invalidate()` instead of `router.refresh()` (CLUB-NAV-BADGE-LIVE-001); visiting discussions clears the unread badge the same way.
