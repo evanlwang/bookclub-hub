@@ -8,15 +8,17 @@
 //
 // The exported `env` object exposes the same keys via getters that read
 // `process.env` *live* — this preserves the test pattern of mutating
-// `process.env.PILOT_PASSCODE` / `vi.stubEnv("NODE_ENV", ...)` mid-suite
-// without re-importing the module. Type-safe at the access site even though
-// the underlying read is dynamic.
+// `process.env.*` / `vi.stubEnv("NODE_ENV", ...)` mid-suite without
+// re-importing the module. Type-safe at the access site even though the
+// underlying read is dynamic.
 //
 // Convention:
 //   - Required in production: DATABASE_URL, DIRECT_URL, CRON_SECRET.
 //   - Optional with documented fallback behavior in the consumer:
 //       RESEND_API_KEY (unset / "re_mock*" / "test" → email.ts skips sending),
-//       PILOT_PASSCODE (unset in production → passcode.ts fails closed).
+//       WEBAUTHN_RP_ID / WEBAUTHN_ORIGIN / WEBAUTHN_RP_NAME (default to
+//       localhost:3000 / "Dogear" for dev; set to the production domain in prod
+//       so passkey ceremonies verify against the right origin).
 
 import { z } from "zod";
 
@@ -29,7 +31,9 @@ const schema = z
     DIRECT_URL: z.string().min(1).optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
     CRON_SECRET: z.string().min(1).optional(),
-    PILOT_PASSCODE: z.string().optional(),
+    WEBAUTHN_RP_ID: z.string().min(1).default("localhost"),
+    WEBAUTHN_ORIGIN: z.string().url().default("http://localhost:3000"),
+    WEBAUTHN_RP_NAME: z.string().min(1).default("Dogear"),
     OPEN_LIBRARY_BASE_URL: z
       .string()
       .url()
@@ -94,8 +98,14 @@ export const env = {
   get CRON_SECRET(): string | undefined {
     return process.env.CRON_SECRET || undefined;
   },
-  get PILOT_PASSCODE(): string | undefined {
-    return process.env.PILOT_PASSCODE;
+  get WEBAUTHN_RP_ID(): string {
+    return process.env.WEBAUTHN_RP_ID || "localhost";
+  },
+  get WEBAUTHN_ORIGIN(): string {
+    return process.env.WEBAUTHN_ORIGIN || "http://localhost:3000";
+  },
+  get WEBAUTHN_RP_NAME(): string {
+    return process.env.WEBAUTHN_RP_NAME || "Dogear";
   },
   get OPEN_LIBRARY_BASE_URL(): string {
     return process.env.OPEN_LIBRARY_BASE_URL || "https://openlibrary.org";

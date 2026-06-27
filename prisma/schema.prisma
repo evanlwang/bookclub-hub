@@ -54,6 +54,11 @@ enum ReadingStatus {
   finished
 }
 
+enum WebAuthnChallengeType {
+  register
+  login
+}
+
 // --- Models ---
 
 model User {
@@ -64,6 +69,8 @@ model User {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   sessions          Session[]
+  credentials        Credential[]
+  webauthnChallenges WebAuthnChallenge[]
   memberships       Membership[]
   createdClubs      Club[]              @relation("ClubCreator")
   nominations       Nomination[]
@@ -87,6 +94,56 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+// A registered WebAuthn passkey. @spec AUTH-PASSKEY-REG-001, AUTH-PASSKEY-MULTI-001
+model Credential {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  credentialId String    @unique @map("credential_id")
+  publicKey    Bytes     @map("public_key")
+  counter      Int       @default(0)
+  transports   String[]
+  deviceName   String    @map("device_name") @db.VarChar(100)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  lastUsedAt   DateTime? @map("last_used_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("credentials")
+}
+
+// A pending email one-time code. Not tied to a User row — an OTP can exist for
+// an email that has no account yet. @spec AUTH-OTP-REQUEST-001
+model EmailOtp {
+  id         String    @id @default(uuid()) @db.Uuid
+  email      String
+  codeHash   String    @map("code_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([email])
+  @@map("email_otps")
+}
+
+// A server-issued, single-use WebAuthn ceremony challenge.
+// @spec AUTH-PASSKEY-CHALLENGE-001
+model WebAuthnChallenge {
+  id         String                @id @default(uuid()) @db.Uuid
+  userId     String?               @map("user_id") @db.Uuid
+  challenge  String
+  type       WebAuthnChallengeType
+  expiresAt  DateTime              @map("expires_at")
+  consumedAt DateTime?             @map("consumed_at")
+  createdAt  DateTime              @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("webauthn_challenges")
 }
 
 model Club {

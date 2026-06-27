@@ -55,6 +55,15 @@ async function send(to: string[], subject: string, body: string): Promise<void> 
 
 // Public API
 export const emailService = {
+  // @spec AUTH-OTP-REQUEST-001 — deliver the login one-time code.
+  async sendOtpCode(email: string, code: string) {
+    await send(
+      [email],
+      `Your Dogear sign-in code: ${code}`,
+      `<p>Your Dogear sign-in code is <b>${escapeHtml(code)}</b>.</p><p>It expires in 10 minutes. If you didn't request it, you can ignore this email.</p>`,
+    );
+  },
+
   async sendRoundNominating(memberEmails: string[], clubName: string) {
     await send(memberEmails, `New voting round in ${clubName}`, `<p>A new voting round has started in <b>${escapeHtml(clubName)}</b>. Start nominating books!</p>`);
   },

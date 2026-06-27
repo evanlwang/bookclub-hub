@@ -9,10 +9,6 @@ import {
   adminProcedure,
 } from "../trpc";
 import { normalizeCode, validateCode } from "@/lib/validation/club-code";
-import { normalizeEmail, validateEmail } from "@/lib/validation/email";
-import { generateSessionId, computeNewExpiry, sessionSetCookieHeader } from "@/lib/auth/session";
-import { passcodeOk } from "@/lib/auth/passcode";
-import { checkRateLimit } from "@/lib/auth/rate-limit";
 
 export const clubsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -489,15 +485,14 @@ export const clubsRouter = router({
       return { ok: true as const };
     }),
 
-  join: publicProcedure
-    .input(
-      z.object({
-        code: z.string(),
-        email: z.string().optional(),
-        displayName: z.string().optional(),
-        passcode: z.string().optional(),
-      })
-    )
+  // Auth v2: identity (email OTP → session) is always established in entry
+  // Step 1 before the club step, so joining requires an authenticated caller.
+  // This closes the prior unverified-user-creation path that the shared
+  // passcode used to gate. `sessionId` stays in the return shape (always null
+  // now) for client-call compatibility.
+  // @spec CLUB-API-003, CLUB-API-004, CLUB-API-005, CLUB-BE-001
+  join: protectedProcedure
+    .input(z.object({ code: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const code = normalizeCode(input.code);
 
@@ -522,71 +517,8 @@ export const clubsRouter = router({
         });
       }
 
-      let userId: string;
-      let sessionId: string | null = null;
-
-      if (ctx.user) {
-        userId = ctx.user.id;
-      } else {
-        // Unauthenticated join — requires email + displayName, plus the
-        // pilot passcode (gated identically to auth.enter so this isn't a
-        // back door around the gate).
-        if (!input.email || !input.displayName) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Email and display name required for new users",
-          });
-        }
-
-        // @spec AUTH-API-RATELIMIT-001
-        // IP-only throttle on unauthenticated joins. We don't key on email
-        // because legit users may try a few clubs in quick succession; the
-        // attack we care about is bulk passcode-guessing from one source.
-        if (ctx.ip) {
-          const check = checkRateLimit(`join:ip:${ctx.ip}`, 10, 60_000);
-          if (!check.ok) {
-            throw new TRPCError({
-              code: "TOO_MANY_REQUESTS",
-              message: "Rate limit exceeded — try again in a minute",
-            });
-          }
-        }
-
-        if (!passcodeOk(input.passcode ?? "")) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Wrong passcode",
-          });
-        }
-
-        const emailValidation = validateEmail(input.email);
-        if (!emailValidation.valid) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: emailValidation.error,
-          });
-        }
-
-        const email = normalizeEmail(input.email);
-        const user = await ctx.db.user.upsert({
-          where: { email },
-          update: { displayName: input.displayName },
-          create: { email, displayName: input.displayName },
-        });
-        userId = user.id;
-
-        // Create session
-        sessionId = generateSessionId();
-        await ctx.db.session.create({
-          data: {
-            id: sessionId,
-            userId: user.id,
-            expiresAt: computeNewExpiry(),
-          },
-        });
-        // @spec AUTH-BE-001
-        ctx.resHeaders?.append("Set-Cookie", sessionSetCookieHeader(sessionId));
-      }
+      const userId = ctx.user.id;
+      const sessionId: string | null = null;
 
       // Check existing membership
       const existing = await ctx.db.membership.findUnique({
