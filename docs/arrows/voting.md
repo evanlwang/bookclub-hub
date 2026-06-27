@@ -4,7 +4,7 @@ Book selection — nominations, approval voting, rounds, manual selection, tie-b
 
 ## Status
 
-**OK** — last audited 2026-06-26 (git SHA `11aba35`). 0 active gaps, 0 divergences, 0 reverse orphans. Nomination pitch field, winner-banner CTAs, voting/nomination deadline pickers + sidebar countdown, and the cron deadline-reminder pipeline are all shipped. This pass reconciled the redesign labels ("+ Nominate", "Now reading" banner, EarGlyph/slip language, ISBN cover fallback) and repointed every spec/LLD ref from the monolithic `vote-round.tsx` to the split `nominating-phase.tsx` / `voting-phase.tsx` / `decided-phase.tsx` (and the decomposed nominate modal). Confirmed `VOTE-API-VISIBILITY-002` matches the PR #15 tally-rank fix (decided nominations sorted so the winner banner matches the top tally).
+**OK** — last audited 2026-06-26 (git SHA `11aba35`). 0 active gaps, 0 divergences, 0 reverse orphans. Nomination pitch field, winner-banner CTAs, voting/nomination deadline pickers + sidebar countdown, and the cron deadline-reminder pipeline are all shipped. This pass reconciled the redesign labels ("+ Nominate", "Now reading" banner, EarGlyph/slip language, ISBN cover fallback) and repointed every spec/LLD ref from the monolithic `vote-round.tsx` to the split `nominating-phase.tsx` / `voting-phase.tsx` / `decided-phase.tsx` (and the decomposed nominate modal). Confirmed `VOTE-API-VISIBILITY-002` matches the PR #15 tally-rank fix (decided nominations sorted so the winner banner matches the top tally). Reverse orphans `VOTE-API-005-MANUAL` (manual-book nomination flow) and `VOTE-API-009-MANUAL` (`books.createManual`) have matching backfilled entries in `vote-specs.md`.
 
 ## References
 

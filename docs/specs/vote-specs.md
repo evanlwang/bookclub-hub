@@ -32,6 +32,7 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 ## Nominations API
 
 - `[x]` **VOTE-API-005**: When a member calls `nominations.create` during "nominating" phase, the system SHALL add the book to the round. (`nominations.ts:7-60`)
+- `[x]` **VOTE-API-005-MANUAL**: A member SHALL be able to nominate a manually-entered book — one created via `books.createManual` (see VOTE-API-009-MANUAL), with no `openLibraryId` — during "nominating" phase, and the resulting nomination SHALL be indistinguishable downstream from a nomination of an Open Library book. The nominate modal creates the manual book then immediately nominates it. (`nominate-modal.tsx`, `nominations.ts:7-60`)
 - `[x]` **VOTE-API-006**: When a member attempts to nominate a book already nominated in the same round, the system SHALL throw a CONFLICT error (unique on `(roundId, bookId)`).
 - `[x]` **VOTE-API-007**: When a member attempts to nominate during "voting" or "decided" phase, the system SHALL throw a BAD_REQUEST error.
 - `[x]` **VOTE-API-NOMDEL-001**: The `nominations.delete` procedure SHALL allow the original nominator OR any admin/owner to delete a nomination. (`nominations.ts:62-89`)
@@ -150,6 +151,7 @@ These specs cover what happens when a member revisits the voting page after they
 
 - `[x]` **VOTE-API-009**: The `books.search` procedure SHALL query the local DB by title/author/ISBN (case-insensitive), then fall through to Open Library API, caching results back into the local Book table. Returns empty array on API failure (graceful degradation). (`books.ts:7-72`)
 - `[x]` **VOTE-API-009-DEDUP**: The `books.search` procedure SHALL collapse duplicate result rows representing the same logical book — matching by normalized ISBN when both rows have one (non-alphanumerics stripped), else by case-insensitive normalized title+author. The earlier-appearing row wins, preserving VOTE-API-009's local-first ordering. (`books.ts`)
+- `[x]` **VOTE-API-009-MANUAL**: The `books.createManual` procedure SHALL create a local `Book` from member-supplied `title` and `author` (with optional `isbn` and `pageCount`) and SHALL omit `openLibraryId` (left null), so a book absent from both the local DB and Open Library can still be nominated. Manual entries are preferred over Open Library twins by VOTE-API-009-DEDUP's first-seen-wins ordering. (`books.ts:71-90`)
 - `[x]` **VOTE-BE-004**: The system SHALL cache book metadata locally after the first lookup to avoid repeated external API calls.
 - `[x]` **VOTE-API-MANUAL-001**: The `books.createManual` procedure SHALL create a Book with `openLibraryId=null`, marking it as manually entered. Requires non-empty title and author (max 500 chars each). (`books.ts:75-96`)
 
