@@ -4,7 +4,7 @@ Multi-tenancy backbone — club creation, membership, roles, the club switcher, 
 
 ## Status
 
-**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 active gaps, 0 divergences, 0 reverse orphans. Soft-delete + 30d hard-delete cron, archive/unarchive mutations, Admin Settings page, real-time code lookup, unread indicators, and switcher-prefetch all landed in Phase E.
+**OK** — last audited 2026-06-11 (git SHA `ec02705`). 0 active gaps, 0 divergences, 0 reverse orphans. Soft-delete + 30d hard-delete cron, archive/unarchive mutations, Admin Settings page, real-time code lookup, unread indicators, and switcher-prefetch all landed in Phase E.
 
 ## References
 

@@ -4,7 +4,11 @@ Book selection — nominations, approval voting, rounds, manual selection, tie-b
 
 ## Status
 
-**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 active gaps, 0 divergences, 0 reverse orphans. Phase E added: nomination pitch field, winner-banner CTAs, voting/nomination deadline pickers + sidebar countdown; cron deadline-reminder pipeline now active.
+**OK** — last stamped 2026-06-11 (git SHA `ec02705`). 0 active gaps, 0 divergences. Phase E added: nomination pitch field, winner-banner CTAs, voting/nomination deadline pickers + sidebar countdown; cron deadline-reminder pipeline now active.
+
+> **Re-stamp pending.** Two coherent cascades landed *after* the `ec02705` stamp and were never re-stamped: the cover-glyph/ear-glyph polish (`e0be268` — ISBN Open Library covers + sidebar EarGlyph dog-ears) and the decided-phase tally-ordering fix (`07aaec9` — `vote-specs.md` + `rounds.ts` + integration tests moved together). Both followed cascade discipline; a targeted re-stamp to current HEAD is recommended.
+
+> **Reverse orphans resolved (2026-06-26).** `VOTE-API-005-MANUAL` (manual-book nomination) and `VOTE-API-009-MANUAL` (`books.createManual`) now have matching entries in `vote-specs.md`, backfilled from the tested code.
 
 ## References
 

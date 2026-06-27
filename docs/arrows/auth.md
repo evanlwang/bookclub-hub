@@ -4,7 +4,7 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 
 ## Status
 
-**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 `[ ]` active gaps, 0 `[!]` divergences, 0 reverse orphans. All non-deferred specs implemented; cookie-security and sliding-expiration hardened in cluster 17.
+**STALE** — last full audit 2026-05-10 (git SHA `aee095b6`). The landing slice (`home-specs` HOME-UI-*) was re-specced and re-verified 2026-06-12 (editorial borrower's-card rebuild, `b31e1b9`), but the `/join` wizard slice has **not** been re-verified spec-to-code since `aee095b6`. No known divergences; the staleness is unverified-since, not detected-drift. Cookie-security and sliding-expiration were hardened in cluster 17.
 
 ## References
 

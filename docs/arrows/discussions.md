@@ -4,7 +4,7 @@ Threaded book discussions, chapter-tagged for spoiler filtering. Members filter 
 
 ## Status
 
-**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 active gaps, 0 divergences, 0 reverse orphans. Phase E added Markdown rendering + sanitization (cluster 11), thread edit/delete/pin (cluster 12), chapter-mismatch warnings (cluster 13), and unread-discussions tracking (cluster 10).
+**OK** — last audited 2026-06-11 (git SHA `ec02705`). 0 active gaps, 0 divergences, 0 reverse orphans. Phase E added Markdown rendering + sanitization (cluster 11), thread edit/delete/pin (cluster 12), chapter-mismatch warnings (cluster 13), and unread-discussions tracking (cluster 10).
 
 ## References
 

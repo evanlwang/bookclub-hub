@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: 2026-06-12
+last_updated: 2026-06-26
 
 # Taxonomy groups segments by domain cluster. Purely organizational.
 taxonomy:
@@ -24,6 +24,8 @@ taxonomy:
     - components-progress-bar
     - components-date-time-picker
     - components-icons
+  infrastructure:
+    - infra
 
 # The graph of segments. Each entry is one arrow segment.
 arrows:
@@ -66,8 +68,8 @@ arrows:
       - clubs
       - live-updates
     detail: voting.md
-    next: null
-    drift: null
+    next: re-stamp to HEAD — two coherent cascades (e0be268 cover/ear-glyph polish, 07aaec9 decided-order fix) landed after ec02705 with specs+tests but were never re-stamped
+    drift: post-stamp coherent cascades not re-stamped (e0be268, 07aaec9). Reverse orphans VOTE-API-005-MANUAL / VOTE-API-009-MANUAL resolved 2026-06-26 (added to vote-specs.md).
 
   meetings:
     status: OK
@@ -241,9 +243,26 @@ arrows:
     next: null
     drift: null
 
+  # Cross-cutting infrastructure (boot env validation, typed config access).
+  # Created 2026-06-26 to give INFRA-ENV-VALIDATION-001 a spec home.
+  infra:
+    status: OK
+    sampled: 2026-06-26
+    audited: 2026-06-26
+    audited_sha: 11aba35
+    blocks: []
+    blockedBy: []
+    detail: infra.md
+    next: null
+    drift: null
+
 # Items found during mapping that don't yet belong to a segment.
 unmapped:
   docs:
     llds: []
     specs:
       - mobile-specs.md  # cozy-redesign mobile/touch specs (NAV-MOBILE-*, TOUCH-*, VOTE-UI-SLIP-*); spans clubs/voting/design — needs owner assignment
+  # Reverse orphans: all five resolved 2026-06-26 by backfilling specs (see git log).
+  # INFRA-ENV-VALIDATION-001 → infra segment; VOTE-API-005-MANUAL / -009-MANUAL → vote-specs.md;
+  # MEET-BE-CREATE-DEDUP-001 / -RESP-EMPTY-001 → meet-specs.md.
+  reverse_orphans: []
