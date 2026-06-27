@@ -1,62 +1,80 @@
-// @spec AUTH-API-SIGNIN-001, AUTH-UI-LOGIN-001, AUTH-UI-LOGIN-002, AUTH-UI-LOGIN-003, LANDING-UI-001
+// @spec AUTH-OTP-VERIFY-001, AUTH-UI-LOGIN-001, AUTH-UI-LOGIN-002, AUTH-UI-LOGIN-003, LANDING-UI-001
 import { test, expect } from "@playwright/test";
 
 /**
  * E2E coverage for the dedicated /login route and the two-CTA landing page.
  *
+ * Login is passkey-first with an email one-time-code (OTP) fallback. In
+ * non-production the fixed code "000000" always verifies for any email, so E2E
+ * signs in via the OTP path without reading an inbox. (The passkey button needs
+ * a real authenticator and is never clicked here.)
+ *
  * Three login outcomes:
  *   1. Existing user with clubs       → /clubs/<firstClubId> (jump straight into a club)
  *   2. Existing user with no clubs    → /join?welcome=1 (onboarding bounce)
- *   3. Unknown email                  → /join?welcome=1&email=… (no user record created)
+ *   3. Unknown email                  → /join?welcome=1&email=… (new user → onboard)
  */
+
+const DEV_OTP = "000000";
 
 test.describe("Login Page — /login", () => {
   // @spec AUTH-UI-LOGIN-001
-  test("renders email + passcode form with no display-name field", async ({ page }) => {
+  test("renders passkey + email-code controls with no display-name field", async ({ page }) => {
     await page.goto("/login");
+    await expect(page.getByTestId("passkey-login")).toBeVisible();
     await expect(page.locator("#email")).toBeVisible();
-    await expect(page.locator("#passcode")).toBeVisible();
+    await expect(page.getByTestId("send-code")).toBeVisible();
+    // The code field only appears after requesting a code.
+    await expect(page.locator("#otp")).toHaveCount(0);
     await expect(page.locator("#name")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /^log in$/i })).toBeVisible();
+  });
+
+  // @spec AUTH-UI-LOGIN-001, AUTH-UI-LOGIN-EMAIL-HINT-001
+  test("'Email me a code' is disabled until the email looks valid", async ({ page }) => {
+    await page.goto("/login");
+    const sendCode = page.getByTestId("send-code");
+    await expect(sendCode).toBeDisabled();
+
+    await page.locator("#email").fill("not-an-email");
+    await expect(sendCode).toBeDisabled();
+    await expect(page.getByTestId("email-format-error")).toBeVisible();
+
+    await page.locator("#email").fill("alice@example.com");
+    await expect(page.getByTestId("email-format-error")).toHaveCount(0);
+    await expect(sendCode).toBeEnabled();
   });
 
   // @spec AUTH-UI-LOGIN-001
-  test("Log in button is disabled until email looks valid AND passcode is filled", async ({ page }) => {
+  test("requesting a code reveals the OTP entry field", async ({ page }) => {
     await page.goto("/login");
-    const btn = page.getByRole("button", { name: /^log in$/i });
-    await expect(btn).toBeDisabled();
-
-    await page.locator("#email").fill("not-an-email");
-    await expect(btn).toBeDisabled();
-
     await page.locator("#email").fill("alice@example.com");
-    // Email is valid, but passcode is still empty → still disabled.
-    await expect(btn).toBeDisabled();
-
-    await page.locator("#passcode").fill("test-passcode");
-    await expect(btn).toBeEnabled();
+    await page.getByTestId("send-code").click();
+    await expect(page.locator("#otp")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("verify-code")).toBeVisible();
   });
 
-  // @spec AUTH-UI-LOGIN-002, AUTH-API-SIGNIN-001
+  // @spec AUTH-UI-LOGIN-002, AUTH-OTP-VERIFY-001
   test("returning user with clubs is dropped into a club dashboard", async ({ page }) => {
     await page.goto("/login");
     await page.locator("#email").fill("alice@example.com");
-    await page.locator("#passcode").fill("test-passcode");
-    await page.getByRole("button", { name: /^log in$/i }).click();
+    await page.getByTestId("send-code").click();
+    await page.locator("#otp").fill(DEV_OTP);
+    await page.getByTestId("verify-code").click();
 
     await page.waitForURL(/\/clubs\/[^/?#]+(\?.*)?$/, { timeout: 10000 });
     await expect(page.getByTestId("club-name")).toBeVisible();
   });
 
-  // @spec AUTH-UI-LOGIN-003, AUTH-API-SIGNIN-001
+  // @spec AUTH-UI-LOGIN-003, AUTH-OTP-VERIFY-001
   test("unknown email bounces to /join with welcome banner and pre-filled email", async ({
     page,
   }) => {
     const ghostEmail = `ghost-${Date.now()}@example.com`;
     await page.goto("/login");
     await page.locator("#email").fill(ghostEmail);
-    await page.locator("#passcode").fill("test-passcode");
-    await page.getByRole("button", { name: /^log in$/i }).click();
+    await page.getByTestId("send-code").click();
+    await page.locator("#otp").fill(DEV_OTP);
+    await page.getByTestId("verify-code").click();
 
     await page.waitForURL(/\/join\?welcome=1/, { timeout: 10000 });
     await expect(page.getByTestId("welcome-banner")).toBeVisible();
@@ -64,22 +82,25 @@ test.describe("Login Page — /login", () => {
     await expect(page.locator("#email")).toHaveValue(ghostEmail);
   });
 
-  // @spec AUTH-UI-LOGIN-003, AUTH-API-SIGNIN-001
+  // @spec AUTH-UI-LOGIN-003, AUTH-OTP-VERIFY-001
   test("existing user with no clubs is routed to /join with welcome banner", async ({
     page,
     request,
   }) => {
     const email = `existing-noclubs-login-${Date.now()}@example.com`;
 
-    // Pre-create the User record (no memberships) via auth.enter.
-    await request.post("/api/trpc/auth.enter", {
-      data: { email, displayName: "Existing No Clubs Login", passcode: "test-passcode" },
+    // Pre-create the User record (no memberships) via the OTP API + dev bypass,
+    // so the UI login below exercises the existing-user-with-no-clubs branch
+    // (isNewUser === false, clubs === []), not the brand-new-user path.
+    await request.post("/api/trpc/auth.verifyOtp", {
+      data: { email, code: DEV_OTP, displayName: "Existing No Clubs Login" },
     });
 
     await page.goto("/login");
     await page.locator("#email").fill(email);
-    await page.locator("#passcode").fill("test-passcode");
-    await page.getByRole("button", { name: /^log in$/i }).click();
+    await page.getByTestId("send-code").click();
+    await page.locator("#otp").fill(DEV_OTP);
+    await page.getByTestId("verify-code").click();
 
     await page.waitForURL(/\/join\?welcome=1/, { timeout: 10000 });
     await expect(page.getByTestId("welcome-banner")).toBeVisible();

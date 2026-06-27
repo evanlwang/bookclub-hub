@@ -115,21 +115,17 @@ describe("clubs", () => {
       ).rejects.toThrow("Club not found");
     });
 
-    it("creates user+session for unauthenticated join", async () => {
+    // @spec CLUB-API-004 — auth v2: join requires a verified session (created in
+    // entry Step 1 via email OTP). The old unauthenticated-join-creates-user
+    // path is gone, closing the unverified-user-creation hole.
+    it("rejects an unauthenticated join with UNAUTHORIZED", async () => {
       const caller = createAnonymousCaller(db);
-      const result = await caller.clubs.join({
-        code: "WEDREADS",
-        email: "newperson@example.com",
-        displayName: "New Person",
-      });
-
-      expect(result.club.name).toBe(wedReads.name);
-      expect(result.sessionId).toBeTruthy();
-
-      const user = await db.user.findUnique({
-        where: { email: "newperson@example.com" },
-      });
-      expect(user).toBeTruthy();
+      await expect(caller.clubs.join({ code: "WEDREADS" })).rejects.toThrow(
+        /UNAUTHORIZED/,
+      );
+      expect(
+        await db.user.findUnique({ where: { email: "newperson@example.com" } }),
+      ).toBeNull();
     });
 
     it("throws FORBIDDEN for archived club", async () => {

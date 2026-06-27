@@ -36,10 +36,13 @@ test.describe("Join Page Interactions", () => {
   async function arriveAtCodeStep(page: Page, email: string) {
     createdEmails.push(email);
     await page.goto("/join?path=join");
+    // Step 1 identity via email OTP (dev bypass "000000"); skip the passkey offer.
     await page.locator("#email").fill(email);
+    await page.getByTestId("send-code").click();
+    await page.locator("#otp").fill("000000");
     await page.locator("#name").fill("Test User");
-    await page.locator("#passcode").fill("pilot");
-    await page.getByRole("button", { name: /^Continue$/ }).click();
+    await page.getByTestId("verify-code").click();
+    await page.getByTestId("skip-passkey").click();
     await expect(page.locator("#code")).toBeVisible({ timeout: 10000 });
   }
 

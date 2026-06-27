@@ -7,7 +7,13 @@ describe("parseEnv", () => {
     const env = parseEnv({ NODE_ENV: "development" } as NodeJS.ProcessEnv);
     expect(env.NODE_ENV).toBe("development");
     expect(env.OPEN_LIBRARY_BASE_URL).toBe("https://openlibrary.org");
-    expect(env.PILOT_PASSCODE).toBeUndefined();
+  });
+
+  it("defaults WebAuthn RP config to localhost for dev", () => {
+    const env = parseEnv({ NODE_ENV: "development" } as NodeJS.ProcessEnv);
+    expect(env.WEBAUTHN_RP_ID).toBe("localhost");
+    expect(env.WEBAUTHN_ORIGIN).toBe("http://localhost:3000");
+    expect(env.WEBAUTHN_RP_NAME).toBe("Dogear");
   });
 
   it("accepts minimal test env", () => {

@@ -4,18 +4,28 @@ import { restoreSeedMembershipGraph } from "./helpers";
 
 /**
  * E2E tests for the new 4-step join/create entry flow:
- *   Step 1: Identity (email + display name)
+ *   Step 1: Identity (email → OTP code + display name → passkey offer)
  *   Step 2: Path choice (join existing OR create new)
  *   Step 3a: Join branch (debounced code lookup → submit)
  *   Step 3b: Create branch (club name → derived code → cadence → submit)
  *   Step 4: Success state (branch-aware)
+ *
+ * Step 1 establishes the session via email OTP. In non-production the fixed code
+ * "000000" always verifies, so E2E never reads an inbox. window.PublicKeyCredential
+ * exists in headless Chromium, so the post-verify passkey offer always appears and
+ * is always skipped (registering a passkey needs a real authenticator).
  */
+
+const DEV_OTP = "000000";
 
 async function fillIdentity(page: Page, email: string, name: string) {
   await page.locator("#email").fill(email);
+  await page.getByTestId("send-code").click();
+  await page.locator("#otp").fill(DEV_OTP);
   await page.locator("#name").fill(name);
-  await page.locator("#passcode").fill("test-passcode");
-  await page.getByRole("button", { name: /continue/i }).click();
+  await page.getByTestId("verify-code").click();
+  // Passkey offer always shows in headless Chromium — skip it to advance.
+  await page.getByTestId("skip-passkey").click();
 }
 
 async function chooseJoinPath(page: Page) {
@@ -27,29 +37,40 @@ async function chooseCreatePath(page: Page) {
 }
 
 test.describe("New Entry Flow — Step 1: Identity", () => {
-  // @spec AUTH-UI-001
-  test("Step 1 renders email + name + passcode inputs first", async ({ page }) => {
+  // @spec AUTH-UI-001, AUTH-UI-STEP1-EMAIL-001, AUTH-UI-STEP1-OTP-001, AUTH-UI-STEP1-NAME-001
+  test("Step 1 starts email-first; code + name appear after requesting a code", async ({ page }) => {
     await page.goto("/join");
     await expect(page.locator("#email")).toBeVisible();
-    await expect(page.locator("#name")).toBeVisible();
-    await expect(page.locator("#passcode")).toBeVisible();
-  });
-
-  // @spec AUTH-UI-001
-  test("Continue button is disabled until all three fields are filled", async ({ page }) => {
-    await page.goto("/join");
-    const continueBtn = page.getByRole("button", { name: /continue/i });
-    await expect(continueBtn).toBeDisabled();
+    await expect(page.getByTestId("send-code")).toBeVisible();
+    // OTP + name fields are not present until a code has been requested.
+    await expect(page.locator("#otp")).toHaveCount(0);
+    await expect(page.locator("#name")).toHaveCount(0);
 
     await page.locator("#email").fill("user@example.com");
-    await expect(continueBtn).toBeDisabled();
+    await page.getByTestId("send-code").click();
+    await expect(page.locator("#otp")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("#name")).toBeVisible();
+  });
+
+  // @spec AUTH-UI-001, AUTH-UI-STEP1-SENDCODE-001, AUTH-UI-STEP1-VERIFY-001
+  test("Send-code gates on a valid email; Verify gates on code + display name", async ({ page }) => {
+    await page.goto("/join");
+    const sendCode = page.getByTestId("send-code");
+    await expect(sendCode).toBeDisabled();
+
+    await page.locator("#email").fill("user@example.com");
+    await expect(sendCode).toBeEnabled();
+    await sendCode.click();
+
+    const verifyBtn = page.getByTestId("verify-code");
+    await expect(verifyBtn).toBeDisabled();
+
+    await page.locator("#otp").fill(DEV_OTP);
+    // Display name still empty → still disabled.
+    await expect(verifyBtn).toBeDisabled();
 
     await page.locator("#name").fill("User");
-    // Passcode still empty → still disabled.
-    await expect(continueBtn).toBeDisabled();
-
-    await page.locator("#passcode").fill("test-passcode");
-    await expect(continueBtn).toBeEnabled();
+    await expect(verifyBtn).toBeEnabled();
   });
 
   // @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003
@@ -140,9 +161,12 @@ test.describe("New Entry Flow — Step 3a: Join branch", () => {
     await expect(page.getByTestId("club-found-panel")).toBeVisible({ timeout: 10000 });
 
     await page.getByRole("button", { name: /Join Wednesday Night Reads/i }).click();
-    await expect(page.getByText(/Welcome to Wednesday Night Reads/i)).toBeVisible({
-      timeout: 10000,
-    });
+    // @spec AUTH-UI-STEP3A-ALREADY-MEMBER-001 — Alice already belongs to WEDREADS,
+    // so the join surfaces the idempotent "already in" banner (with an Open-it
+    // link) rather than advancing to the Step 4 welcome.
+    await expect(page.getByTestId("already-member-banner")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/You're already in Wednesday Night Reads/i)).toBeVisible();
+    await expect(page.getByTestId("already-member-link")).toHaveAttribute("href", /\/clubs\//);
   });
 });
 
@@ -305,11 +329,13 @@ test.describe("New Entry Flow — Layout & Accessibility", () => {
 });
 
 test.describe("Landing Page → Join page navigation", () => {
+  // @spec LANDING-UI-001 — the editorial landing has no top nav; the sign-up
+  // action is the hero CTA linking to /join.
   test("landing page has navigation to join (Sign up)", async ({ page }) => {
     await page.goto("/");
-    await expect(
-      page.locator("nav").getByRole("link", { name: /^sign up$/i })
-    ).toBeVisible();
+    const signup = page.getByTestId("hero-signup");
+    await expect(signup).toBeVisible();
+    await expect(signup).toHaveAttribute("href", "/join");
   });
 });
 
@@ -380,11 +406,8 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
 
     await page.goto("/join");
 
-    // Step 1 — identity for a brand-new user
-    await page.locator("#email").fill(email);
-    await page.locator("#name").fill("Brand New Creator");
-    await page.locator("#passcode").fill("test-passcode");
-    await page.getByRole("button", { name: /continue/i }).click();
+    // Step 1 — identity for a brand-new user (email → OTP → name → skip passkey)
+    await fillIdentity(page, email, "Brand New Creator");
 
     // Step 2 — auth.me returns 0 clubs, so the wizard falls through to path choice
     await expect(page.getByText("Join an existing club")).toBeVisible({ timeout: 10000 });
@@ -409,11 +432,8 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
 
     await page.goto("/join");
 
-    // Step 1 — identity for a brand-new user
-    await page.locator("#email").fill(email);
-    await page.locator("#name").fill("Brand New Joiner");
-    await page.locator("#passcode").fill("test-passcode");
-    await page.getByRole("button", { name: /continue/i }).click();
+    // Step 1 — identity for a brand-new user (email → OTP → name → skip passkey)
+    await fillIdentity(page, email, "Brand New Joiner");
 
     // Step 2 — auth.me returns 0 clubs, wizard falls through to path choice
     await expect(page.getByText("Join an existing club")).toBeVisible({ timeout: 10000 });
@@ -436,10 +456,7 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
     // Alice is a seeded member of WEDREADS — she's the canonical returning user.
     await page.goto("/join");
 
-    await page.locator("#email").fill("alice@example.com");
-    await page.locator("#name").fill("Alice Chen");
-    await page.locator("#passcode").fill("test-passcode");
-    await page.getByRole("button", { name: /continue/i }).click();
+    await fillIdentity(page, "alice@example.com", "Alice Chen");
 
     // Smart detection: auth.me finds clubs.length > 0 → router.push(`/clubs/${firstClubId}`)
     // No path-choice cards are ever rendered.
@@ -455,21 +472,19 @@ test.describe("User Journeys — Four Entry Scenarios", () => {
   }) => {
     const email = `existing-noclubs-${Date.now()}@example.com`;
 
-    // Pre-create the user via the tRPC API — their User record exists in the DB,
-    // but they have zero memberships (e.g., they typed their email previously
-    // but never joined or created a club).
-    await request.post("/api/trpc/auth.enter", {
-      data: { email, displayName: "Existing No Clubs", passcode: "test-passcode" },
+    // Pre-create the user via the OTP API (dev bypass code "000000") — their User
+    // record exists in the DB, but they have zero memberships (e.g., they verified
+    // their email previously but never joined or created a club).
+    await request.post("/api/trpc/auth.verifyOtp", {
+      data: { email, code: "000000", displayName: "Existing No Clubs" },
     });
 
-    // The browser starts fresh — no session cookie carried in.
+    // The browser starts fresh — no session cookie carried in (the API request
+    // above used a separate request context).
     await page.goto("/join");
 
-    // Step 1 — same form as a new user; auth.enter is idempotent and recognizes them.
-    await page.locator("#email").fill(email);
-    await page.locator("#name").fill("Existing No Clubs");
-    await page.locator("#passcode").fill("test-passcode");
-    await page.getByRole("button", { name: /continue/i }).click();
+    // Step 1 — same flow as a new user; verifyOtp recognizes the existing record.
+    await fillIdentity(page, email, "Existing No Clubs");
 
     // Smart detection: auth.me returns clubs:[] → fall through to Step 2.
     // The wizard SHALL show the Join/Create choice rather than auto-redirecting.

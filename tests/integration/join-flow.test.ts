@@ -1,31 +1,66 @@
-// @spec AUTH-UI-001, AUTH-UI-002, AUTH-UI-003, AUTH-UI-004, CLUB-UI-001, CLUB-UI-002, CLUB-UI-003
+// @spec AUTH-UI-001, AUTH-UI-003, AUTH-UI-004, CLUB-UI-001, CLUB-UI-002, CLUB-UI-003, CLUB-API-003, CLUB-API-004, CLUB-API-005, CLUB-BE-001
 import { describe, it, expect, beforeEach } from "vitest";
 import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller, createAnonymousCaller } from "@tests/helpers/trpc";
 import { alice, bob, carol, dave, insertAllUsers } from "@tests/fixtures/users";
 import { wedReads } from "@tests/fixtures/clubs";
 import { seedClubWithMembers } from "@tests/fixtures/memberships";
+import { getEmailCalls, resetEmailCalls } from "@/server/services/email";
+import { _resetRateLimits } from "@/lib/auth/rate-limit";
 
 const db = getTestDb();
+
+/** Pull the most recently emailed OTP code out of the recorded email body. */
+function lastEmailedCode(): string {
+  const calls = getEmailCalls();
+  const last = calls[calls.length - 1];
+  const m = last?.body.match(/(\d{6})/);
+  if (!m) throw new Error("no OTP code in last email");
+  return m[1];
+}
+
+/** Request an OTP and return the emailed code (auth v2's "Step 1" identity entry). */
+async function requestAndReadCode(email: string): Promise<string> {
+  await createAnonymousCaller(db).auth.requestOtp({ email });
+  return lastEmailedCode();
+}
+
+/**
+ * Establish an authenticated caller by walking the new email-OTP entry flow.
+ * Uses the non-production "000000" dev bypass to mint a session without an inbox.
+ */
+async function enterAsNewUser(email: string, displayName?: string) {
+  const res = await createAnonymousCaller(db).auth.verifyOtp({
+    email,
+    code: "000000",
+    ...(displayName ? { displayName } : {}),
+  });
+  const caller = await createAuthenticatedCaller(db, res.user);
+  return { caller, user: res.user };
+}
 
 describe("Join Flow — Integration Tests", () => {
   beforeEach(async () => {
     await resetDb(db);
     await insertAllUsers(db);
+    resetEmailCalls();
+    _resetRateLimits();
   });
 
-  describe("Step 1: Identity Entry (auth.enter)", () => {
+  describe("Step 1: Identity Entry (auth.requestOtp + auth.verifyOtp)", () => {
     // @spec AUTH-UI-001, AUTH-UI-003
     it("creates new user and session", async () => {
+      const code = await requestAndReadCode("newuser@example.com");
       const caller = createAnonymousCaller(db);
-      const result = await caller.auth.enter({
+      const result = await caller.auth.verifyOtp({
         email: "newuser@example.com",
+        code,
         displayName: "New User",
-        passcode: "test-passcode",
       });
 
       expect(result.user.email).toBe("newuser@example.com");
       expect(result.user.displayName).toBe("New User");
+      expect(result.isNewUser).toBe(true);
       expect(result.sessionId).toBeTruthy();
       expect(result.sessionId.length).toBeGreaterThanOrEqual(64);
 
@@ -41,15 +76,18 @@ describe("Join Flow — Integration Tests", () => {
     it("recognizes returning user by normalized email", async () => {
       const caller = createAnonymousCaller(db);
 
-      const first = await caller.auth.enter({
+      const code1 = await requestAndReadCode("Test@Example.COM");
+      const first = await caller.auth.verifyOtp({
         email: "Test@Example.COM",
+        code: code1,
         displayName: "Test User",
-        passcode: "test-passcode",
       });
-      const second = await caller.auth.enter({
+
+      const code2 = await requestAndReadCode("test@example.com");
+      const second = await caller.auth.verifyOtp({
         email: "test@example.com",
+        code: code2,
         displayName: "Test User Updated",
-        passcode: "test-passcode",
       });
 
       expect(second.user.id).toBe(first.user.id);
@@ -61,10 +99,10 @@ describe("Join Flow — Integration Tests", () => {
       const caller = createAnonymousCaller(db);
 
       await expect(
-        caller.auth.enter({
+        caller.auth.verifyOtp({
           email: "invalid-email",
+          code: "000000",
           displayName: "User",
-          passcode: "test-passcode",
         })
       ).rejects.toThrow();
     });
@@ -74,10 +112,10 @@ describe("Join Flow — Integration Tests", () => {
       const caller = createAnonymousCaller(db);
 
       await expect(
-        caller.auth.enter({
+        caller.auth.verifyOtp({
           email: "user@example.com",
+          code: "000000",
           displayName: "",
-          passcode: "test-passcode",
         })
       ).rejects.toThrow();
     });
@@ -87,30 +125,20 @@ describe("Join Flow — Integration Tests", () => {
       const caller = createAnonymousCaller(db);
 
       await expect(
-        caller.auth.enter({
+        caller.auth.verifyOtp({
           email: "user@example.com",
+          code: "000000",
           displayName: "A".repeat(101),
-          passcode: "test-passcode",
         })
       ).rejects.toThrow();
     });
   });
 
-  describe("Smart detection — auth.me after auth.enter", () => {
+  describe("Smart detection — auth.me after entry", () => {
     // @spec AUTH-UI-004
     it("returns 0 clubs for brand-new user (falls through to Step 2)", async () => {
-      const enter = await createAnonymousCaller(db).auth.enter({
-        email: "brandnew@example.com",
-        displayName: "Brand New",
-        passcode: "test-passcode",
-      });
-
-      const authed = await createAuthenticatedCaller(db, {
-        id: enter.user.id,
-        email: enter.user.email,
-        displayName: enter.user.displayName,
-      });
-      const me = await authed.auth.me();
+      const { caller } = await enterAsNewUser("brandnew@example.com", "Brand New");
+      const me = await caller.auth.me();
 
       expect(me.clubs).toHaveLength(0);
     });
@@ -119,18 +147,8 @@ describe("Join Flow — Integration Tests", () => {
     it("returns N clubs for returning user with memberships (smart detection redirects)", async () => {
       await seedClubWithMembers(db, wedReads, alice, [], []);
 
-      const enter = await createAnonymousCaller(db).auth.enter({
-        email: alice.email,
-        displayName: alice.displayName,
-        passcode: "test-passcode",
-      });
-
-      const authed = await createAuthenticatedCaller(db, {
-        id: enter.user.id,
-        email: enter.user.email,
-        displayName: enter.user.displayName,
-      });
-      const me = await authed.auth.me();
+      const { caller } = await enterAsNewUser(alice.email, alice.displayName);
+      const me = await caller.auth.me();
 
       expect(me.clubs.length).toBeGreaterThan(0);
       expect(me.clubs[0]).toMatchObject({ code: "WEDREADS" });
@@ -197,72 +215,27 @@ describe("Join Flow — Integration Tests", () => {
       });
     });
 
-    describe("Complete join journey: unauthenticated", () => {
-      // @spec CLUB-UI-001
-      it("allows new user to join with email and name", async () => {
-        const caller = createAnonymousCaller(db);
-
-        // Step 1: auth.enter (via clubs.join with email/displayName)
-        const result = await caller.clubs.join({
-          code: "WEDREADS",
-          email: "newmember@example.com",
-          displayName: "New Member",
-          passcode: "test-passcode",
-        });
-
-        expect(result.club.id).toBe(wedReads.id);
-        expect(result.alreadyMember).toBe(false);
-        expect(result.sessionId).toBeTruthy();
-
-        // Verify user created
-        const user = await db.user.findUnique({
-          where: { email: "newmember@example.com" },
-        });
-        expect(user?.displayName).toBe("New Member");
-
-        // Verify membership created
-        const membership = await db.membership.findUnique({
-          where: {
-            clubId_userId: { clubId: wedReads.id, userId: user!.id },
-          },
-        });
-        expect(membership?.role).toBe("member");
-      });
-
-      // @spec CLUB-UI-001, AUTH-UI-003
-      it("returns sessionId for unauthenticated join", async () => {
-        const caller = createAnonymousCaller(db);
-        const result = await caller.clubs.join({
-          code: "WEDREADS",
-          email: "newmember@example.com",
-          displayName: "New Member",
-          passcode: "test-passcode",
-        });
-
-        expect(result.sessionId).toBeTruthy();
-
-        // Verify session exists in DB
-        const session = await db.session.findUnique({
-          where: { id: result.sessionId! },
-        });
-        expect(session).toBeTruthy();
-      });
-
-      // @spec CLUB-UI-001
-      it("requires email and display name for unauthenticated join", async () => {
+    describe("Join requires an authenticated caller", () => {
+      // Auth v2 removed the unauthenticated-join-creates-user path entirely.
+      // Identity (email OTP → session) is always established first; join then
+      // takes only { code }. The old "anonymous join with email/displayName"
+      // tests are dropped because that behavior no longer exists.
+      // @spec CLUB-API-004
+      it("rejects join from an anonymous caller (UNAUTHORIZED)", async () => {
         const caller = createAnonymousCaller(db);
 
         await expect(
-          caller.clubs.join({
-            code: "WEDREADS",
-            // missing email and displayName
-          })
-        ).rejects.toThrow("Email and display name required");
+          caller.clubs.join({ code: "WEDREADS" })
+        ).rejects.toThrow("UNAUTHORIZED");
+
+        // No membership leaked for a phantom user.
+        const count = await db.membership.count({ where: { clubId: wedReads.id } });
+        expect(count).toBe(3);
       });
     });
 
     describe("Complete join journey: authenticated (Step 1 already done)", () => {
-      // @spec CLUB-UI-001, AUTH-UI-003
+      // @spec CLUB-API-003, CLUB-BE-001
       it("allows authenticated user to join club", async () => {
         const caller = await createAuthenticatedCaller(db, dave);
 
@@ -281,7 +254,7 @@ describe("Join Flow — Integration Tests", () => {
         expect(membership?.role).toBe("member");
       });
 
-      // @spec CLUB-UI-001
+      // @spec CLUB-API-005
       it("returns alreadyMember=true if user already in club", async () => {
         const caller = await createAuthenticatedCaller(db, alice);
 
@@ -292,35 +265,27 @@ describe("Join Flow — Integration Tests", () => {
     });
 
     describe("Join branch error cases", () => {
-      // @spec CLUB-UI-001
+      // @spec CLUB-API-003, CLUB-BE-001
       it("rejects join if club is archived", async () => {
         await db.club.update({
           where: { id: wedReads.id },
           data: { status: "archived" },
         });
 
-        const caller = createAnonymousCaller(db);
+        const caller = await createAuthenticatedCaller(db, dave);
 
         await expect(
-          caller.clubs.join({
-            code: "WEDREADS",
-            email: "user@example.com",
-            displayName: "User",
-          })
+          caller.clubs.join({ code: "WEDREADS" })
         ).rejects.toThrow("no longer active");
       });
 
-      // @spec CLUB-UI-001
-      it("rejects join with invalid email", async () => {
-        const caller = createAnonymousCaller(db);
+      // @spec CLUB-API-003
+      it("rejects join with an unknown code", async () => {
+        const caller = await createAuthenticatedCaller(db, dave);
 
         await expect(
-          caller.clubs.join({
-            code: "WEDREADS",
-            email: "invalid-email",
-            displayName: "User",
-          })
-        ).rejects.toThrow();
+          caller.clubs.join({ code: "NONEXISTENT" })
+        ).rejects.toThrow("Club not found");
       });
     });
   });
@@ -484,36 +449,29 @@ describe("Join Flow — Integration Tests", () => {
   });
 
   describe("Step 4: Success states (post-flow)", () => {
-    // @spec CLUB-UI-001
+    // @spec CLUB-API-003, CLUB-BE-001
     it("join branch success: user redirects to club with membership", async () => {
       await seedClubWithMembers(db, wedReads, alice, [], []);
 
-      const caller = createAnonymousCaller(db);
-      const joinResult = await caller.clubs.join({
-        code: "WEDREADS",
-        email: "newmember@example.com",
-        displayName: "New Member",
-      });
+      // Step 1: establish identity/session for a brand-new member.
+      const { caller, user } = await enterAsNewUser("newmember@example.com", "New Member");
 
-      // Find the user that was created and verify membership exists
-      const newUser = await db.user.findUniqueOrThrow({
-        where: { email: "newmember@example.com" },
-      });
+      // Step 3a: authenticated join.
+      const joinResult = await caller.clubs.join({ code: "WEDREADS" });
+      expect(joinResult.alreadyMember).toBe(false);
 
-      const authenticatedCaller = await createAuthenticatedCaller(db, {
-        id: newUser.id,
-        email: newUser.email,
-        displayName: newUser.displayName,
-      });
-
-      const meResult = await authenticatedCaller.auth.me();
+      const meResult = await caller.auth.me();
       expect(meResult.clubs).toContainEqual(
         expect.objectContaining({
           name: wedReads.name,
           code: "WEDREADS",
         })
       );
-      expect(joinResult.sessionId).toBeTruthy();
+
+      const membership = await db.membership.findUnique({
+        where: { clubId_userId: { clubId: wedReads.id, userId: user.id } },
+      });
+      expect(membership?.role).toBe("member");
     });
 
     // @spec CLUB-UI-002, CLUB-UI-003
@@ -635,33 +593,20 @@ describe("Join Flow — Integration Tests", () => {
   });
 
   describe("Session persistence across steps", () => {
-    // @spec AUTH-UI-003
+    // @spec AUTH-UI-003, CLUB-API-003
     it("session created in Step 1 is usable in Step 3", async () => {
       await seedClubWithMembers(db, wedReads, alice, [], []);
 
-      // Step 1: auth.enter creates session
-      const step1 = await createAnonymousCaller(db).auth.enter({
-        email: "continuinguser@example.com",
-        displayName: "Continuing User",
-        passcode: "test-passcode",
-      });
+      // Step 1: OTP entry creates user + session.
+      const { caller } = await enterAsNewUser("continuinguser@example.com", "Continuing User");
 
       // Step 2: No API call (path choice)
 
-      // Step 3a: Use session from Step 1 to join
-      const authenticatedCaller = await createAuthenticatedCaller(db, {
-        id: step1.user.id,
-        email: step1.user.email,
-        displayName: step1.user.displayName,
-      });
-
-      const step3 = await authenticatedCaller.clubs.join({
-        code: "WEDREADS",
-      });
+      // Step 3a: Use the session from Step 1 to join.
+      const step3 = await caller.clubs.join({ code: "WEDREADS" });
 
       expect(step3.alreadyMember).toBe(false);
       expect(step3.club.id).toBe(wedReads.id);
-      expect(step1.sessionId).toBeTruthy();
     });
   });
 });

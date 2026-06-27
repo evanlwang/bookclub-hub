@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// @spec AUTH-UI-LOGIN-EMAIL-HINT-001, AUTH-UI-LOGIN-PASSCODE-HINT-001, AUTH-UI-LOGIN-AUTOCOMPLETE-001
+// @spec AUTH-UI-LOGIN-EMAIL-HINT-001, AUTH-UI-LOGIN-AUTOCOMPLETE-001, AUTH-UI-LOGIN-001
 
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -13,24 +13,58 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-// Mock the trpc react hooks. Login uses useUtils() and trpc.auth.signIn.useMutation.
-vi.mock("@/trpc/react-hooks", () => ({
-  trpc: {
-    useUtils: () => ({
-      auth: { me: { fetch: vi.fn() } },
-    }),
-    auth: {
-      signIn: {
-        useMutation: () => ({
-          mutate: vi.fn(),
-          isPending: false,
-        }),
-      },
-    },
-  },
+// The login page kicks off conditional passkey autofill in a useEffect via
+// @simplewebauthn/browser. Stub it so jsdom stays quiet (no real authenticator).
+vi.mock("@simplewebauthn/browser", () => ({
+  startAuthentication: vi.fn(),
+  browserSupportsWebAuthnAutofill: vi.fn().mockResolvedValue(false),
 }));
 
+// Mock the trpc react hooks. Login uses useUtils() plus the passkey + OTP
+// mutations (startPasskeyLogin, finishPasskeyLogin, requestOtp, verifyOtp).
+vi.mock("@/trpc/react-hooks", () => {
+  const mutation = () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false });
+  return {
+    trpc: {
+      useUtils: () => ({
+        auth: { me: { fetch: vi.fn() } },
+      }),
+      auth: {
+        startPasskeyLogin: { useMutation: mutation },
+        finishPasskeyLogin: { useMutation: mutation },
+        requestOtp: { useMutation: mutation },
+        verifyOtp: { useMutation: mutation },
+      },
+    },
+  };
+});
+
 import LoginPage from "@/app/login/page";
+
+describe("LoginPage — passkey-first controls", () => {
+  // @spec AUTH-UI-LOGIN-001
+  it("renders a passkey login button", () => {
+    render(<LoginPage />);
+    expect(screen.getByTestId("passkey-login")).toBeInTheDocument();
+  });
+
+  // @spec AUTH-UI-LOGIN-001
+  it("renders an email-me-a-code button", () => {
+    render(<LoginPage />);
+    expect(screen.getByTestId("send-code")).toBeInTheDocument();
+  });
+});
+
+describe("LoginPage — email input", () => {
+  // @spec AUTH-UI-LOGIN-AUTOCOMPLETE-001
+  it("sets autoComplete to 'email webauthn' on the email input", () => {
+    render(<LoginPage />);
+    expect(screen.getByLabelText("Email")).toHaveAttribute(
+      "autocomplete",
+      "email webauthn",
+    );
+  });
+});
 
 describe("LoginPage — email format hint", () => {
   // @spec AUTH-UI-LOGIN-EMAIL-HINT-001
@@ -58,27 +92,5 @@ describe("LoginPage — email format hint", () => {
     fireEvent.change(email, { target: { value: "name@example.com" } });
     expect(screen.queryByTestId("email-format-error")).toBeNull();
     expect(email).not.toHaveAttribute("aria-invalid");
-  });
-});
-
-describe("LoginPage — passcode recovery hint", () => {
-  // @spec AUTH-UI-LOGIN-PASSCODE-HINT-001
-  it("renders a recovery hint beneath the passcode field", () => {
-    render(<LoginPage />);
-    expect(
-      screen.getByText(/Contact your organizer if you don't have the passcode/i),
-    ).toBeInTheDocument();
-  });
-});
-
-describe("LoginPage — autocomplete attrs", () => {
-  // @spec AUTH-UI-LOGIN-AUTOCOMPLETE-001
-  it("sets autoComplete on email and passcode inputs", () => {
-    render(<LoginPage />);
-    expect(screen.getByLabelText("Email")).toHaveAttribute("autocomplete", "email");
-    expect(screen.getByLabelText("Pilot passcode")).toHaveAttribute(
-      "autocomplete",
-      "current-password",
-    );
   });
 });
