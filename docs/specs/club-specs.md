@@ -80,6 +80,8 @@ The active/archived/deleted lifecycle is encoded in the data model but only "act
 
 - `[x]` **CLUB-BE-002**: Role-based access enforcement: member+ for viewing, admin+ for editing settings and managing members, owner for deletion and ownership transfer. (Enforced at tRPC procedure level via `memberProcedure` / `adminProcedure`.) Note: `members.remove` is admin+; `members.updateRole` is owner-only; `members.transferOwnership` is owner-only.
 - `[x]` **CLUB-API-009**: When a non-member attempts to access any club-scoped procedure, the system SHALL throw a FORBIDDEN error.
+- `[x]` **CLUB-UI-ACCESS-GUARD-001**: When an unauthenticated viewer requests any `/clubs/{clubId}` route, the club layout (`src/app/clubs/[clubId]/layout.tsx`) SHALL server-side `redirect()` to `/login` (the seed fetch throws `UNAUTHORIZED`) rather than render the club shell or the `club-error` view. Supersedes the prior `club-error` reading of `AUTH-UI-LOGOUT-003`.
+- `[x]` **CLUB-UI-ACCESS-GUARD-002**: When an authenticated non-member (or a viewer requesting a nonexistent club id) requests any `/clubs/{clubId}` route, the club layout SHALL server-side `redirect()` to `/` (the seed fetch throws `FORBIDDEN`) rather than render the club shell or the `club-error` view.
 - `[x]` **CLUB-BE-003**: The owner SHALL NOT be able to leave the club without first transferring ownership. Enforced by `clubs.leave` (CLUB-BE-LEAVE-001).
 
 ## Club Lifecycle Gaps

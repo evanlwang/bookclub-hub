@@ -47,14 +47,16 @@ test.describe("Multi-Club Switching", () => {
     await expect(page.getByTestId("nav-progress")).toBeVisible();
   });
 
-  test("user only in one club cannot access another", async ({ page }) => {
+  // @spec CLUB-UI-ACCESS-GUARD-002
+  test("user only in one club is bounced home from another", async ({ page }) => {
     // Carol is only in WEDREADS
     await loginAs(page, "carol@example.com");
     const otherClub = await getClubByCode("SCIFI42");
 
     await page.goto(`/clubs/${otherClub.id}`);
 
-    await expect(page.getByTestId("club-error")).toBeVisible();
+    await page.waitForURL("**/", { timeout: 10000 });
+    expect(new URL(page.url()).pathname).toBe("/");
   });
 
   test("user in only one club has no switcher (just the club name)", async ({ page }) => {
