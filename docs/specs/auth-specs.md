@@ -3,7 +3,7 @@
 **LLD**: docs/llds/auth-and-accounts.md
 **Implementing artifacts**:
 - API: `src/server/routers/auth.ts`
-- UI: `src/app/join/page.tsx`, `src/app/login/page.tsx`, `src/app/page.tsx` (landing CTAs)
+- UI: `src/app/join/page.tsx` (controller: state, handlers, mutations) + step components `src/app/join/_step1-identity.tsx`, `_step2-path.tsx`, `_step3-join.tsx`, `_step3-create.tsx`, `_step4-success.tsx` (`_stepper.tsx`/`_shared.tsx` helpers); `src/app/login/page.tsx`; `src/app/page.tsx` (landing CTAs)
 - Tests: `tests/e2e/login.spec.ts`, `tests/e2e/join-club.spec.ts`, `tests/integration/auth.test.ts`, `tests/integration/join-flow.test.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` divergence
@@ -12,7 +12,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Entry Flow State
 
-State: step 1 (Identity) — buttons shown: email input, display name input, "Continue" — transitions: → step 2 (no clubs); → /clubs (smart detection: user has clubs); → step 3 (explicit `?path=join|create`)
+State: step 1 (Identity) — buttons shown: email input, display name input, pilot passcode input, "Continue" — transitions: → step 2 (no clubs); → /clubs (smart detection: user has clubs); → step 3 (explicit `?path=join|create`)
 State: step 2 (Path) — buttons shown: "Join an existing club" card, "Create a new club" card, "Back" — transitions: → step 3a (Join); → step 3b (Create); → step 1 (Back)
 State: step 3a (Join) — buttons shown: club code input, "Back", "Join the club" — transitions: → step 4; → step 2 (Back)
 State: step 3b (Create) — buttons shown: club name input, club code input, voting cadence radios, "Back", "Create club" — transitions: → step 4; → step 2 (Back)
@@ -33,17 +33,18 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 
 ## Entry Flow
 
-- `[x]` **AUTH-UI-001**: The system SHALL display an identity form (email + display name) as the first step of the join flow. (`join/page.tsx:466-526`)
-- `[x]` **AUTH-UI-002**: After identity entry (and when smart detection finds no existing memberships), the system SHALL present a choice between joining an existing club and creating a new one. (`join/page.tsx:530-552`)
-- `[x]` **AUTH-UI-003**: The system SHALL create a session immediately on Step 1 completion (when `auth.enter` succeeds) so subsequent steps can use authenticated procedures. (`join/page.tsx:198-254`)
-- `[x]` **AUTH-UI-004**: After Step 1 succeeds, the system SHALL fetch the user's clubs via `auth.me`. If `clubs.length > 0` AND the request did NOT include `?path=join` or `?path=create`, the system SHALL `router.push("/clubs/{firstClubId}")` (drop the user straight into their first club). Otherwise it advances to Step 2. If `auth.me` fails, the system falls through to Step 2 (graceful degradation). (`join/page.tsx:226-249`)
-- `[x]` **AUTH-UI-PATH-OVERRIDE-001**: When the URL includes `?path=join` or `?path=create`, the system SHALL skip Step 2 and route directly to the corresponding Step 3 branch (`pathOverride` in `join/page.tsx:158, 226-232`).
+- `[x]` **AUTH-UI-001**: The system SHALL display an identity form (email + display name) as the first step of the join flow. (`join/_step1-identity.tsx:43-70`, rendered at `join/page.tsx:311-325`)
+- `[x]` **AUTH-UI-002**: After identity entry (and when smart detection finds no existing memberships), the system SHALL present a choice between joining an existing club and creating a new one. (`join/_step2-path.tsx`, rendered at `join/page.tsx:327-329`)
+- `[x]` **AUTH-UI-003**: The system SHALL create a session immediately on Step 1 completion (when `auth.enter` succeeds) so subsequent steps can use authenticated procedures. (`handleIdentityContinue` in `join/page.tsx:103-137`, `enterMutation` at `join/page.tsx:111`)
+- `[x]` **AUTH-UI-004**: After Step 1 succeeds, the system SHALL fetch the user's clubs via `auth.me`. If `clubs.length > 0` AND the request did NOT include `?path=join` or `?path=create`, the system SHALL `router.push("/clubs/{firstClubId}")` (drop the user straight into their first club). Otherwise it advances to Step 2. If `auth.me` fails, the system falls through to Step 2 (graceful degradation). (`join/page.tsx:113-130`)
+- `[x]` **AUTH-UI-PATH-OVERRIDE-001**: When the URL includes `?path=join` or `?path=create`, the system SHALL skip Step 2 and route directly to the corresponding Step 3 branch (`pathOverride` in `join/page.tsx:19, 113-117`).
 
 ## Step 1 Buttons
 
-- `[x]` **AUTH-UI-STEP1-EMAIL-001**: Email input (type=email, required, htmlFor matches input id). (`join/page.tsx:472-480`)
-- `[x]` **AUTH-UI-STEP1-NAME-001**: Display name input (required). (`join/page.tsx:487-495`)
-- `[x]` **AUTH-UI-STEP1-CONTINUE-001**: Button: "Continue" (`join/page.tsx:503-512`) — disabled when `!identityValid || signingIn` (`identityValid = email.includes("@") && displayName.trim().length > 0`) — handler: `handleIdentityContinue` (calls `auth.enter`, sets session cookie, runs smart detection).
+- `[x]` **AUTH-UI-STEP1-EMAIL-001**: Email input (type=email, htmlFor matches input id). (`join/_step1-identity.tsx:43-56`)
+- `[x]` **AUTH-UI-STEP1-NAME-001**: Display name input (htmlFor matches input id, helper text "Visible to other members in the club"). (`join/_step1-identity.tsx:58-70`)
+- `[x]` **AUTH-UI-STEP1-CONTINUE-001**: Button: "Continue" (`join/_step1-identity.tsx:92-102`) — disabled when `!identityValid || signingIn` (disabled wiring at `join/_step1-identity.tsx:97`; `identityValid = email.includes("@") && displayName.trim().length > 0 && passcode.length > 0` in `join/page.tsx:53-54`) — handler: `handleIdentityContinue` (`join/page.tsx:103-137`; calls `auth.enter`, sets session cookie, runs smart detection).
+- `[x]` **AUTH-UI-STEP1-PASSCODE-001**: Pilot passcode input (label "Pilot passcode", type=password, placeholder "Shared with the pilot group", htmlFor matches input id). Its non-empty value is required for "Continue" (feeds `identityValid` via `passcode.length > 0`) and is passed to `auth.enter` as `passcode`. (`join/_step1-identity.tsx:72-84`; `identityValid` in `join/page.tsx:53-54`; passed to `enterMutation` at `join/page.tsx:111`)
 
 ## Step 2 Buttons
 
@@ -53,24 +54,24 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 
 ## Step 3a Buttons (Join Branch)
 
-- `[x]` **AUTH-UI-STEP3A-CODE-001**: Club code input (uppercase normalized, monospace, debounced lookup). On change ≥4 chars, calls `clubs.lookup`. (`join/page.tsx:265-297`)
+- `[x]` **AUTH-UI-STEP3A-CODE-001**: Club code input (uppercase normalized, monospace, debounced lookup). On change ≥4 chars, calls `clubs.lookup`. (input in `join/_step3-join.tsx:33-50`; `handleCodeChange` lookup in `join/page.tsx:146-173`)
 - `[x]` **AUTH-UI-STEP3A-BACK-001**: Button: "Back" — handler: returns to step 2.
-- `[x]` **AUTH-UI-STEP3A-JOIN-001**: Button: "Join {clubName}" / "Join the club" (`join/page.tsx:595-604`) — disabled when `!joinReady || joiningClub` — handler: `handleJoinSubmit` calls `clubs.join`.
+- `[x]` **AUTH-UI-STEP3A-JOIN-001**: Button: "Join {clubName}" / "Join the club" (`join/_step3-join.tsx:90-100`) — disabled when `!joinReady || joiningClub || !!alreadyMember` — handler: `handleJoinSubmit` (`join/page.tsx:176-194`) calls `clubs.join`.
 - `[x]` **AUTH-UI-STEP3A-ALREADY-MEMBER-001**: When `clubs.join` returns `{ alreadyMember: true }`, Step 3a SHALL render an in-flow informational banner ("You're already in {clubName}.") with a link "Open it →" that navigates to `/clubs/{id}`. The Join button SHALL be disabled while the banner is visible, and editing the code SHALL clear the banner. The system SHALL NOT advance to Step 4 in this case. (`src/app/join/page.tsx`, `src/app/join/_step3-join.tsx`)
 
 ## Step 3b Buttons (Create Branch)
 
-- `[x]` **AUTH-UI-STEP3B-NAME-001**: Club name input (required, min 3 chars). (`join/page.tsx:616-624`)
-- `[x]` **AUTH-UI-STEP3B-CODE-001**: Club code input, defaulted from auto-derived `derivedCode` (alphanumeric, uppercase, max 10). User can override; uppercased on input. (`join/page.tsx:631-638`)
-- `[x]` **AUTH-UI-STEP3B-CADENCE-001**: Voting cadence radio buttons — implemented; the divergence note below documents what older spec text omitted. Three options labeled "Monthly" / "Six Weeks" / "Flexible" (values: `monthly`, `six_weeks`, `flexible`). (`join/page.tsx:646-666`) The chosen cadence is appended to the club description on create as "Voting cadence: {cadence}". The cadence is **not** stored as a structured field on Club today.
+- `[x]` **AUTH-UI-STEP3B-NAME-001**: Club name input (required, min 3 chars). (`join/_step3-create.tsx:50-63`)
+- `[x]` **AUTH-UI-STEP3B-CODE-001**: Club code input, defaulted from auto-derived `derivedCode` (alphanumeric, uppercase, max 10). User can override; uppercased on input. (input in `join/_step3-create.tsx:65-102`; `derivedCode` in `join/page.tsx:58-62`)
+- `[x]` **AUTH-UI-STEP3B-CADENCE-001**: Voting cadence radio buttons — three options labeled "Monthly" / "6 weeks" / "Flexible" (values: `monthly`, `six_weeks`, `flexible`). (`join/_step3-create.tsx:104-125`) The chosen cadence is passed to `clubs.create` as a structured `cadence` argument (`join/page.tsx:219-224`) — see AUTH-UI-STEP3B-CADENCE-DATA-001. The earlier "embed in description" hack has been removed.
   - `[x]` **AUTH-UI-STEP3B-CADENCE-DATA-001**: Voting cadence persists as a typed `VotingCadence` enum column (`monthly | six_weeks | flexible`, default `monthly`) on the `clubs.voting_cadence` field. `clubs.create` and `clubs.update` accept a `cadence` argument and persist directly. The previous "embed in description" hack is removed from `src/app/join/page.tsx` and `src/components/club/club-switcher-modal.tsx`. (`prisma/schema.prisma` `VotingCadence`, `Club.votingCadence`; `src/server/routers/clubs.ts` `create`/`update`)
 - `[x]` **AUTH-UI-STEP3B-BACK-001**: Button: "Back" — handler: returns to step 2.
-- `[x]` **AUTH-UI-STEP3B-CREATE-001**: Button: "Create club" (`join/page.tsx:685-694`) — disabled when `!createReady || creatingClub` — handler: `handleCreateSubmit` validates code via `clubs.lookup` then calls `clubs.create`.
+- `[x]` **AUTH-UI-STEP3B-CREATE-001**: Button: "Create club" (`join/_step3-create.tsx:143-152`) — disabled when `!createReady || creatingClub || codeStatus === "taken"` — handler: `handleCreateSubmit` (`join/page.tsx:209-233`) validates code via `clubs.lookup` then calls `clubs.create`.
 
 ## Step 4 Buttons (Success)
 
-- `[x]` **AUTH-UI-STEP4-WELCOME-001**: For join branch, the system SHALL display "Welcome to {clubName}!" with a 64×64 success check icon (role="img", aria-label="Success"). Auto-redirects to `/clubs/{id}` after 1500ms. (`join/page.tsx:700-734`)
-- `[x]` **AUTH-UI-STEP4-COPY-001**: For create branch, the system SHALL display the invite code prominently with a Button: "Copy" that calls `navigator.clipboard.writeText(successClubCode)`. (`join/page.tsx:723-730`)
+- `[x]` **AUTH-UI-STEP4-WELCOME-001**: For join branch, the system SHALL display "Welcome to {clubName}!" as the success heading and auto-redirect to `/clubs/{id}` after 1500ms. The success moment is rendered as the library-card animation (see JOIN-UI-LIBRARYCARD-001), not the older success-check icon. (heading in `join/_step4-success.tsx:36-43`; redirect in `handleJoinSubmit`, `join/page.tsx:189`)
+- `[x]` **AUTH-UI-STEP4-COPY-001**: For create branch, the system SHALL display the invite code prominently with a copy control that calls `navigator.clipboard.writeText(successClubCode)`. (`join/_step4-success.tsx:72-85`; `copyToClipboard` in `join/page.tsx:244-246`)
 
 ## User Identity
 
@@ -82,7 +83,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 
 ## Sessions
 
-- `[x]` **AUTH-BE-SESSION-001**: The system SHALL create a server-side session and set a `session_id` cookie with 30-day max-age. (`join/page.tsx:224`, `auth.ts`)
+- `[x]` **AUTH-BE-SESSION-001**: The system SHALL create a server-side session and set a `session_id` cookie with 30-day max-age. The cookie is emitted server-side via `Set-Cookie` (`sessionSetCookieHeader`/`computeNewExpiry` in `src/lib/auth/session.ts`, called from `src/server/routers/auth.ts`).
 - `[x]` **AUTH-BE-001**: The session cookie is now emitted server-side via `Set-Cookie` from `auth.signIn`, `auth.enter`, and the unauthenticated `clubs.join` path with `HttpOnly; Path=/; SameSite=Lax; Max-Age=2592000` and `Secure` appended in production. The client-side `document.cookie` writes in `src/app/join/page.tsx` and `src/app/login/page.tsx` are removed; the helper `sessionSetCookieHeader` in `src/lib/auth/session.ts` is the single source of truth for the cookie format. The clearing cookie in `auth.logout` mirrors the same attributes.
 - `[x]` **AUTH-BE-002**: Sliding expiration runs on every authenticated request: the route handler at `src/app/api/trpc/[trpc]/route.ts` and the RSC server caller at `src/trpc/server.ts` both refresh `Session.expiresAt` via `db.session.update({ expiresAt: computeNewExpiry() })` when a valid session is loaded. The HTTP path additionally emits a fresh `Set-Cookie` so the browser's `Max-Age` rolls forward; the RSC path lets the next tRPC HTTP call refresh the cookie because `Set-Cookie` from RSC trees isn't supported by Next.js. The previously-dead `src/server/context.ts` remains as an unused helper — it will be removed in a future clean-up.
 - `[x]` **AUTH-API-003**: `auth.logout` SHALL destroy the server-side session and clear the cookie. Both halves are implemented in the same `auth.logout` mutation: server-side row delete + clearing `Set-Cookie` (`src/server/routers/auth.ts:113-124`). AUTH-API-LOGOUT-001/002 below cover the response-header form.

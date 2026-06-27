@@ -29,7 +29,7 @@ Track is always `--color-bg-sunken`. Height is fixed at 8px (`h-2`); shape is `r
 
 ## Layout
 
-The track is `relative` so callers can overlay content (the dashboard hero overlays per-member tick marks — see `DASH-UI-HERO-TICKS-001`). The fill is an absolutely-positioned child sized by `width: {percentage}%`.
+The track is `relative` so callers can overlay content. The fill is an absolutely-positioned child sized by `width: {percentage}%`.
 
 `percentage` is **not clamped** — passing 120 produces a fill that overflows visually. Track `overflow-hidden` clips it. Callers are responsible for valid input. This is a deliberate choice (clamping silently hides upstream bugs) but worth surfacing as a contract.
 

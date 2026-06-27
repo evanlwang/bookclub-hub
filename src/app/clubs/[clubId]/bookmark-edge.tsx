@@ -1,5 +1,5 @@
-// @spec DASH-UI-BOOKMARK-EDGE-001 — replaces the avatar-tick overlay
-// (DASH-UI-HERO-TICKS-001) per the cozy-redesign divergence list.
+// @spec DASH-UI-BOOKMARK-EDGE-001 — replaces the former avatar-tick
+// overlay per the cozy-redesign divergence list.
 "use client";
 
 import { useState } from "react";

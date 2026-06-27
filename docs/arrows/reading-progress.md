@@ -4,7 +4,7 @@ Self-reported reading progress — page/chapter/percentage/status. Drives the sp
 
 ## Status
 
-**OK** — last audited 2026-06-11 (git SHA `ec02705`). 0 active gaps, 0 divergences, 0 reverse orphans. Was already the most coverage-complete segment at first audit; the single divergence was resolved during user gap-pass.
+**OK** — last audited 2026-06-26 (git SHA `11aba35`). 0 active gaps, 0 divergences, 0 reverse orphans. This pass reconciled the redesign labels ("Move my bookmark", "Save my place", "Page") and corrected the optimistic-update spec to match code: `onMutate` rewrites only the `progress.list` cache; `progress.me` is invalidated in `onSettled`, not rewritten optimistically.
 
 ## References
 

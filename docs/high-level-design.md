@@ -60,8 +60,10 @@ v1 ships a complete, usable product for the core loop: join/create → vote → 
 
 **In v1:**
 - Email-only identity with long-lived sessions (no password, no OAuth)
+- Shared pilot passcode gating every unauthenticated entry point during the invite-only pilot (fails closed in production if the env var is unset)
 - 4-step entry flow: identity → path choice (join | create) → branch (join-by-code | create-with-code-derivation) → success
 - Club creation with auto-derived codes, joining by code, club switcher
+- Club lifecycle management via a settings page: rename/description edits, role promote/demote, ownership transfer, member removal, self-leave (owner must transfer first), archive/unarchive, and owner soft-delete with a 30-day retention window before a scheduled hard-delete
 - Three-tier roles (owner, admin, member)
 - Book nomination + approval voting (N approvals per member, configurable) with external metadata lookup
 - Admin-pick (skip vote) for book selection
@@ -234,6 +236,8 @@ A single light theme using `oklch()` notation for perceptual uniformity across m
 | Tech stack | Next.js + PostgreSQL + Prisma on Vercel | SvelteKit + Drizzle; Rails + Hotwire | Single language (TypeScript), fastest to ship, largest ecosystem, zero-config deployment. Trade-off: tight frontend/backend coupling acceptable for this project's scale. |
 | Identity | Email + display name, no password or OAuth | OAuth; username/password; magic links; anonymous/cookie-only | Email is the minimum identity that works across devices and clubs. No password means zero credential management. No OAuth means no third-party dependency and no consent screens. |
 | Club joining | Club code (short alphanumeric string shared out-of-band) | Invitation links with tokens; email-sent invites; QR codes | A code is the simplest thing to share verbally or in a group chat. No link formatting, no expiration tokens. |
+| Pilot access control | Shared environment passcode (`PILOT_PASSCODE`) gating every unauthenticated entry point; constant-time compare; fails closed in production when unset | Open signup; per-invite tokens; email allowlist | A single shared passcode keeps the invite-only pilot private without building invite infrastructure. Fail-closed in prod means a missing env var locks the door rather than opening it. Removable post-pilot by clearing the env var (dev/test then accept any input). |
+| Club deletion | Soft-delete (`status`/`deletedAt`) with a 30-day retention window, then scheduled hard-delete via Vercel cron | Immediate hard-delete; never delete (archive only) | Soft-delete gives an undo window and guards against accidental loss; the cron sweep reclaims storage after retention. Archive (reversible hide) is offered separately for clubs that aren't being deleted. |
 | Real-time updates | Polling with SWR/stale-while-revalidate (v1) — implemented via opt-in client polling (`use-live-query`, see `docs/llds/live-updates.md`) plus optimistic mutation updates | WebSockets; SSE | Polling is simpler to deploy. Real-time is nice-to-have for discussions but not critical for v1. WebSockets can be added later without data model changes. Polling is opt-in per query (never a global default) to bound serverless invocation cost on the Hobby plan. |
 | Email provider | Resend | SendGrid; AWS SES; Postmark | Resend has the simplest API, generous free tier (3k emails/month), and first-class Next.js/Vercel integration. Sufficient for v1 notification volume. |
 | Design tokens | Tailwind v4 `@theme` block of CSS custom properties in `globals.css` | Utility-class palette only (no custom tokens); CSS-in-JS (Stitches/vanilla-extract); SCSS variables | Tailwind v4 native, zero build step, designer-editable, framework-agnostic at the CSS layer. Custom-property names become the contract specs assert against. |

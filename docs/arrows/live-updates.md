@@ -4,7 +4,7 @@ Cross-cutting liveness mechanism — opt-in polling hook, optimistic-mutation co
 
 ## Status
 
-**OK** — implemented and audited 2026-06-11 (git SHA `ec02705`). All 6 LIVE-* specs `[x]`; all consumer-side live/optimistic specs `[x]` across the five feature segments. Verified by 13 unit tests (hook contract, optimistic cache behavior per surface), 10 integration tests (`rounds.turnout`, `clubs.navState`), and 7 cross-member e2e scenarios (`tests/e2e/live-updates.spec.ts`).
+**OK** — re-verified 2026-06-26 (git SHA `11aba35`); no drift (the recipe doc is accurate against `use-live-query.ts`). All 6 LIVE-* specs `[x]`; all consumer-side live/optimistic specs `[x]` across the five feature segments. Verified by 13 unit tests (hook contract, optimistic cache behavior per surface), 10 integration tests (`rounds.turnout`, `clubs.navState`), and 7 cross-member e2e scenarios (`tests/e2e/live-updates.spec.ts`).
 
 ## References
 

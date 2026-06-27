@@ -43,20 +43,17 @@ The freshly created club replaces the grid of empty preview boxes with a single 
 
 ## Currently Reading Hero
 
-- `[x]` **DASH-UI-007**: The hero card SHALL show book cover, title, author. (`page.tsx:161-218`)
-- `[x]` **DASH-UI-009**: The hero SHALL display three stats: median % (with "median" label), finished count, reading count. (`page.tsx:182-191`)
-- `[x]` **DASH-UI-HERO-PROGRESS-001**: A primary progress bar SHALL render at median % (`page.tsx:195`). Below it, an avatar overlay row positions up to 8 member avatars at their progress percentage along the same horizontal axis. (`page.tsx:196-206`)
-- `[x]` **DASH-UI-008**: The dashboard hero progress bar SHALL render per-member tick-marks overlaid on the bar with hover/focus tooltips showing name and current chapter. Implementation covered by sub-IDs below.
-  - `[x]` **DASH-UI-HERO-TICKS-001**: Each member's reading position is rendered as a small vertical pill overlaid on the progress bar (`absolute inset-0` layer over `<ProgressBar>`), positioned by `left: {percentage}%`. `data-testid="hero-tick-{userId}"` carries `data-percentage`. Pill grows on hover/focus.
-  - `[x]` **DASH-UI-HERO-TOOLTIP-001**: Each tick + the below-row avatar SHALL carry a native `title="{name} — Ch. {currentChapter ?? '{pct}%'}"` and matching `aria-label` so screen readers + hovers announce the same content. Native `title` is used (no custom tooltip primitive) to match the rest of the codebase. (`src/app/clubs/[clubId]/page.tsx`)
-- `[x]` **DASH-UI-HERO-EMPTY-001**: When no book is selected, the hero card SHALL show "No book selected yet" with a "Start a vote" link. (`page.tsx:219-229`)
+- `[x]` **DASH-UI-007**: The hero card SHALL show book cover, title, and author (with page count when known). (`page.tsx:207-230`)
+- `[x]` **DASH-UI-009**: The hero SHALL display three stats: median % (labeled "Median"), finished count, and not-started count. (`page.tsx:231-258`)
+- `[x]` **DASH-UI-HERO-PROGRESS-001**: When at least one member has progress, the hero SHALL render member reading positions via the page-edge bookmark bar (`<BookmarkEdge>`) at reading depth, with the median marked, plus the caption "Tap a bookmark to see who's there". The bookmark-edge behavioral contract is canonical in `DASH-UI-BOOKMARK-EDGE-001` (`docs/specs/mobile-specs.md`); this replaced the former progress-bar + avatar-overlay + per-member tick-mark treatment. (`page.tsx:262-271`, `bookmark-edge.tsx`)
+- `[x]` **DASH-UI-HERO-EMPTY-001**: When no book is selected, the hero card SHALL show "No book selected yet" with a "Start a vote" link. (`page.tsx:273-289`)
 
 ## Three-Column Grid Cards
 
-- `[x]` **DASH-UI-010**: Below the hero, three preview cards SHALL render: Active Vote / Next Meeting / Recent Discussions. (`page.tsx:232-345`)
-- `[x]` **DASH-UI-CARD-VOTE-001**: Active Vote card — when `activeRound` exists, displays the status as a Badge ("nominating" → accent, "voting" → primary) and a "Cast my vote" link. When no active round, shows "No active vote" + "Start a vote" link. (`page.tsx:234-266`)
-- `[x]` **DASH-UI-CARD-MEET-001**: Next Meeting card — when `nextMeeting` exists, shows title + status Badge ("Confirmed" / "Awaiting responses") + confirmedTime (if any) + "View meetings" link. When none, shows "No meetings scheduled" + "Schedule a meeting" link. (`page.tsx:269-310`)
-- `[x]` **DASH-UI-CARD-DISC-001**: Recent Discussions card — lists up to 3 most recent threads (chapter chip + title + comment count) plus a "View all" link. When empty, shows "No discussions yet" + "View all" link. (`page.tsx:313-344`)
+- `[x]` **DASH-UI-010**: Below the hero, three preview cards SHALL render: "Active vote" / "Next meeting" / "Margin notes". (`page.tsx:295-460`)
+- `[x]` **DASH-UI-CARD-VOTE-001**: Active vote card — when `activeRound` exists, displays the status as a Badge ("nominating" → accent, "voting" → primary) and a "Nominate a book" / "Cast my vote" link (by phase). When no active round, shows "No active vote" + "Start a vote" link. (`page.tsx:296-350`)
+- `[x]` **DASH-UI-CARD-MEET-001**: Next meeting card — when `nextMeeting` exists, shows title + status Badge ("Confirmed" / "Awaiting responses") + confirmedTime (if any) + "View meetings" link. When none, shows "No meetings scheduled" + "Schedule a meeting" link. (`page.tsx:352-410`)
+- `[x]` **DASH-UI-CARD-DISC-001**: Margin notes card — lists up to 3 most recent threads (chapter chip + title + comment count) plus a "View all" link. When empty, shows "No discussions yet" + "View all" link. (`page.tsx:412-460`)
 
 ## Reading Progress Link Card
 

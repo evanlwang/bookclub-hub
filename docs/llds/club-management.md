@@ -17,11 +17,11 @@ active → archived → active
 active → deleted
 ```
 
-State: active — buttons shown: all features (vote/meet/discuss/progress) — transitions: → archived (admin/owner; no UI); → deleted (owner; no UI)
-State: archived — buttons shown: read-only history (no UI to enter this state today) — transitions: → active (un-archive; no UI)
-State: deleted — buttons shown: none — transitions: terminal; hard-delete after 30 days (not enforced today)
+State: active — buttons shown: all features (vote/meet/discuss/progress) — transitions: → archived (owner; `clubs.archive` mutation, no Settings toggle yet); → deleted (owner; Settings → Danger zone soft-delete)
+State: archived — buttons shown: read-only history (no UI to enter/exit this state yet) — transitions: → active (`clubs.unarchive`; owner; no UI)
+State: deleted — buttons shown: none — transitions: terminal; hard-deleted 30 days after `deletedAt` by the `hard-delete-clubs` Vercel cron
 
-Today only the "active" state is exercised in the UI; archived/deleted lifecycle is data-model-only.
+The active and deleted states are exercised in the UI (owner soft-delete via Settings → Danger zone, then the cron sweeps the row after 30 days). Archive/unarchive ship as owner-only mutations without a Settings toggle yet.
 
 ## Button Inventory
 
@@ -35,18 +35,23 @@ Create flow (in `/join`, see auth-and-accounts.md for full inventory of Step 3b)
 
 The standalone `/clubs` index page was removed: login/join now route the user straight into a club, and switching is handled by the sidebar dropdown + in-place "Create or join a club" modal (see CLUB-NAV-001 and CLUB-NAV-MODAL-001).
 
-## Gaps (UI not built)
+## Admin & Lifecycle Surfaces (status)
 
-Settings page — `[ ]` admin: name/desc/code edit, archive/unarchive, delete (30-day notice). Mutations exist.
-Member management UI — `[x]` admin: list with remove and promote/demote actions. `clubs.members.remove`, `clubs.members.updateRole`, `clubs.members.transferOwnership`, `clubs.leave`. (`/clubs/[clubId]/members`)
-Topbar invite chip ("OAKWOOD-7Q · Copy") — `[ ]` not in any topbar; invite code is shown only on the dashboard header and on Step 4 success.
+Settings page — `[x]` owner|admin at `/clubs/[clubId]/settings`: name/description edits, voting cadence, per-club theme color, and an owner-only Danger Zone for type-to-confirm soft-delete. (CLUB-UI-SETTINGS-001)
+Member management UI — `[x]` admin: list with remove and promote/demote; owner: transfer ownership; self: leave. `clubs.members.remove`, `clubs.members.updateRole`, `clubs.members.transferOwnership`, `clubs.leave`. (`/clubs/[clubId]/members`; CLUB-UI-MEMBERS-*)
+Soft-delete + 30-day retention + hard-delete job — `[x]` `clubs.delete` soft-deletes (`status="deleted"`, `deletedAt=now`); the `hard-delete-clubs` cron (wired in `vercel.json`, daily 03:00) purges clubs past the 30-day window. (CLUB-BE-004, CLUB-BE-005)
+Archive/un-archive — `[x]` `clubs.archive` / `clubs.unarchive` mutations (owner-only); writes to archived clubs are rejected. No Settings toggle yet. (CLUB-BE-006)
+Owner-cannot-leave enforcement — `[x]` `clubs.leave` blocks the owner until ownership is transferred. (CLUB-BE-LEAVE-001)
+Real-time code-availability check during create — `[x]` 300ms-debounced `clubs.lookup`. (CLUB-UI-CODE-LIVE-001)
+Client-side switcher (no full route load) — `[x]` prefetched `<Link>` rows + `router.push` modal. (CLUB-NAV-CLIENT-001)
+Unread discussion dots on switcher rows + nav badge — `[x]` via `clubs.navState` / `unreadDiscussionCounts`. (CLUB-NAV-UNREAD-001, CLUB-NAV-BADGE-LIVE-001)
+
+Remaining gaps:
+Topbar invite chip ("OAKWOOD-7Q · Copy") — `[ ]` invite code is shown only on the dashboard header and on Step 4 success.
 Topbar "Invite" button — `[ ]` not implemented.
-Real-time code-availability check during create — `[ ]` only on submit today.
-Unread activity indicators on switcher rows — `[ ]` not implemented.
-Unread count Badge on Discussions nav link — `[ ]` not implemented.
-Client-side switcher (no full route load) — `[ ]` switching today is a Link navigation.
-Archive/un-archive flow — `[ ]` not implemented.
-Soft-delete with 30-day retention and hard-delete job — `[ ]` not implemented.
+Settings: invite-code edit — `[ ]` deferred (needs a uniqueness UX).
+Settings: archive/unarchive toggle — `[ ]` mutations exist; no UI surface.
+Unread activity indicators for meetings/voting on switcher rows — `[ ]` discussions-only today.
 
 ## Club Codes
 
@@ -58,11 +63,11 @@ Why codes over invitation links: a code is the simplest thing to share verbally,
 
 Three roles, each a strict superset of the one below:
 
-- **owner** — created the club. Can delete, transfer ownership, change code.
-- **admin** — can manage members, edit settings, manage voting rounds.
+- **owner** — created the club. Owner-exclusive: delete (soft-delete), archive/unarchive, transfer ownership, and promote/demote members (`members.updateRole`).
+- **admin** — edit settings (name, description, cadence, theme color, club code), remove members (`members.remove`), manage voting rounds.
 - **member** — can nominate, vote, RSVP, post, track progress.
 
-UI today renders only `admin` / `member` Badges in the switcher (owner appears as "owner" string). Member management UI is not built.
+The switcher renders `admin` / `member` Badges (owner shown as the "owner" string). Member management is implemented at `/clubs/[clubId]/members` (admin+ only).
 
 ## Data Model
 
@@ -158,8 +163,11 @@ The sidebar's clubs list is loaded server-side via `auth.me` in `clubs/[clubId]/
 | `clubs.list` | required | - | `[{ club, role, current_book?, unread_count? }]` |
 | `clubs.create` | required | `{ name, description, code }` | `{ club }` (creator becomes owner) |
 | `clubs.get` | member | `{ clubId }` | `{ club, members, current_book }` |
-| `clubs.update` | admin+ | `{ clubId, name?, description?, code? }` | `{ club }` |
-| `clubs.delete` | owner | `{ clubId }` | (soft delete) |
+| `clubs.update` | admin+ | `{ clubId, name?, description?, code?, cadence?, themeColor? }` | `{ club }` |
+| `clubs.delete` | owner | `{ clubId }` | (soft delete: `status="deleted"`, `deletedAt=now`) |
+| `clubs.archive` | owner | `{ clubId }` | (`status="archived"`) |
+| `clubs.unarchive` | owner | `{ clubId }` | (`status="active"`) |
+| `clubs.markDiscussionsVisited` | member | `{ clubId }` | - (stamps `lastVisitedDiscussions`) |
 | `clubs.members.list` | member | `{ clubId }` | `[{ user, role, joinedAt }]` |
 | `clubs.members.remove` | admin+ (or self) | `{ clubId, userId }` | - |
 | `clubs.members.updateRole` | owner | `{ clubId, userId, role: "admin" \| "member" }` | - |
@@ -189,11 +197,12 @@ The Settings UI offers five curated swatches plus a "Custom" tile. The Forest Te
 | Action | Required Role |
 |--------|--------------|
 | View club data | member+ |
-| Edit club settings | admin+ |
-| Change club code | owner |
+| Edit club settings (name, description, cadence, theme) | admin+ |
+| Change club code | admin+ (`clubs.update` is `adminProcedure`) |
 | Remove non-owner member | admin+ |
 | Promote member ↔ admin | owner |
-| Delete club | owner |
+| Delete club (soft-delete) | owner |
+| Archive / un-archive club | owner |
 | Transfer ownership | owner |
 | Leave club | member+ (owner blocked by `clubs.leave`; must transfer first) |
 
@@ -247,7 +256,7 @@ The transaction enforces `CLUB-DATA-003` (exactly one owner) by demoting and pro
 | Code format | 4–16 alphanumeric, case-insensitive | UUID; numeric only | Memorable and shareable. |
 | Code uniqueness | Unique across active clubs | Globally unique (incl. deleted); none | Recycles codes from deleted clubs. |
 | Role model | Three roles | Two; fine-grained permissions | Minimum that covers use cases. |
-| Club deletion | Soft delete + 30-day retention (target) | Hard delete; archive-only | Prevents accidental data loss. (Not enforced today.) |
+| Club deletion | Soft delete + 30-day retention, then scheduled hard-delete via Vercel cron | Hard delete; archive-only | Prevents accidental data loss; the `hard-delete-clubs` cron reclaims storage after the window. |
 
 ## Open Questions
 
@@ -255,18 +264,22 @@ The transaction enforces `CLUB-DATA-003` (exactly one owner) by demoting and pro
 
 1. ✅ Club codes as join mechanism.
 2. ✅ Three-tier role model.
-3. ✅ Sidebar club switcher.
+3. ✅ Sidebar club switcher (client-side, prefetched).
+4. ✅ Settings page (rename, description, cadence, theme, owner soft-delete).
+5. ✅ Member management UI (remove, promote/demote, transfer ownership, leave).
+6. ✅ Real-time code-availability validation during create.
+7. ✅ Soft-delete + 30-day retention + hard-delete cron; archive/unarchive mutations.
+8. ✅ Owner-cannot-leave-without-transfer enforcement.
+9. ✅ Unread-discussion indicators on switcher and Discussions nav.
 
 ### Deferred
 
-1. **Settings page** (admin: rename, change code, archive/delete).
-2. **Member management UI** (admin: remove, promote/demote).
-3. **Topbar invite chip + Invite button.**
-4. **Real-time code-availability validation during create.**
-5. **Unread activity indicators on switcher and Discussions nav.**
-6. **Client-side switcher with prefetch.**
-7. **Archive/un-archive flow + soft-delete enforcement + hard-delete job.**
-8. **Owner-cannot-leave-without-transfer enforcement.**
+1. **Topbar invite chip + Invite button.**
+2. **Settings invite-code edit** (needs a uniqueness UX).
+3. **Settings archive/unarchive toggle** (mutations exist; no UI surface).
+4. **Unread activity indicators for meetings/voting** (discussions-only today).
+5. **Configurable max member limit** (`CLUB-BE-007`).
+6. **New-owner notification on ownership transfer** (`CLUB-UI-OWNERSHIP-NOTIFY-001`).
 
 ## References
 

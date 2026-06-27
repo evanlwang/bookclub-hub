@@ -4,7 +4,7 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 
 ## Status
 
-**STALE** — last full audit 2026-05-10 (git SHA `aee095b6`). The landing slice (`home-specs` HOME-UI-*) was re-specced and re-verified 2026-06-12 (editorial borrower's-card rebuild, `b31e1b9`), but the `/join` wizard slice has **not** been re-verified spec-to-code since `aee095b6`. No known divergences; the staleness is unverified-since, not detected-drift. Cookie-security and sliding-expiration were hardened in cluster 17.
+**OK** — last audited 2026-06-26 (git SHA `11aba35`). 0 `[ ]` active gaps, 0 `[!]` divergences, 0 reverse orphans. The join wizard was re-verified this pass (resolving the prior STALE flag): it is now a controller `page.tsx` + `_stepN` step components, and Step 1 carries a required "Pilot passcode" input (`AUTH-UI-STEP1-PASSCODE-001`, gated by `AUTH-API-PASSCODE-001/002`). Landing slice current as of `b31e1b9` (editorial rebuild).
 
 ## References
 
@@ -35,7 +35,7 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 - `src/lib/validation/email.ts` — AUTH-DATA-001, AUTH-DATA-002
 - `src/app/page.tsx` — landing page
 - `src/app/login/page.tsx` — login (returning users)
-- `src/app/join/page.tsx` — join flow (new users + smart-detection redirect)
+- `src/app/join/page.tsx` — join flow controller (state, handlers, smart-detection redirect); step UI in `src/app/join/_step1-identity.tsx` … `_step4-success.tsx` (+ `_stepper.tsx`, `_shared.tsx`)
 - `src/app/layout.tsx` — root layout, skip-nav
 
 ## Architecture
@@ -52,9 +52,9 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 
 | Source | Active specs | `[x]` | `[ ]` (gap) | `[D]` (deferred) | `[!]` (divergence) |
 |---|---|---|---|---|---|
-| auth-specs.md | 53 | 50 | 0 | 3 | 0 |
+| auth-specs.md | 54 | 51 | 0 | 3 | 0 |
 | home-specs.md | 52 | 49 | 0 | 3 | 0 |
-| **Total** | **96** | **90** | **0** | **6** | **0** |
+| **Total** | **97** | **91** | **0** | **6** | **0** |
 
 **Summary:** 100% of non-deferred specs implemented (90/90). 6 deliberately-deferred items (smart-detection edge polish + landing copy variants).
 
@@ -64,7 +64,9 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 
 1. **All non-deferred specs implemented.** Cookie security hardened in cluster 17 (`AUTH-BE-001`, `AUTH-BE-002`): server-side `Set-Cookie` with HttpOnly+Secure+SameSite=Lax, sliding expiration on every authenticated request via `src/server/context.ts` semantics inlined into both lookup paths.
 2. **Cadence persistence** (cluster 4) — voting cadence is now a typed `VotingCadence` enum on `Club.votingCadence`, not embedded in description.
-3. **6 deferred specs** — smart-detection edge cases and landing copy variants; deliberate, not drift.
+3. **Pilot passcode gate** — every unauthenticated entry point (`auth.enter`, `auth.signIn`, the unauthenticated `clubs.join` branch) requires the shared `PILOT_PASSCODE`; constant-time compare, fails closed in production when unset (`AUTH-API-PASSCODE-001/002`, `src/lib/auth/passcode.ts`). Step 1 and `/login` surface the passcode input.
+4. **Join wizard composed of step components** — the monolithic page was split into `_step1-identity.tsx` … `_step4-success.tsx`; spec `file:line` refs repointed accordingly. The Step 4 success moment is the library-card animation (`JOIN-UI-LIBRARYCARD-001`, in `mobile-specs.md`).
+5. **6 deferred specs** — smart-detection edge cases and landing copy variants; deliberate, not drift.
 
 ## Work Required
 

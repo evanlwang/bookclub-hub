@@ -30,22 +30,22 @@ taxonomy:
 # The graph of segments. Each entry is one arrow segment.
 arrows:
   auth:
-    status: STALE
+    status: OK
     sampled: 2026-05-07
-    audited: 2026-05-10
-    audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
+    audited: 2026-06-26
+    audited_sha: 11aba35
     blocks:
       - clubs
     blockedBy: []
     detail: auth.md
-    next: re-audit the /join wizard slice (still unverified since aee095b6); the landing slice was re-specced + verified 2026-06-12 (editorial borrower's-card rebuild)
-    drift: join-wizard spec-to-code verification not redone since aee095b6. Landing (home-specs HOME-UI-*) is current as of b31e1b9.
+    next: null
+    drift: null
 
   clubs:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-06-11
-    audited_sha: ec02705
+    audited: 2026-06-26
+    audited_sha: 11aba35
     blocks:
       - voting
       - meetings
@@ -61,8 +61,8 @@ arrows:
   voting:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-06-11
-    audited_sha: ec02705
+    audited: 2026-06-26
+    audited_sha: 11aba35
     blocks: []
     blockedBy:
       - clubs
@@ -74,8 +74,8 @@ arrows:
   meetings:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-06-11
-    audited_sha: ec02705
+    audited: 2026-06-26
+    audited_sha: 11aba35
     blocks: []
     blockedBy:
       - clubs
@@ -87,8 +87,8 @@ arrows:
   discussions:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-06-11
-    audited_sha: ec02705
+    audited: 2026-06-26
+    audited_sha: 11aba35
     blocks: []
     blockedBy:
       - clubs
@@ -100,8 +100,8 @@ arrows:
   reading-progress:
     status: OK
     sampled: 2026-05-07
-    audited: 2026-06-11
-    audited_sha: ec02705
+    audited: 2026-06-26
+    audited_sha: 11aba35
     blocks: []
     blockedBy:
       - clubs
@@ -115,8 +115,8 @@ arrows:
   live-updates:
     status: OK
     sampled: 2026-06-11
-    audited: 2026-06-11
-    audited_sha: ec02705
+    audited: 2026-06-26
+    audited_sha: 11aba35
     blocks:
       - clubs
       - voting
@@ -261,7 +261,7 @@ unmapped:
   docs:
     llds: []
     specs:
-      - mobile-specs.md  # cozy-redesign mobile/touch specs (NAV-MOBILE-*, TOUCH-*, VOTE-UI-SLIP-*); spans clubs/voting/design — needs owner assignment
+      - mobile-specs.md  # cozy-redesign specs, now IMPLEMENTED and cited cross-segment: DASH-UI-BOOKMARK-EDGE-001 (dashboard hero), JOIN-UI-LIBRARYCARD-001 (auth step 4), VOTE-UI-EARGLYPH-001/VOTE-UI-SLIP-* (voting), DISC-UI-SPOILERBAR-001 (discussions), PROG-UI-DOGEAR-001/PROG-UI-BOOKMARK-SLIDER-001 (progress), plus NAV-MOBILE-*/TOUCH-*. Load-bearing across dash/auth/voting/discussions/progress/design — overdue for split into the owning segments (or its own design-redesign segment). Needs owner assignment.
   # Reverse orphans: all five resolved 2026-06-26 by backfilling specs (see git log).
   # INFRA-ENV-VALIDATION-001 → infra segment; VOTE-API-005-MANUAL / -009-MANUAL → vote-specs.md;
   # MEET-BE-CREATE-DEDUP-001 / -RESP-EMPTY-001 → meet-specs.md.

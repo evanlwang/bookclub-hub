@@ -51,7 +51,7 @@ step 1 → step 3b (?path=create)
 step 4 → /clubs/{id}  (auto-redirect after 1500ms)
 ```
 
-State: step 1 (Identity) — buttons: email, display name, "Continue" — transitions: → step 2; → /clubs (smart); → step 3 (?path)
+State: step 1 (Identity) — buttons: email, display name, pilot passcode, "Continue" — transitions: → step 2; → /clubs (smart); → step 3 (?path)
 State: step 2 (Path) — buttons: "Join an existing club", "Create a new club", "Back" — transitions: → step 3a / step 3b / step 1
 State: step 3a (Join) — buttons: code input, "Back", "Join the club" — transitions: → step 4 / step 2
 State: step 3b (Create) — buttons: name, code, cadence radios, "Back", "Create club" — transitions: → step 4 / step 2
@@ -59,21 +59,24 @@ State: step 4 (Success) — buttons: "Copy" (create branch only) — transitions
 
 ## Button Inventory
 
-Button: email input — `join/page.tsx:472-480` — required, type=email
-Button: display name input — `join/page.tsx:487-495` — required
-Button: "Continue" — `join/page.tsx:503-512` — enabled: identityValid (email contains @ AND displayName.trim() ≥ 1) — handler: `auth.enter` then smart detection or step 2
-Button: "Join an existing club" PathCard — `join/page.tsx:532-537` — handler: setPath("join"), step 3
-Button: "Create a new club" PathCard — `join/page.tsx:539-544` — handler: setPath("create"), step 3
-Button: "Back" (step 2 → 1) — `join/page.tsx:546-550`
-Button: club code input (join) — `join/page.tsx:563-572` — debounced, normalized to uppercase, calls `clubs.lookup` after 4 chars
-Button: "Back" (step 3a → 2) — `join/page.tsx:586-593`
-Button: "Join {clubName}" / "Join the club" — `join/page.tsx:595-604` — enabled: joinReady AND !joiningClub — handler: `clubs.join`
-Button: club name input (create) — `join/page.tsx:616-624` — required, min 3 chars
-Button: invite code input (create) — `join/page.tsx:631-638` — defaulted from derivedCode; auto-uppercases
-Button: voting cadence radio "Monthly" / "Six Weeks" / "Flexible" — `join/page.tsx:646-666` — values: monthly / six_weeks / flexible
-Button: "Back" (step 3b → 2) — `join/page.tsx:676-682`
-Button: "Create club" — `join/page.tsx:685-694` — enabled: createReady (name.trim() ≥ 3) AND !creatingClub — handler: `validateClubCode` then `clubs.create`
-Button: "Copy" (step 4, create branch) — `join/page.tsx:723-730` — handler: `navigator.clipboard.writeText(successClubCode)`
+The `/join` wizard is composed of a controller page (`src/app/join/page.tsx` — all state, handlers, mutations, `identityValid`/routing) plus per-step presentational components (`_step1-identity.tsx`, `_step2-path.tsx`, `_step3-join.tsx`, `_step3-create.tsx`, `_step4-success.tsx`, with `_stepper.tsx`/`_shared.tsx` helpers). The refs below point at the step component for markup and at `page.tsx` for state/handlers.
+
+Button: email input — `_step1-identity.tsx:43-56` — type=email
+Button: display name input — `_step1-identity.tsx:58-70`
+Button: pilot passcode input — `_step1-identity.tsx:72-84` — type=password; non-empty value feeds identityValid and is passed to `auth.enter`
+Button: "Continue" — `_step1-identity.tsx:92-102` — enabled: identityValid (email contains @ AND displayName.trim() ≥ 1 AND passcode.length > 0, `join/page.tsx:53-54`) — handler: `handleIdentityContinue` (`join/page.tsx:103-137`) → `auth.enter` then smart detection or step 2
+Button: "Join an existing club" PathCard — `_step2-path.tsx:15-21` — handler: onChoose("join") → `handlePathChoice` (`join/page.tsx:139`), step 3
+Button: "Create a new club" PathCard — `_step2-path.tsx:22-28` — handler: onChoose("create") → `handlePathChoice`, step 3
+Button: "Back" (step 2 → 1) — `_step2-path.tsx:29-34`
+Button: club code input (join) — `_step3-join.tsx:33-50` — debounced, normalized to uppercase; `handleCodeChange` calls `clubs.lookup` after 4 chars (`join/page.tsx:146-173`)
+Button: "Back" (step 3a → 2) — `_step3-join.tsx:80-89`
+Button: "Join {clubName}" / "Join the club" — `_step3-join.tsx:90-100` — enabled: joinReady AND !joiningClub AND !alreadyMember — handler: `handleJoinSubmit` (`join/page.tsx:176-194`) → `clubs.join`
+Button: club name input (create) — `_step3-create.tsx:50-63` — required, min 3 chars
+Button: invite code input (create) — `_step3-create.tsx:65-102` — defaulted from `derivedCode` (`join/page.tsx:58-62`); auto-uppercases; live uniqueness status
+Button: voting cadence radio "Monthly" / "6 weeks" / "Flexible" — `_step3-create.tsx:104-125` — values: monthly / six_weeks / flexible
+Button: "Back" (step 3b → 2) — `_step3-create.tsx:133-142`
+Button: "Create club" — `_step3-create.tsx:143-152` — enabled: createReady (name.trim() ≥ 3) AND !creatingClub AND codeStatus ≠ "taken" — handler: `handleCreateSubmit` (`join/page.tsx:209-233`) → `validateClubCode` then `clubs.create`
+Button: invite-code copy control (step 4, create branch) — `_step4-success.tsx:72-85` — handler: `copyToClipboard` (`join/page.tsx:244-246`) → `navigator.clipboard.writeText(successClubCode)`
 Button: "Sign out" (club sidebar footer) — `src/app/clubs/[clubId]/sidebar.tsx` — handler: POST `/api/trpc/auth.logout` → clear `session_id` cookie → `router.push("/")` — the only sign-out surface (the legacy `/clubs` page header variant was removed when the standalone `/clubs` index went away)
 
 ## Smart Detection
@@ -146,18 +149,18 @@ No OAuthConnection table, no MagicLinkToken table, no password hash.
 
 | Procedure | Input | Output |
 |-----------|-------|--------|
-| `auth.enter` | `{ email, displayName }` | `{ user, sessionId }` (sets cookie). Idempotent: creates user if new, updates displayName if changed. |
-| `auth.signIn` | `{ email }` | `{ user, sessionId }` if user exists. Throws NOT_FOUND otherwise — never creates a User record. |
+| `auth.enter` | `{ email, displayName, passcode }` | `{ user, sessionId }` (sets cookie). Idempotent: creates user if new, updates displayName if changed. Throws UNAUTHORIZED on wrong passcode (see AUTH-API-PASSCODE-001). |
+| `auth.signIn` | `{ email, passcode }` | `{ user, sessionId }` if user exists. Throws NOT_FOUND otherwise — never creates a User record. Throws UNAUTHORIZED on wrong passcode. |
 | `auth.me` | - | `{ user, clubs }` or 401 |
 | `auth.logout` | - | `{ success: true }`. Deletes the server session row (if present) and emits a `Set-Cookie: session_id=; Path=/; Max-Age=0` response header. Idempotent — safe to call without an active session (publicProcedure). |
 
-## Voting Cadence Field (gap)
+## Voting Cadence Field
 
-The voting cadence radios in Step 3b store the chosen value (`monthly`/`six_weeks`/`flexible`) and pass it as `description: "Voting cadence: {cadence}"` to `clubs.create` (`join/page.tsx:369`). There is **no structured field** on Club for cadence today. Recommendation: add `voting_cadence` enum to Club and stop overloading description.
+The voting cadence radios in Step 3b (`_step3-create.tsx:104-125`) store the chosen value (`monthly`/`six_weeks`/`flexible`) and pass it to `clubs.create` as a structured `cadence` argument (`join/page.tsx:219-224`), persisted to the typed `Club.votingCadence` enum column. See `AUTH-UI-STEP3B-CADENCE-DATA-001`. The earlier "embed in description" hack has been removed.
 
 ## Session Management
 
-Sessions are server-side, stored in PostgreSQL (Neon). Session ID is a cryptographically random string stored in a cookie. The cookie is set on `auth.enter` success with `max-age=30 days` (`join/page.tsx:224`). Cookie hardening flags (HttpOnly/Secure/SameSite) need verification against the actual cookie write path on the server side.
+Sessions are server-side, stored in PostgreSQL (Neon). Session ID is a cryptographically random string stored in a cookie. The cookie is set server-side via `Set-Cookie` on `auth.enter`/`auth.signIn` success with `Max-Age=2592000` (30 days). `sessionSetCookieHeader` in `src/lib/auth/session.ts` is the single source of truth for the cookie format and emits `HttpOnly; Path=/; SameSite=Lax` (plus `Secure` in production). See `AUTH-BE-001`.
 
 ## Decisions & Alternatives
 
