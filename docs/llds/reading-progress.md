@@ -16,14 +16,13 @@ State: finished — page input: forced to totalPages AND disabled; chapter input
 
 ## Button Inventory
 
-Button: "Update My Progress" — `update-modal.tsx:24-30` — visible: progress dashboard header — handler: opens modal
-Button: status radio cards "Not Started" / "Reading" / "Finished" — `update-modal.tsx:118-139` — handler: handleStatusChange (sets status; also coerces page on enter to "finished" or "not_started")
-Button: page number input — `update-modal.tsx:146-160` — disabled: status="finished"
-Button: chapter number input (optional) — `update-modal.tsx:182-190`
-Button: "Cancel" — `update-modal.tsx:201-203` — handler: onClose
-Button: "Save my place" — `update-modal.tsx` — handler: optimistic `progress.update` (cache write + rollback, PROG-UI-OPTIMISTIC-001), then toast + onClose
-Button: book selector card (per book) — `progress/page.tsx:51-76` — handler: navigates to `/clubs/[clubId]/progress?bookId={bookId}`
-Button: "All books" back link — `progress/page.tsx:120-126` — handler: navigates back to `/clubs/[clubId]/progress`
+Button: "Move my bookmark" — `update-modal.tsx:140-150` — visible: progress dashboard header — handler: opens modal
+Button: status radio cards "Not started" / "Reading" / "Finished" — `update-modal.tsx:292-325` — handler: handleStatusChange (sets status; also coerces page on enter to "finished" or "not_started")
+Button: page number input — `update-modal.tsx:348-357` — disabled: status="finished"
+Button: chapter number input (optional) — `update-modal.tsx:374-386`
+Button: "Cancel" — `update-modal.tsx:427-429` — handler: onClose
+Button: "Save my place" — `update-modal.tsx:430-439` — handler: optimistic `progress.update` (cache write + rollback, PROG-UI-OPTIMISTIC-001), then toast + onClose
+Button: history-picker entry (per selection) — `progress/page.tsx:193-215` — handler: navigates to `/clubs/[clubId]/progress?bookId={bookId}`
 
 ## Gaps
 
@@ -34,7 +33,7 @@ Editable percentage input (0–100) — `[D]` deferred; percentage is a read-onl
 Mechanism owned by `docs/llds/live-updates.md`; this segment's surfaces:
 
 - **Dashboard member list + summary** render from a polled `progress.list` client query (60s interval, RSC-seeded `initialData` with ISO-stringified dates) so other members' updates appear without reload (PROG-DASH-LIVE-001). Row stagger animations run on first paint only — background refetches swap data in place under stable keys.
-- **Progress save is optimistic** (PROG-UI-OPTIMISTIC-001): the viewer's row and `progress.me` cache rewrite in `onMutate`; rollback on error; `onSettled` invalidates. The undo toast (PROG-UI-MODAL-UNDO-001) keeps its pre-save snapshot semantics; its revert path uses invalidation instead of `router.refresh()`.
+- **Progress save is optimistic** (PROG-UI-OPTIMISTIC-001): only the `progress.list` cache rewrites in `onMutate` (the viewer's row is updated in place, or appended when first-time); rollback restores the `progress.list` snapshot on error; `onSettled` invalidates both `progress.list` and `progress.me` to reconcile (`progress.me` is not rewritten optimistically). The undo toast (PROG-UI-MODAL-UNDO-001) keeps its pre-save snapshot semantics; its revert path uses invalidation instead of `router.refresh()`.
 
 ## Progress Model
 

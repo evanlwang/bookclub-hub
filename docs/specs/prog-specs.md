@@ -15,7 +15,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 State: not_started — page input behavior: forced to 0 on status change — chapter input: editable but cleared on auto-set
 State: reading — page input behavior: editable, range 0..totalPages — chapter input: editable
 State: finished — page input behavior: forced to totalPages on status change AND disabled — chapter input: editable
-Auto-transitions: page input change from 0→positive while status="not_started" auto-bumps status to "reading" (`update-modal.tsx:151-156`)
+Auto-transitions: page input change from 0→positive while status="not_started" auto-bumps status to "reading" (`update-modal.tsx:218-220`)
 
 ## Book Selection & Navigation
 
@@ -51,20 +51,20 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-BE-005**: Status enum: "not_started", "reading", "finished".
 - `[x]` **PROG-BE-006**: When status="finished", percentage forced to 100; currentPage forced to totalPages (if known).
 - `[x]` **PROG-BE-006-AUTOFINISH**: When `totalPages` is known and the computed `percentage` reaches 100 (via `currentPage===totalPages` or explicit `percentage=100`), `computeProgress` SHALL promote `status` from "reading" to "finished". Symmetric pair to PROG-BE-006 — the 100% state and the "finished" state are equivalent, so the dashboard and modal render a single, consistent visual. When `totalPages` is null, status is left untouched (no denominator means percentage=100 is a user-supplied claim). (`compute.ts`)
-- `[x]` **PROG-BE-007**: When status="not_started" via the modal, currentPage SHALL be reset to 0 (modal-side; API itself does not coerce). (`update-modal.tsx:62-66`)
+- `[x]` **PROG-BE-007**: When status="not_started" via the modal, currentPage SHALL be reset to 0 (modal-side; API itself does not coerce). (`update-modal.tsx:209-211`)
 
 ## Progress Update UI — Modal
 
-- `[x]` **PROG-UI-MODAL-OPEN-001**: Button: "Update My Progress" (`update-modal.tsx:24-30`) is rendered on the progress dashboard. Click opens the modal.
-- `[x]` **PROG-UI-001**: The modal SHALL display three large radio-card buttons for status: "Not Started", "Reading", "Finished" (`update-modal.tsx:118-139`). Selected state uses primary border + soft background.
-- `[x]` **PROG-UI-MODAL-PAGE-001**: Number input for "Current Page", min 0, max totalPages. Disabled when status="finished" (`update-modal.tsx:142-164`). When user enters a positive value while status="not_started", status auto-changes to "reading".
+- `[x]` **PROG-UI-MODAL-OPEN-001**: Button: "Move my bookmark" (`update-modal.tsx:140-150`) is rendered on the progress dashboard. Click opens the modal.
+- `[x]` **PROG-UI-001**: The modal SHALL display three large radio-card buttons for status: "Not started", "Reading", "Finished" (`update-modal.tsx:292-325`). Selected state uses primary border + soft background.
+- `[x]` **PROG-UI-MODAL-PAGE-001**: Number input labeled "Page", min 0, max totalPages. Disabled when status="finished" (`update-modal.tsx:348-357`). When user enters a positive value while status="not_started", status auto-changes to "reading".
 - `[x]` **PROG-UI-002**: Implemented via PROG-UI-MODAL-SLIDER-001 below.
   - `[x]` **PROG-UI-MODAL-SLIDER-001**: The modal SHALL render a range slider (`<input type="range">`, `data-testid="page-slider"`, min 0, max totalPages) bidirectionally synced with the page number input. Changing the slider SHALL update the page input; changing the page input SHALL update the slider. The slider SHALL be disabled when status="finished". Moving the slider from 0 → positive while status="not_started" SHALL auto-bump status to "reading" (same behavior as the page input).
-- `[x]` **PROG-UI-003**: When status="finished", the page input auto-locks to totalPages and is disabled. (`update-modal.tsx:62-63, 157`)
-- `[x]` **PROG-UI-004**: When status="not_started", the page input resets to 0. Chapter input is not auto-cleared. (`update-modal.tsx:64-66`)
+- `[x]` **PROG-UI-003**: When status="finished", the page input auto-locks to totalPages and is disabled. (`update-modal.tsx:207-208, 354`)
+- `[x]` **PROG-UI-004**: When status="not_started", the page input resets to 0. Chapter input is not auto-cleared. (`update-modal.tsx:209-211`)
 - `[x]` **PROG-UI-MODAL-PCT-001**: The modal SHALL render the percentage as a read-only visual: a "Progress: {N}%" header and a `<ProgressBar>` filled to that percentage, inside a `data-testid="progress-preview-bar"` container that exposes `data-percentage` and `data-status` attributes for tests. The percentage is derived live from `page / totalPages` (or 100 when status="finished") and is not directly editable — users adjust the page input or the slider, and the bar follows.
-- `[x]` **PROG-UI-006**: The modal SHALL include an optional numeric "Chapter (optional)" input (`update-modal.tsx:178-191`), placeholder "—".
-- `[x]` **PROG-UI-007**: Buttons: "Cancel" (`update-modal.tsx:201-203`) and "Save Progress" (`update-modal.tsx:204-212`) at the bottom. Save calls `progress.update` optimistically (cache write + rollback, PROG-UI-OPTIMISTIC-001); no route refresh.
+- `[x]` **PROG-UI-006**: The modal SHALL include an optional numeric "Chapter (optional)" input (`update-modal.tsx:374-386`), placeholder "—".
+- `[x]` **PROG-UI-007**: Buttons: "Cancel" (`update-modal.tsx:427-429`) and "Save my place" (`update-modal.tsx:430-439`) at the bottom. Save calls `progress.update` optimistically (cache write + rollback, PROG-UI-OPTIMISTIC-001); no route refresh.
 
 ## Progress Update UI — Gaps
 
@@ -77,7 +77,7 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 
 ## Progress Dashboard Display
 
-- `[x]` **PROG-UI-DASH-001**: Header SHALL display the page title and the "Update My Progress" button.
+- `[x]` **PROG-UI-DASH-001**: Header SHALL display the page title and the "Move my bookmark" button.
 - `[x]` **PROG-UI-DASH-002**: When no progress records exist for a book, the system SHALL display an empty state.
 - `[x]` **PROG-UI-DASH-003**: A summary card SHALL display an SVG animated progress ring showing the club's median reading percentage.
 - `[x]` **PROG-UI-DASH-004**: The progress ring animates via stroke-dasharray/stroke-dashoffset (≈1s cubic-bezier, 500ms ease-out variant for staggered rows).
@@ -91,7 +91,7 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 - `[x]` **PROG-UI-DASH-012**: Members with status="finished" SHALL display a gold checkmark next to the name.
 - `[x]` **PROG-UI-DASH-013**: Per-member info line:
   - "Not started yet" (status="not_started")
-  - "Finished · [totalPages] pages" (status="finished")
+  - "Finished · [totalPages ?? currentPage] pages" (status="finished"; falls back to currentPage, then empty, when totalPages is unknown)
   - "Page [currentPage][optional · ch. [currentChapter]]" (status="reading")
 - `[x]` **PROG-UI-DASH-014**: A compact dashboard card variant (360px width, small ring, mini distribution bar) is used as a read-only preview on the main club dashboard.
 - `[x]` **PROG-DASH-MEDIAN-001**: The dashboard median percentage SHALL be computed over members whose `status !== "not_started"` only. The summary line SHALL read "median {N}% across {K} reading" and append "· {M} not started" and "· {F} finished" when those counts are positive. When zero members have started, the line SHALL read "No one has started yet". Excluding zeros for not-started members prevents the median from being dragged down mid-cycle. (`progress/page.tsx`, `median.ts`)
@@ -100,10 +100,10 @@ Auto-transitions: page input change from 0→positive while status="not_started"
 ## Live Updates (mechanism: docs/llds/live-updates.md)
 
 - `[x]` **PROG-DASH-LIVE-001**: WHILE a member is viewing the progress dashboard, other members' progress rows and the aggregate summary SHALL refresh within 60s via a polled `progress.list` query — without a reload. Row animations SHALL NOT replay on background refetches (stable keys, in-place swaps).
-- `[x]` **PROG-UI-OPTIMISTIC-001**: WHEN the viewer saves progress from the update modal, their own dashboard row and the `progress.me` cache SHALL reflect the new values immediately (`onMutate` cache write). IF the mutation fails, the prior values SHALL be restored and the modal's existing inline error shown (PROG-ERR-001). The undo-toast contract (PROG-UI-MODAL-UNDO-001) is unchanged.
+- `[x]` **PROG-UI-OPTIMISTIC-001**: WHEN the viewer saves progress from the update modal, their own dashboard row SHALL reflect the new values immediately via an `onMutate` write to the `progress.list` cache (the viewer's row is updated in place, or appended when no prior record exists). IF the mutation fails, the prior `progress.list` snapshot SHALL be restored and the modal's existing inline error shown (PROG-ERR-001). On `onSettled` both `progress.list` and `progress.me` SHALL be invalidated to reconcile with the server (the `progress.me` cache is not rewritten in `onMutate`). The undo-toast contract (PROG-UI-MODAL-UNDO-001) is unchanged.
 
 ## Error Handling
 
-- `[x]` **PROG-ERR-001**: If `progress.update` fails, the modal SHALL display the error message inline (`update-modal.tsx:193-197`).
-- `[x]` **PROG-ERR-002**: If loading the progress data fails (`selections.list`, `progress.list`, `progress.me`, or book lookup), the page SHALL render the error's `.message` via `data-testid="selections-error"` or `data-testid="progress-error"` (`progress/page.tsx:27-33, 75-77`). Verified end-to-end by the non-member test below.
-- `[x]` **PROG-ERR-003**: Non-members SHALL receive `FORBIDDEN` ("Not a club member") from `progress.list`/`progress.me`/`progress.update`/`selections.list`. Enforced by `memberProcedure` middleware (`src/server/trpc.ts:26-41`); covered by `tests/e2e/progress-membership-403.spec.ts`.
+- `[x]` **PROG-ERR-001**: If `progress.update` fails, the modal SHALL display the error message inline (`update-modal.tsx:420-424`).
+- `[x]` **PROG-ERR-002**: If loading the progress data fails (`selections.list`, `progress.list`, `progress.me`, or book lookup), the page SHALL render the error's `.message` via `data-testid="selections-error"` or `data-testid="progress-error"` (`progress/page.tsx:28-34, 79-81`). Verified end-to-end by the non-member test below.
+- `[x]` **PROG-ERR-003**: Non-members SHALL receive `FORBIDDEN` ("Not a club member") from `progress.list`/`progress.me`/`progress.update`/`selections.list`. Enforced by `memberProcedure` middleware (`src/server/trpc.ts:27-42`); covered by `tests/e2e/progress-membership-403.spec.ts`.

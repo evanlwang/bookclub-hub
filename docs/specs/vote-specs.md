@@ -3,7 +3,7 @@
 **LLD**: docs/llds/book-selection-and-voting.md
 **Implementing artifacts**:
 - API: `src/server/routers/rounds.ts`, `votes.ts`, `nominations.ts`, `books.ts`, `selections.ts`
-- UI: `src/app/clubs/[clubId]/vote/page.tsx`, `vote-round.tsx`, `nominate-modal.tsx`
+- UI: `src/app/clubs/[clubId]/vote/page.tsx`, `vote-round.tsx` (phase dispatcher), `nominating-phase.tsx`, `voting-phase.tsx`, `decided-phase.tsx`, `none-phase.tsx`, `slip.tsx`, `nominate-modal.tsx`
 - Tests: `tests/integration/voting-lifecycle.test.ts`, `tests/integration/vote-persistence.test.ts`, `tests/integration/rounds-turnout.test.ts`, `tests/integration/books.test.ts`, `tests/integration/books-manual.test.ts`, `tests/integration/cron-deadline-reminder.test.ts`, `tests/e2e/vote-persistence.spec.ts`, `tests/e2e/vote-submission.spec.ts`, `tests/e2e/voting-close.spec.ts`, `tests/e2e/voting-phases.spec.ts`, `tests/e2e/voting-round.spec.ts`, `tests/e2e/voting-sidebar.spec.ts`, `tests/unit/voting/tally.test.ts`, `tests/unit/voting-persistence.test.ts`, `tests/unit/app/voting-optimistic.test.tsx`, `tests/unit/app/vote-sidebar-earglyph.test.tsx`, `tests/e2e/live-updates.spec.ts`
 
 Status markers: `[x]` implemented · `[ ]` gap (not yet built) · `[D]` deferred · `[!]` divergence (built but differs from prior spec text)
@@ -12,22 +12,22 @@ Status markers: `[x]` implemented · `[ ]` gap (not yet built) · `[D]` deferred
 
 ## Voting Round Lifecycle
 
-State: nominating — buttons shown: "Search & nominate" (all members), "Advance to Voting" (admin, ≥2 nominations) — transitions: nominating → voting (admin clicks "Advance to Voting"), nominating → cancelled (admin via `rounds.cancel` API)
+State: nominating — buttons shown: "+ Nominate" (all members), "Advance to Voting" (admin, ≥2 nominations) — transitions: nominating → voting (admin clicks "Advance to Voting"), nominating → cancelled (admin via `rounds.cancel` API)
 State: voting — buttons shown: nomination cards (toggle), "Submit N votes" / "Save changes" / "✓ Votes saved" (all members), "Close voting & reveal winner" + "Cancel round" (admin) — transitions: voting → decided (admin clicks "Close voting" → `rounds.advance`), voting → cancelled (admin clicks "Cancel round" → `rounds.cancel`)
 State: decided — buttons shown: "Start new round" (admin) — transitions: terminal; admin starts a new round via `rounds.create`
 State: cancelled — buttons shown: none (round excluded from active list) — transitions: terminal
 
 ## Round Lifecycle API
 
-- `[x]` **VOTE-API-001**: When an admin calls `rounds.create`, the system SHALL create the round in "nominating" status. (`rounds.ts:17`)
-- `[x]` **VOTE-API-002**: When an admin calls `rounds.advance` on a round in "nominating", the system SHALL transition it to "voting" status. (`rounds.ts:118-126`)
+- `[x]` **VOTE-API-001**: When an admin calls `rounds.create`, the system SHALL create the round in "nominating" status. (`rounds.ts:19-68`)
+- `[x]` **VOTE-API-002**: When an admin calls `rounds.advance` on a round in "nominating", the system SHALL transition it to "voting" status. (`rounds.ts:198-219`)
 - `[x]` **VOTE-API-ADVANCE-MINNOMS-001**: `rounds.advance` SHALL throw BAD_REQUEST when transitioning from "nominating" to "voting" with fewer than 2 nominations. Server-side mirror of the UI guard (VOTE-UI-NOM-003) so direct API callers and stale clients can't push a round into a trivially unwinnable voting phase. (`rounds.ts`, `src/lib/voting/advance-guard.ts`)
-- `[x]` **VOTE-API-003**: When an admin calls `rounds.advance` on a round in "voting", the system SHALL transition it to "decided", determine the winner via `tallyVotes`, set the winning book as the club's current book (BookSelection with isCurrent=true), and demote any prior current selection. (`rounds.ts:128-181`)
-- `[x]` **VOTE-API-DECIDED-FINISHED-001**: When demoting a prior current `BookSelection` (during `rounds.advance` to "decided" or `selections.createDirectPick`), the system SHALL also stamp `finishedAt: new Date()` on that prior selection so the history picker renders it as "Finished {MMM YYYY}" per `PROG-UI-BOOK-008` instead of falling back to "Selected {MMM YYYY}". Already-stamped `finishedAt` values SHALL NOT be overwritten. (`rounds.ts:156-160`, `selections.ts:23-26`)
-- `[x]` **VOTE-API-004**: When an admin calls `rounds.cancel`, the system SHALL set status to "cancelled" and delete all associated nominations and votes. (`rounds.ts:189-217`)
-- `[x]` **VOTE-API-CANCEL-GUARD-001**: `rounds.cancel` SHALL throw BAD_REQUEST if the round is already "decided" or "cancelled". (`rounds.ts:189-217`)
+- `[x]` **VOTE-API-003**: When an admin calls `rounds.advance` on a round in "voting", the system SHALL transition it to "decided", determine the winner via `tallyVotes`, set the winning book as the club's current book (BookSelection with isCurrent=true), and demote any prior current selection. (`rounds.ts:221-286`)
+- `[x]` **VOTE-API-DECIDED-FINISHED-001**: When demoting a prior current `BookSelection` (during `rounds.advance` to "decided" or `selections.createDirectPick`), the system SHALL also stamp `finishedAt: new Date()` on that prior selection so the history picker renders it as "Finished {MMM YYYY}" per `PROG-UI-BOOK-008` instead of falling back to "Selected {MMM YYYY}". Already-stamped `finishedAt` values SHALL NOT be overwritten. (`rounds.ts:252-260`, `selections.ts:29-32`)
+- `[x]` **VOTE-API-004**: When an admin calls `rounds.cancel`, the system SHALL set status to "cancelled" and delete all associated nominations and votes. (`rounds.ts:294-322`)
+- `[x]` **VOTE-API-CANCEL-GUARD-001**: `rounds.cancel` SHALL throw BAD_REQUEST if the round is already "decided" or "cancelled". (`rounds.ts:305-310`)
 - `[x]` **VOTE-BE-001**: The winning book SHALL be determined by highest approval count. Ties SHALL be broken by earliest nomination timestamp.
-- `[x]` **VOTE-BE-002**: The system SHALL allow only one active round (status "nominating" or "voting") per club at a time. `rounds.create` throws CONFLICT otherwise. (`rounds.ts:17-66`)
+- `[x]` **VOTE-BE-002**: The system SHALL allow only one active round (status "nominating" or "voting") per club at a time. `rounds.create` throws CONFLICT otherwise. (`rounds.ts:19-68`)
 
 ## Nominations API
 
@@ -35,7 +35,7 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 - `[x]` **VOTE-API-006**: When a member attempts to nominate a book already nominated in the same round, the system SHALL throw a CONFLICT error (unique on `(roundId, bookId)`).
 - `[x]` **VOTE-API-007**: When a member attempts to nominate during "voting" or "decided" phase, the system SHALL throw a BAD_REQUEST error.
 - `[x]` **VOTE-API-NOMDEL-001**: The `nominations.delete` procedure SHALL allow the original nominator OR any admin/owner to delete a nomination. (`nominations.ts:62-89`)
-- `[x]` **VOTE-API-NOMDELETE-XCLUB-001**: The `nominations.delete` procedure SHALL verify the loaded nomination's `round.clubId` matches `input.clubId` BEFORE running the author/admin authorization check, and SHALL throw NOT_FOUND on mismatch. Without this guard an admin of club A can delete any nomination from club B by passing a foreign `nominationId`, because `ctx.membership` is scoped to `input.clubId` not to the nomination's actual club. Mirrors the cross-club guard in `rounds.advance` (rounds.ts:148-150) and `threads.get` (threads.ts:151-153). (`nominations.ts`)
+- `[x]` **VOTE-API-NOMDELETE-XCLUB-001**: The `nominations.delete` procedure SHALL verify the loaded nomination's `round.clubId` matches `input.clubId` BEFORE running the author/admin authorization check, and SHALL throw NOT_FOUND on mismatch. Without this guard an admin of club A can delete any nomination from club B by passing a foreign `nominationId`, because `ctx.membership` is scoped to `input.clubId` not to the nomination's actual club. Mirrors the cross-club guard in `rounds.advance` (rounds.ts:185-187) and `threads.get` (threads.ts:151-153). (`nominations.ts`)
 - `[x]` **VOTE-DATA-001**: Each nomination SHALL have a unique `(round_id, book_id)` pair.
 
 ## Voting API
@@ -47,17 +47,17 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 
 ## Vote Visibility
 
-- `[x]` **VOTE-API-VISIBILITY-001**: `rounds.get` SHALL hide vote counts and other members' votes while the round is in "nominating" or "voting" status; only the calling user's own votes are returned. (`rounds.ts:68-96`)
-- `[x]` **VOTE-API-VISIBILITY-002**: `rounds.get` SHALL return all votes and full per-nomination vote counts when the round is in "decided" status, with nominations ordered by canonical tally rank (vote count desc, earliest nomination breaking ties via `compareByTally`) so `nominations[0]` is the winner and downstream surfaces (VOTE-UI-DEC-002) render ranked order without re-sorting. (`rounds.ts:68-103`)
-- `[x]` **VOTE-UI-001**: While a round is in "voting" status, the UI SHALL hide vote tallies from all members. The voter-turnout sidebar shows only "X of N have voted" with a "Tallies hidden until close" hint. (`vote-round.tsx:263-277`)
-- `[x]` **VOTE-UI-002**: When a round reaches "decided" status, the UI SHALL display the full vote tallies and winner to all members. (`vote-round.tsx:283-369`)
+- `[x]` **VOTE-API-VISIBILITY-001**: `rounds.get` SHALL hide vote counts and other members' votes while the round is in "nominating" or "voting" status; only the calling user's own votes are returned. (`rounds.ts:70-106`)
+- `[x]` **VOTE-API-VISIBILITY-002**: `rounds.get` SHALL return all votes and full per-nomination vote counts when the round is in "decided" status, with nominations ordered by canonical tally rank (vote count desc, earliest nomination breaking ties via `compareByTally`) so `nominations[0]` is the winner and downstream surfaces (VOTE-UI-DEC-002) render ranked order without re-sorting. (`rounds.ts:70-106`)
+- `[x]` **VOTE-UI-001**: While a round is in "voting" status, the UI SHALL hide vote tallies from all members. The voter-turnout sidebar shows only "{N} of {M} have voted" with a "Tallies hidden until close" hint. (`voting-phase.tsx:463-477`)
+- `[x]` **VOTE-UI-002**: When a round reaches "decided" status, the UI SHALL display the full vote tallies and winner to all members. (`decided-phase.tsx:59-201`)
 
 ## Voting UI — Nominating Phase
 
-- `[x]` **VOTE-UI-NOM-001**: The phase SHALL display nomination cards showing book cover, pitch text (if any), nominator name, and relative nomination time (e.g. "2h ago"). (`vote-round.tsx:412-435`)
-- `[x]` **VOTE-UI-NOM-002**: Button: "Search & nominate" (`vote-round.tsx:402-409`) is visible to all members in "nominating" phase and opens the `NominateModal`.
-- `[x]` **VOTE-UI-NOM-003**: Button: "Advance to Voting" (`vote-round.tsx:440-449`) is visible only to admins, disabled when `nominations.length < 2`, and calls `rounds.advance`. Adjacent help text "Needs at least 2 nominations" is shown when disabled.
-- `[x]` **VOTE-UI-NOM-COUNT-001**: A header reads "{N} nomination(s) so far. Anyone can nominate." (`vote-round.tsx:398-401`)
+- `[x]` **VOTE-UI-NOM-001**: The phase SHALL display nomination cards showing book cover, pitch text (if any), nominator name, and relative nomination time (e.g. "2h ago"). (`nominating-phase.tsx:136-140`, rendered by `slip.tsx`)
+- `[x]` **VOTE-UI-NOM-002**: Button: "+ Nominate" (`nominating-phase.tsx:126-133`, `data-testid="search-and-nominate-btn"`) is visible to all members in "nominating" phase and opens the `NominateModal`.
+- `[x]` **VOTE-UI-NOM-003**: Button: "Advance to Voting" (`nominating-phase.tsx:148-158`) is visible only to admins, disabled when `nominations.length < 2`, and calls `rounds.advance`. Adjacent help text "Needs at least 2 nominations — you have {N}." is shown when disabled (`nominating-phase.tsx:172-176`).
+- `[x]` **VOTE-UI-NOM-COUNT-001**: A header card reads "Nominations are open" with a subline "{N} slip(s) so far · anyone can nominate". (`nominating-phase.tsx:117-134`)
 
 ## Nominate Modal
 
@@ -73,29 +73,29 @@ State: cancelled — buttons shown: none (round excluded from active list) — t
 
 ## Voting UI — Voting Phase
 
-- `[x]` **VOTE-UI-VOTE-001**: Each nomination renders as a clickable card Button (`vote-round.tsx:155-196`) toggling membership of `selected` state. Cards are disabled when `selected.length >= maxApprovals && !isSelected` (visual: opacity-50, cursor-not-allowed).
-- `[x]` **VOTE-UI-VOTE-002**: The header pill shows used picks as filled dots over total picks: "{N}/{maxApprovals}" with a Picks label. (`vote-round.tsx:127-147`)
+- `[x]` **VOTE-UI-VOTE-001**: Each nomination renders as a clickable `Slip` card Button (`voting-phase.tsx:277-293`, `slip.tsx:120-132`) toggling membership of `selected` state. Cards are disabled when `selected.length >= maxApprovals && !isSelected` (visual: opacity-50, cursor-not-allowed).
+- `[x]` **VOTE-UI-VOTE-002**: The header pill shows used picks as filled `EarGlyph` folds over total picks: "{N}/{maxApprovals} dog-eared" with a "Picks" label. (`voting-phase.tsx:245-261`)
 - `[x]` **VOTE-UI-005**: The approval cap indicator SHALL render as a row of dog-ear `EarGlyph` folds (header pill row at 20px per VOTE-UI-EARGLYPH-001; desktop sidebar at 28px). Filled = terracotta-soft square with folded terracotta corner; empty = sunken square. Existing `approval-dot` / `data-filled` test hooks stay on the sidebar glyph wrappers. **Re-spec 2026-06-11:** the sidebar previously used circles with white checkmarks (a desktop adaptation predating the ear-glyph motif); swapped to EarGlyphs for one consistent dog-ear idiom across header, slips, and sidebar. (`voting-phase.tsx`, `src/components/ui/ear-glyph.tsx`)
 - `[x]` **VOTE-UI-VOTE-003**: The submit button has three labels driven by `(hasVoted, hasPendingChanges)` to make the modify-a-vote affordance obvious:
   - never voted, picks selected → **"Submit {N} votes"** (primary, enabled)
   - voted, no pending edits → **"✓ Votes saved"** (disabled — no action to take)
   - voted, with pending edits → **"Save changes"** (primary, enabled)
   Disabled when `selected.length === 0`. The component sets `data-state` to `first-submit | save-changes | saved` on the button for E2E assertions. Calls `votes.submit` on click. (Replaces the older "✓ Voted — Update {N}?" label, which conflated saved-state with action-required state.)
-- `[x]` **VOTE-UI-VOTE-004**: After a successful vote submission the UI SHALL show a small success message "✓ Your votes have been recorded" below the button (only when `hasVoted && !loading`). (`vote-round.tsx:218-222`)
-- `[x]` **VOTE-UI-009** (alias `VOTE-UI-VOTE-005`): The voting sidebar (desktop only, `lg:flex`) SHALL show: a "Voting open" badge, "You've approved {N} / {max}" counter, the ear-glyph indicator row (VOTE-UI-005), and a "Voter turnout" card "{voterCount} of {memberCount} have voted · Tallies hidden until close". (`vote-round.tsx:226-278`)
-- `[x]` **VOTE-UI-VOTE-DEADLINE-001**: Voting deadline is now surfaced both in round creation (admin "Configure deadlines" toggle on the decided-phase admin row) and in the voting-phase sidebar (`data-testid="active-voting-deadline"` rendering "Closes {localized datetime}" when `votingDeadline` is set on the active round). The deadline flows page → VoteRound prop → sidebar render. (`vote-round.tsx`, `vote/page.tsx`)
+- `[x]` **VOTE-UI-VOTE-004**: After a successful vote submission the UI SHALL show a small success message "✓ Your votes have been recorded" below the button (only when `justSubmitted && !loading`). (`voting-phase.tsx:330-334`)
+- `[x]` **VOTE-UI-009** (alias `VOTE-UI-VOTE-005`): The voting sidebar (desktop only, `lg:flex`) SHALL show: a "Voting open" badge, "You've approved {N} / {max}" counter, the ear-glyph indicator row (VOTE-UI-005), and a "Voter turnout" card "{voterCount} of {memberCount} have voted · Tallies hidden until close". (`voting-phase.tsx:420-478`)
+- `[x]` **VOTE-UI-VOTE-DEADLINE-001**: Voting deadline is now surfaced both in round creation (admin "Configure deadlines" toggle on the decided-phase admin row) and in the voting-phase sidebar (`data-testid="active-voting-deadline"` rendering "Closes {localized datetime}" when `votingDeadline` is set on the active round). The deadline flows page → VoteRound prop → sidebar render. (`decided-phase.tsx`, `voting-phase.tsx`, `vote/page.tsx`)
 
 ## Vote Persistence and Update Experience
 
 These specs cover what happens when a member revisits the voting page after they've already voted, and how their selections + voter-turnout numbers stay in sync as votes come in.
 
 - `[x]` **VOTE-DATA-VOTE-PERSIST-001**: User votes SHALL persist in the `Vote` table across sessions. On resubmit, the system SHALL atomically replace the user's previous votes for that round (delete-then-createMany inside a single procedure). (`votes.ts:54-67`)
-- `[x]` **VOTE-API-MY-VOTES-001**: During the "voting" phase, `rounds.get` SHALL return each nomination's `votes` array filtered to the calling user's own votes only (other members' votes hidden until "decided"). Clients derive the user's prior selections from `nominations[i].votes[*].nominationId`. (`rounds.ts:85-93`)
-- `[x]` **VOTE-UI-PRIOR-VOTES-001**: When a member loads the voting page after having previously submitted votes, the UI SHALL pre-select their prior selections so the displayed state matches what is persisted server-side. (`vote/page.tsx:38-43` derives `myVotes` from `activeRoundDetail.nominations` via `derivePriorVotes`; `vote-round.tsx:54-66` initializes `selected` from the prop and re-syncs on `router.refresh()`.)
-- `[x]` **VOTE-UI-PRIOR-VOTES-002**: When prior votes are present on page load, the submit button SHALL render in the "✓ Votes saved" state (disabled) and the picks area SHALL show a hint explaining how to modify the vote: "You voted previously — tap a book to add or remove it, then save your changes." Toggling any nomination flips the button to "Save changes" (enabled). Hint test ID: `prior-vote-hint`. (`src/lib/voting/prior-votes.ts`, `vote-round.tsx:230`)
+- `[x]` **VOTE-API-MY-VOTES-001**: During the "voting" phase, `rounds.get` SHALL return each nomination's `votes` array filtered to the calling user's own votes only (other members' votes hidden until "decided"). Clients derive the user's prior selections from `nominations[i].votes[*].nominationId`. (`rounds.ts:87-95`)
+- `[x]` **VOTE-UI-PRIOR-VOTES-001**: When a member loads the voting page after having previously submitted votes, the UI SHALL pre-select their prior selections so the displayed state matches what is persisted server-side. (`vote/page.tsx:38-43` derives `myVotes` from `activeRoundDetail.nominations` via `derivePriorVotes`; `voting-phase.tsx:45-50` initializes `selected` from the prop and `voting-phase.tsx:109-115` re-syncs on `router.refresh()`.)
+- `[x]` **VOTE-UI-PRIOR-VOTES-002**: When prior votes are present on page load, the submit button SHALL render in the "✓ Votes saved" state (disabled) and the picks area SHALL show a hint explaining how to modify the vote: "You voted previously — tap a book to add or remove it, then save your changes." Toggling any nomination flips the button to "Save changes" (enabled). Hint test ID: `prior-vote-hint`. (`src/lib/voting/prior-votes.ts`, `voting-phase.tsx:262-269`)
 - `[x]` **VOTE-UI-TURNOUT-LIVE-001**: After a successful `votes.submit`, the "Voter turnout" card SHALL refresh without a manual page reload. (Mechanism: the turnout card renders from the `rounds.turnout` client query — optimistically bumped on first vote per VOTE-UI-OPTIMISTIC-001 and reconciled via `onSettled` invalidation. Previously implemented via `router.refresh()` re-running the server component; re-mechanized under the live-updates segment, requirement unchanged.)
 - `[x]` **VOTE-UI-TURNOUT-CHANGE-COUNT-001**: First vote increments the turnout count; updating an existing vote leaves it unchanged. The DB-level distinct-on-userId count gives this semantic (`rounds.turnout`), and the client query (invalidation + polling per VOTE-UI-LIVE-POLL-001) surfaces the latest value to the UI.
-- `[x]` **VOTE-UI-UPDATE-CONFIRM-001**: Distinct success messages — "✓ Your votes have been recorded" on first submit, "✓ Your votes have been updated" on subsequent submits. (`vote-round.tsx:99-101` tracks `lastSubmitWasUpdate`; `vote-round.tsx:251-256` renders via `successMessage(lastSubmitWasUpdate)`.) The toast also clears as soon as the user toggles a nomination again (`vote-round.tsx:79`).
+- `[x]` **VOTE-UI-UPDATE-CONFIRM-001**: Distinct success messages — "✓ Your votes have been recorded" on first submit, "✓ Your votes have been updated" on subsequent submits. (`voting-phase.tsx:102,155-158` tracks `lastSubmitWasUpdate`; `voting-phase.tsx:330-334` renders via `successMessage(lastSubmitWasUpdate)`.) The toast also clears as soon as the user toggles a nomination again (`voting-phase.tsx:128-129`).
 
 ## Live Updates (mechanism: docs/llds/live-updates.md)
 
@@ -106,12 +106,12 @@ These specs cover what happens when a member revisits the voting page after they
 
 ## Voting UI — Decided Phase
 
-- `[x]` **VOTE-UI-DEC-001**: The winner banner SHALL display in a gradient card containing book cover, "Winner" badge + "Round winner" caption, title, "by {author} · nominated by {nominator}" subtitle, and a vote-count display "{N} votes". (`vote-round.tsx:288-325`)
-- `[x]` **VOTE-UI-006**: The decided-phase winner banner SHALL render two CTAs alongside the vote count: "Set up first meeting" and "View on Open Library". Implementation covered by the two sub-IDs below.
-  - `[x]` **VOTE-UI-DEC-CTA-MEETING-001**: A primary "Set up first meeting" CTA SHALL render in the winner banner as a `<Link>` to `/clubs/{clubId}/meetings`. `data-testid="winner-cta-meeting"`. (`vote-round.tsx`)
-  - `[x]` **VOTE-UI-DEC-CTA-OPENLIB-001**: A secondary "View on Open Library" CTA SHALL render when the winning `Book.openLibraryId` is non-null, opening `https://openlibrary.org{openLibraryId}` in a new tab (`target="_blank"`, `rel="noreferrer"`). When the winning book is a manual entry without an Open Library ID, the CTA SHALL NOT render. `data-testid="winner-cta-openlib"`. (`vote-round.tsx`)
-- `[x]` **VOTE-UI-DEC-002**: Below the winner, a "Final tallies" card SHALL list all nominations ranked by vote count, with position indicator (① for #1, then "0N" mono numerals), book cover, title/author, a per-row progress bar (`width = votes / maxVotes * 100%`), and a "{N} votes" right column. The first row has a tinted background. (`vote-round.tsx:343-366`)
-- `[x]` **VOTE-UI-DEC-003**: Button: "Start new round" (`vote-round.tsx:331-339`) is visible only to admins on decided phase and calls `rounds.create`.
+- `[x]` **VOTE-UI-DEC-001**: The winner banner SHALL display in a gradient "shelf" card containing a "Now reading" badge, title, a "{author} · {N} approval vote(s) · nominated by {nominator}" subtitle (vote count folded into the subtitle), and the book cover resting on an ink shelf. (`decided-phase.tsx:63-106`)
+- `[x]` **VOTE-UI-006**: The decided-phase winner banner SHALL render two CTAs below the shelf card: "Set up first meeting" and "Open Library ↗". Implementation covered by the two sub-IDs below.
+  - `[x]` **VOTE-UI-DEC-CTA-MEETING-001**: A primary "Set up first meeting" CTA SHALL render in the winner banner as a `<Link>` to `/clubs/{clubId}/meetings`. `data-testid="winner-cta-meeting"`. (`decided-phase.tsx:85-92`)
+  - `[x]` **VOTE-UI-DEC-CTA-OPENLIB-001**: A secondary "Open Library ↗" CTA SHALL render when the winning `Book.openLibraryId` is non-null, opening `https://openlibrary.org{openLibraryId}` in a new tab (`target="_blank"`, `rel="noreferrer"`). When the winning book is a manual entry without an Open Library ID, the CTA SHALL NOT render. `data-testid="winner-cta-openlib"`. (`decided-phase.tsx:93-103`)
+- `[x]` **VOTE-UI-DEC-002**: Below the winner, a "Final tallies" list SHALL show all nominations ranked by vote count, each as a `Slip` with a numbered rank badge (amber for #1, sunken for the rest), book cover, title/author, a per-row progress bar (`width = votes / maxVotes * 100%`), and the vote count. (`decided-phase.tsx:108-196`, `slip.tsx`)
+- `[x]` **VOTE-UI-DEC-003**: Button: "Start new round" (`decided-phase.tsx:113-140`) is visible only to admins on decided phase and calls `rounds.create`.
 
 ## Voting UI — No Active Round
 
@@ -143,8 +143,8 @@ These specs cover what happens when a member revisits the voting page after they
 
 ## Deadlines
 
-- `[x]` **VOTE-UI-DEADLINE-NOM-001**: Admins SHALL see a "Configure deadlines" toggle that reveals a `<input type="datetime-local" data-testid="nomination-deadline-input">`. The chosen value is sent to `rounds.create` as `nominationDeadline` (ISO string). Optional — empty input means no deadline. (`vote-round.tsx`)
-- `[x]` **VOTE-UI-DEADLINE-VOTE-001**: Same toggle reveals a paired `data-testid="voting-deadline-input"` for the voting deadline (ISO string into `rounds.create.votingDeadline`). The picker is on round creation; advance-to-voting reuses the same value via the round record. (`vote-round.tsx`)
+- `[x]` **VOTE-UI-DEADLINE-NOM-001**: Admins SHALL see a "Configure deadlines" toggle that reveals a `<input type="datetime-local" data-testid="nomination-deadline-input">`. The chosen value is sent to `rounds.create` as `nominationDeadline` (ISO string). Optional — empty input means no deadline. (`decided-phase.tsx:160-167`)
+- `[x]` **VOTE-UI-DEADLINE-VOTE-001**: Same toggle reveals a paired `data-testid="voting-deadline-input"` for the voting deadline (ISO string into `rounds.create.votingDeadline`). The picker is on round creation; advance-to-voting reuses the same value via the round record. (`decided-phase.tsx:170-177`)
 
 ## Book Metadata API
 
@@ -160,9 +160,9 @@ These specs cover what happens when a member revisits the voting page after they
 
 ## Notifications
 
-- `[x]` **VOTE-NOTIFY-001**: When a round enters "nominating", the system SHALL email all club members. (`rounds.ts:17-66`)
-- `[x]` **VOTE-NOTIFY-002**: When a round enters "voting", the system SHALL email all club members. (`rounds.ts:118-126`)
-- `[x]` **VOTE-NOTIFY-004**: When a round is decided, the system SHALL email all club members with the winning book. (`rounds.ts:128-181`)
+- `[x]` **VOTE-NOTIFY-001**: When a round enters "nominating", the system SHALL email all club members. (`rounds.ts:19-68`)
+- `[x]` **VOTE-NOTIFY-002**: When a round enters "voting", the system SHALL email all club members. (`rounds.ts:198-219`)
+- `[x]` **VOTE-NOTIFY-004**: When a round is decided, the system SHALL email all club members with the winning book. (`rounds.ts:221-286`)
 - `[x]` **VOTE-NOTIFY-003**: When `VotingRound.votingDeadline` is between now and now+24h, the cron handler at `src/app/api/cron/voting-deadline-reminder/route.ts` emails non-voters with reminder copy. The cron pipeline already existed (covered by `tests/integration/cron-deadline-reminder.test.ts`) — Phase E cluster 14 unlocks it by adding the deadline-picker UI. (`src/app/api/cron/voting-deadline-reminder/route.ts`)
 - `[x]` **VOTE-NOTIFY-NONBLOCK-001**: Round notification email failures (missing/invalid API key, network errors, provider rejections) SHALL NOT cause `rounds.create` or `rounds.advance` to fail. Email is a best-effort side effect; the round transition is the contract. Failures are logged via `console.error` and swallowed inside the email service so callers do not need their own try/catch. (`src/server/services/email.ts`)
 

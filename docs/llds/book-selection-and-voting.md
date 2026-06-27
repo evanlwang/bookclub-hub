@@ -18,7 +18,7 @@ nominating → cancelled
 voting → cancelled
 ```
 
-State: nominating — buttons shown: "Search & nominate", "Advance to Voting" (admin) — transitions: → voting (admin clicks "Advance to Voting"; needs ≥2 nominations); → cancelled (admin via API only)
+State: nominating — buttons shown: "+ Nominate", "Advance to Voting" (admin) — transitions: → voting (admin clicks "Advance to Voting"; needs ≥2 nominations); → cancelled (admin via API only)
 State: voting — buttons shown: nomination cards, "Submit N votes" / "Save changes" / "✓ Votes saved", "Close voting & reveal winner" (admin), "Cancel round" (admin) — transitions: → decided (admin clicks Close voting → `rounds.advance`); → cancelled (admin clicks Cancel round → `rounds.cancel`)
 State: decided — buttons shown: "Start new round" (admin) — transitions: terminal
 State: cancelled — buttons shown: none on the round itself — transitions: terminal. Cancelled rounds are excluded from the voting page's round-history list (VOTE-UI-LIST-001); they remain in the DB for audit but have no UI surface. When all rounds in the club are cancelled (no nominating, voting, or decided round to render), admins SHALL see the NonePhase "Start new round" CTA at the page level (VOTE-UI-NONE-001).
@@ -33,14 +33,14 @@ Phase descriptions:
 
 Exact rendered labels in the running app, with conditions and handlers.
 
-Button: "Search & nominate" — `vote-round.tsx:402-409` — visible: status="nominating" — enabled: always — handler: opens NominateModal
-Button: "Advance to Voting" — `vote-round.tsx:440-449` — visible: status="nominating" AND isAdmin — enabled: nominations.length ≥ 2 — handler: `rounds.advance`
-Button: nomination card (clickable) — `vote-round.tsx:155-196` — visible: status="voting" — enabled: not (selected.length ≥ maxApprovals AND !isSelected) — handler: toggleSelection
+Button: "+ Nominate" — `nominating-phase.tsx:126-133` — visible: status="nominating" — enabled: always — handler: opens NominateModal
+Button: "Advance to Voting" — `nominating-phase.tsx:148-158` — visible: status="nominating" AND isAdmin — enabled: nominations.length ≥ 2 — handler: `rounds.advance`
+Button: nomination card (clickable Slip) — `voting-phase.tsx:277-293` / `slip.tsx:120-132` — visible: status="voting" — enabled: not (selected.length ≥ maxApprovals AND !isSelected) — handler: toggleSelection
 Button: "Submit {N} votes" / "Save changes" / "✓ Votes saved" — visible: status="voting" — three states driven by `(hasVoted, hasPendingChanges)` (VOTE-UI-VOTE-003): "Submit N votes" pre-vote, "Save changes" when voted+edited, disabled "✓ Votes saved" when voted+unedited — handler: `votes.submit`
 Button: "Close voting & reveal winner" — visible: status="voting" AND isAdmin — enabled: at least one approval cast — handler: opens close-voting dialog → on confirm calls `rounds.advance` (CLOSE-002..006)
 Button: "Cancel round" — visible: (status="nominating" OR "voting") AND isAdmin — enabled: always — handler: opens typed-confirmation dialog → calls `rounds.cancel` (CANCEL-002)
-Button: "Start new round" — `vote-round.tsx:331-339` — visible: status="decided" AND isAdmin — enabled: always — handler: `rounds.create`
-Button: "Start your first round" / "Start new round" (NonePhase) — `none-phase.tsx:91-118` — visible: isAdmin AND no round in club is `nominating`, `voting`, or `decided` (i.e., zero rounds OR all prior rounds cancelled) — enabled: always — handler: `rounds.create` (VOTE-UI-NONE-001)
+Button: "Start new round" — `decided-phase.tsx:113-140` — visible: status="decided" AND isAdmin — enabled: always — handler: `rounds.create`
+Button: "Start your first round" (NonePhase) — `none-phase.tsx:93-120` — visible: isAdmin AND no round in club is `nominating`, `voting`, or `decided` (i.e., zero rounds OR all prior rounds cancelled) — enabled: always — handler: `rounds.create` (VOTE-UI-NONE-001)
 Button: search input (debounced) — `nominate-modal.tsx:230-247` — visible: modal open, search tab — handler: `books.search` after 300ms debounce
 Button: "Nominate" (per result row) — `nominate-modal.tsx:272-283` — visible: search results present — handler: `nominations.create`
 Button: "Enter manually" — `nominate-modal.tsx:290-305` — visible: search ran, zero results — handler: switches to manual tab
@@ -161,9 +161,9 @@ BookSelection {
 
 ## Notification Triggers (via Resend)
 
-- `[x]` Round enters "nominating" → email all members (`rounds.ts:17-66`)
-- `[x]` Round enters "voting" → email all members (`rounds.ts:118-126`)
-- `[x]` Round decided → email all members with winner (`rounds.ts:128-181`)
+- `[x]` Round enters "nominating" → email all members (`rounds.ts:19-68`)
+- `[x]` Round enters "voting" → email all members (`rounds.ts:198-219`)
+- `[x]` Round decided → email all members with winner (`rounds.ts:221-286`)
 - `[x]` Voting deadline 24h before → email non-voters via cron (`src/app/api/cron/voting-deadline-reminder/route.ts`, VOTE-NOTIFY-003)
 
 ## Decisions & Alternatives

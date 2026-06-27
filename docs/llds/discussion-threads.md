@@ -10,22 +10,30 @@ Status markers: `[x]` implemented · `[ ]` gap · `[!]` divergence · `[D]` defe
 
 ## Discussion State
 
-State: thread list — buttons shown: "New Thread", chapter input, "Show all" (when hidden > 0), "Recent" / "Most comments" sort, thread cards
-State: compose form — buttons shown: title/body/chapter inputs, ChapterChip preview, "Cancel", "Post Thread"
+State: thread list — buttons shown: "+ New note", "You're on chapter" input, "Show all anyway" (when hidden > 0), "Recent" / "Most replies" sort, thread cards
+State: compose form — buttons shown: body input, chapter input, ChapterChip preview, "Cancel", "Post note" (no title field)
 State: thread detail — buttons shown: per-comment "Reply", reply composer ("Cancel"+"Post"), sticky bottom composer ("Post")
+
+## Component Structure
+
+The discussions page is no longer a single monolith. The surfaces split as:
+
+- **List page** — `discussions/page.tsx` (RSC: resolves current book + spoiler cutoff, seeds the client) → `discussions-content.tsx` (client list, spoiler bar, sort) → `create-thread.tsx` (the "+ New note" button + compose `Sheet`).
+- **Thread detail** — `[threadId]/page.tsx` (client) → `[threadId]/comment-item.tsx` (each comment row, its controls, edit/delete, and nested replies) + `comment-composer.tsx` (sticky bottom composer and inline reply composer).
 
 ## Button Inventory
 
-Button: "New Thread" — `create-thread.tsx:21-28` — visible: discussions page when form not open — handler: opens CreateThreadForm
-Button: "Cancel" (compose) — `create-thread.tsx:140-141` — handler: closes form
-Button: "Post Thread" — `create-thread.tsx:143-151` — handler: `threads.create`
-Button: "I'm on chapter:" number input — `discussions/page.tsx:123-133` — handler: setMaxChapter; resets showAll
-Button: "Show all" — `discussions/page.tsx:138-144` — visible: hiddenCount > 0 AND !showAll — handler: setShowAll(true)
-Button: "Recent" / "Most comments" sort — `discussions/page.tsx:153-166` — handler: setSort
-Button: thread card (link to detail) — `discussions/page.tsx:178-209`
-Button: per-comment "Reply" — `[threadId]/page.tsx:150-161` — handler: toggle replyingTo
-Button: "Cancel" (reply composer) — `comment-composer.tsx:74-77` — visible: when onCancel prop provided — handler: closes inline composer
-Button: "Post" (composer) — `comment-composer.tsx:79-87` — enabled: body.trim().length > 0 — handler: `comments.create`
+Button: "+ New note" — `create-thread.tsx:23-30` (`data-testid="new-thread-btn"`) — visible: in the sort/actions row — handler: opens compose `Sheet` (CreateThreadForm)
+Button: "Cancel" (compose) — `create-thread.tsx:178-180` — handler: closes form
+Button: "Post note" — `create-thread.tsx:181-192` — handler: `threads.create` (relabels to "Resolve spoiler warning" on mismatch)
+Button: "You're on chapter" number input — `discussions-content.tsx:86-97` — handler: setMaxChapter; resets showAll
+Button: "Show all anyway" — `discussions-content.tsx:105-112` (`data-testid="show-all-btn"`) — visible: hiddenCount > 0 AND !showAll — handler: setShowAll(true)
+Button: "Recent" / "Most replies" sort — `discussions-content.tsx:131-150` — handler: setSort
+Button: thread card (link to detail) — `discussions-content.tsx:210-253`
+Button: per-comment "Reply" — `comment-item.tsx:206-215` — handler: toggle reply mode
+Button: "Cancel" (reply composer) — `comment-composer.tsx:122-125` — visible: when onCancel prop provided — handler: closes inline composer
+Button: "Post" (composer) — `comment-composer.tsx:127-136` — enabled: body.trim().length > 0 — handler: `comments.create`
+Button: thread header Edit / Delete / Pin (icon buttons) — `[threadId]/page.tsx:438-485` (`ThreadHeaderActions`) — handler: `threads.update` / `threads.delete`
 
 ## Gaps
 
@@ -80,14 +88,14 @@ Threads with unparseable `chapter_tag` (and therefore null `chapter_number`) are
 
 | Procedure | Auth | Input | Output |
 |-----------|------|-------|--------|
-| `threads.list` | member | `{ clubId, bookId, maxChapter?, sort? }` | `{ threads, hiddenCount }` |
-| `threads.create` | member | `{ clubId, bookId, title, body, chapterTag? }` | `{ thread }` |
-| `threads.get` | member | `{ clubId, threadId }` | `{ thread, comments }` |
-| `threads.update` | author or admin+ | `{ clubId, threadId, title?, body?, chapterTag?, isPinned? }` | `{ thread }` (no UI calls this) |
-| `threads.delete` | author or admin+ | `{ clubId, threadId }` | - (no UI calls this) |
+| `threads.list` | member | `{ clubId, bookId, maxChapter?, sort? }` | `{ threads, totalCount, hiddenCount }` |
+| `threads.create` | member | `{ clubId, bookId, title?, body, chapterTag? }` | `{ thread }` (title optional; derived from body when omitted) |
+| `threads.get` | member | `{ clubId, threadId }` | `{ thread }` (thread includes `comments`) |
+| `threads.update` | author or admin+ | `{ clubId, threadId, title?, body?, chapterTag?, isPinned? }` | `{ thread }` (called by header body-edit + pin toggle) |
+| `threads.delete` | author or admin+ | `{ clubId, threadId }` | `{ success }` (called by thread-detail Delete) |
 | `comments.create` | member | `{ clubId, threadId, body, parentCommentId? }` | `{ comment }` |
-| `comments.update` | author | `{ clubId, commentId, body }` | `{ comment }` (no UI calls this) |
-| `comments.delete` | author or admin+ | `{ clubId, commentId }` | - (no UI calls this) |
+| `comments.update` | author | `{ clubId, commentId, body }` | `{ comment }` (called by comment Edit) |
+| `comments.delete` | author or admin+ | `{ clubId, commentId }` | - (called by comment Delete) |
 
 ## Decisions & Alternatives
 
@@ -95,7 +103,7 @@ Threads with unparseable `chapter_tag` (and therefore null `chapter_number`) are
 |----------|--------|------------------------|-----------|
 | Spoiler mechanism | Chapter-tagged threads with progress-based filtering | Inline spoiler tags; AI detection; no system | Chapter tags are structural and predictable. |
 | Comment nesting | One level | Flat; unlimited | One level gives structure without indentation hell. |
-| Thread ownership | Author can edit/delete own; admin can delete any | Admin only; no deletion | Standard ownership pattern. (UI not yet built.) |
+| Thread ownership | Author can edit/delete own; admin can delete any | Admin only; no deletion | Standard ownership pattern. (UI wired via header icon buttons.) |
 | Content format | Markdown (CommonMark subset) | Rich text editor; plain text only | Rendered via `marked` (GFM) and sanitized with DOMPurify (DISC-BE-002/003). |
 | Chapter tag format | Free-form string + parsed integer | Structured dropdown; page ranges only | Free-form accommodates Prologue, Part I, etc. |
 | Reply button visibility | Always visible (current) | Hover/focus revealed (older spec) | Always visible is mobile-friendly and discoverable. |
