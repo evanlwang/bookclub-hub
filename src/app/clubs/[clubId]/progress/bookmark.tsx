@@ -65,7 +65,13 @@ export function BookmarkSlider({
   const top = `calc(${clamped / 100} * (100% - 26px))`;
 
   return (
-    <div className="flex h-[190px] select-none" data-testid="bookmark-slider">
+    <div
+      className="flex h-[190px] select-none"
+      data-testid="bookmark-slider"
+      // Opt out of the Sheet's swipe-down-to-dismiss: a downward drag here
+      // moves the bookmark, it must not drag the popup closed. @spec OVERLAY-SHEET-004
+      data-sheet-no-drag
+    >
       {/* the page */}
       <div className="relative flex-1 overflow-hidden rounded-l-[12px] border-[1.5px] border-r-0 border-line-strong bg-bg-soft">
         <div className="absolute inset-[16px_18px] flex flex-col gap-[9px]">
