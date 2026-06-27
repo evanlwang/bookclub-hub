@@ -4,7 +4,7 @@ Multi-tenancy backbone — club creation, membership, roles, the club switcher, 
 
 ## Status
 
-**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 active gaps, 0 divergences, 0 reverse orphans. Soft-delete + 30d hard-delete cron, archive/unarchive mutations, Admin Settings page, real-time code lookup, unread indicators, and switcher-prefetch all landed in Phase E.
+**OK** — last audited 2026-06-26 (git SHA `11aba35`). 0 active gaps, 0 divergences, 0 reverse orphans. Soft-delete + 30d hard-delete cron (now wired in `vercel.json`), archive/unarchive mutations, Admin Settings page, real-time code lookup, unread indicators, and switcher-prefetch are all shipped. This pass reconciled the club LLD (which still marked these as gaps/deferred) and aligned club-code-edit authorization to admin+ (`clubs.update` is `adminProcedure`).
 
 ## References
 

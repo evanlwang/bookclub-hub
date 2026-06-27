@@ -4,7 +4,7 @@ Book selection — nominations, approval voting, rounds, manual selection, tie-b
 
 ## Status
 
-**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 active gaps, 0 divergences, 0 reverse orphans. Phase E added: nomination pitch field, winner-banner CTAs, voting/nomination deadline pickers + sidebar countdown; cron deadline-reminder pipeline now active.
+**OK** — last audited 2026-06-26 (git SHA `11aba35`). 0 active gaps, 0 divergences, 0 reverse orphans. Nomination pitch field, winner-banner CTAs, voting/nomination deadline pickers + sidebar countdown, and the cron deadline-reminder pipeline are all shipped. This pass reconciled the redesign labels ("+ Nominate", "Now reading" banner, EarGlyph/slip language, ISBN cover fallback) and repointed every spec/LLD ref from the monolithic `vote-round.tsx` to the split `nominating-phase.tsx` / `voting-phase.tsx` / `decided-phase.tsx` (and the decomposed nominate modal). Confirmed `VOTE-API-VISIBILITY-002` matches the PR #15 tally-rank fix (decided nominations sorted so the winner banner matches the top tally).
 
 ## References
 

@@ -109,14 +109,14 @@ These specs document invariants enforced inside the `meetings` router and exerci
 
 ## Meeting Creation UI
 
-- `[x]` **MEET-UI-CREATE-001**: Button: "Propose Meeting" (`create-meeting.tsx:17-24`) is rendered in the meetings page header (admin only via membership check upstream). When clicked it switches the area to the create form.
+- `[x]` **MEET-UI-CREATE-001**: Button: "Propose Meeting" (`create-meeting.tsx:108-123`, `ProposeMeetingTrigger`) is rendered in the meetings page header (admin only via membership check upstream). When clicked it switches the area to the create form.
 - `[x]` **MEET-UI-CREATE-002**: The create form SHALL include:
-  - Optional Title input (`create-meeting.tsx:122-129`)
-  - "+ Add description" toggle that reveals an optional Description textarea (`create-meeting.tsx:132-151`)
-  - 2–5 time slots, each rendered with a custom `<DateTimePicker>` (calendar icon, popover with month grid + AM/PM time chooser, Esc/click-outside dismissal, keeping the "YYYY-MM-DDTHH:MM" local-ISO contract of the native input via a hidden form input) and a duration `<select>` offering 30 / 45 / 60 / 90 / 120 / 150 / 180 / 240 min, default 120. A row of quick-pick chips above the slots ("Tonight", "Tomorrow", "Sat 7pm", "Next Sat 7pm") prefills the next empty slot at 7:00 PM local; a small inline "in N days" line under each filled slot supplements the picker trigger's absolute date readout. (`create-meeting.tsx`, `date-time-picker.tsx`)
-  - Button: "+ Add another time" — visible when `slots.length < 5` (`create-meeting.tsx:191-200`)
-  - Button: "×" remove per slot — visible when `slots.length > 2` (`create-meeting.tsx:179-188`)
-  - Button: "Cancel" (`create-meeting.tsx:210-211`) closes the form
-  - Button: "Send to Members" (`create-meeting.tsx:213-221`) submits via `meetings.create`; reloads page on success
-- `[x]` **MEET-UI-CREATE-VAL-001**: Submit validation requires at least 2 slots with a non-empty `time`; otherwise inline error "At least 2 time slots are required". (`create-meeting.tsx:83-87`)
+  - Optional Title input (`create-meeting.tsx:231-241`) and an optional Location input (`create-meeting.tsx:251-258`)
+  - "+ Add description" toggle that reveals an optional Description textarea (`create-meeting.tsx:262-289`)
+  - 2–5 time slots, each rendered with a custom `<DateTimePicker>` (calendar icon, popover with month grid + AM/PM time chooser, Esc/click-outside dismissal, keeping the "YYYY-MM-DDTHH:MM" local-ISO contract of a native datetime-local input) and a duration `<select>` offering 30 / 45 / 60 / 90 / 120 / 150 / 180 / 240 min, default 120. A row of quick-pick chips above the slots ("Tonight 7pm" — shown only when 7pm is still upcoming today —, "Tomorrow 7pm", "Sat 7pm", "Next Sat 7pm") prefills the next empty slot at 7:00 PM local; a small inline relative-date line ("today" / "tomorrow" / "in N days") under each filled slot supplements the picker trigger's absolute date readout. (`create-meeting.tsx:291-366`, `date-time-picker.tsx`)
+  - Button: "+ Add another time" — visible when `slots.length < 5` (`create-meeting.tsx:367-376`)
+  - Button: "×" remove per slot — visible when `slots.length > 2` (`create-meeting.tsx:343-353`)
+  - Button: "Cancel" (`create-meeting.tsx:386-388`) closes the form
+  - Button: "Send to Members" (`create-meeting.tsx:389-397`) submits via `meetings.create`; on success it optimistically updates the meetings list cache (see MEET-UI-CREATE-003), no page reload
+- `[x]` **MEET-UI-CREATE-VAL-001**: Submit validation requires at least 2 slots with a non-empty `time`, otherwise inline error "At least 2 time slots are required"; it also rejects duplicate slot instants client-side with inline error "Two time slots have the same date and time" (mirrors MEET-BE-CREATE-DEDUP-001). (`create-meeting.tsx:185-221`)
 - `[x]` **MEET-UI-CREATE-003**: When `meetings.create` succeeds, the meetings list SHALL reflect the newly created meeting immediately on the proposer's screen without requiring a manual page reload. Implemented by optimistic prepend to the `meetings.list` query cache in `MeetingsClient` plus invalidation for server-authoritative backfill, mirroring the pattern used by confirm/cancel/edit/respond (MEET-UI-CACHE-SOT-001). (`create-meeting.tsx` `onCreated`, `meetings-client.tsx` `applyCreatedMeeting`)

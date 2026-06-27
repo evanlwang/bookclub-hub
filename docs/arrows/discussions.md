@@ -4,7 +4,7 @@ Threaded book discussions, chapter-tagged for spoiler filtering. Members filter 
 
 ## Status
 
-**OK** — last audited 2026-05-10 (git SHA `aee095b6`). 0 active gaps, 0 divergences, 0 reverse orphans. Phase E added Markdown rendering + sanitization (cluster 11), thread edit/delete/pin (cluster 12), chapter-mismatch warnings (cluster 13), and unread-discussions tracking (cluster 10).
+**OK** — last audited 2026-06-26 (git SHA `11aba35`). 0 active gaps, 0 divergences, 0 reverse orphans. Markdown rendering + sanitization, thread edit/delete/pin, chapter-mismatch warnings, and unread-discussions tracking are all shipped. This pass reconciled the redesign labels ("Margin notes", "+ New note", "Most replies", "You're on chapter") and repointed specs/LLD from the monolithic page to the split `discussions-content.tsx` / `create-thread.tsx` / `comment-item.tsx` components; `threads.list` now also returns `totalCount`.
 
 ## References
 

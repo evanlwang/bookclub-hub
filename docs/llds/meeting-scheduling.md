@@ -31,21 +31,22 @@ Phase descriptions:
 
 ## Button Inventory
 
-Button: "Propose Meeting" — `create-meeting.tsx:17-24` — visible: meetings page header (admin only) — handler: opens CreateMeetingForm
+Button: "Propose Meeting" — `create-meeting.tsx:108-123` (`ProposeMeetingTrigger`) — visible: meetings page header (admin only) — handler: opens CreateMeetingForm (sets `proposing` in MeetingsClient)
 Button: filter tabs "All" / "Proposed" / "Confirmed" / "Past" — `meetings-client.tsx:255-278` — visible: always — handler: setFilter (client state)
 Button: meeting row toggle (proposed) — `meetings-client.tsx:476-510` — visible: status="proposed" — handler: expand/collapse RespondMeeting
 Button: "Respond" / "Update" — `meetings-client.tsx:507-509` — visible: status="proposed" — handler: same toggle as row click
 Button: "Available" / "Maybe" / "Can't" (per slot) — `respond-meeting.tsx:165-192` — visible: respond UI expanded — handler: setSlotResponse → auto-persist (client state + `meetings.submitAvailability`)
 Availability auto-save — `respond-meeting.tsx:95-115` — visible: respond UI expanded — handler: `meetings.submitAvailability` fires on each per-slot selection (no dedicated "Save" button); inline-error guard requires ≥1 response (`respond-meeting.tsx:101-107`)
-Button: meeting title input — `create-meeting.tsx:122-129` — optional
-Button: "+ Add description" — `create-meeting.tsx:132-139` — visible: showDesc=false — handler: reveals description textarea
-Button: per-slot datetime input — `create-meeting.tsx:160-166` — always visible per slot
-Button: per-slot duration select (30/60/90/120 min) — `create-meeting.tsx:167-178` — always visible per slot
-Button: "×" remove slot — `create-meeting.tsx:179-188` — visible: slots.length > 2 — handler: removeSlot
-Button: "+ Add another time" — `create-meeting.tsx:191-200` — visible: slots.length < 5 — handler: addSlot
-Button: "Cancel" (create form) — `create-meeting.tsx:210-211` — visible: form open — handler: closes form
-Button: "Send to Members" — `create-meeting.tsx:213-221` — visible: form open — enabled: ≥2 slots have a time — handler: `meetings.create`; on success the new meeting is optimistically prepended to the meetings.list cache and an invalidation backfills server-authoritative state (MEET-UI-CREATE-003, MEET-UI-CACHE-SOT-001)
-Button: location text input — `create-meeting.tsx:248-251` — visible: form open — handler: setLocation; submitted with `meetings.create`
+Button: meeting title input — `create-meeting.tsx:231-241` — optional
+Button: "+ Add description" — `create-meeting.tsx:262-269` — visible: showDesc=false — handler: reveals description textarea
+Button: quick-pick chips ("Tonight 7pm" (only if 7pm is still upcoming today) / "Tomorrow 7pm" / "Sat 7pm" / "Next Sat 7pm") — `create-meeting.tsx:297-308` — visible: form open — handler: applyQuickPick fills the next empty slot at 7:00 PM local
+Button: per-slot datetime picker (`DateTimePicker`) — `create-meeting.tsx:321-326` — always visible per slot
+Button: per-slot duration select (30/45/60/90/120/150/180/240 min, default 120) — `create-meeting.tsx:329-342` — always visible per slot
+Button: "×" remove slot — `create-meeting.tsx:343-353` — visible: slots.length > 2 — handler: removeSlot
+Button: "+ Add another time" — `create-meeting.tsx:367-376` — visible: slots.length < 5 — handler: addSlot
+Button: "Cancel" (create form) — `create-meeting.tsx:386-388` — visible: form open — handler: closes form
+Button: "Send to Members" — `create-meeting.tsx:389-397` — visible: form open — handler: `meetings.create` (`handleSubmit` at `create-meeting.tsx:185-221`); validates ≥2 timed slots and no duplicate instants; on success the new meeting is optimistically prepended to the meetings.list cache and an invalidation backfills server-authoritative state (MEET-UI-CREATE-003, MEET-UI-CACHE-SOT-001)
+Button: location text input — `create-meeting.tsx:251-258` — visible: form open — handler: setLocation; submitted with `meetings.create`
 Button: per-slot "Confirm time" — `admin-confirm.tsx:179-188` (within `admin-confirm-section`) — visible: status="proposed", admin only — handler: `meetings.confirm` (MEET-UI-CONFIRM-BTN-001)
 Button: "Details" toggle — `meetings-client.tsx:383-406` — visible: status="confirmed", admin only — handler: toggles disclosure of Edit/Cancel buttons (MEET-UI-DETAILS-DISCLOSURE-001)
 Button: "Edit" — `edit-meeting-button.tsx` — visible: under Details disclosure on confirmed cards, or on proposed cards admin only — handler: opens focus-trapped dialog wired to `meetings.update` (MEET-UI-EDIT-BTN-001)
@@ -122,7 +123,7 @@ AvailabilityResponse {
 
 ## Time Zone Handling
 
-All timestamps stored in UTC (Prisma default). Frontend displays in user's local timezone via `toLocaleString` / `toLocaleTimeString`. Proposal UI uses `<input type="datetime-local">` which submits in user-local time and is converted to UTC via `new Date(s.time).toISOString()` (`create-meeting.tsx:79`). No per-user timezone setting in v1.
+All timestamps stored in UTC (Prisma default). Frontend displays in user's local timezone via `toLocaleString` / `toLocaleTimeString`. Proposal UI uses a custom `<DateTimePicker>` that emits a user-local `"YYYY-MM-DDTHH:MM"` string (same contract as a native `datetime-local` input); at submit it is converted to UTC via `new Date(s.time).toISOString()` (`create-meeting.tsx:193`). No per-user timezone setting in v1.
 
 ## Decisions & Alternatives
 
