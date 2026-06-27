@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: 2026-06-12
+last_updated: 2026-06-26
 
 # Taxonomy groups segments by domain cluster. Purely organizational.
 taxonomy:
@@ -66,8 +66,8 @@ arrows:
       - clubs
       - live-updates
     detail: voting.md
-    next: null
-    drift: null
+    next: re-stamp to HEAD — two coherent cascades (e0be268 cover/ear-glyph polish, 07aaec9 decided-order fix) landed after ec02705 with specs+tests but were never re-stamped; resolve VOTE-API-005-MANUAL / VOTE-API-009-MANUAL reverse orphans first
+    drift: post-stamp coherent cascades not re-stamped (e0be268, 07aaec9). Reverse orphans VOTE-API-005-MANUAL and VOTE-API-009-MANUAL annotated in nominate-modal.tsx/books.ts/books-manual.test.ts with no matching vote-specs.md entry (only base -005/-009 and -009-DEDUP exist).
 
   meetings:
     status: OK
@@ -79,8 +79,8 @@ arrows:
       - clubs
       - live-updates
     detail: meetings.md
-    next: null
-    drift: null
+    next: resolve MEET-BE-CREATE-DEDUP-001 / MEET-BE-RESP-EMPTY-001 reverse orphans (create specs or drop annotations)
+    drift: reverse orphans MEET-BE-CREATE-DEDUP-001 and MEET-BE-RESP-EMPTY-001 annotated in create-meeting.tsx/respond-meeting.tsx/meetings.ts with no matching meet-specs.md entry. Pending user decision.
 
   discussions:
     status: OK
@@ -247,3 +247,10 @@ unmapped:
     llds: []
     specs:
       - mobile-specs.md  # cozy-redesign mobile/touch specs (NAV-MOBILE-*, TOUCH-*, VOTE-UI-SLIP-*); spans clubs/voting/design — needs owner assignment
+  # Reverse orphans: @spec annotations in code/tests with no matching spec entry. Pending user decision (create spec / drop annotation / alias).
+  reverse_orphans:
+    - INFRA-ENV-VALIDATION-001  # src/env.ts, src/lib/db.ts, tests/unit/env.test.ts — no INFRA spec file or segment exists; needs an infra segment or a spec home
+    - VOTE-API-005-MANUAL       # voting — nominate-modal.tsx, books-manual.test.ts (base VOTE-API-005 exists)
+    - VOTE-API-009-MANUAL       # voting — nominate-modal.tsx, books.ts (base VOTE-API-009 / -009-DEDUP exist)
+    - MEET-BE-CREATE-DEDUP-001  # meetings — create-meeting.tsx, meetings.ts
+    - MEET-BE-RESP-EMPTY-001    # meetings — respond-meeting.tsx, meetings.ts
