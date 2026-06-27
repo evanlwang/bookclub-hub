@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { TRPCError } from "@trpc/server";
 import { getServerCaller } from "@/trpc/server";
 import { ClubSidebar } from "./sidebar";
 import { MobileTabBar } from "./mobile-tab-bar";
@@ -71,7 +73,18 @@ export default async function ClubLayout({
     userName = me.user.displayName || me.user.email;
     clubs = me.clubs;
     initialNavState = navState;
-  } catch {
+  } catch (e) {
+    // @spec CLUB-UI-ACCESS-GUARD-001, CLUB-UI-ACCESS-GUARD-002 — the layout is
+    // the common ancestor of every club route, so it owns the access decision
+    // once for the whole subtree. memberProcedure surfaces two "not allowed to
+    // view this club" failures we bounce on (a nonexistent club id misses the
+    // membership lookup and also reports FORBIDDEN). redirect() throws
+    // NEXT_REDIRECT, which propagates out of this catch; any other (unexpected)
+    // error falls through to the child / route error.tsx boundary.
+    if (e instanceof TRPCError) {
+      if (e.code === "UNAUTHORIZED") redirect("/login");
+      if (e.code === "FORBIDDEN" || e.code === "NOT_FOUND") redirect("/");
+    }
     // Will fall through to child which handles errors
   }
 

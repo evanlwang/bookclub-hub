@@ -26,8 +26,8 @@ test.describe("Sign Out", () => {
     expect(await getSessionCookie(page)).toBeUndefined();
   });
 
-  // @spec AUTH-UI-LOGOUT-003
-  test("revisiting a club after sign-out shows the unauthenticated state", async ({ page }) => {
+  // @spec AUTH-UI-LOGOUT-003, CLUB-UI-ACCESS-GUARD-001
+  test("revisiting a club after sign-out bounces to /login", async ({ page }) => {
     await loginAs(page, "alice@example.com");
     const wedReads = await getClubByCode("WEDREADS");
 
@@ -39,6 +39,7 @@ test.describe("Sign Out", () => {
     await page.waitForURL("**/", { timeout: 10000 });
 
     await page.goto(`/clubs/${wedReads.id}`);
-    await expect(page.getByTestId("club-error")).toBeVisible({ timeout: 10000 });
+    await page.waitForURL("**/login", { timeout: 10000 });
+    expect(new URL(page.url()).pathname).toBe("/login");
   });
 });
