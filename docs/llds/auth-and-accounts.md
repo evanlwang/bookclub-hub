@@ -119,7 +119,7 @@ A dedicated minimal page for returning users:
 
 1. On load, if `window.PublicKeyCredential` and conditional-mediation are available, the page requests a passkey assertion (`auth.startPasskeyLogin` → browser → `auth.finishPasskeyLogin`). A successful assertion creates a session and routes by `auth.me` (`/clubs/{firstClubId}` if any club, else `/join?welcome=1`).
 2. The page always also offers "email me a code": email input → `auth.requestOtp` → OTP entry → `auth.verifyOtp`. This is the fallback when no passkey exists or the platform can't run WebAuthn.
-3. Unknown email on the OTP path is **not** an error surface that reveals account existence — `requestOtp` responds the same whether or not the email maps to a user (anti-enumeration); a brand-new email that verifies is routed to `/join?welcome=1` to pick a club.
+3. Unknown email on the OTP path is **not** an error surface that reveals account existence — `requestOtp` responds the same whether or not the email maps to a user (anti-enumeration). A brand-new email that verifies on `/login` is created with a provisional display name (email local-part), gets a session, and is routed to `/join?welcome=1` (signalled by `isNewUser`) to pick a club and edit the name.
 
 Why a separate route: returning users get a one-tap (passkey) or one-field (email) form; the login-vs-signup separation lets the landing advertise both clearly.
 
@@ -194,7 +194,7 @@ WebAuthn registration and authentication each require a server-issued, single-us
 | Procedure | Input | Output / Behavior |
 |-----------|-------|-------------------|
 | `auth.requestOtp` | `{ email }` | `{ ok: true }` always (anti-enumeration). Generates a 6-digit code, stores its hash with a ~10-min TTL, emails it via `emailService.sendOtpCode`. Rate-limited per IP and per email. |
-| `auth.verifyOtp` | `{ email, code, displayName? }` | `{ user, sessionId }` (sets cookie) on a valid, unexpired, unconsumed code within the attempt cap. Creates the user if new (using `displayName`, required when the email is unknown), matches existing otherwise. Marks the OTP consumed. Throws `UNAUTHORIZED` on wrong/expired/exhausted code. |
+| `auth.verifyOtp` | `{ email, code, displayName? }` | `{ user, sessionId, isNewUser }` (sets cookie) on a valid, unexpired, unconsumed code within the attempt cap. Creates the user if new — using `displayName` when supplied (the `/join` route), otherwise a provisional name derived from the email local-part (the `/login` route) — and matches existing otherwise. Marks the OTP consumed. Throws `UNAUTHORIZED` on wrong/expired/exhausted code. The client uses `isNewUser` to route a fresh `/login` verifier to `/join?welcome=1` to pick a club and edit the provisional name. |
 | `auth.startPasskeyRegistration` | — (protected) | `{ options }` — WebAuthn `PublicKeyCredentialCreationOptions` with a fresh stored challenge, `excludeCredentials` = the user's existing passkeys. |
 | `auth.finishPasskeyRegistration` | `{ attestation, deviceName? }` (protected) | `{ credential }` — verifies attestation against the stored challenge, persists a `Credential`, consumes the challenge. |
 | `auth.startPasskeyLogin` | `{ email? }` | `{ options }` — WebAuthn `PublicKeyCredentialRequestOptions` with a fresh challenge; `allowCredentials` scoped to the email's passkeys when provided, empty for discoverable-credential (usernameless) login. |
@@ -221,7 +221,14 @@ Both env vars are added to the `src/env` validation schema. Mismatched RP config
 
 ## Rate Limiting
 
-`auth.requestOtp` and `auth.verifyOtp` reuse the in-process limiter (`src/lib/auth/rate-limit.ts`): per-IP and per-email windows on requests, plus a per-OTP attempt cap enforced via `EmailOtp.attempts`. `clubs.join` (unauthenticated branch) retains its limit. The passkey ceremonies are challenge-gated and additionally IP-limited. (Carries forward `AUTH-API-RATELIMIT-001`, retargeted from `signIn`/`enter` to the OTP procedures.)
+`auth.requestOtp` and `auth.verifyOtp` reuse the in-process limiter (`src/lib/auth/rate-limit.ts`): 5 requests per minute per source IP AND per normalized email, plus a per-OTP attempt cap of 5 verifications enforced via `EmailOtp.attempts`. `clubs.join` (unauthenticated branch) retains its limit. The passkey ceremonies are challenge-gated and additionally IP-limited. (Carries forward `AUTH-API-RATELIMIT-001`, retargeted from `signIn`/`enter` to the OTP procedures.)
+
+### Chosen magnitudes & operational notes
+
+- **OTP TTL:** 10 minutes.
+- **OTP attempt cap:** 5 verification attempts per issued code, then the code is dead and a new one must be requested.
+- **Resend / supersede:** `requestOtp` marks any prior unconsumed OTP for that email consumed before issuing a new one, so only the latest code verifies.
+- **Preview deployments:** passkeys are bound to `WEBAUTHN_RP_ID` (the stable production domain). Vercel preview URLs have different hostnames, so passkeys won't assert there — preview/dev rely on the OTP path. This is expected, not a bug.
 
 ## Decisions & Alternatives
 

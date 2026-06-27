@@ -28,7 +28,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 
 - `[ ]` **AUTH-UI-LOGIN-001**: The `/login` page SHALL be passkey-first: WHEN `window.PublicKeyCredential` and conditional mediation are available, it SHALL request a passkey assertion via `auth.startPasskeyLogin` and complete login with `auth.finishPasskeyLogin` without requiring email entry. It SHALL always also render an "email me a code" affordance as the fallback. (`src/app/login/page.tsx`)
 - `[ ]` **AUTH-UI-LOGIN-002**: On a successful login (passkey assertion OR verified OTP), the page SHALL call `auth.me`; if the user has one or more memberships, it SHALL `router.push("/clubs/{firstClubId}")` so the user lands directly inside a club (the standalone `/clubs` index page was removed). (`src/app/login/page.tsx`)
-- `[ ]` **AUTH-UI-LOGIN-003**: WHEN a login completes for a user with zero memberships, the page SHALL `router.push("/join?welcome=1[&email=…]")`. The `/join` page SHALL render a welcome banner above Step 1 and pre-fill the email field. (`src/app/login/page.tsx`, `src/app/join/page.tsx`)
+- `[ ]` **AUTH-UI-LOGIN-003**: WHEN a login completes for a user with zero memberships OR `verifyOtp` returns `isNewUser: true`, the page SHALL `router.push("/join?welcome=1[&email=…]")`. The `/join` page SHALL render a welcome banner above Step 1 and pre-fill the email field; a newly-created user (provisional name) can edit the display name there. (`src/app/login/page.tsx`, `src/app/join/page.tsx`)
 - `[x]` **AUTH-UI-LOGIN-EMAIL-HINT-001**: When the email field is non-empty AND fails the basic `@`+`.` shape check, the `/login` page SHALL render an inline helper-text error ("Enter a valid email like name@example.com.") below the input and set `aria-invalid="true"` on the input. The helper SHALL NOT appear while the field is empty. (`src/app/login/page.tsx`)
 - `[ ]` **AUTH-UI-LOGIN-AUTOCOMPLETE-001**: The `/login` email input SHALL set `autoComplete="email webauthn"` so both password managers and the platform passkey picker recognize the form, and the OTP code input SHALL set `autoComplete="one-time-code"` and `inputMode="numeric"` so the platform offers the emailed code for autofill. (`src/app/login/page.tsx`)
 
@@ -81,7 +81,7 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 
 - `[x]` **AUTH-DATA-001**: User identity stored as email (unique, lowercase-normalized) and `display_name`.
 - `[x]` **AUTH-DATA-002**: Email uniqueness is case-insensitive ("Evan@Example.com" and "evan@example.com" resolve to the same user).
-- `[ ]` **AUTH-API-001**: `auth.verifyOtp` SHALL create a new user when the verified email does not exist (requiring `displayName`), or match and return the existing user when it does. It MUST NOT create a user until the OTP is verified. (`src/server/routers/auth.ts`)
+- `[ ]` **AUTH-API-001**: `auth.verifyOtp` SHALL create a new user when the verified email does not exist — using the supplied `displayName` when present (the `/join` route) or a provisional display name derived from the email local-part when absent (the `/login` route) — or match and return the existing user when it does. It MUST NOT create a user until the OTP is verified. The result SHALL include `isNewUser`. (`src/server/routers/auth.ts`)
 - `[ ]` **AUTH-API-002**: WHEN an existing user verifies an OTP and supplies a `displayName` that differs from the stored one, the system SHALL update the display name. (`src/server/routers/auth.ts`)
 
 ## Email One-Time Code (OTP)
@@ -93,7 +93,8 @@ State: step 4 (Success) — buttons shown: invite code "Copy" (create branch onl
 - `[ ]` **AUTH-OTP-SINGLE-USE-001**: A consumed OTP SHALL NOT verify a second time; replaying a previously-accepted code SHALL throw `UNAUTHORIZED`. (`src/lib/auth/otp.ts`)
 - `[ ]` **AUTH-OTP-EXPIRY-001**: An OTP presented after its `expires_at` SHALL be rejected with `UNAUTHORIZED` and SHALL NOT create a session. (`src/lib/auth/otp.ts`)
 - `[ ]` **AUTH-OTP-ATTEMPTS-001**: The system SHALL cap verification attempts per issued OTP (incrementing `attempts`); once the cap is exceeded the code SHALL be rejected even if later presented correctly, and the user must request a new code. (`src/lib/auth/otp.ts`)
-- `[ ]` **AUTH-OTP-LATEST-001**: WHEN multiple OTPs are requested for the same email, verification SHALL succeed only against an unconsumed, unexpired code; superseded codes follow the same expiry/consumption rules. (`src/lib/auth/otp.ts`)
+- `[ ]` **AUTH-OTP-LATEST-001**: WHEN a new OTP is requested for an email, the system SHALL mark any prior unconsumed OTP for that email consumed before issuing the new code, so only the most recently requested code can verify. (`src/server/routers/auth.ts`, `src/lib/auth/otp.ts`)
+- `[ ]` **AUTH-OTP-MAGNITUDES-001**: The OTP SHALL expire 10 minutes after issuance, and the per-code verification attempt cap SHALL be 5. (`src/lib/auth/otp.ts`)
 
 ## Passkeys (WebAuthn)
 
