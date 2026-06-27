@@ -11,9 +11,18 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 
 ## Dashboard State
 
+State: fresh club (no book, no active round, no meetings) — buttons shown: first-run nook setup rail (copy/share invite code, "Start a book vote" / "Nominate a book") — transitions: → `/clubs/{id}/vote`
 State: club loaded — buttons shown: attention banner CTA (when applicable), per-card CTAs (vote/meet/discuss/progress) — transitions: route-level navigation
 State: error — buttons shown: none — message: `error.message` displayed
-State: empty (no current book) — buttons shown: "Start a vote" link — transitions: → `/clubs/{id}/vote`
+State: empty (no current book, but a round/meeting exists) — buttons shown: per-card empty CTAs ("Start a vote" link etc.) — transitions: → `/clubs/{id}/vote`
+
+## First-Run Nook (Empty State)
+
+The freshly created club replaces the grid of empty preview boxes with a single first-run experience. Threads and progress cannot exist without a selected book, so the book/round/meeting trio fully characterises the zero state.
+
+- `[x]` **DASH-UI-EMPTY-NOOK-001**: When a club has no current book AND no active round (`nominating`/`voting`) AND no meetings, the dashboard SHALL render the first-run `EmptyNook` instead of the populated hero + preview grid: a welcome hero ("It's quiet in here." + an empty book slot + the signature page-edge promise bar), a two-step setup rail, and a muted "Then the nook fills in" preview strip. (`src/app/clubs/[clubId]/page.tsx`, `src/app/clubs/[clubId]/empty-nook.tsx` `data-testid="empty-nook"`)
+- `[x]` **DASH-UI-EMPTY-SETUP-001**: The setup rail SHALL present the two things that actually start a club. Step 1 ("Bring your club in") renders the invite code (`data-testid="empty-club-code"`) with a Copy button (`data-testid="empty-copy-code-btn"`, swaps to "Copied ✓" for 1.6s) and a Share button (native `navigator.share` when available, falling back to copy), plus a member-count line ("Just you so far" at 1 member, "{N} members so far" beyond). Step 2 ("Choose the first read") renders a primary CTA (`data-testid="empty-start-vote"`) linking to `/clubs/{clubId}/vote` whose label is "Start a book vote" for admins (owner/admin) — with an extra "I'll pick" shortcut — and "Nominate a book" for members. (`src/app/clubs/[clubId]/empty-nook.tsx`)
+- `[x]` **DASH-UI-EMPTY-UNLOCKS-001**: Below the setup rail, a "Then the nook fills in" strip SHALL teach the populated layout with three muted, non-interactive rows (Meetings, Margin notes, Reading progress), each marked "SOON", instead of stacking empty boxes. (`src/app/clubs/[clubId]/empty-nook.tsx`)
 
 ## Sidebar Navigation
 

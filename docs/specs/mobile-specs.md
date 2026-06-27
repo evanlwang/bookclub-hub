@@ -38,6 +38,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 - `[x]` **OVERLAY-SHEET-001**: The system SHALL provide one overlay primitive that renders as a bottom sheet below `md` (anchored bottom, rounded top, slide-up, drag handle, internal scroll, safe-area padding) and as a centered modal at `md+`, dismissable by backdrop tap, Escape, and swipe-down on mobile. (`src/components/ui/sheet.tsx`)
 - `[x]` **OVERLAY-SHEET-002**: The Sheet SHALL trap focus and restore it on close, reusing the existing focus-trap utility. (`src/components/ui/sheet.tsx`)
 - `[x]` **OVERLAY-SHEET-003**: Existing center-screen modals SHALL be migrated to the Sheet primitive so all overlays share mobile behavior. (`club-switcher-modal.tsx`, `vote/nominate-modal.tsx`, `vote/close-voting-dialog.tsx`, `progress/update-modal.tsx`, `meetings/edit-meeting-dialog.tsx`, `meetings/cancel-meeting-dialog.tsx`)
+- `[x]` **OVERLAY-SHEET-004**: The Sheet's swipe-down-to-dismiss SHALL NOT engage when the touch begins inside an element opting out via `data-sheet-no-drag`, so an inner vertical drag control (e.g. the bookmark slider) never fights — or accidentally triggers — the dismiss gesture on mobile. (`src/components/ui/sheet.tsx`, `src/app/clubs/[clubId]/progress/bookmark.tsx`)
 
 ## Mobile density (no horizontal overflow at 375px)
 

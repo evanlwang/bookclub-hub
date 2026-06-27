@@ -15,7 +15,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 State: proposed — buttons shown: "Respond"/"Update" (all members), expanded: per-slot "Available"/"Maybe"/"Can't" (auto-saves on each selection, all members); "Propose Meeting" (admin, header); admin-only in the expanded panel: availability heatmap, per-slot "Confirm time", "Edit", "Cancel meeting" (the admin-confirm section) — transitions: → confirmed (admin via `meetings.confirm`, wired to the "Confirm time" buttons — `MEET-UI-CONFIRM-BTN-001`), → cancelled (admin via `meetings.cancel`, wired to the "Cancel meeting" button — `MEET-UI-CANCEL-BTN-001`)
 State: confirmed — buttons shown: read-only details for all members; admin-only "Edit" and "Cancel meeting" revealed behind a "Details" toggle (`MEET-UI-DETAILS-DISCLOSURE-001`) — transitions: → completed (manual via `meetings.update`; **no scheduled job / auto-complete**), → cancelled (admin via `meetings.cancel` behind the Details toggle — `MEET-UI-CANCEL-BTN-001`)
 State: completed — buttons shown: none (display only; a Notes button remains deferred and is not rendered) — transitions: terminal
-State: cancelled — buttons shown: none (rendered as "Past") — transitions: terminal
+State: cancelled — buttons shown: none (excluded from the meetings list per `MEET-UI-LIST-001`; retained in DB) — transitions: terminal
 
 ## Meeting Creation API
 
@@ -76,13 +76,14 @@ These specs document invariants enforced inside the `meetings` router and exerci
 
 ## Meeting List UI
 
-- `[x]` **MEET-UI-006**: The meeting list SHALL support filter tabs (All / Proposed / Confirmed / Past) with counts. Past tab maps to `status === "completed"` (cancelled meetings are also rendered with `PastMeetingRow`). (`meetings-client.tsx:255-278`)
-- `[x]` **MEET-UI-LIST-EMPTY-001**: When no meetings match the filter, the list SHALL display an empty-state message (`data-testid="no-meetings"`): "No meetings yet — propose one to get started." for the All filter, otherwise "No {filter} meetings." (`meetings-client.tsx:280-293`)
+- `[x]` **MEET-UI-006**: The meeting list SHALL support filter tabs (All / Proposed / Confirmed / Past) with counts. Past tab maps to `status === "completed"`; cancelled meetings are excluded from every tab and count (MEET-UI-LIST-001). (`meetings-client.tsx:227-293`)
+- `[x]` **MEET-UI-LIST-EMPTY-001**: When no meetings match the filter, the list SHALL display an empty-state message (`data-testid="no-meetings"`): "No meetings yet — propose one to get started." for the All filter, otherwise "No {filter} meetings." (`meetings-client.tsx:294-297`)
+- `[x]` **MEET-UI-LIST-001**: The meetings list SHALL exclude meetings in `cancelled` status — a cancelled meeting carries no outcome and adds only noise to the history surface. The exclusion is at the UI render layer (counts, filter tabs, and the rendered list all derive from the non-cancelled `visibleMeetings` set); `meetings.list` continues to return all statuses for badge/active detection. When every meeting in a club is cancelled, the list SHALL render the same empty state as a club with zero meetings. (`meetings-client.tsx:201` `visibleMeetings`)
 
 ## Proposed Meeting Row
 
-- `[x]` **MEET-UI-PROP-001**: Each proposed meeting SHALL render a per-viewer status badge ("Awaiting your response" warning, or "You responded" success), the title, the linked book title (if any), the slot count, and the responder count. (`meetings-client.tsx:489-506`)
-- `[x]` **MEET-UI-PROP-002**: The row is clickable and SHALL toggle expansion to reveal the respond UI. The right-aligned Button ("Respond", or "Update" once the viewer has responded) provides an explicit affordance for the same toggle. (`meetings-client.tsx:476-510`)
+- `[x]` **MEET-UI-PROP-001**: Each proposed meeting SHALL render as a flat card (no calendar icon-box column) with a viewer-aware status badge carrying a dot — "Awaiting your response" in the `primary` tone when the viewer has not responded, "You responded" in the `success` tone once they have — alongside the title and the linked book title (if any). Below, a serif-italic slot-count subtitle ("{N} time slots proposed") and the responder count next to the progress bar. (`meetings-client.tsx` `ProposedMeetingRow`)
+- `[x]` **MEET-UI-PROP-002**: The row is clickable and SHALL toggle expansion to reveal the respond UI. A full-width Button at the bottom of the card provides an explicit affordance for the same toggle: primary "Respond" when the viewer has not responded, ghost "Update" once they have. (`meetings-client.tsx` `ProposedMeetingRow`)
 - `[x]` **MEET-UI-007**: The row counts members responded (deduped by userId across all slots' responses). Older spec's amber-→-green progress bar is not implemented; only the count is shown.
 - `[x]` **MEET-UI-PROP-PROGRESS-001**: Each proposed meeting row SHALL render a thin horizontal progress bar reflecting `responded / memberCount` as a percentage. The fill SHALL be a CSS gradient running from `--color-warning` (amber, left edge / 0%) to `--color-success` (green, right edge / 100%), revealed by `clip-path` so partial fills show partial gradient. The bar carries `data-testid="response-progress-{meetingId}"`, `data-percentage` (0–100 integer), and `data-tone` (`"green"` when 100%, otherwise `"amber"`); also exposed as a `role="progressbar"` with `aria-valuenow/min/max`. (`meetings-client.tsx` `ResponseProgress`)
 
@@ -99,7 +100,7 @@ These specs document invariants enforced inside the `meetings` router and exerci
 
 ## Past Meeting Row
 
-- `[x]` **MEET-UI-009**: Past meetings (`status="completed"` or `status="cancelled"`) SHALL render muted (`opacity-75`), with a muted date stamp (or a "—" placeholder when there is no confirmed time), a rotated "PAST"/"CANCELLED" rubber-stamp marker, the title, the location, and the attended count (or "Cancelled" when applicable). (`meetings-client.tsx:546-575`)
+- `[x]` **MEET-UI-009**: Past meetings (`status="completed"`) SHALL render muted (`opacity-75`), with a rotated muted date stamp (or a "—" placeholder when there is no confirmed time), a rotated "PAST" rubber-stamp marker, the title, the location, and the attended count. Cancelled meetings are excluded from the list entirely (MEET-UI-LIST-001) and never reach this row. (`meetings-client.tsx:555-580`)
 
 ## Live Updates (mechanism: docs/llds/live-updates.md)
 

@@ -58,29 +58,58 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
 
   return (
     <div data-testid="decided-phase">
-      {/* The "Now reading" shelf moment — amber wash, centered cover resting
-          on an ink shelf. @spec VOTE-UI-DEC-CTA-MEETING-001, VOTE-UI-DEC-CTA-OPENLIB-001 */}
+      {/* The "Now reading" moment — amber wash, the winning cover grounded by a
+          soft contact shadow (no hard shelf) and pressed with a rubber-stamp
+          seal. The #1 rank badge marks it the winner; it is omitted from the
+          tally list below.
+          @spec VOTE-UI-DEC-WINNER-001, VOTE-UI-DEC-CTA-MEETING-001, VOTE-UI-DEC-CTA-OPENLIB-001 */}
       {winner && (
         <>
           <div
-            className="relative overflow-hidden rounded-[var(--radius-lg)] border border-line shadow-md px-4 pt-6 pb-0 text-center"
+            data-testid="decided-winner-card"
+            className="relative overflow-hidden rounded-[var(--radius-lg)] border border-line shadow-md px-4 pt-6 pb-8 text-center"
             style={{
               background:
-                "linear-gradient(180deg, var(--color-accent-soft), var(--color-bg-soft) 75%)",
+                "linear-gradient(180deg, var(--color-accent-soft), var(--color-bg-soft) 78%)",
             }}
           >
+            {/* #1 rank badge — amber, with a pressable bottom edge */}
+            <span
+              aria-hidden="true"
+              className="absolute top-3.5 left-3.5 z-[2] flex h-[30px] w-[30px] items-center justify-center rounded-full bg-accent font-[var(--font-display)] text-[15px] font-extrabold text-ink shadow-[0_2px_0_var(--color-accent-hover),var(--shadow-sm)]"
+            >
+              1
+            </span>
             <Badge tone="accent" dot>Now reading</Badge>
             <h2 className="font-[var(--font-display)] text-[23px] font-extrabold leading-tight tracking-tight text-ink mt-2.5 mb-0.5 break-words">
               {winner.book.title}
             </h2>
             <p className="font-[var(--font-serif)] italic text-[15px] text-ink-2 m-0">
-              {winner.book.author} · {winner.voteCount ?? 0} approval vote{(winner.voteCount ?? 0) === 1 ? "" : "s"} · nominated by {winner.nominator.displayName}
+              {winner.book.author} · nominated by {winner.nominator.displayName}
             </p>
-            <div className="flex justify-center mt-3.5">
-              <BookCover title={winner.book.title} author={winner.book.author} coverUrl={winner.book.coverUrl} isbn={winner.book.isbn} size="md" />
+            <div className="relative inline-block mt-5">
+              {/* soft contact shadow grounds the book — no hard shelf */}
+              <div
+                aria-hidden="true"
+                className="absolute left-1/2 -bottom-2.5 -translate-x-1/2 w-[82%] h-4 rounded-[50%]"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at center, color-mix(in srgb, var(--color-ink) 30%, transparent), transparent 72%)",
+                }}
+              />
+              <BookCover title={winner.book.title} author={winner.book.author} coverUrl={winner.book.coverUrl} isbn={winner.book.isbn} size="lg" />
+              {/* stamped seal — echoes the library-card stamp moment */}
+              <div
+                data-testid="decided-winner-stamp"
+                className="font-[var(--font-mono)] absolute -top-3 -right-4 flex h-[58px] w-[58px] -rotate-[7deg] flex-col items-center justify-center rounded-full border-2 border-primary bg-bg-soft/85 text-primary-ink shadow-[var(--shadow-sm)]"
+              >
+                <span className="text-[7.5px] font-bold tracking-[0.12em] leading-none">THE</span>
+                <span className="font-[var(--font-display)] text-[15px] leading-[1.05] text-primary-ink">PICK</span>
+                <span className="text-[6.5px] font-bold tracking-[0.05em] leading-none mt-px">
+                  {winner.voteCount ?? 0} VOTE{(winner.voteCount ?? 0) === 1 ? "" : "S"}
+                </span>
+              </div>
             </div>
-            {/* the shelf */}
-            <div className="h-3 -mx-4 rounded-t bg-ink shadow-[0_-3px_8px_rgba(96,64,32,0.18)]" />
           </div>
           <div className="flex gap-2 mt-3 mb-6">
             <Link
@@ -181,18 +210,24 @@ export function DecidedPhase({ clubId, nominations, isAdmin }: DecidedPhaseProps
         </div>
       )}
 
-      {/* @spec DENSITY-VOTE-001 — ranked slips with vote bars stack cleanly
-          at any width; the rank badge marks the winner in amber. */}
+      {/* @spec VOTE-UI-DEC-WINNER-001, DENSITY-VOTE-001 — ranked runner-up slips
+          with vote bars. The winner is #1 and is shown in the card above, so the
+          tally list starts at rank 2. */}
       <div className="flex flex-col gap-2.5">
-        {nominations.map((nom, i) => (
+        {nominations.slice(1).map((nom, i) => (
           <Slip
             key={nom.id}
+            rank={i + 2}
             nom={nom}
-            rank={i + 1}
             votes={nom.voteCount ?? 0}
             maxVotes={maxVotes}
           />
         ))}
+        {nominations.length <= 1 && (
+          <p className="font-[var(--font-serif)] italic text-[14px] text-ink-3">
+            No other nominations this round.
+          </p>
+        )}
       </div>
 
       {error && <p className="text-sm text-danger mt-2">{error}</p>}

@@ -21,20 +21,20 @@ confirmed → cancelled
 State: proposed — buttons shown: "Respond"/"Update", per-slot "Available"/"Maybe"/"Can't" (availability auto-saves on each selection — no "Save" button); admin only: heatmap, per-slot "Confirm time", and Edit/"Cancel meeting" (within `admin-confirm-section`) — transitions: → confirmed (`meetings.confirm` via the "Confirm time" buttons); → cancelled (`meetings.cancel` via the "Cancel meeting" button)
 State: confirmed — buttons shown: read-only meeting details for all members; admin only: Edit and "Cancel meeting" hidden behind a "Details" toggle (`MEET-UI-DETAILS-DISCLOSURE-001`) — transitions: → completed (**manual via `meetings.update` only; no background job / auto-complete**); → cancelled (Cancel under Details disclosure)
 State: completed — buttons shown: none (display only) — transitions: terminal
-State: cancelled — buttons shown: none (rendered as Past) — transitions: terminal
+State: cancelled — buttons shown: none (excluded from the meetings list per `MEET-UI-LIST-001`; retained in DB) — transitions: terminal
 
 Phase descriptions:
 - **Proposed**: admin offers 2–5 candidate slots. Members mark availability per slot. Admin sees an availability heatmap and confirms one slot.
 - **Confirmed**: a slot has been picked. Confirmed time and location are surfaced to all members. Admin can still Edit or Cancel via the Details disclosure on the confirmed card.
 - **Completed**: time has passed. Today reached only by manual `meetings.update` or via the API; no scheduled job.
-- **Cancelled**: admin cancels via the Cancel button in the Details disclosure (or via API).
+- **Cancelled**: admin cancels via the Cancel button in the Details disclosure (or via API). A cancelled meeting is hidden from the meetings list entirely (`MEET-UI-LIST-001`) — mirroring how cancelled voting rounds are excluded from the round history (`VOTE-UI-LIST-001`). The row remains in the DB for audit and is still returned by `meetings.list`; the exclusion is purely at the render layer so badge/active detection is unaffected.
 
 ## Button Inventory
 
 Button: "Propose Meeting" — `create-meeting.tsx:108-123` (`ProposeMeetingTrigger`) — visible: meetings page header (admin only) — handler: opens CreateMeetingForm (sets `proposing` in MeetingsClient)
-Button: filter tabs "All" / "Proposed" / "Confirmed" / "Past" — `meetings-client.tsx:255-278` — visible: always — handler: setFilter (client state)
-Button: meeting row toggle (proposed) — `meetings-client.tsx:476-510` — visible: status="proposed" — handler: expand/collapse RespondMeeting
-Button: "Respond" / "Update" — `meetings-client.tsx:507-509` — visible: status="proposed" — handler: same toggle as row click
+Button: filter tabs "All" / "Proposed" / "Confirmed" / "Past" — `meetings-client.tsx:260-293` — visible: always — handler: setFilter (client state)
+Button: meeting row toggle (proposed) — `meetings-client.tsx` `ProposedMeetingRow` — visible: status="proposed" — handler: expand/collapse RespondMeeting. Flat card (no icon-box column): title + viewer-aware badge (primary "Awaiting your response" / success "You responded") on the top row, serif-italic slot-count subtitle, then the progress bar with the responder count.
+Button: "Respond" / "Update" — `meetings-client.tsx` `ProposedMeetingRow` — visible: status="proposed" — handler: same toggle as row click. Full-width button at the bottom of the card (primary when awaiting, ghost "Update" once the viewer has responded).
 Button: "Available" / "Maybe" / "Can't" (per slot) — `respond-meeting.tsx:165-192` — visible: respond UI expanded — handler: setSlotResponse → auto-persist (client state + `meetings.submitAvailability`)
 Availability auto-save — `respond-meeting.tsx:95-115` — visible: respond UI expanded — handler: `meetings.submitAvailability` fires on each per-slot selection (no dedicated "Save" button); inline-error guard requires ≥1 response (`respond-meeting.tsx:101-107`)
 Button: meeting title input — `create-meeting.tsx:231-241` — optional
@@ -48,7 +48,7 @@ Button: "Cancel" (create form) — `create-meeting.tsx:386-388` — visible: for
 Button: "Send to Members" — `create-meeting.tsx:389-397` — visible: form open — handler: `meetings.create` (`handleSubmit` at `create-meeting.tsx:185-221`); validates ≥2 timed slots and no duplicate instants; on success the new meeting is optimistically prepended to the meetings.list cache and an invalidation backfills server-authoritative state (MEET-UI-CREATE-003, MEET-UI-CACHE-SOT-001)
 Button: location text input — `create-meeting.tsx:251-258` — visible: form open — handler: setLocation; submitted with `meetings.create`
 Button: per-slot "Confirm time" — `admin-confirm.tsx:179-188` (within `admin-confirm-section`) — visible: status="proposed", admin only — handler: `meetings.confirm` (MEET-UI-CONFIRM-BTN-001)
-Button: "Details" toggle — `meetings-client.tsx:383-406` — visible: status="confirmed", admin only — handler: toggles disclosure of Edit/Cancel buttons (MEET-UI-DETAILS-DISCLOSURE-001)
+Button: "Details" toggle — `meetings-client.tsx:383-410` — visible: status="confirmed", admin only — handler: toggles disclosure of Edit/Cancel buttons (MEET-UI-DETAILS-DISCLOSURE-001)
 Button: "Edit" — `edit-meeting-button.tsx` — visible: under Details disclosure on confirmed cards, or on proposed cards admin only — handler: opens focus-trapped dialog wired to `meetings.update` (MEET-UI-EDIT-BTN-001)
 Button: "Cancel meeting" — `cancel-meeting-button.tsx` — visible: under Details disclosure on confirmed cards, or on proposed cards admin only — handler: opens focus-trapped dialog wired to `meetings.cancel` (MEET-UI-CANCEL-BTN-001)
 

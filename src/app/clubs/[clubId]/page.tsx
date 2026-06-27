@@ -1,4 +1,4 @@
-// @spec DASH-UI-006, DASH-UI-007, DASH-UI-009, DASH-UI-011, DASH-UI-HERO-PROGRESS-001, DISC-UI-DASH-FEED-AUTOFILTER-001, DASH-UI-BOOKMARK-EDGE-001
+// @spec DASH-UI-006, DASH-UI-007, DASH-UI-009, DASH-UI-011, DASH-UI-EMPTY-NOOK-001, DASH-UI-HERO-PROGRESS-001, DISC-UI-DASH-FEED-AUTOFILTER-001, DASH-UI-BOOKMARK-EDGE-001
 import { getServerCaller } from "@/trpc/server";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
@@ -6,6 +6,7 @@ import { Card, Badge, BookCover, ChapterChip, Avatar, EarGlyph, DateStamp } from
 import { deriveSpoilerCutoff } from "@/lib/discussions/spoiler-cutoff";
 import { CopyClubCode } from "./copy-club-code";
 import { BookmarkEdge, type EdgeMember } from "./bookmark-edge";
+import { EmptyNook } from "./empty-nook";
 
 export default async function ClubDashboard({
   params,
@@ -25,6 +26,8 @@ export default async function ClubDashboard({
   let hasPendingMeeting = false;
   let viewerId = "";
   let myVoteCount: number | null = null;
+  let isAdmin = false;
+  let memberCount = 0;
 
   try {
     const caller = await getServerCaller();
@@ -39,6 +42,13 @@ export default async function ClubDashboard({
     club = clubResult.club;
     currentBook = clubResult.currentBook;
     meetings = meetingsResult;
+    memberCount = clubResult.members.length;
+    // @spec DASH-UI-EMPTY-SETUP-001 — the first-run setup rail varies its
+    // "choose the first read" step by whether the viewer can start a vote.
+    const viewerRole = clubResult.members.find(
+      (m: any) => m.userId === me.user.id
+    )?.role;
+    isAdmin = viewerRole === "owner" || viewerRole === "admin";
     activeRound = rounds.find(
       (r: any) => r.status === "nominating" || r.status === "voting"
     );
@@ -94,6 +104,43 @@ export default async function ClubDashboard({
         <p data-testid="club-error" className="text-danger">
           {error}
         </p>
+      </div>
+    );
+  }
+
+  // @spec DASH-UI-EMPTY-NOOK-001 — a freshly created club (no book, no active
+  // vote, nothing scheduled) gets the first-run nook instead of a grid of empty
+  // boxes. Threads and progress can't exist without a selected book, so the
+  // book/round/meeting trio fully characterises the zero state.
+  const isFreshClub =
+    !currentBook?.book && !activeRound && meetings.length === 0;
+  if (isFreshClub) {
+    return (
+      <div className="w-full max-w-[1600px]">
+        <div className="mb-8 hidden md:block">
+          <p className="text-[11px] font-bold font-[var(--font-display)] text-ink-3 uppercase tracking-[0.18em] mb-2">
+            Your reading nook
+          </p>
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <h1
+              className="font-[var(--font-display)] text-[clamp(28px,2.6vw,40px)] font-extrabold text-ink tracking-tight leading-none"
+              data-testid="club-name"
+            >
+              {club.name}
+            </h1>
+          </div>
+          <div className="mt-2 flex items-center gap-3">
+            <CopyClubCode code={club.code} />
+          </div>
+          <div className="mt-5 h-px bg-line" />
+        </div>
+        <EmptyNook
+          clubId={clubId}
+          clubName={club.name}
+          code={club.code}
+          memberCount={memberCount}
+          admin={isAdmin}
+        />
       </div>
     );
   }
