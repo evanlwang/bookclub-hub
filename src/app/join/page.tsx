@@ -24,9 +24,6 @@ function JoinPageInner() {
 
   const [email, setEmail] = useState(prefilledEmail);
   const [displayName, setDisplayName] = useState("");
-  const [passcode, setPasscode] = useState("");
-  const [identityError, setIdentityError] = useState("");
-  const [signingIn, setSigningIn] = useState(false);
 
   const [code, setCode] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -46,12 +43,9 @@ function JoinPageInner() {
   const [successClubCode, setSuccessClubCode] = useState("");
 
   const utils = trpc.useUtils();
-  const enterMutation = trpc.auth.enter.useMutation();
   const joinMutation = trpc.clubs.join.useMutation();
   const createMutation = trpc.clubs.create.useMutation();
 
-  const identityValid =
-    email.includes("@") && displayName.trim().length > 0 && passcode.length > 0;
   const joinReady = !!clubInfo && typeof clubInfo !== "string";
   const createReady = clubName.trim().length >= 3;
 
@@ -100,40 +94,28 @@ function JoinPageInner() {
           ? "taken"
           : "idle";
 
-  async function handleIdentityContinue() {
-    if (!identityValid) return;
-    setSigningIn(true);
-    setIdentityError("");
+  // @spec AUTH-UI-004 — Step 1 authenticated the user (OTP → session, possibly a
+  // passkey). Run smart detection / path routing. `isNewUser` is currently
+  // informational; we still consult auth.me so a returning user with clubs is
+  // dropped straight in.
+  async function handleAuthenticated(_isNewUser: boolean) {
+    if (pathOverride === "join" || pathOverride === "create") {
+      setPath(pathOverride);
+      setStep(3);
+      return;
+    }
 
     try {
-      // @spec AUTH-BE-001 — server emits the HttpOnly+Secure+SameSite cookie
-      // via Set-Cookie on the auth.enter response; no client-side write needed.
-      await enterMutation.mutateAsync({ email, displayName, passcode });
-
-      if (pathOverride === "join" || pathOverride === "create") {
-        setPath(pathOverride);
-        setStep(3);
+      const me = await utils.auth.me.fetch();
+      if (me.clubs.length > 0) {
+        router.push(`/clubs/${me.clubs[0].id}`);
         return;
       }
-
-      // Imperative fetch — one-shot redirect decision, not an ongoing subscription.
-      try {
-        const me = await utils.auth.me.fetch();
-        if (me.clubs.length > 0) {
-          router.push(`/clubs/${me.clubs[0].id}`);
-          return;
-        }
-      } catch {
-        // Graceful degradation — fall through to Step 2.
-      }
-
-      setStep(2);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create session";
-      setIdentityError(message);
-    } finally {
-      setSigningIn(false);
+    } catch {
+      // Graceful degradation — fall through to Step 2.
     }
+
+    setStep(2);
   }
 
   function handlePathChoice(chosen: "join" | "create") {
@@ -315,12 +297,7 @@ function JoinPageInner() {
               setEmail={setEmail}
               displayName={displayName}
               setDisplayName={setDisplayName}
-              passcode={passcode}
-              setPasscode={setPasscode}
-              identityError={identityError}
-              identityValid={identityValid}
-              signingIn={signingIn}
-              onContinue={handleIdentityContinue}
+              onAuthenticated={handleAuthenticated}
             />
           )}
 
