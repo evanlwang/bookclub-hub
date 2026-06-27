@@ -1,8 +1,14 @@
 // @vitest-environment jsdom
-// @spec OVERLAY-SHEET-001, OVERLAY-SHEET-002
+// @spec OVERLAY-SHEET-001, OVERLAY-SHEET-002, OVERLAY-SHEET-004
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Sheet } from "@/components/ui/sheet";
+
+function swipeDown(target: Element) {
+  fireEvent.touchStart(target, { touches: [{ clientY: 100 }] });
+  fireEvent.touchMove(target, { touches: [{ clientY: 300 }] });
+  fireEvent.touchEnd(target, { changedTouches: [{ clientY: 300 }] });
+}
 
 describe("Sheet — overlay primitive", () => {
   it("renders nothing when closed", () => {
@@ -59,5 +65,33 @@ describe("Sheet — overlay primitive", () => {
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("dialog"));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  // @spec OVERLAY-SHEET-004
+  it("dismisses on a swipe-down that starts on ordinary content", () => {
+    const onClose = vi.fn();
+    render(
+      <Sheet open onClose={onClose} ariaLabel="s">
+        <p data-testid="content">drag me</p>
+      </Sheet>,
+    );
+    swipeDown(screen.getByTestId("content"));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  // @spec OVERLAY-SHEET-004
+  it("does NOT dismiss when the swipe starts on an opt-out drag control", () => {
+    const onClose = vi.fn();
+    render(
+      <Sheet open onClose={onClose} ariaLabel="s">
+        <div data-sheet-no-drag data-testid="slider">
+          <span data-testid="grip">ribbon</span>
+        </div>
+      </Sheet>,
+    );
+    // Dragging the inner control downward must not run the sheet's
+    // swipe-to-dismiss — the gestures would otherwise fight each other.
+    swipeDown(screen.getByTestId("grip"));
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

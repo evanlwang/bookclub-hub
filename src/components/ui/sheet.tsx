@@ -1,4 +1,4 @@
-// @spec OVERLAY-SHEET-001, OVERLAY-SHEET-002
+// @spec OVERLAY-SHEET-001, OVERLAY-SHEET-002, OVERLAY-SHEET-004
 "use client";
 
 import {
@@ -83,9 +83,19 @@ export function Sheet({
   if (!mounted || !open) return null;
 
   // Swipe-down-to-dismiss: only engage when the panel is scrolled to the top,
-  // so the gesture never fights with scrolling long content.
+  // so the gesture never fights with scrolling long content. It also stands
+  // down when the touch begins on an inner control that opts out via
+  // `data-sheet-no-drag` (e.g. the vertical bookmark slider) — otherwise a
+  // downward drag inside that control would drag/dismiss the whole sheet.
+  // @spec OVERLAY-SHEET-004
   function onTouchStart(e: ReactTouchEvent<HTMLDivElement>) {
     if (!dismissible) return;
+    if (
+      e.target instanceof Element &&
+      e.target.closest("[data-sheet-no-drag]")
+    ) {
+      return;
+    }
     const el = panelRef.current;
     if (el && el.scrollTop > 0) return;
     dragStart.current = e.touches[0].clientY;
