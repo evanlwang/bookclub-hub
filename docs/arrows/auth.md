@@ -4,7 +4,7 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 
 ## Status
 
-**IN PROGRESS (auth v2)** — 2026-06-26. The identity layer is being rebuilt: the shared pilot passcode is removed and replaced with email-OTP verification + WebAuthn passkeys (FaceID/Touch ID). The docs cascade (HLD → LLD → EARS) is complete; the new `AUTH-OTP-*`, `AUTH-PASSKEY-*`, `AUTH-RECOVERY-*` families and the retargeted identity/login/session specs are currently `[ ]` gaps pending tests + code. Session machinery (`AUTH-BE-001/002`), sign-out, and landing specs are unchanged and remain `[x]`.
+**OK (auth v2)** — 2026-06-26. The identity layer was rebuilt: the shared pilot passcode is removed and replaced with email-OTP verification + WebAuthn passkeys (FaceID/Touch ID). Full cascade landed — HLD → LLD → EARS → tests → code. All non-deferred auth specs are `[x]` implemented and tested (unit: `otp`/`webauthn`; integration: `auth.test.ts` OTP+passkey+recovery, `auth-ratelimit.test.ts`; E2E: `login.spec.ts`, `join-club.spec.ts`). Session machinery (`AUTH-BE-001/002`), sign-out, and landing specs unchanged and remain `[x]`.
 
 **Resolved divergence:** the prior "OK / 0 divergences" status was inaccurate — the shipped pilot passcode (`AUTH-API-PASSCODE-*`, `src/lib/auth/passcode.ts`) lived in specs and code but was never reflected in the HLD or LLD. Auth v2 removes the passcode outright, eliminating that drift.
 
@@ -60,7 +60,7 @@ Identity, sessions, the join/login flow, and the marketing landing page.
 
 ## Spec Coverage
 
-Auth v2 cascade in flight. The `auth-specs.md` identity/login/session/OTP/passkey/recovery specs are `[ ]` gaps until Phase 5 (tests) and Phase 6 (code) land; `home-specs.md` is untouched. Counts will be re-tallied after implementation. New families added this change: `AUTH-OTP-*`, `AUTH-PASSKEY-*`, `AUTH-RECOVERY-*`. Removed: `AUTH-API-PASSCODE-*`, `AUTH-API-SIGNIN-001`, `AUTH-UI-LOGIN-PASSCODE-HINT-001`, deferred `AUTH-BE-004` (magic-link, now realized as the OTP family).
+Auth v2 cascade complete. All non-deferred `auth-specs.md` specs (identity/login/session + the new `AUTH-OTP-*`, `AUTH-PASSKEY-*`, `AUTH-RECOVERY-*` families) are `[x]` implemented and tested; `home-specs.md` is untouched. Deferred: `AUTH-DATA-003` (account deletion), `AUTH-DATA-004` (per-club names), `AUTH-API-007` (Redis rate limiting). Removed this change: `AUTH-API-PASSCODE-*`, `AUTH-API-SIGNIN-001`, `AUTH-UI-LOGIN-PASSCODE-HINT-001`, deferred `AUTH-BE-004` (magic-link, now realized as the OTP family).
 
 **Spec families:** AUTH-API, AUTH-API-LOGOUT, AUTH-OTP-*, AUTH-PASSKEY-*, AUTH-RECOVERY-*, AUTH-BE, AUTH-BE-SESSION, AUTH-DATA, AUTH-UI, AUTH-UI-LOGIN, AUTH-UI-LOGOUT, AUTH-UI-PATH-OVERRIDE, AUTH-UI-STEP1-*, AUTH-UI-STEP2-*, AUTH-UI-STEP3A-*, AUTH-UI-STEP3B-*, AUTH-UI-STEP4-*, LANDING-UI, HOME-UI, HOME-UI-CTA-PRIMARY, HOME-UI-CTA-SECONDARY, HOME-A11Y, JOIN-UI, JOIN-UI-CREATE-*, JOIN-UI-COPY.
 
@@ -73,7 +73,6 @@ Auth v2 cascade in flight. The `auth-specs.md` identity/login/session/OTP/passke
 
 ## Work Required
 
-1. Phase 5 — write OTP/passkey/recovery tests (`@spec`-annotated), confirm they fail.
-2. Phase 6 — implement schema (`Credential`, `EmailOtp`, `WebAuthnChallenge`), `src/lib/auth/*`, the rewritten `auth` router, UI, and `sendOtpCode`; delete `passcode.ts`; flip the `[ ]` specs to `[x]`.
-3. Purge — zero `passcode`/`PILOT_PASSCODE` hits across `src/ tests/ docs/`; rewrite/remove `docs/pilot-passcode-and-rollout.md`.
-4. Re-tally spec coverage and flip status to OK once coherence checks pass.
+None — auth v2 shipped and verified (typecheck, lint, build, unit, integration, E2E all green; `passcode`/`PILOT_PASSCODE` purged from `src/ tests/`). Maintain coherence on future changes.
+
+Known pre-existing (out-of-segment, NOT auth): two `landing-page.spec.ts` visual assertions fail on a curly-vs-straight apostrophe in unchanged `src/app/page.tsx` (home segment) — independent of this change.

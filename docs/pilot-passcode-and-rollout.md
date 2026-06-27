@@ -1,209 +1,138 @@
-# Pilot rollout: passcode gate + future Vercel/Neon/Resend deploy
+# Auth v2 rollout: email OTP + passkeys, then Vercel/Neon/Resend deploy
 
-> **Status:** Phase A (passcode gate) is the active scope. Phases B and C are
-> kept as reference for when the user revisits deployment.
+> **Status:** Auth v2 (email one-time-code + WebAuthn passkeys) is shipped in
+> code. The shared pilot passcode is removed. Phases B and C below are the
+> deployment handoff, kept for when the user revisits going live.
 
 ## Context
 
-The app is locally complete enough to share with friends, but `auth.enter` and
-`auth.signIn` are passwordless and unverified — anyone who types a valid
-friend's email gets logged in as them. That's a hard blocker for sharing the
-URL. The intended pilot lives on Vercel + Neon (already referenced in
-`CLAUDE.md`) + Resend (already in stack), with Claude Chrome
-(browser-driving agent) doing the click-through deploy work after the human
-handles the parts only a human can do.
+The app's identity layer is email-verified: a 6-digit one-time code (OTP)
+proves email ownership on first contact, and a WebAuthn passkey (FaceID/Touch
+ID) gives one-tap returning logins. OTP remains the permanent recovery/fallback
+so no one is locked out. This replaced the earlier shared-passcode gate, which
+let anyone who knew one string log in as any email — see
+`docs/llds/auth-and-accounts.md` and the `AUTH-OTP-*` / `AUTH-PASSKEY-*` /
+`AUTH-RECOVERY-*` families in `docs/specs/auth-specs.md`.
 
-Decisions captured:
-- **Auth gate = shared passcode** stored as a `PILOT_PASSCODE` env var.
-  Cheapest to ship, zero ongoing cost, easy to swap for magic-link later.
-  Phone-OTP was considered and ruled out (Twilio isn't free; Clerk is free up
-  to 10k MAU but adds a dependency and a refactor).
-- **Hosting target** = Vercel (Hobby) + Neon (free) + Resend (free). $0/month
-  at pilot scale.
-- **Handoff model** = the CLI Claude ships the code change. The human does
-  the human-only setup. Claude Chrome handles every browser click after that.
+Hosting target unchanged: Vercel (Hobby) + Neon (free) + Resend (free), $0/month
+at pilot scale.
 
-## Phase A — Passcode gate (active scope)
+## Environment variables (production)
 
-Goal: a single `PILOT_PASSCODE` env var that gates both account creation and
-login. Wrong passcode → `UNAUTHORIZED` error. No effect on session shape,
-cookie flow, or the rest of the app.
+Required in production (validated in `src/env.ts`): `DATABASE_URL`, `DIRECT_URL`,
+`CRON_SECRET`.
 
-### Server (`src/server/routers/auth.ts`)
-- Add a constant-time string compare helper at the top: `function passcodeOk(input: string): boolean`.
-  Reads `process.env.PILOT_PASSCODE`. If the env var is unset (local dev),
-  accept any input — preserves the existing `make up` flow. If set, require
-  exact match.
-- Extend the Zod input schemas of `auth.signIn` and `auth.enter` with a
-  required `passcode: z.string().min(1)` field.
-- Inside both handlers, call `passcodeOk(input.passcode)` immediately after
-  email validation; throw `TRPCError({ code: "UNAUTHORIZED", message: "Wrong passcode" })`
-  on mismatch. Return BEFORE creating any user/session.
+Auth v2 additions:
+- `WEBAUTHN_RP_ID` — the registrable production domain (e.g. `dogear.vercel.app`
+  or a custom domain). Passkeys are bound to this; it must match the site origin.
+- `WEBAUTHN_ORIGIN` — full origin, e.g. `https://dogear.vercel.app`.
+- `WEBAUTHN_RP_NAME` — display name shown in the OS passkey prompt (`Dogear`).
+- `RESEND_API_KEY` — now load-bearing: it sends the OTP email. Without a real
+  key (unset / `re_mock*` / `test`) the OTP is recorded but not delivered, so
+  production MUST have a real key or no one can receive a code.
 
-### Login UI (`src/app/login/page.tsx`)
-- Add a passcode `<input type="password">` below the email field.
-- Include the value in the POST body as `{ email, passcode }`.
-- Reuse the existing `ErrorBox` for the new "Wrong passcode" error path. The
-  "no account → /join" branch stays unchanged.
+There is no longer a `PILOT_PASSCODE`. In **development** the fixed OTP code
+`000000` always verifies (dev bypass) so `make up`, the seeded accounts, and
+E2E work without an inbox; this is strictly gated to `NODE_ENV !== "production"`.
 
-### Signup UI (`src/app/join/page.tsx`)
-- Add the passcode field to Step 1 alongside email + displayName.
-- Pass `passcode` into the `auth.enter` call. Track it in component state
-  alongside the existing `email` / `displayName`.
-
-### Tests
-- `tests/integration/auth.test.ts`: every `signIn` / `enter` call needs to
-  pass `passcode: "test-passcode"` in the input. Default behavior:
-  `PILOT_PASSCODE` unset, dev bypass takes over (the bypass is itself a
-  behavior worth testing once).
-- `tests/integration/join-flow.test.ts`: same — add `passcode` arg to every
-  `auth.enter` call.
-- `tests/e2e/login.spec.ts` and `tests/e2e/join-club.spec.ts`: fill the new
-  passcode input.
-
-### Out of scope
-- Magic-link replacement (deferred — passcode is the friend-pilot stopgap).
-- Rate-limiting / lockout. The URL is shared by trust, not made public, so
-  brute-force on a single shared passcode isn't the threat model. If the
-  URL ever leaks, rotate `PILOT_PASSCODE` rather than adding rate limits.
-- Per-user 2FA, password reset, anything resembling real auth.
+Passkeys are bound to `WEBAUTHN_RP_ID`, so they only assert on the stable
+production domain. Vercel **preview** deployments have different hostnames and
+therefore fall back to the OTP path — expected, not a bug.
 
 ## Phase B — Human pre-handoff checklist (DEFERRED)
 
-For when deployment is unblocked. ~30 min, only the user can do these.
+~30 min, only the user can do these.
 
-1. **Create accounts** at github.com, vercel.com, neon.tech, resend.com —
-   same email everywhere; verify each via email; complete any 2FA setup.
-2. **(Optional) Add payment to Vercel.** Hobby plan doesn't require a card
-   unless you exceed free-tier limits. Skip until Vercel actually prompts.
-3. **Domain decision.** Free path: skip and use the `*.vercel.app` URL.
-   Custom path: buy at Cloudflare/Namecheap (~$10/yr).
-4. **Pick a passcode.** Something memorable — e.g. `wedreads-2026`. Save it
-   where you'll text friends from.
+1. **Create accounts** at github.com, vercel.com, neon.tech, resend.com — same
+   email everywhere; verify each; complete any 2FA.
+2. **(Optional) Add payment to Vercel.** Hobby doesn't require a card until you
+   exceed free-tier limits.
+3. **Domain decision.** Free: use the `*.vercel.app` URL (and set
+   `WEBAUTHN_RP_ID` to it). Custom: buy a domain (~$10/yr) and point
+   `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN` at it. Decide BEFORE registering
+   passkeys, since changing the RP ID invalidates existing passkeys (users just
+   re-register via OTP, but avoid churn).
+4. **Resend domain.** Verify a sending domain in Resend (DKIM/SPF) so OTP emails
+   don't land in spam; until then OTPs may be flaky.
 5. **Push the repo to GitHub** from the laptop:
-   `gh repo create bookclub-hub --private --source=. --push` (or use the
-   GitHub UI). This is the only step that uses local creds.
-6. **Log into all four services in the same Chrome profile** Claude Chrome
-   will run in. Don't paste passwords into Claude's prompt — let it inherit
-   sessions.
+   `gh repo create bookclub-hub --private --source=. --push`.
+6. **Log into all four services in the same Chrome profile** the deploy agent
+   will use. Don't paste secrets into chat — let it inherit sessions.
 
-## Phase C — Claude Chrome handoff prompt (DEFERRED, paste-ready)
+## Phase C — Deploy handoff prompt (DEFERRED, paste-ready)
 
-Replace the bracketed values before pasting. Don't paste real connection
-strings or the passcode anywhere in the prompt — Claude Chrome will copy
-values directly between tabs.
+Replace bracketed values before pasting. Don't paste connection strings or keys
+into chat — copy them directly between tabs.
 
 ```
 You're deploying a Next.js + Prisma + tRPC app to Vercel + Neon + Resend.
 Repo: https://github.com/[your-username]/bookclub-hub
 I'm logged into GitHub, Vercel, Neon, and Resend in this browser.
-The pilot passcode is set in my password manager under "bookclub-hub PILOT_PASSCODE".
 
 Hard rules:
-- Don't echo the passcode or any connection string back to me.
+- Don't echo any connection string or API key back to me.
 - Copy values directly between tabs; never paste them into chat.
-- Don't run `make seed` or anything that calls `seedDev` against production — it wipes every table.
-- Don't change auth code or any other source files.
+- Don't run `make seed` / anything that calls seedDev against production — it wipes every table.
+- Don't change source files.
 - If a step fails twice, stop and summarize.
 
 Steps in order:
 
-1. Neon → New project "bookclub-hub-prod", closest US region. Copy the
-   POOLED connection string for DATABASE_URL and the DIRECT one for DIRECT_URL.
-   Hold them in tabs.
+1. Neon → New project "bookclub-hub-prod", closest US region. Copy the POOLED
+   connection string for DATABASE_URL and the DIRECT one for DIRECT_URL.
 
-2. Resend → Create an API key named "bookclub-hub-prod". Copy as RESEND_API_KEY.
+2. Resend → Create + verify a sending domain, then create an API key named
+   "bookclub-hub-prod". Copy as RESEND_API_KEY.
 
-3. Vercel → Import the GitHub repo `bookclub-hub`. Framework: Next.js.
-   BEFORE first deploy, set these env vars (Production + Preview + Development):
-     DATABASE_URL        (from step 1, pooled)
-     DIRECT_URL          (from step 1, direct)
-     RESEND_API_KEY      (from step 2)
-     PILOT_PASSCODE      (from my password manager)
+3. Vercel → Import the GitHub repo. Framework: Next.js. BEFORE first deploy set
+   these env vars (Production + Preview + Development unless noted):
+     DATABASE_URL        (step 1, pooled)
+     DIRECT_URL          (step 1, direct)
+     RESEND_API_KEY      (step 2)
+     CRON_SECRET         (generate a random string)
+     WEBAUTHN_RP_ID      (the production hostname, no scheme — e.g. dogear.vercel.app) [Production only]
+     WEBAUTHN_ORIGIN     (https://<that host>) [Production only]
+     WEBAUTHN_RP_NAME    (Dogear)
    Save.
 
-4. Vercel → Settings → Build & Development Settings → set Build Command to:
+4. Vercel → Build & Development Settings → set Build Command to:
      npx prisma db push --accept-data-loss && next build
-   ⚠ ONE-SHOT, FIRST DEPLOY ONLY. `--accept-data-loss` lets Prisma silently
-   drop columns/tables on any schema diff — fine against the brand-new
-   empty Neon DB, dangerous against a populated one. After the first green
-   deploy, flip the Build Command back to `next build` and apply future
-   schema changes by running `npx prisma db push` from the laptop against
-   the prod connection string (or set up `prisma/migrations/` and switch to
-   `prisma migrate deploy && next build`, which is the safer long-term form).
-   (`prisma generate` runs automatically during the `@prisma/client` install
-   on Vercel, so it doesn't need to be in the build command.)
+   ⚠ ONE-SHOT, FIRST DEPLOY ONLY (safe against the brand-new empty DB). After
+   the first green deploy, flip it back to `next build` and apply future schema
+   changes via `npx prisma db push` from the laptop against the prod string (or
+   adopt `prisma/migrations/` + `prisma migrate deploy && next build`).
 
 5. Wait for green deploy. Open the production URL.
 
 6. Smoke test on the live site:
-   a. Visit / and confirm landing page loads.
-   b. Click "Sign up" → /join → enter your test email + display name + the passcode.
-   c. Confirm you can create a club and see its dashboard.
-   d. Log out, then /login with the same email + passcode → confirm session works.
-   e. Try wrong passcode → confirm "Wrong passcode" error.
-   f. Confirm `/robots.txt` returns `Disallow: /` (or that the root layout
-      emits `<meta name="robots" content="noindex">`). The friend-pilot URL
-      should not be indexable.
-   If any step 500s, copy the Vercel runtime log line and stop. Don't guess.
+   a. Visit / and confirm the landing page loads.
+   b. "Sign up" → /join → enter your email → receive the 6-digit code by email →
+      enter it + a display name → optionally set up a passkey → create a club.
+   c. Log out, then /login → "Sign in with a passkey" (FaceID) OR "Email me a
+      code" → confirm session works.
+   d. /account → confirm the passkey appears under "Your devices" and can be removed.
+   If any step 500s, copy the Vercel runtime log line and stop.
 
-7. Report back with:
-   - The production URL
-   - Smoke-test results
-   - Confirmation no secrets are visible in any screenshot you took
+7. Report back: production URL, smoke-test results, confirmation no secrets are
+   visible in any screenshot.
 ```
 
-## Critical files (Phase A — shipped)
+## Verification (automated, after code changes)
 
-- `src/lib/auth/passcode.ts` — new shared `passcodeOk` helper (constant-time compare; dev-bypass when env is unset).
-- `src/server/routers/auth.ts` — extend `signIn` and `enter` Zod schemas with required `passcode`; gate after email validation.
-- `src/server/routers/clubs.ts` — **scope expansion discovered during implementation:** `clubs.join`'s unauthenticated branch upserts a User + creates a Session, so it had to be gated too. Added optional `passcode` to its Zod schema; required only when `ctx.user` is null.
-- `src/app/login/page.tsx` — passcode `<input type="password">` + button-disabled gate on both fields.
-- `src/app/join/page.tsx` — passcode field added to Step 1 alongside email + display name; identityValid checks all three.
-- `tests/integration/auth.test.ts` — passcode arg added to every `signIn`/`enter`; new `PILOT_PASSCODE gate` describe with three tests (rejects wrong passcode for both procedures + asserts dev-bypass when unset).
-- `tests/integration/join-flow.test.ts` — passcode arg added to every `auth.enter` call and to the unauth `clubs.join` call.
-- `tests/e2e/login.spec.ts`, `tests/e2e/join-club.spec.ts` — fill `#passcode`; updated button-disabled assertions to require all fields.
-- `.env.example` — documented `PILOT_PASSCODE` with a comment explaining the dev-bypass.
+- `npx tsc --noEmit` — zero errors.
+- `npm run test` — unit + integration green.
+- `npx playwright test tests/e2e/login.spec.ts` — OTP login flow green.
 
-## Implementation note: why the helper is shared
+## Manual local sanity (before any push)
 
-The original plan only touched `auth.ts`, but the unauthenticated branch of `clubs.join` also creates Users + Sessions, so leaving it ungated would have been a back door around the gate. Both routers now import `passcodeOk` from `src/lib/auth/passcode.ts`. If a future entry point accepts unauthenticated User/Session creation, gate it with the same helper.
+- `make up` → /login → "Email me a code" → enter `000000` (dev bypass) → in.
+- /join → email → `000000` → name → skip or set up a passkey → create a club.
+- /account → add a passkey (needs a real authenticator or the browser's
+  virtual authenticator) → confirm it lists, then remove it.
 
-## Implementation note: fail closed in production
+## Post-launch
 
-`passcodeOk` returns `true` when `PILOT_PASSCODE` is unset — but only when `NODE_ENV !== "production"`. In production, an unset env var is treated as "no one can log in" (fail closed) rather than "anyone can log in" (fail open). This means forgetting the env var on Vercel locks the gate instead of disabling it. Canonical behavior lives in EARS rows `AUTH-API-PASSCODE-001` and `AUTH-API-PASSCODE-002` in `docs/specs/auth-specs.md`.
-
-## Reusable bits
-
-- `validateEmail` / `normalizeEmail` at `src/lib/validation/email.ts` — keep
-  using for email; passcode validation is just non-empty + env compare.
-- `ErrorBox` already used at `src/app/login/page.tsx` — reuse for the new
-  "Wrong passcode" path.
-- The session/cookie flow (server returns `sessionId`, client sets
-  `document.cookie`) is unchanged. Adding a passcode is purely an
-  input-schema gate before user/session creation.
-
-## Verification
-
-### Automated (after Phase A code changes)
-- `npx tsc --noEmit` — zero new errors.
-- `npx vitest run` — all unit tests pass.
-- `npx vitest run --config vitest.config.integration.ts tests/integration/auth.test.ts tests/integration/join-flow.test.ts`
-  — both pass.
-
-### Manual local sanity (before any push)
-- `make up` → log in as `alice@example.com` with NO `PILOT_PASSCODE` set in
-  env → still works (dev bypass).
-- Set `PILOT_PASSCODE=local-test` in `.env.local`, restart server → log in
-  attempts without the passcode field reject; with the right passcode accept.
-
-### Production smoke (Claude Chrome step 6, when deployment resumes)
-- Landing page renders.
-- `/join` with right passcode creates account; `/join` with wrong passcode rejects.
-- `/login` with right passcode + existing email creates session; logout clears cookie.
-- Creating a club, voting, posting a thread all round-trip without 500s.
-
-### Post-launch
-- Watch Vercel runtime logs for the first hour.
-- Send the URL + passcode + a club code to two friends as a soft launch;
-  broaden once they report success.
+- Watch Vercel runtime logs for the first hour, especially OTP email sends
+  (Resend dashboard) and any WebAuthn verification errors (usually an RP-ID /
+  origin mismatch).
+- Soft-launch the URL to two friends; broaden once they report success.

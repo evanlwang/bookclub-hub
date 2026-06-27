@@ -2,7 +2,7 @@
 
 ## Context
 
-Dogear is ready to invite a small group of book clubs as a passcode-gated pilot. The application logic is well-structured (tRPC + Prisma + Next.js App Router with strong test coverage, sliding-session auth, role-based authorization), but a focused audit surfaced one tenant-isolation bug, a defense-in-depth email gap, and several thin-but-load-bearing infra pieces that are missing or unverified. The user's pilot model is "any friend with the shared passcode can sign up" (keep `PILOT_PASSCODE` as-is). The bar for shipping is **critical security + minimal infra** — defer CI workflows, Prisma migrations, DB indices, Sentry-style observability, and email retries to post-pilot.
+Dogear is ready to invite a small group of book clubs as a friends pilot. The application logic is well-structured (tRPC + Prisma + Next.js App Router with strong test coverage, sliding-session auth, role-based authorization), but a focused audit surfaced one tenant-isolation bug, a defense-in-depth email gap, and several thin-but-load-bearing infra pieces that are missing or unverified. The pilot model is "anyone can sign up with an email they control" — email ownership is proven by a 6-digit one-time code (OTP), and returning logins use passkeys (FaceID/Touch ID) with OTP as the permanent fallback. The bar for shipping is **critical security + minimal infra** — defer CI workflows, Prisma migrations, DB indices, Sentry-style observability, and email retries to post-pilot.
 
 This plan delivers the smallest set of changes that closes the real cross-tenant exposure, hardens the perimeter (rate limits, HTTP headers, email escaping), validates env at boot, and gives operations a heartbeat — without slowing the launch.
 
@@ -13,8 +13,8 @@ This plan delivers the smallest set of changes that closes the real cross-tenant
 - GitHub Actions CI for tests/lint/typecheck
 - Sentry / Datadog / structured logger
 - Email retry queue, delivery-failure alerting
-- Account-enumeration polish in `signIn` / `clubs.join` error messages
-- Per-user clubs cap, per-club members cap (passcode is already a meaningful gate; revisit after pilot)
+- Account-enumeration polish in `clubs.join` error messages (the OTP `requestOtp` path is already anti-enumeration)
+- Per-user clubs cap, per-club members cap (email-OTP-verified signup is already a meaningful gate; revisit after pilot)
 - Vercel function timeout / region overrides
 - Email allowlist or pre-created-clubs-only mode
 
@@ -62,21 +62,21 @@ Each track is independently committable. Tracks A–D are security; E–G are in
 
 ### C. Basic rate limiting on auth + join endpoints
 
-**Files:** `src/server/routers/auth.ts` (`signIn`, `enter`), `src/server/routers/clubs.ts` (`join` unauthenticated branch)
+**Files:** `src/server/routers/auth.ts` (`requestOtp`, `verifyOtp`, passkey ceremonies), `src/server/routers/clubs.ts` (`join` unauthenticated branch)
 
-**Risk:** A passcode-guessing or email-enumeration script faces no throttle. The passcode is 1 shared secret across the pilot — guessable iff brute-forced fast.
+**Risk:** An OTP-guessing or email-enumeration script faces no throttle. The OTP is a 6-digit code, so an unthrottled verifier could brute-force it; an unthrottled requester could probe which emails have accounts. Mitigation is layered: codes are hashed and single-use, each issued code has a per-code attempt cap, `requestOtp` is anti-enumeration (identical response regardless of account existence), and the rate limit caps request volume.
 
 **Change:**
-- Add a lightweight in-memory token-bucket per IP + per email (separately), used only at these three entry points. New file `src/lib/auth/rate-limit.ts` exporting `checkRateLimit(key: string, limit: number, windowMs: number)`. In-memory `Map` is fine for pilot; document the trade-off (resets on deploy; doesn't span Vercel instances) in the file header.
-- Apply: 5 attempts per minute per IP and per email on `signIn`/`enter`; 10 per minute per IP on `clubs.join`. On exceed, throw `TOO_MANY_REQUESTS`.
+- Add a lightweight in-memory token-bucket per IP + per email (separately), used at these entry points. New file `src/lib/auth/rate-limit.ts` exporting `checkRateLimit(key: string, limit: number, windowMs: number)`. In-memory `Map` is fine for pilot; document the trade-off (resets on deploy; doesn't span Vercel instances) in the file header.
+- Apply: 5 attempts per minute per IP and per email on `requestOtp`/`verifyOtp`; 30 per minute per IP on the passkey ceremonies (they fire on every login-page load via autofill); 10 per minute per IP on `clubs.join`. On exceed, throw `TOO_MANY_REQUESTS`.
 - Extract the caller IP from `ctx` — verify `src/app/api/trpc/[trpc]/route.ts` or `src/trpc/server.ts` already forwards `req.headers['x-forwarded-for']`; if not, plumb it through context.
 
 **Spec:**
-- `docs/specs/auth-specs.md` — add `AUTH-API-RATELIMIT-001`: the system SHALL throttle signIn/enter to 5 attempts per minute per IP and per email; throw TOO_MANY_REQUESTS on exceed.
+- `docs/specs/auth-specs.md` — add `AUTH-API-RATELIMIT-001`: the system SHALL throttle `requestOtp`/`verifyOtp` to 5 attempts per minute per IP and per email; throw TOO_MANY_REQUESTS on exceed.
 
 **Test:**
 - Unit test for `rate-limit.ts` (token-bucket behavior).
-- Integration test: 6 sequential `signIn` calls from the same IP — 6th throws.
+- Integration test: 6 sequential `verifyOtp` calls from the same IP — 6th throws.
 
 ---
 
@@ -102,12 +102,12 @@ Each track is independently committable. Tracks A–D are security; E–G are in
 
 **New file:** `src/env.ts`
 
-**Risk:** `process.env.PILOT_PASSCODE`, `RESEND_API_KEY`, `CRON_SECRET`, `DATABASE_URL`, `DIRECT_URL` are read inline at call sites. A missing value surfaces only when that code path runs (lazy failure). `passcode.ts` already does fail closed in production for `PILOT_PASSCODE` — but the rest are silent.
+**Risk:** `process.env.RESEND_API_KEY`, `CRON_SECRET`, `DATABASE_URL`, `DIRECT_URL`, and the `WEBAUTHN_*` vars are read inline at call sites. A missing value surfaces only when that code path runs (lazy failure) — e.g. a missing `RESEND_API_KEY` means OTP emails silently fail and no one can sign in, and a missing/mismatched `WEBAUTHN_RP_ID`/`WEBAUTHN_ORIGIN` fails passkey ceremonies. (The old shared-passcode env `PILOT_PASSCODE` and `src/lib/auth/passcode.ts` no longer exist under auth v2.)
 
 **Change:**
-- Create `src/env.ts` exporting a Zod-validated `env` object covering: `DATABASE_URL`, `DIRECT_URL`, `RESEND_API_KEY`, `CRON_SECRET`, `PILOT_PASSCODE`, `NODE_ENV`, `OPEN_LIBRARY_BASE_URL`. Required-in-production fields use `.refine()` keyed off `NODE_ENV`.
+- Create `src/env.ts` exporting a Zod-validated `env` object covering: `DATABASE_URL`, `DIRECT_URL`, `RESEND_API_KEY`, `CRON_SECRET`, `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`, `WEBAUTHN_RP_NAME`, `NODE_ENV`, `OPEN_LIBRARY_BASE_URL`. Required-in-production fields use `.refine()` keyed off `NODE_ENV`.
 - Import once at the top of `src/lib/db.ts` (which is the de-facto early entry) so any missing env triggers a clear error at boot, not in a request.
-- Replace inline `process.env.X` reads at the three sites that matter most (`email.ts`, `passcode.ts`, both cron routes) with `env.X`. Don't churn other call sites for the pilot.
+- Replace inline `process.env.X` reads at the sites that matter most (`email.ts`, `webauthn.ts`, both cron routes) with `env.X`. Don't churn other call sites for the pilot.
 
 **Test:**
 - Unit test on `env.ts`: invalid env throws with a readable message. Skip mutating `process.env` in CI — use Zod schema directly.
@@ -146,8 +146,8 @@ Each track is independently committable. Tracks A–D are security; E–G are in
     ]
   }
   ```
-- Confirm `CRON_SECRET`, `DATABASE_URL`, `DIRECT_URL`, `RESEND_API_KEY`, `PILOT_PASSCODE`, `OPEN_LIBRARY_BASE_URL` are set in Vercel Production env. The `vercel:env` skill can pull current values for comparison.
-- Document the pilot URL, passcode hand-off process, and "how to add/remove a pilot club" in a short runbook (new `docs/runbook-pilot.md`).
+- Confirm `CRON_SECRET`, `DATABASE_URL`, `DIRECT_URL`, `RESEND_API_KEY`, `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`, `WEBAUTHN_RP_NAME`, `OPEN_LIBRARY_BASE_URL` are set in Vercel Production env. The `vercel:env` skill can pull current values for comparison.
+- Document the pilot URL, the email-OTP + passkey sign-in flow, and "how to add/remove a pilot club" in a short runbook (new `docs/runbook-pilot.md`).
 
 **Note:** Vercel automatically injects `CRON_SECRET` validation via the `Authorization: Bearer ${CRON_SECRET}` header; check that the existing cron route handlers expect that exact header format and not a custom one. The current implementation uses `process.env.CRON_SECRET` comparison — verify the header parsing matches Vercel's convention before relying on the wiring.
 
@@ -159,7 +159,7 @@ Each track is independently committable. Tracks A–D are security; E–G are in
 |---|---|---|
 | `src/server/routers/nominations.ts` | A | Add cross-club guard in `delete` |
 | `src/server/services/email.ts` | B | Add `escapeHtml`, wrap interpolations |
-| `src/server/routers/auth.ts` | C | Apply rate-limit to `signIn`, `enter` |
+| `src/server/routers/auth.ts` | C | Apply rate-limit to `requestOtp`, `verifyOtp`, passkey ceremonies |
 | `src/server/routers/clubs.ts` | C | Apply rate-limit to unauth `join` branch |
 | `src/lib/auth/rate-limit.ts` | C | NEW — in-memory token bucket |
 | `next.config.ts` | D | Add `headers()` export |
@@ -176,7 +176,7 @@ Each track is independently committable. Tracks A–D are security; E–G are in
 
 - Cross-club guard pattern: copy from `src/server/routers/rounds.ts:148-150` (`if (round.clubId !== input.clubId) throw NOT_FOUND`) and `src/server/routers/threads.ts:151-153`.
 - Test pattern for cross-club: `tests/integration/meetings-security.test.ts` already implements this exactly for meetings — mirror its structure for nominations.
-- Passcode `timingSafeEqual` pattern in `src/lib/auth/passcode.ts:13-24` is the model for any constant-time comparison the rate-limit code might need.
+- Constant-time comparison pattern: the OTP hash compare lives in `src/lib/auth/otp.ts` (the old `src/lib/auth/passcode.ts` is gone) — model any constant-time comparison the rate-limit code might need on it.
 - Email recording test helper: `getEmailCalls()` and `resetEmailCalls()` in `src/server/services/email.ts:83-89` — reuse for the escape-html test.
 
 ## Verification
@@ -199,7 +199,7 @@ Each track is independently committable. Tracks A–D are security; E–G are in
 4. **Manual security smoke (post-deploy to a Vercel preview URL):**
    - `curl -i https://<preview>/api/health` — expect 200 with `db: "ok"`.
    - `curl -I https://<preview>/` — verify the five security headers are present.
-   - Try `signIn` with wrong passcode 6 times in a row from the same IP — 6th should return `TOO_MANY_REQUESTS`.
+   - Call `requestOtp` (or `verifyOtp` with a wrong code) 6 times in a row from the same IP/email — 6th should return `TOO_MANY_REQUESTS`.
    - From an admin account in club A, attempt `nominations.delete` via the tRPC URL with a nominationId from club B — expect `NOT_FOUND`.
    - Create a club with name `<b>X</b>` and trigger a round-start email; inspect the recorded body (in test mode) or the actual email — verify `&lt;b&gt;X&lt;/b&gt;`.
 5. **Cron sanity:** in the Vercel dashboard, confirm both crons appear under "Crons" with the expected schedules and a successful most-recent run.
@@ -210,5 +210,5 @@ Each track is independently committable. Tracks A–D are security; E–G are in
 - Vercel production deploy green; `/api/health` returns 200 from the production URL.
 - Five security headers verified on production.
 - Both crons visible in Vercel dashboard with at least one successful invocation logged.
-- Pilot passcode generated, set in Vercel env, and recorded only in your password manager.
-- Runbook (`docs/runbook-pilot.md`) lists: pilot URL, passcode, how to rotate the passcode, how to archive a pilot club, how to read the recent voting-deadline-reminder cron logs.
+- `RESEND_API_KEY` and the `WEBAUTHN_RP_ID`/`WEBAUTHN_ORIGIN`/`WEBAUTHN_RP_NAME` vars set in Vercel Production env, and a real OTP email confirmed deliverable.
+- Runbook (`docs/runbook-pilot.md`) lists: pilot URL, how identity works (email OTP + passkeys), how to add/archive a pilot club, how to read the recent voting-deadline-reminder cron logs.

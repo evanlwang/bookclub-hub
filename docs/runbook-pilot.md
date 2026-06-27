@@ -1,6 +1,6 @@
 # Pilot Operations Runbook
 
-How to run the Dogear passcode-gated friends pilot.
+How to run the Dogear friends pilot. Identity is email-OTP-verified signup plus passkeys (FaceID/Touch ID) — there is no shared passcode.
 
 ## URLs
 
@@ -17,8 +17,10 @@ Set in Vercel **Project Settings → Environment Variables → Production**. The
 | `DATABASE_URL` | yes (prod) | Neon pooled URL (PgBouncer). |
 | `DIRECT_URL` | yes (prod) | Neon direct URL — Prisma uses this for migrations. |
 | `CRON_SECRET` | yes (prod) | Random 32+ char secret. Vercel injects this as `Authorization: Bearer <value>` when invoking cron endpoints. |
-| `PILOT_PASSCODE` | recommended | The shared friends-pilot passcode. **If unset in production, the app fails closed and no one can sign up.** Generate a random 12–16 char string and share it with the pilot group. |
-| `RESEND_API_KEY` | recommended | Resend API key. If unset, all email sends become no-ops (silent). |
+| `WEBAUTHN_RP_ID` | yes (prod) | Registrable domain for passkeys (e.g. the Vercel/custom domain; `localhost` in dev). The browser enforces that the page origin matches; a mismatch fails the passkey ceremony. |
+| `WEBAUTHN_ORIGIN` | yes (prod) | Full origin used as `expectedOrigin` during WebAuthn verification (e.g. `https://<domain>` in prod, `http://localhost:3000` in dev). |
+| `WEBAUTHN_RP_NAME` | yes (prod) | Human-readable relying-party display name (e.g. "Dogear"). |
+| `RESEND_API_KEY` | yes (prod) | Resend API key. **Load-bearing in production: it delivers the OTP sign-in code.** If unset, OTP emails become silent no-ops and no one can verify their email to sign in. |
 | `OPEN_LIBRARY_BASE_URL` | optional | Defaults to `https://openlibrary.org`. |
 
 Validation logic lives in `src/env.ts` (`INFRA-ENV-VALIDATION-001`). Pull current values for comparison with:
@@ -27,11 +29,16 @@ Validation logic lives in `src/env.ts` (`INFRA-ENV-VALIDATION-001`). Pull curren
 vercel env pull .env.production.local --environment=production
 ```
 
-## Pilot passcode
+## How identity works
 
-- The passcode is the only gate on signup. Treat it like a shared secret.
-- Hand it to pilot members directly (DM, encrypted note) — never in a public channel.
-- Rotation: change `PILOT_PASSCODE` in Vercel Production env, then redeploy. All in-flight sessions stay valid (sessions don't rely on the passcode); only new signups are affected.
+There is no shared secret. A user proves they own their email by entering a 6-digit one-time code (OTP), then is offered a passkey for fast returning logins:
+
+- **First sign-in / new device:** enter email → receive a 6-digit OTP by email (delivered via Resend) → enter the code → session created. The code is hashed at rest, single-use, and expires after ~10 minutes.
+- **Returning login:** a passkey (FaceID/Touch ID) logs the user in with one tap, no code needed. Passkeys are encouraged but never required.
+- **Recovery / fallback:** the OTP path never goes away. A user who loses their device, switches browsers, or is on a WebAuthn-incapable browser can always re-verify by email and (re)register a passkey. Nobody gets locked out.
+- **Dev bypass:** in any non-production environment the fixed code `000000` always verifies, so local and E2E runs don't need a live mailbox. This bypass is disabled in production.
+
+**Nothing to rotate.** Because there is no shared passcode, there is no secret to change or redistribute. To remove a specific person's access you would delete their account (account-level deletion is still deferred — see "What is NOT yet wired"); to remove someone from a single club, see "Force-remove a member from a club" below.
 
 ## Crons
 
@@ -52,8 +59,10 @@ Read recent cron logs in the Vercel dashboard: **Functions → /api/cron/... →
 
 | Endpoint | Limit | Window | Key |
 |---|---|---|---|
-| `auth.signIn`, `auth.enter` | 5 attempts | 1 minute | per source IP AND per normalized email |
-| `clubs.join` (unauth branch) | 10 attempts | 1 minute | per source IP |
+| `auth.requestOtp`, `auth.verifyOtp` | 5 attempts | 1 minute | per source IP AND per normalized email |
+| `auth.startPasskeyLogin`, `auth.finishPasskeyLogin` | 30 attempts | 1 minute | per source IP (higher ceiling — these fire on every login-page load via passkey autofill) |
+
+Per-OTP brute force is additionally capped: each issued code dies after 5 verification attempts. In development the rate limits are effectively disabled so a shared-IP local/E2E run isn't locked out.
 
 State is in-process — resets on cold start, doesn't span Vercel instances. Adequate for pilot scale (≤20 clubs); revisit if traffic grows.
 
@@ -61,7 +70,7 @@ State is in-process — resets on cold start, doesn't span Vercel instances. Ade
 
 ### Add a pilot club
 
-Clubs are admin-of-club, not admin-of-platform — any authenticated user can create one. To "add" a club to the pilot: share the passcode with the new admin, they sign up, create the club via the UI, and invite members with the club code.
+Clubs are admin-of-club, not admin-of-platform — any authenticated user can create one. To "add" a club to the pilot: the new admin signs up with their email (verify the OTP), creates the club via the UI, and invites members with the club code. Members join the same way — sign up with email + OTP, then enter the club code.
 
 ### Remove a pilot club
 
@@ -96,13 +105,6 @@ WHERE status = 'active'
 ORDER BY created_at DESC;
 ```
 
-### Rotate the pilot passcode
-
-1. Generate a new random string.
-2. `vercel env rm PILOT_PASSCODE production` then `vercel env add PILOT_PASSCODE production` and paste the new value.
-3. Redeploy: `vercel --prod` (or push to main if linked to git).
-4. Distribute the new passcode to the pilot group.
-
 ## Security headers
 
 Set globally by `next.config.ts` (`headers()`): HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy. CSP is intentionally **not** set in the pilot — to add it later, fingerprint Next.js inline scripts and Tailwind first.
@@ -124,7 +126,7 @@ These are tracked in `docs/pilot-launch-readiness-plan.md` under "Out of Scope":
 - CI workflow (no automated test/lint/typecheck on PRs).
 - Sentry / structured logger / observability dashboards.
 - Email retry queue and delivery-failure alerting.
-- Account-enumeration polish in `signIn` / `clubs.join` error messages.
+- Account-enumeration polish in `clubs.join` error messages (the OTP path already returns an identical `requestOtp` response whether or not the email maps to a user).
 - Per-user clubs cap, per-club members cap.
 - CSP header.
 

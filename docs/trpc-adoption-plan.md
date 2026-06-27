@@ -149,8 +149,8 @@ Save for last. The join page is a multi-step state machine where the migration i
 
 | File | Calls | Notes |
 |---|---|---|
-| `app/login/page.tsx` | 2 calls | `auth.signIn`, `auth.me`. |
-| `app/join/page.tsx` | 4 calls | `auth.enter`, `auth.me`, `clubs.lookup` (live debounced), `clubs.lookup` (validation), `clubs.join`, `clubs.create`. The current debounced live-uniqueness check uses an explicit AbortController — `useQuery` does this automatically by cancelling on input change. |
+| `app/login/page.tsx` | calls | `auth.startPasskeyLogin`/`auth.finishPasskeyLogin` (passkey-first), `auth.requestOtp`/`auth.verifyOtp` (OTP fallback), `auth.me`. |
+| `app/join/page.tsx` | calls | `auth.requestOtp`/`auth.verifyOtp`, `auth.me`, `clubs.lookup` (live debounced), `clubs.lookup` (validation), `clubs.join`, `clubs.create`. The current debounced live-uniqueness check uses an explicit AbortController — `useQuery` does this automatically by cancelling on input change. |
 
 **Shared `auth.me` hook.** Multiple pages call `auth.me`. Extract a `useViewer()` wrapper in `src/lib/auth/use-viewer.ts`:
 
