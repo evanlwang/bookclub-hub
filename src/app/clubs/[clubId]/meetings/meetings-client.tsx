@@ -46,7 +46,7 @@ function getAttendeeNames(meeting: any): string[] {
   }, []);
 }
 
-// @spec MEET-UI-006, MEET-UI-008, MEET-UI-009, MEET-UI-CREATE-003
+// @spec MEET-UI-006, MEET-UI-008, MEET-UI-009, MEET-UI-CREATE-003, MEET-UI-LIST-001
 export function MeetingsClient({
   clubId,
   initialMeetings,
@@ -193,18 +193,24 @@ export function MeetingsClient({
     );
   }
 
-  // Active states surface first; completed/cancelled drop to the bottom so a
-  // recently-cancelled meeting can't outrank an active proposed one in "All".
+  // @spec MEET-UI-LIST-001 — cancelled meetings are excluded from the list
+  // entirely (audit-only in the DB), mirroring how cancelled voting rounds are
+  // dropped from the round history (VOTE-UI-LIST-001). Counts, filter tabs, and
+  // the rendered list all derive from this non-cancelled set; `meetings.list`
+  // still returns every status for badge/active detection.
+  const visibleMeetings = meetings.filter((m: any) => m.status !== "cancelled");
+
+  // Active states surface first; completed drops to the bottom so a
+  // recently-completed meeting can't outrank an active proposed one in "All".
   const STATUS_RANK: Record<string, number> = {
     proposed: 0,
     confirmed: 1,
     completed: 2,
-    cancelled: 3,
   };
   const filteredMeetings = (
     filter === "all"
-      ? meetings
-      : meetings.filter(
+      ? visibleMeetings
+      : visibleMeetings.filter(
           (m: any) =>
             m.status === filter || (filter === "past" && m.status === "completed"),
         )
@@ -218,10 +224,10 @@ export function MeetingsClient({
     });
 
   const counts = {
-    all: meetings.length,
-    proposed: meetings.filter((m: any) => m.status === "proposed").length,
-    confirmed: meetings.filter((m: any) => m.status === "confirmed").length,
-    past: meetings.filter((m: any) => m.status === "completed").length,
+    all: visibleMeetings.length,
+    proposed: visibleMeetings.filter((m: any) => m.status === "proposed").length,
+    confirmed: visibleMeetings.filter((m: any) => m.status === "confirmed").length,
+    past: visibleMeetings.filter((m: any) => m.status === "completed").length,
   };
 
   return (
@@ -321,7 +327,7 @@ export function MeetingsClient({
                     onDone={() => setExpandedId(null)}
                   />
                 )}
-                {(meeting.status === "completed" || meeting.status === "cancelled") && (
+                {meeting.status === "completed" && (
                   <PastMeetingRow meeting={meeting} />
                 )}
               </Card>
@@ -544,9 +550,10 @@ function ProposedMeetingRow({
 }
 
 // @spec MEET-UI-009 — muted stamp + rotated PAST rubber stamp.
+// Renders completed meetings only; cancelled meetings are excluded upstream
+// (MEET-UI-LIST-001) and never reach this row.
 function PastMeetingRow({ meeting }: { meeting: any }) {
   const { going } = getResponseCounts(meeting);
-  const cancelled = meeting.status === "cancelled";
 
   return (
     <div className="relative flex gap-3.5 items-center opacity-75">
@@ -561,14 +568,14 @@ function PastMeetingRow({ meeting }: { meeting: any }) {
         <p className="font-[var(--font-display)] text-[15.5px] font-extrabold text-ink m-0 truncate">{meeting.title}</p>
         <p className="font-[var(--font-serif)] text-[13px] text-ink-3 mt-1 mb-0">
           {meeting.location && `${meeting.location} · `}
-          {going > 0 ? `${going} attended` : cancelled ? "Cancelled" : ""}
+          {going > 0 ? `${going} attended` : ""}
         </p>
       </div>
       <span
         aria-hidden="true"
         className="absolute top-0 right-0 rotate-6 rounded-[5px] border-2 border-ink-3 px-1.5 py-0.5 font-[var(--font-mono)] text-[9.5px] font-bold tracking-[0.14em] text-ink-3 opacity-80"
       >
-        {cancelled ? "CANCELLED" : "PAST"}
+        PAST
       </span>
     </div>
   );

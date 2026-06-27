@@ -15,7 +15,7 @@ Status markers: `[x]` implemented · `[ ]` gap · `[D]` deferred · `[!]` diverg
 State: proposed — buttons shown: "Respond" (all members), expanded: per-slot "Available"/"Maybe"/"Can't" (all members), "Save Availability" (all members), "Propose Meeting" (admin, header) — transitions: → confirmed (admin via `meetings.confirm` API; **no UI button**), → cancelled (admin via `meetings.cancel` API; **no UI button**)
 State: confirmed — buttons shown: none (display only) — transitions: → completed (auto when confirmedTime passes), → cancelled (admin via API only)
 State: completed — buttons shown: none (display only — see `MEET-UI-NOTES-IMPL-001` for planned Notes button) — transitions: terminal
-State: cancelled — buttons shown: none (rendered as "Past") — transitions: terminal
+State: cancelled — buttons shown: none (excluded from the meetings list; retained in DB for audit) — transitions: terminal
 
 ## Meeting Creation API
 
@@ -74,8 +74,9 @@ These specs document invariants enforced inside the `meetings` router and exerci
 
 ## Meeting List UI
 
-- `[x]` **MEET-UI-006**: The meeting list SHALL support filter tabs (All / Proposed / Confirmed / Past) with counts. Past tab maps to `status === "completed"` (cancelled meetings are also rendered with `PastMeetingRow`). (`meetings-client.tsx:74-94`)
+- `[x]` **MEET-UI-006**: The meeting list SHALL support filter tabs (All / Proposed / Confirmed / Past) with counts. Past tab maps to `status === "completed"`. (`meetings-client.tsx:74-94`)
 - `[x]` **MEET-UI-LIST-EMPTY-001**: When no meetings match the filter, the list SHALL display "No meetings scheduled." (`meetings-client.tsx:96-107`)
+- `[x]` **MEET-UI-LIST-001**: The meetings list SHALL exclude meetings in `cancelled` status — a cancelled meeting carries no outcome and adds only noise to the history surface. The exclusion is at the UI render layer (counts, filter tabs, and the rendered list all derive from the non-cancelled set); `meetings.list` continues to return all statuses for badge/active detection. When every meeting in a club is cancelled, the list SHALL render the same empty state as a club with zero meetings. (`meetings-client.tsx` `visibleMeetings`)
 
 ## Proposed Meeting Row
 
@@ -97,7 +98,7 @@ These specs document invariants enforced inside the `meetings` router and exerci
 
 ## Past Meeting Row
 
-- `[x]` **MEET-UI-009**: Past meetings (`status="completed"` or `status="cancelled"`) SHALL render with `opacity-70`, a calendar icon block, "Past" neutral badge, the date, title, location, and attended count. (`meetings-client.tsx:241-267`)
+- `[x]` **MEET-UI-009**: Past meetings (`status="completed"`) SHALL render with `opacity-70`, a calendar icon block, "Past" neutral badge, the date, title, location, and attended count. Cancelled meetings are excluded from the list entirely (MEET-UI-LIST-001) and never reach this row. (`meetings-client.tsx:241-267`)
 
 ## Live Updates (mechanism: docs/llds/live-updates.md)
 

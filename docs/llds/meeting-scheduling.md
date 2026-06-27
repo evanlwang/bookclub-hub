@@ -21,13 +21,13 @@ confirmed → cancelled
 State: proposed — buttons shown: "Respond", per-slot "Available"/"Maybe"/"Can't", "Save Availability"; admin only: heatmap, per-slot "Confirm" (within `admin-confirm-section`), and Edit/Cancel under a Details disclosure — transitions: → confirmed (`meetings.confirm` via admin-confirm UI); → cancelled (Cancel button under Details)
 State: confirmed — buttons shown: read-only meeting details for all members; admin only: Edit and "Cancel meeting" hidden behind a "Details" toggle (`MEET-UI-DETAILS-DISCLOSURE-001`) — transitions: → completed (auto when time passes; **not enforced via background job**); → cancelled (Cancel under Details disclosure)
 State: completed — buttons shown: "Notes" (no-op handler) — transitions: terminal
-State: cancelled — buttons shown: rendered as Past with no-op "Notes" — transitions: terminal
+State: cancelled — buttons shown: none (excluded from the meetings list; retained in DB for audit, `MEET-UI-LIST-001`) — transitions: terminal
 
 Phase descriptions:
 - **Proposed**: admin offers 2–5 candidate slots. Members mark availability per slot. Admin sees an availability heatmap and confirms one slot.
 - **Confirmed**: a slot has been picked. Confirmed time and location are surfaced to all members. Admin can still Edit or Cancel via the Details disclosure on the confirmed card.
 - **Completed**: time has passed. Today reached only by manual `meetings.update` or via the API; no scheduled job.
-- **Cancelled**: admin cancels via the Cancel button in the Details disclosure (or via API).
+- **Cancelled**: admin cancels via the Cancel button in the Details disclosure (or via API). A cancelled meeting is hidden from the meetings list entirely (`MEET-UI-LIST-001`) — mirroring how cancelled voting rounds are excluded from the round history (`VOTE-UI-LIST-001`). The row remains in the DB for audit and is still returned by `meetings.list`; the exclusion is purely at the render layer so badge/active detection is unaffected.
 
 ## Button Inventory
 
@@ -37,7 +37,7 @@ Button: meeting row toggle (proposed) — `meetings-client.tsx:197-219` — visi
 Button: "Respond" — `meetings-client.tsx:216-218` — visible: status="proposed" — handler: same toggle as row click
 Button: "Available" / "Maybe" / "Can't" (per slot) — `respond-meeting.tsx:97-113` — visible: respond UI expanded — handler: setSlotResponse (client state)
 Button: "Save Availability" — `respond-meeting.tsx:121-129` — visible: respond UI expanded — enabled: ≥1 slot has a response — handler: `meetings.submitAvailability`
-Button: "Notes" — `meetings-client.tsx:264` — visible: status="completed" or "cancelled" — **handler: NO-OP (no onClick wired)**
+Button: "Notes" — `meetings-client.tsx:264` — visible: status="completed" — **handler: NO-OP (no onClick wired)**
 Button: meeting title input — `create-meeting.tsx:122-129` — optional
 Button: "+ Add description" — `create-meeting.tsx:132-139` — visible: showDesc=false — handler: reveals description textarea
 Button: per-slot datetime input — `create-meeting.tsx:160-166` — always visible per slot
