@@ -152,7 +152,7 @@ BookSelection {
 | `rounds.turnout` | member | `{ clubId, roundId }` | `{ voterCount, memberCount, status }` | cheap poll target for the turnout card (VOTE-API-TURNOUT-001) |
 | `nominations.create` | member | `{ clubId, roundId, bookId, pitch? }` | `{ nomination }` | requires status="nominating"; CONFLICT on duplicate |
 | `nominations.delete` | nominator OR admin+ | `{ clubId, nominationId }` | `{ success: true }` | NOT_FOUND if the loaded nomination's `round.clubId` differs from `input.clubId` — cross-club guard (VOTE-API-NOMDELETE-XCLUB-001) |
-| `votes.submit` | member | `{ clubId, roundId, nominationIds }` | `{ success, voteCount }` | requires status="voting"; replaces all prior votes |
+| `votes.submit` | member | `{ clubId, roundId, nominationIds }` | `{ success, voteCount }` | requires status="voting"; atomically replaces all prior votes (delete + insert in one DB transaction — a failed resubmit leaves the prior selection intact) |
 | `books.search` | required | `{ query }` | `[{ book }]` | local cache → Open Library; merged results collapsed by content key (ISBN, else title+author) so the same logical book never appears twice; empty array on API failure |
 | `books.createManual` | required | `{ title, author, isbn?, pageCount? }` | `{ book }` | openLibraryId=null |
 | `books.listForClub` | member | `{ clubId }` | `[{ book }]` | books selected for this club |
@@ -174,6 +174,7 @@ BookSelection {
 | Vote visibility during voting | Hidden until decided | Live tally; anonymous results | Hidden tallies prevent bandwagoning. |
 | Tie-breaking | Earliest nomination timestamp | Random; admin picks; runoff | Deterministic; rewards initiative. |
 | Vote replacement | Full replacement (submit all approvals at once) | Incremental add/remove | Simpler; avoids partial-vote states. |
+| Replacement atomicity | Delete + insert inside one DB transaction | Delete then insert as separate writes; upsert-per-nomination diffing | The full-replacement decision's whole point is "no partial-vote states" — that invariant must hold across failures too. Separate writes can crash after the delete and silently erase a member's votes. |
 | Manual book entry | Title/Author/ISBN/PageCount, no Open Library ID | Require Open Library | Lets clubs add obscure or non-cataloged books. |
 
 ## Open Questions
@@ -189,6 +190,8 @@ BookSelection {
 1. **Nomination limits per member per round.** Currently unlimited.
 2. **Reading history analytics.** Genre distribution, pace over time, author diversity.
 3. **"I've already read this" flag.** Useful signal but adds UI complexity.
+4. **Concurrent resubmits by the same user can merge selections.** Two interleaved `votes.submit` transactions can persist the union of both selections (possibly exceeding `maxApprovalsPerMember`); closing this needs row locks or serializable isolation.
+5. **Round status guard races the vote transaction.** The `status="voting"` check runs outside the transaction, so a vote can land as the round is advanced to decided.
 
 ## References
 
