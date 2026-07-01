@@ -1,4 +1,4 @@
-// @spec VOTE-API-008, VOTE-BE-003
+// @spec VOTE-API-008, VOTE-BE-003, VOTE-DATA-VOTE-PERSIST-001
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, memberProcedure } from "../trpc";
@@ -51,20 +51,27 @@ export const votesRouter = router({
         });
       }
 
-      // Replace all votes for this user in this round
-      await ctx.db.vote.deleteMany({
-        where: { roundId: input.roundId, userId: ctx.user.id },
-      });
-
+      // Replace all votes for this user in this round. Delete + insert run in
+      // one transaction so a failed resubmit leaves the prior selection intact.
+      // Delete must precede insert: retained nominations would otherwise trip
+      // the unique constraint on (roundId, nominationId, userId).
+      const replaceOps = [
+        ctx.db.vote.deleteMany({
+          where: { roundId: input.roundId, userId: ctx.user.id },
+        }),
+      ];
       if (input.nominationIds.length > 0) {
-        await ctx.db.vote.createMany({
-          data: input.nominationIds.map((nominationId) => ({
-            roundId: input.roundId,
-            nominationId,
-            userId: ctx.user.id,
-          })),
-        });
+        replaceOps.push(
+          ctx.db.vote.createMany({
+            data: input.nominationIds.map((nominationId) => ({
+              roundId: input.roundId,
+              nominationId,
+              userId: ctx.user.id,
+            })),
+          })
+        );
       }
+      await ctx.db.$transaction(replaceOps);
 
       return { success: true, voteCount: input.nominationIds.length };
     }),
