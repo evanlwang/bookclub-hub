@@ -73,7 +73,8 @@ v1 ships a complete, usable product for the core loop: join/create → vote → 
 - Toast feedback on save actions with undo affordance
 - Attention banner on dashboard highlighting immediate actions
 - Per-member progress indicators on reading hero card with hover tooltips
-- Responsive web (mobile-friendly, not native)
+- Responsive web (mobile-friendly)
+- Native iPhone client (SwiftUI, iOS 18+) with full feature parity, consuming the same tRPC API as the web app — HIG-native look and feel, not a port of the web design system
 
 **Post-v1 (explicitly deferred):**
 - Email verification / magic link upgrade
@@ -94,7 +95,8 @@ v1 ships a complete, usable product for the core loop: join/create → vote → 
 - **E-reader integration.** Progress is entered manually (page number or percentage). There is no Kindle/Kobo/Apple Books sync. That is a feature with high integration cost and low reliability.
 - **Video/audio chat.** Meetings are scheduled here but held elsewhere (Zoom, in person, etc.). Building video into a book-club app is not justified.
 - **AI-generated discussion prompts or summaries.** The value of a book club is human discussion. Automated prompts are out of scope.
-- **Mobile-native apps (v1).** The first version is a responsive web application. Native iOS/Android apps are a future consideration, not a v1 deliverable.
+- **Android, iPad, and desktop-native apps.** The native client is iPhone-only. Android users get the responsive web app. iPad and macOS layouts are a future consideration.
+- **Native push notifications.** The iOS client relies on the same email notifications and in-app polling as the web app. APNs requires server-side token infrastructure that isn't justified yet.
 
 ## System Design
 
@@ -102,8 +104,9 @@ v1 ships a complete, usable product for the core loop: join/create → vote → 
 
 ```mermaid
 flowchart TB
-    subgraph client["Browser"]
-        next["Next.js App Router\n(React Server Components)"]
+    subgraph client["Clients"]
+        next["Browser\nNext.js App Router\n(React Server Components)"]
+        ios["iPhone\nSwiftUI (iOS 18+)\nURLSession tRPC client"]
     end
 
     subgraph server["Next.js API (tRPC)"]
@@ -125,6 +128,7 @@ flowchart TB
     end
 
     next <-->|tRPC| server
+    ios <-->|"tRPC over HTTP\n(cookie session)"| server
     server <--> db
     book --> bookapi
     meet --> resend
@@ -200,8 +204,11 @@ erDiagram
 - **Auth**: Custom email-based sessions (HttpOnly cookie, server-side session store)
 - **Email**: Resend (transactional email API — notifications, reminders)
 - **Deployment**: Vercel (zero-config Next.js hosting, serverless functions, edge network)
+- **iOS client**: Swift 6 / SwiftUI with the Observation framework, iOS 18+, XcodeGen-generated project under `ios/`, Swift Testing for unit tests, zero third-party dependencies
 
 This is a CRUD-heavy app with lightweight interactivity — Next.js is the fastest path to a working product. Single language (TypeScript) across the entire stack eliminates context-switching. Prisma provides migration management and type-safe database access. Vercel deployment is zero-config for Next.js. The main trade-off is tight coupling between frontend and backend; if a standalone API is needed later, Route Handlers can be extracted into a separate service.
+
+The iOS client is a second consumer of the same `/api/trpc` HTTP boundary — no server changes. Because the server configures tRPC without a transformer, the wire format is plain JSON (dates as ISO-8601 strings), which a hand-rolled URLSession client with Codable models can speak directly. Sessions reuse the existing HttpOnly `session_id` cookie via `HTTPCookieStorage`; liveness reuses the polling conventions from `docs/llds/live-updates.md`.
 
 ## Design System
 
@@ -240,6 +247,11 @@ A single light theme using `oklch()` notation for perceptual uniformity across m
 | Design ↔ specs relationship | EARS specs reference token *names*, not values | Specs cite hex/oklch values directly; specs ignore styling entirely | Tokens become re-themeable without spec churn; specs stay focused on behavior. |
 | Design-arrow placement | Parallel overlay (design segments not in feature segments' `blockedBy`) | Foundational segment (every feature depends on design); off-graph (no `arrows/` entry) | Avoids cascade ricochets from cosmetic changes; keeps arrow-maintenance coverage of design. |
 | Theming (v1) | Single light theme in `oklch()`, mode-agnostic token names | Light + dark from day one; user-customizable themes | Ships v1 faster. Forward-compatible naming lets dark mode land as a token-value swap, not a rename. |
+| Native mobile approach | Native SwiftUI iPhone app | React Native; Capacitor/web wrapper; PWA-only | The PWA layer (`docs/specs/mobile-specs.md`) already covers "usable in a phone browser." A native app is worth building only if it feels native — SwiftUI delivers that; wrappers don't. Single-platform (iOS) keeps scope honest. |
+| iOS ↔ API transport | Hand-rolled URLSession tRPC client + Codable models | OpenAPI bridge (trpc-openapi) + generated Swift client; GraphQL gateway | Zero server changes; the no-transformer wire format is plain JSON so the client is small. Contract drift is caught by EARS-pinned integration tests against the real endpoint, not codegen. |
+| iOS visual language | Native HIG (system fonts, SF Symbols, standard controls) | Port the warm-paper web design tokens; pixel-faithful port of the redesign | Fastest to build and most at home on the platform. The `DSYS-`/`COMP-*` design segments do not block iOS segments. |
+| iOS session handling | Reuse cookie sessions via `HTTPCookieStorage` | Token/bearer auth added server-side; re-implement cookie jar | URLSession persists and rolls the `session_id` cookie automatically — the sliding-expiry contract (AUTH-BE-002) works unchanged. Bearer auth would be new server surface for no gain. |
+| iOS project generation | XcodeGen (`ios/project.yml`, `.xcodeproj` gitignored) | Checked-in `.xcodeproj`; Tuist | Declarative, diffable, regenerates in under a second; avoids pbxproj merge churn. Tuist is heavier than one app target warrants. |
 
 ## Success Metrics
 
@@ -318,6 +330,7 @@ sequenceDiagram
 | **Organizer churn** — the one person running the club stops using the app | Medium | High | Design every feature to minimize organizer effort (one-tap meeting confirmation, automated reminders, progress-based scheduling hints). Allow ownership transfer so another member can take over. |
 | **Session cookie loss** — user clears cookies or switches browser, loses access | Medium | Medium | Re-entering email restores access to all clubs. No data is lost — only the session. Make the "welcome back" re-entry flow as frictionless as the initial join. |
 | **Prisma query limitations** — complex aggregations (progress summaries, vote tallies) hit ORM limits | Low | Medium | Use Prisma's `$queryRaw` for complex SQL when needed. The data model is straightforward CRUD; most queries are simple. Monitor query performance early. |
+| **API wire-format drift breaks the iOS client** — the Swift client hand-decodes the tRPC JSON envelope; adding a transformer (superjson) or changing output shapes server-side breaks decoding | Medium | High | iOS integration tests assert the raw envelope shape and decode against the live seeded server; every server API spec that an iOS segment depends on is a `blockedBy` edge in the arrow, so server-side changes cascade-pause into the iOS segments for review. |
 
 ## Testing Coverage Plan
 
@@ -346,6 +359,11 @@ sequenceDiagram
 | Spoiler-safe discussion | Member at Ch. 5 sees only Ch. 1–5 threads → updates progress to Ch. 10 → sees Ch. 6–10 threads appear |
 | Multi-club switching | User in 2 clubs → switches → sees correct club data, no bleed |
 
+### iOS Client Tests
+- **Unit (Swift Testing, `ios/DogearKit`, no simulator required)**: wire-envelope and fixture decoding per output model, tRPC URL/body construction, error-code mapping, ISO-8601 date parsing (with/without fractional seconds), mirrored domain logic parity (e.g. spoiler cutoff)
+- **Integration (opt-in via `DOGEAR_BASE_URL`)**: against the seeded local dev server — one authenticated round-trip per domain; a raw-envelope-shape assertion that fails loudly if a transformer is ever added server-side; sign in once per suite to respect the 5/min auth rate limit
+- **XCUITest**: launch smoke test only; behavioral coverage lives in the spec-pinned unit/integration tiers (server behavior is already covered by Playwright)
+
 ### Security Tests (run in CI)
 - **Cross-club isolation**: User A (member of Club 1 only) cannot GET/POST/PUT/DELETE any endpoint scoped to Club 2. Test every club-scoped route.
 - **Session validity**: Expired session cookie → 401. Tampered session ID → 401. No cookie → 401.
@@ -366,7 +384,10 @@ sequenceDiagram
 - `docs/specs/meet-specs.md`
 - `docs/specs/disc-specs.md`
 - `docs/specs/prog-specs.md`
-- `docs/llds/design-system.md` (forthcoming)
-- `docs/llds/components-*.md` (forthcoming, one per primitive)
-- `docs/specs/dsys-specs.md` (forthcoming)
-- `docs/specs/comp-*-specs.md` (forthcoming, one per primitive)
+- `docs/llds/design-system.md`
+- `docs/llds/components-*.md` (one per primitive)
+- `docs/specs/dsys-specs.md`
+- `docs/specs/comp-*-specs.md` (one per primitive)
+- `docs/llds/ios-foundation.md` and `docs/llds/ios-*.md` (forthcoming, one per iOS segment)
+- `docs/specs/ios-*-specs.md` (forthcoming, one per iOS segment)
+- `docs/plans/2026-07-03-ios-swiftui-client.md` (iOS client build plan)
