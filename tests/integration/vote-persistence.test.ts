@@ -1,5 +1,5 @@
 // @spec VOTE-DATA-VOTE-PERSIST-001, VOTE-API-MY-VOTES-001, VOTE-UI-PRIOR-VOTES-001, VOTE-UI-TURNOUT-CHANGE-COUNT-001, VOTE-API-VISIBILITY-001
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getTestDb, resetDb } from "@/lib/db.test-utils";
 import { createAuthenticatedCaller } from "@tests/helpers/trpc";
 import { alice, bob, carol, dave, insertAllUsers } from "@tests/fixtures/users";
@@ -176,6 +176,68 @@ describe("vote persistence and turnout semantics", () => {
       expect(persisted).toHaveLength(2);
       expect(persisted.map((v) => v.nominationId).sort()).toEqual(
         selection.slice().sort(),
+      );
+    });
+
+    // @spec VOTE-DATA-VOTE-PERSIST-001
+    it("executes the delete + insert of a resubmit in a single transaction", async () => {
+      const fixture = await setupVotingRound();
+      const aliceCaller = await createAuthenticatedCaller(db, alice);
+
+      await aliceCaller.votes.submit({
+        clubId: wedReads.id,
+        roundId: fixture.roundId,
+        nominationIds: [fixture.nomDune, fixture.nomKindred],
+      });
+
+      const txSpy = vi.spyOn(db, "$transaction");
+      try {
+        await aliceCaller.votes.submit({
+          clubId: wedReads.id,
+          roundId: fixture.roundId,
+          nominationIds: [fixture.nomLeftHand],
+        });
+
+        expect(txSpy).toHaveBeenCalledTimes(1);
+        // Batch of two operations: delete prior votes, insert new selection
+        expect(txSpy.mock.calls[0][0]).toHaveLength(2);
+      } finally {
+        txSpy.mockRestore();
+      }
+    });
+
+    // @spec VOTE-DATA-VOTE-PERSIST-001
+    it("leaves the prior selection intact when the replacement transaction fails", async () => {
+      const fixture = await setupVotingRound();
+      const aliceCaller = await createAuthenticatedCaller(db, alice);
+
+      const original = [fixture.nomDune, fixture.nomKindred];
+      await aliceCaller.votes.submit({
+        clubId: wedReads.id,
+        roundId: fixture.roundId,
+        nominationIds: original,
+      });
+
+      const txSpy = vi
+        .spyOn(db, "$transaction")
+        .mockRejectedValueOnce(new Error("simulated transaction failure"));
+      try {
+        await expect(
+          aliceCaller.votes.submit({
+            clubId: wedReads.id,
+            roundId: fixture.roundId,
+            nominationIds: [fixture.nomLeftHand],
+          }),
+        ).rejects.toThrow();
+      } finally {
+        txSpy.mockRestore();
+      }
+
+      const persisted = await db.vote.findMany({
+        where: { roundId: fixture.roundId, userId: alice.id },
+      });
+      expect(persisted.map((v) => v.nominationId).sort()).toEqual(
+        original.slice().sort(),
       );
     });
   });
