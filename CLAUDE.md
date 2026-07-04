@@ -81,6 +81,18 @@ npx vitest run -t "pattern"    # Run a single test by name
 
 Unit tests live in `*.test.ts` files next to source. Integration tests in `tests/integration/`. E2E tests in `tests/e2e/`.
 
+### iOS app (native SwiftUI client under ios/)
+
+```bash
+cd ios && xcodegen generate            # Regenerate Dogear.xcodeproj from project.yml (gitignored)
+cd ios/DogearKit && swift test         # DogearKit unit tests (Swift Testing, no simulator needed)
+DOGEAR_BASE_URL=http://localhost:3000 \
+  xcodebuild test -scheme Dogear \
+  -destination 'platform=iOS Simulator,name=iPhone 16'   # Integration tests (needs `make dev` + seed; skipped without DOGEAR_BASE_URL)
+```
+
+iOS EARS segments use prefixes `IOSNET-`/`IOSAPP-` (foundation), `IOSAUTH-`, `IOSCLUB-`, `IOSVOTE-`, `IOSMEET-`, `IOSDISC-`, `IOSPROG-`. Swift files carry the same `// @spec` comment annotations as TypeScript.
+
 ### Linting & Type Checking
 
 ```bash
@@ -154,6 +166,16 @@ docs/
 ├── high-level-design.md          # System vision, problems solved, v1 scope
 ├── specs/                        # EARS requirement specs (vote-specs, meet-specs, etc.)
 └── llds/                         # Low-level designs per intent component
+
+ios/                              # Native SwiftUI iPhone client (iOS 18+), consumes /api/trpc
+├── project.yml                   # XcodeGen manifest (Dogear.xcodeproj is gitignored — regenerate)
+├── DogearKit/                    # Local SPM package: tRPC client, Codable models, mirrored domain logic
+│   ├── Sources/DogearKit/{TRPC,API,Models,Domain}/
+│   └── Tests/DogearKitTests/     # Swift Testing unit tests + JSON wire fixtures
+└── Dogear/                       # App target (SwiftUI)
+    ├── App/                      # DogearApp, RootView, AppEnvironment
+    ├── Support/                  # LivePoller, error banners, formatters
+    └── Features/{Auth,Clubs,Voting,Meetings,Discussions,Progress}/
 ```
 
 ## Development Patterns
@@ -228,7 +250,7 @@ Sessions are stored in the `sessions` table. The `auth` router handles login (em
 
 Each spec has a globally unique ID like `VOTE-UI-001` or `PROG-API-003`. Placement rules are in the LID `### Code annotations` section below. The grep recipe:
 
-- Find every implementation and test of a spec: `grep -rn "VOTE-UI-001" src/ tests/`
+- Find every implementation and test of a spec: `grep -rn "VOTE-UI-001" src/ tests/ ios/`
 - Find the requirement itself: look in `docs/specs/{domain}-specs.md` for the matching ID.
 
 This creates a queryable chain: Spec → Tests → Code, all navigable via `grep`.

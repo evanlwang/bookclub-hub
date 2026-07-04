@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: 2026-06-26
+last_updated: 2026-07-03
 
 # Taxonomy groups segments by domain cluster. Purely organizational.
 taxonomy:
@@ -26,6 +26,14 @@ taxonomy:
     - components-icons
   infrastructure:
     - infra
+  ios-client:
+    - ios-foundation
+    - ios-auth
+    - ios-clubs
+    - ios-voting
+    - ios-meetings
+    - ios-discussions
+    - ios-progress
 
 # The graph of segments. Each entry is one arrow segment.
 arrows:
@@ -36,6 +44,8 @@ arrows:
     audited_sha: aee095b69d1fb383117c7b8b3d9bbda6357f9a7a
     blocks:
       - clubs
+      - ios-foundation
+      - ios-auth
     blockedBy: []
     detail: auth.md
     next: re-audit the /join wizard slice (still unverified since aee095b6); the landing slice was re-specced + verified 2026-06-12 (editorial borrower's-card rebuild)
@@ -51,6 +61,7 @@ arrows:
       - meetings
       - discussions
       - reading-progress
+      - ios-clubs
     blockedBy:
       - auth
       - live-updates
@@ -63,7 +74,8 @@ arrows:
     sampled: 2026-05-07
     audited: 2026-06-11
     audited_sha: ec02705
-    blocks: []
+    blocks:
+      - ios-voting
     blockedBy:
       - clubs
       - live-updates
@@ -76,7 +88,8 @@ arrows:
     sampled: 2026-05-07
     audited: 2026-06-11
     audited_sha: ec02705
-    blocks: []
+    blocks:
+      - ios-meetings
     blockedBy:
       - clubs
       - live-updates
@@ -89,7 +102,8 @@ arrows:
     sampled: 2026-05-07
     audited: 2026-06-11
     audited_sha: ec02705
-    blocks: []
+    blocks:
+      - ios-discussions
     blockedBy:
       - clubs
       - live-updates
@@ -102,7 +116,8 @@ arrows:
     sampled: 2026-05-07
     audited: 2026-06-11
     audited_sha: ec02705
-    blocks: []
+    blocks:
+      - ios-progress
     blockedBy:
       - clubs
       - live-updates
@@ -123,6 +138,7 @@ arrows:
       - meetings
       - discussions
       - reading-progress
+      - ios-foundation
     blockedBy: []
     detail: live-updates.md
     next: null
@@ -250,10 +266,110 @@ arrows:
     sampled: 2026-06-26
     audited: 2026-06-26
     audited_sha: 11aba35
-    blocks: []
+    blocks:
+      - ios-foundation
     blockedBy: []
     detail: infra.md
     next: null
+    drift: null
+
+  # iOS client — native SwiftUI iPhone app (ios/), a second consumer of the
+  # /api/trpc boundary. Segments mirror the server domains 1:1; the API-contract
+  # dependency is expressed as blockedBy edges to the server-owning segments so
+  # server-side spec changes cascade-pause into iOS for review, while Swift view
+  # churn never cascades into web specs. Created 2026-07-03; build plan at
+  # docs/plans/2026-07-03-ios-swiftui-client.md.
+  ios-foundation:
+    status: PLANNED
+    sampled: null
+    audited: null
+    blocks:
+      - ios-auth
+      - ios-clubs
+    blockedBy:
+      - auth
+      - live-updates
+      - infra
+    detail: ios-foundation.md
+    next: "M1: draft docs/llds/ios-foundation.md + ios-foundation-specs.md (IOSNET-, IOSAPP-), then TRPCClient/procedure catalog/LivePoller/app shell"
+    drift: null
+
+  ios-auth:
+    status: PLANNED
+    sampled: null
+    audited: null
+    blocks:
+      - ios-clubs
+    blockedBy:
+      - ios-foundation
+      - auth
+    detail: ios-auth.md
+    next: "M2: entry flow (email + display name + passcode; sign-in vs join branch), session bootstrap via auth.me, logout"
+    drift: null
+
+  ios-clubs:
+    status: PLANNED
+    sampled: null
+    audited: null
+    blocks:
+      - ios-voting
+      - ios-meetings
+      - ios-discussions
+      - ios-progress
+    blockedBy:
+      - ios-foundation
+      - ios-auth
+      - clubs
+    detail: ios-clubs.md
+    next: "M3: dashboard, club switcher, join/create/lookup, members + roles, navState/unread badges"
+    drift: null
+
+  ios-voting:
+    status: PLANNED
+    sampled: null
+    audited: null
+    blocks: []
+    blockedBy:
+      - ios-clubs
+      - voting
+    detail: ios-voting.md
+    next: "M4: rounds, nominations (books.search relay), ballot with maxApprovals, turnout, admin close/advance/cancel, selections"
+    drift: null
+
+  ios-meetings:
+    status: PLANNED
+    sampled: null
+    audited: null
+    blocks: []
+    blockedBy:
+      - ios-clubs
+      - meetings
+    detail: ios-meetings.md
+    next: "M5: list/detail, admin create/update/confirm/cancel, 3-state availability grid"
+    drift: null
+
+  ios-discussions:
+    status: PLANNED
+    sampled: null
+    audited: null
+    blocks: []
+    blockedBy:
+      - ios-clubs
+      - discussions
+    detail: ios-discussions.md
+    next: "M7: thread list with chapter chips + spoiler filter, thread detail, comments CRUD; resolve in LLD whether spoiler filtering is fully server-side"
+    drift: null
+
+  ios-progress:
+    status: PLANNED
+    sampled: null
+    audited: null
+    blocks: []
+    blockedBy:
+      - ios-clubs
+      - reading-progress
+    detail: ios-progress.md
+    next: "M6: update sheet + club dashboard via progress.list/me/update/summary"
     drift: null
 
 # Items found during mapping that don't yet belong to a segment.
